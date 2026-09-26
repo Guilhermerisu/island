@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "guilhermerisu.island",
+  "name": "Island",
+  "version": "0.1.0",
+  "author": "guilhermerisu",
+  "description": "A floating, morphing Omarchy bar",
+  "kinds": [
+    "bar"
+  ],
+  "entryPoints": {
+    "bar": "Island.qml"
+  }
+}
