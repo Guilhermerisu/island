@@ -10,6 +10,7 @@ import "keybinds"
 import "clipboard"
 import "menu"
 import "player"
+import "settings"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -19,7 +20,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface]
+  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     return null
@@ -29,7 +30,7 @@ Item {
     id: controlsSurface
     host: views.host
     viewName: "controls"
-    fixedWidth: 470
+    fixedWidth: 540
     maxHeight: 780
     ControlCenter { host: views.host; active: controlsSurface.active; anchors.fill: parent }
   }
@@ -99,6 +100,14 @@ Item {
     fixedWidth: 440
     padding: 24
     PlayerView { host: views.host; active: playerSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: settingsSurface
+    host: views.host
+    viewName: "settings"
+    fixedWidth: 480
+    SettingsView { host: views.host; active: settingsSurface.active; anchors.fill: parent }
   }
 
   Surface {

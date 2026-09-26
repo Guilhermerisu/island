@@ -88,13 +88,6 @@ ColumnLayout {
     gameModeWrite.running = true
   }
 
-  // --- Lock ---
-  Process { id: lockRunner; command: ["omarchy-system-lock"] }
-  function lockScreen() {
-    host.view = "rest"
-    lockRunner.startDetached()
-  }
-
   // --- Brightness (the Display card hides when the output has no control) ---
   property bool brightnessAvailable: false
   property int brightness: 0
@@ -147,8 +140,8 @@ ColumnLayout {
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
-    Layout.preferredHeight: 58
-    radius: 29
+    Layout.preferredHeight: 62
+    radius: 31
     color: cc.tile
     opacity: available ? 1 : 0.5
     scale: tileMouse.pressed ? 0.97 : 1
@@ -157,9 +150,9 @@ ColumnLayout {
     Rectangle {
       id: badge
       anchors.left: parent.left
-      anchors.leftMargin: 9
+      anchors.leftMargin: 10
       anchors.verticalCenter: parent.verticalCenter
-      width: 40; height: 40; radius: 20
+      width: 42; height: 42; radius: 21
       color: t.checked ? cc.accent : cc.host.withAlpha(cc.text, 0.1)
       Behavior on color { ColorAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
       Text {
@@ -167,7 +160,7 @@ ColumnLayout {
         text: t.icon
         color: t.checked ? cc.accentInk : cc.text
         font.family: cc.iconFont
-        font.pixelSize: 17
+        font.pixelSize: 19
       }
     }
     Column {
@@ -185,6 +178,7 @@ ColumnLayout {
         font.family: "Adwaita Sans"
         font.pixelSize: 14
         font.weight: Font.DemiBold
+        font.letterSpacing: -0.2
       }
       Text {
         width: parent.width
@@ -194,7 +188,7 @@ ColumnLayout {
         elide: Text.ElideRight
         color: cc.textMuted
         font.family: "Adwaita Sans"
-        font.pixelSize: 11
+        font.pixelSize: 12
       }
     }
     MouseArea {
@@ -213,9 +207,9 @@ ColumnLayout {
     property bool checked: false
     signal clicked()
 
-    Layout.preferredWidth: 58
-    Layout.preferredHeight: 58
-    radius: 29
+    Layout.preferredWidth: 62
+    Layout.preferredHeight: 62
+    radius: 31
     color: checked ? cc.accent : cc.tile
     scale: roundMouse.pressed ? 0.94 : 1
     Behavior on color { ColorAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
@@ -225,7 +219,7 @@ ColumnLayout {
       text: r.icon
       color: r.checked ? cc.accentInk : cc.text
       font.family: cc.iconFont
-      font.pixelSize: 18
+      font.pixelSize: 20
     }
     MouseArea {
       id: roundMouse
@@ -242,8 +236,8 @@ ColumnLayout {
     signal moved(real value)
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 34
-    radius: 17
+    Layout.preferredHeight: 46
+    radius: 23
     color: cc.well
     clip: true
 
@@ -259,12 +253,12 @@ ColumnLayout {
     }
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 13
+      anchors.leftMargin: 16
       anchors.verticalCenter: parent.verticalCenter
       text: s.icon
       color: cc.accentInk
       font.family: cc.iconFont
-      font.pixelSize: 15
+      font.pixelSize: 18
     }
     MouseArea {
       id: sliderMouse
@@ -287,20 +281,21 @@ ColumnLayout {
     default property alias content: body.data
 
     Layout.fillWidth: true
-    Layout.preferredHeight: body.implicitHeight + 50
-    radius: 22
+    Layout.preferredHeight: body.implicitHeight + 52
+    radius: 26
     color: cc.card
 
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 14
+      anchors.leftMargin: 16
       anchors.top: parent.top
-      anchors.topMargin: 12
+      anchors.topMargin: 13
       text: sec.title
       color: cc.text
       font.family: "Adwaita Sans"
       font.pixelSize: 14
       font.weight: Font.DemiBold
+      font.letterSpacing: -0.2
     }
     Rectangle {
       visible: sec.showChevron
@@ -326,7 +321,7 @@ ColumnLayout {
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.top: parent.top
-      anchors.topMargin: 40
+      anchors.topMargin: 42
       anchors.leftMargin: 10
       anchors.rightMargin: 10
       spacing: 6
@@ -359,8 +354,8 @@ ColumnLayout {
       onClicked: cc.notifications.setDoNotDisturb(!cc.dnd)
     }
     CcRound {
-      icon: "󰍁"
-      onClicked: cc.lockScreen()
+      icon: "󰒓"
+      onClicked: cc.host.view = "settings"
     }
   }
 
@@ -466,12 +461,13 @@ ColumnLayout {
     }
   }
 
+
   // ---------- Notifications ----------
 
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: notificationBody.implicitHeight + 20
-    radius: 22
+    radius: 26
     color: cc.card
 
     ColumnLayout {
@@ -487,15 +483,39 @@ ColumnLayout {
         Layout.leftMargin: 4
         Layout.rightMargin: 4
         Layout.topMargin: 2
-        Text { text: "Notifications"; color: cc.textMuted; font.family: "Adwaita Sans"; font.pixelSize: 12 }
-        Item { Layout.fillWidth: true }
         Text {
-          visible: cc.host.history.length > 0
-          text: "Clear all"
-          color: cc.textMuted
+          text: "Notifications"
+          color: cc.text
           font.family: "Adwaita Sans"
-          font.pixelSize: 12
-          MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: cc.host.clearAllNotifications() }
+          font.pixelSize: 14
+          font.weight: Font.DemiBold
+          font.letterSpacing: -0.2
+        }
+        Item { Layout.fillWidth: true }
+        // iOS's grey capsule button.
+        Rectangle {
+          visible: cc.host.history.length > 0
+          implicitWidth: clearLabel.implicitWidth + 20
+          implicitHeight: 24
+          radius: 12
+          color: clearMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.16) : cc.well
+          Behavior on color { ColorAnimation { duration: cc.animDuration } }
+          Text {
+            id: clearLabel
+            anchors.centerIn: parent
+            text: "Clear"
+            color: cc.text
+            font.family: "Adwaita Sans"
+            font.pixelSize: 12
+            font.weight: Font.Medium
+          }
+          MouseArea {
+            id: clearMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: cc.host.clearAllNotifications()
+          }
         }
       }
 
@@ -524,8 +544,8 @@ ColumnLayout {
           required property var modelData
           readonly property string appName: String(modelData.app || modelData.summary || "?")
           width: ListView.view.width
-          height: noteBody.implicitHeight + 22
-          radius: 16
+          height: noteBody.implicitHeight + 24
+          radius: 20
           color: noteMouse.containsMouse && modelData.isActive ? cc.host.withAlpha(cc.text, 0.12) : cc.card
 
           MouseArea {
@@ -545,10 +565,10 @@ ColumnLayout {
             readonly property string source: cc.host.notificationIconSource(note.modelData, imageFailed)
             readonly property var brand: cc.host.notificationBrand(note.modelData)
             anchors.left: parent.left
-            anchors.leftMargin: 10
+            anchors.leftMargin: 12
             anchors.top: parent.top
             anchors.topMargin: 12
-            width: 30; height: 30; radius: 15
+            width: 34; height: 34; radius: 9
             color: brand ? brand.tile
               : noteIcon.status === Image.Ready ? "transparent" : cc.host.withAlpha(cc.accent, 0.18)
             Image {
@@ -568,7 +588,7 @@ ColumnLayout {
               text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
               color: avatar.brand ? avatar.brand.ink : cc.accent
               font.family: avatar.brand ? "JetBrainsMono Nerd Font" : "Adwaita Sans"
-              font.pixelSize: avatar.brand ? 18 : 13
+              font.pixelSize: avatar.brand ? 20 : 14
               font.weight: Font.DemiBold
             }
           }
@@ -579,7 +599,7 @@ ColumnLayout {
             anchors.right: parent.right
             anchors.rightMargin: 32
             anchors.top: parent.top
-            anchors.topMargin: 11
+            anchors.topMargin: 12
             spacing: 2
             // Like iOS's Notification Center: the title with the time on the
             // same line (the icon already says which app).
@@ -596,8 +616,9 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: cc.text
                 font.family: "Adwaita Sans"
-                font.pixelSize: 13
+                font.pixelSize: 14
                 font.weight: Font.DemiBold
+                font.letterSpacing: -0.2
               }
               Text {
                 id: noteAge
@@ -607,7 +628,7 @@ ColumnLayout {
                 textFormat: Text.PlainText
                 color: cc.textMuted
                 font.family: "Adwaita Sans"
-                font.pixelSize: 11
+                font.pixelSize: 12
               }
             }
             Text {
@@ -618,16 +639,16 @@ ColumnLayout {
               wrapMode: Text.Wrap
               maximumLineCount: 3
               elide: Text.ElideRight
-              color: cc.textMuted
+              color: cc.host.withAlpha(cc.text, 0.72)
               font.family: "Adwaita Sans"
-              font.pixelSize: 12
+              font.pixelSize: 13
             }
           }
           Text {
             anchors.right: parent.right
-            anchors.rightMargin: 12
+            anchors.rightMargin: 13
             anchors.top: parent.top
-            anchors.topMargin: 10
+            anchors.topMargin: 12
             text: "󰅖"
             color: closeMouse.containsMouse ? cc.text : cc.textMuted
             font.family: cc.iconFont

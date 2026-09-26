@@ -27,7 +27,7 @@ Item {
   onReportedArtChanged: if (reportedArt) { keptArt = reportedArt; keptArtTitle = mediaTitle }
   onMediaTitleChanged: if (mediaTitle !== keptArtTitle) { keptArt = reportedArt; keptArtTitle = mediaTitle }
   readonly property string mediaArt: reportedArt || (mediaTitle === keptArtTitle ? keptArt : "")
-  readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup
+  readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup && settings.mediaPill
 
   ColorQuantizer {
     id: coverColors
@@ -60,6 +60,30 @@ Item {
     return screens.length ? String(screens[0].name) : ""
   }
   readonly property string home: Quickshell.env("HOME")
+
+  readonly property QtObject settings: settingsData
+  FileView {
+    path: root.home + "/.config/omarchy/island.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onAdapterUpdated: writeAdapter()
+    onLoadFailed: function(error) {
+      if (error !== FileViewError.FileNotFound) return
+      writeAdapter()
+      Qt.callLater(reload)
+    }
+    JsonAdapter {
+      id: settingsData
+      property real motionScale: 1.5
+      property bool hoverLift: true
+      property bool clock24h: true
+      property bool mediaPill: true
+      property bool volumeHud: true
+      property int bannerSeconds: 5
+      property bool notch: false
+    }
+  }
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
   readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
   property string themeName: ""
@@ -103,7 +127,7 @@ Item {
     return Math.abs(l - luminance(colorBackground)) > Math.abs(l - luminance(colorText)) ? colorBackground : colorText
   }
 
-  readonly property real motionScale: 1.5
+  readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
 
   function notificationIconSource(row, appIconOnly) {
     if (!row) return ""
@@ -174,10 +198,10 @@ Item {
   }
 
   onVolumeChanged: {
-    if (initialized && volume >= 0) showFeedback("", 1800, "volume")
+    if (initialized && volume >= 0 && settings.volumeHud) showFeedback("", 1800, "volume")
   }
   onMutedChanged: {
-    if (initialized && volume >= 0) showFeedback("", 1800, "volume")
+    if (initialized && volume >= 0 && settings.volumeHud) showFeedback("", 1800, "volume")
   }
   Component.onCompleted: {
     initialized = true
@@ -257,7 +281,7 @@ Item {
       if (key === lastNotificationKey) return
       lastNotificationKey = key
       lastNotification = current
-      if (!surfaceOpen) showFeedback(String(current.summary || current.app || "Notification"), 5000, "notification")
+      if (!surfaceOpen) showFeedback(String(current.summary || current.app || "Notification"), settings.bannerSeconds * 1000, "notification")
     } catch (e) {
       console.warn("island: notification feed parse failed", e)
     }
@@ -403,10 +427,52 @@ Item {
           function onSurfaceOpenChanged() { if (!root.surfaceOpen) focusGrab.armed = false }
         }
 
+        Canvas {
+          id: leftEar
+          readonly property real r: 10
+          visible: root.settings.notch
+          x: island.x - r
+          y: island.y
+          width: r
+          height: r
+          onPaint: {
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.fillStyle = root.colorBackground
+            ctx.beginPath()
+            ctx.moveTo(r, 0)
+            ctx.lineTo(r, r)
+            ctx.arc(0, r, r, 0, -Math.PI / 2, true)
+            ctx.closePath()
+            ctx.fill()
+          }
+        }
+        Canvas {
+          id: rightEar
+          readonly property real r: 10
+          visible: root.settings.notch
+          x: island.x + island.width
+          y: island.y
+          width: r
+          height: r
+          onPaint: {
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.fillStyle = root.colorBackground
+            ctx.beginPath()
+            ctx.moveTo(0, 0)
+            ctx.lineTo(0, r)
+            ctx.arc(r, r, r, Math.PI, 1.5 * Math.PI, false)
+            ctx.closePath()
+            ctx.fill()
+          }
+        }
+
         Rectangle {
           id: island
           x: (parent.width - width) / 2
-          y: 8
+          y: root.settings.notch ? 0 : 8
+          Behavior on y { NumberAnimation { duration: 300 * root.motionScale; easing.type: Easing.OutCubic } }
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
@@ -417,15 +483,17 @@ Item {
             : 100
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
-            : root.mediaPill ? 44
+            : root.mediaPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? 56
-            : root.view === "rest" ? 40 : 52
+            : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
           property real radiusCap: root.volumePill ? 20 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
-          radius: Math.min(height / 2, radiusCap)
-          scale: root.view === "rest" && clockHover.hovered ? 1.07 : 1
+          radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
+          topLeftRadius: root.settings.notch ? 0 : radius
+          topRightRadius: root.settings.notch ? 0 : radius
+          scale: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch ? 1.07 : 1
           Behavior on scale { NumberAnimation { duration: 240 * root.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.8 } }
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
           color: root.colorBackground
