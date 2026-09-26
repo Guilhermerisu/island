@@ -363,7 +363,7 @@ Item {
           y: 8
           readonly property Item picker: root.view === "themes" ? themeSwitcher
             : root.view === "wallpapers" ? wallpaperSwitcher : null
-          width: root.view === "apps" ? 480
+          width: root.view === "apps" ? 600
             : root.view === "power" ? powerMenu.implicitWidth + 36
             : picker ? 820
             : root.view === "controls" ? 470

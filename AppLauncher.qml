@@ -5,8 +5,9 @@ import Quickshell.Widgets
 // Omarchy's own launcher ranking, so results match its menu exactly.
 import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 
-// Application launcher hosted by the island: a search field over a list of
-// apps (icon, name, generic name or description). Type to filter, ↑/↓ (or
+// Application launcher hosted by the island: a large search field over a list
+// of apps (icon tile and name); the selected row gets a soft highlight and an
+// accent bar. Search still matches names, descriptions, and keywords. Type to filter, ↑/↓ (or
 // Tab, PageUp/PageDown) to move, Enter or a click to launch, Esc to close.
 // Uses the same app set as Omarchy's launcher (desktop entries minus its
 // hidden lists) and launches the same way.
@@ -117,7 +118,7 @@ Item {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    height: 32
+    height: 40
 
     Text {
       id: searchIcon
@@ -127,7 +128,7 @@ Item {
       text: "󰍉"
       color: launcher.host.colorMuted
       font.family: launcher.host.fontFamily
-      font.pixelSize: 18
+      font.pixelSize: 22
     }
     TextInput {
       id: search
@@ -140,7 +141,8 @@ Item {
       selectionColor: launcher.host.withAlpha(launcher.host.colorAccent, 0.4)
       selectedTextColor: launcher.host.colorText
       font.family: "Adwaita Sans"
-      font.pixelSize: 15
+      font.pixelSize: 21
+      font.weight: Font.Normal
       clip: true
       onTextChanged: launcher.query = text
       Keys.onPressed: function(event) {
@@ -162,7 +164,7 @@ Item {
         anchors.fill: parent
         verticalAlignment: Text.AlignVCenter
         visible: search.text === ""
-        text: "Search…"
+        text: "Search"
         color: launcher.host.colorMuted
         font: search.font
       }
@@ -200,7 +202,6 @@ Item {
       required property var modelData
       required property int index
       readonly property bool isSelected: ListView.isCurrentItem
-      readonly property string subtitle: String(modelData.genericName || modelData.comment || "")
       width: ListView.view.width
       height: launcher.rowHeight
 
@@ -264,16 +265,6 @@ Item {
           font.family: "Adwaita Sans"
           font.pixelSize: 14
           font.weight: Font.DemiBold
-        }
-        Text {
-          width: parent.width
-          visible: row.subtitle !== ""
-          text: row.subtitle
-          textFormat: Text.PlainText
-          elide: Text.ElideRight
-          color: launcher.host.colorMuted
-          font.family: "Adwaita Sans"
-          font.pixelSize: 12
         }
       }
       MouseArea {
