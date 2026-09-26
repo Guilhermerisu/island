@@ -37,7 +37,8 @@ mv "$tmp" "$config"
 # SUPER+CTRL+SPACE `omarchy-menu toggle background`, SUPER+ESCAPE and the
 # power key `omarchy-menu toggle system`, and `omarchy-menu toggle apps` (the
 # menu's Apps row, or any key bound to it) resolves to apps; the menu's
-# Emoji row resolves to trigger.emoji. The
+# Emoji row resolves to trigger.emoji and its Learn → Keybindings row to
+# learn.keybindings. The
 # menu merge resets omitted fields, so the icon, label, and aliases are
 # repeated from Omarchy's default entries. An existing override of any of
 # them is left alone.
@@ -47,6 +48,7 @@ menu_entries=(
   'apps|  "apps": {"icon":"󰀻","label":"Apps","aliases":["app","applications"],"action":"omarchy-shell guilhermerisu.island apps"},'
   'system|  "system": {"icon":"","label":"System","aliases":["power-menu"],"action":"omarchy-shell guilhermerisu.island power"},'
   'trigger.emoji|  "trigger.emoji": {"icon":"","label":"Emoji","aliases":["emoji","emojis"],"action":"omarchy-shell guilhermerisu.island show emoji"},'
+  'learn.keybindings|  "learn.keybindings": {"icon":"","label":"Keybindings","action":"omarchy-shell guilhermerisu.island show keybinds"},'
 )
 if [[ ! -f $menu ]]; then
   mkdir -p "$(dirname "$menu")"

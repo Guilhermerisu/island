@@ -6,6 +6,7 @@ import "launcher"
 import "themes"
 import "wallpapers"
 import "emoji"
+import "keybinds"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -15,7 +16,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface]
+  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     return null
@@ -62,6 +63,14 @@ Item {
     viewName: "emoji"
     fixedWidth: 600
     EmojiPicker { host: views.host; active: emojiSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: keybindsSurface
+    host: views.host
+    viewName: "keybinds"
+    fixedWidth: 700
+    KeybindList { host: views.host; active: keybindsSurface.active; anchors.fill: parent }
   }
 
   Surface {
