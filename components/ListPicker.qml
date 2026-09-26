@@ -9,22 +9,35 @@ import QtQuick
 //
 // The owner filters: bind `items` to a list computed from `query`. Rows are
 // drawn by `row`, a component whose root declares `property var entry` and
-// `property bool selected`.
+// `property bool selected`. An optional `side` component (same `entry`
+// property, bound to the selected item) is shown in a pane to the right of
+// the list, `sideWidth` wide.
 Item {
   id: picker
   required property var host
   property bool active: false
   property var items: []
   property Component row
+  property Component side
+  property int sideWidth: 300
+  // Lets a view show the pane only for some items (e.g. just images).
+  property bool sideVisible: true
+  readonly property bool showSide: !!side && sideVisible
   property string placeholder: "Search"
   property string emptyText: "Nothing matches"
   property int rowHeight: 50
   property int visibleRows: 7
   property int columns: 1
   readonly property bool grid: columns > 1
+  // Spotlight-style selection: the selected row fills with the theme accent
+  // (rows should switch their text to host.colorAccentText when selected).
+  property bool fillSelection: false
   readonly property string query: search.text
   readonly property var selected: items[list.currentIndex] || null
   signal chosen(var entry)
+  // Offered every key first; a view sets event.accepted to handle one itself
+  // (e.g. Delete to remove an entry, Shift+Enter for a second action).
+  signal keyFilter(var event)
 
   implicitHeight: search.height + 10 + 1 + 8 + list.height
 
@@ -57,6 +70,8 @@ Item {
     fontSize: 21
     placeholder: picker.placeholder
     onKeyPressed: function(event) {
+      picker.keyFilter(event)
+      if (event.accepted) return
       if (picker.grid && event.key === Qt.Key_Right) {
         picker.move(1); event.accepted = true
       } else if (picker.grid && event.key === Qt.Key_Left) {
@@ -96,7 +111,8 @@ Item {
   GridView {
     id: list
     anchors.left: parent.left
-    anchors.right: parent.right
+    anchors.right: picker.showSide ? sidePane.left : parent.right
+    anchors.rightMargin: picker.showSide ? 12 : 0
     anchors.top: divider.bottom
     anchors.topMargin: 8
     height: picker.rowHeight * picker.visibleRows
@@ -119,14 +135,15 @@ Item {
 
       Rectangle {
         anchors.fill: parent
-        anchors.leftMargin: picker.grid ? 3 : 8
+        anchors.leftMargin: picker.grid ? 3 : picker.fillSelection ? 0 : 8
         anchors.rightMargin: picker.grid ? 3 : 0
         anchors.topMargin: picker.grid ? 3 : 0
         anchors.bottomMargin: picker.grid ? 3 : 0
         radius: 12
-        color: slot.isSelected
-          ? (picker.grid ? picker.host.withAlpha(picker.host.colorAccent, 0.28) : picker.host.withAlpha(picker.host.colorText, 0.07))
-          : "transparent"
+        color: !slot.isSelected ? "transparent"
+          : picker.fillSelection ? picker.host.colorAccent
+          : picker.grid ? picker.host.withAlpha(picker.host.colorAccent, 0.28)
+          : picker.host.withAlpha(picker.host.colorText, 0.07)
       }
       // Accent bar marking the selected row (list mode).
       Rectangle {
@@ -136,11 +153,11 @@ Item {
         height: 22
         radius: 1.5
         color: picker.host.colorAccent
-        visible: slot.isSelected && !picker.grid
+        visible: slot.isSelected && !picker.grid && !picker.fillSelection
       }
       Loader {
         anchors.fill: parent
-        anchors.leftMargin: picker.grid ? 0 : 16
+        anchors.leftMargin: picker.grid ? 0 : picker.fillSelection ? 10 : 16
         anchors.rightMargin: picker.grid ? 0 : 12
         sourceComponent: picker.row
         onLoaded: {
@@ -162,6 +179,23 @@ Item {
       color: picker.host.colorMuted
       font.family: "Adwaita Sans"
       font.pixelSize: 13
+    }
+  }
+
+  // Details for the selected item (e.g. a clipboard image preview).
+  Rectangle {
+    id: sidePane
+    visible: picker.showSide
+    anchors.right: parent.right
+    anchors.top: list.top
+    anchors.bottom: list.bottom
+    width: picker.showSide ? picker.sideWidth : 0
+    color: "transparent"
+    Loader {
+      anchors.fill: parent
+      anchors.margins: 4
+      sourceComponent: picker.side
+      onLoaded: item.entry = Qt.binding(function() { return picker.selected || ({}) })
     }
   }
 }
