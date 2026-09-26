@@ -100,6 +100,7 @@ ColumnLayout {
   property int brightness: 0
   onActiveChanged: {
     if (!active) { outputsOpen = false; return }
+    Qt.callLater(function() { cc.forceActiveFocus() })
     if (!brightnessRead.running) brightnessRead.running = true
     if (!gameModeRead.running) gameModeRead.running = true
   }
@@ -128,6 +129,9 @@ ColumnLayout {
   }
 
   spacing: 10
+
+  // Esc closes the control center.
+  Keys.onEscapePressed: cc.host.view = "rest"
 
   // ---------- Reusable pieces ----------
 
@@ -535,7 +539,10 @@ ColumnLayout {
           // there's none (or it fails to load).
           ClippingRectangle {
             id: avatar
-            readonly property string source: cc.host.notificationIconSource(note.modelData)
+            // A live image handle dies with the shell; fall back to the app
+            // icon (then the letter) when it no longer loads.
+            property bool imageFailed: false
+            readonly property string source: cc.host.notificationIconSource(note.modelData, imageFailed)
             anchors.left: parent.left
             anchors.leftMargin: 10
             anchors.top: parent.top
@@ -551,6 +558,7 @@ ColumnLayout {
               fillMode: Image.PreserveAspectCrop
               asynchronous: true
               visible: status === Image.Ready
+              onStatusChanged: if (status === Image.Error) avatar.imageFailed = true
             }
             Text {
               anchors.centerIn: parent

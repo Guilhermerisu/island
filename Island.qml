@@ -4,7 +4,6 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
-import Quickshell.Widgets
 import qs.Commons
 
 Item {
@@ -336,7 +335,10 @@ Item {
         WlrLayershell.namespace: "omarchy-island"
         WlrLayershell.layer: WlrLayer.Overlay
         // Only the switchers type; everything else stays click-only.
-        WlrLayershell.keyboardFocus: root.pickerOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        // The switchers, launcher, power menu, and control center (Esc) take
+        // the keyboard while open; the resting island stays click-only.
+        WlrLayershell.keyboardFocus: root.pickerOpen || root.view === "controls"
+          ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         mask: Region { item: island }
 
         // Clicking anywhere outside the island clears the grab and closes it.
@@ -422,154 +424,11 @@ Item {
             }
           }
 
-          Item {
-            id: notificationPillContent
-            readonly property var row: root.lastNotification || ({})
-            property bool imageFailed: false
-            onRowChanged: imageFailed = false
-            readonly property string iconSource: root.notificationIconSource(root.lastNotification, imageFailed)
-            anchors.fill: parent
-            opacity: root.notificationPill ? 1 : 0
-            visible: opacity > 0.01
-            Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
+          NotificationPill { host: root; shape: island; anchors.fill: parent }
 
-            ClippingRectangle {
-              id: appTile
-              anchors.left: parent.left
-              anchors.leftMargin: 15
-              anchors.verticalCenter: parent.verticalCenter
-              // Grows with the pill so it never pokes past the rounded ends.
-              width: height
-              height: Math.max(0, Math.min(54, island.height - 30))
-              radius: height * 0.28
-              color: "transparent"
-              Rectangle {
-                anchors.fill: parent
-                visible: appTileImage.status !== Image.Ready
-                gradient: Gradient {
-                  GradientStop { position: 0; color: Qt.lighter(root.colorAccent, 1.25) }
-                  GradientStop { position: 1; color: root.colorAccent }
-                }
-              }
-              Image {
-                id: appTileImage
-                anchors.fill: parent
-                source: notificationPillContent.iconSource
-                sourceSize.width: 100
-                sourceSize.height: 100
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                visible: status === Image.Ready
-                onStatusChanged: if (status === Image.Error) notificationPillContent.imageFailed = true
-              }
-              Text {
-                anchors.centerIn: parent
-                visible: appTileImage.status !== Image.Ready
-                text: String(notificationPillContent.row.glyph || "") || "󰂚"
-                color: root.colorAccentText
-                font.family: root.fontFamily
-                font.pixelSize: 24
-              }
-            }
+          VolumeSlider { host: root; shape: island; anchors.fill: parent }
 
-            Column {
-              anchors.left: appTile.right
-              anchors.leftMargin: 12
-              anchors.right: parent.right
-              anchors.rightMargin: 30
-              anchors.verticalCenter: parent.verticalCenter
-              spacing: 2
-              Text {
-                width: parent.width
-                text: String(notificationPillContent.row.summary || notificationPillContent.row.app || "Notification")
-                textFormat: Text.PlainText
-                elide: Text.ElideRight
-                color: root.colorText
-                font.pixelSize: 16
-                font.weight: Font.DemiBold
-              }
-              Text {
-                width: parent.width
-                text: String(notificationPillContent.row.body || notificationPillContent.row.app || "")
-                visible: text !== ""
-                textFormat: Text.PlainText
-                elide: Text.ElideRight
-                color: root.colorMuted
-                font.pixelSize: 13
-              }
-            }
-          }
-
-          // iOS Control Center–style volume, laid on its side: the island
-          // becomes a wide slider that fills with white from the left, speaker
-          // glyph near the left end.
-          ClippingRectangle {
-            id: volumePillContent
-            readonly property real level: root.muted ? 0 : Math.max(0, Math.min(1, root.volume))
-            // Animate the level, not the pixel width, so the fill doesn't
-            // restart its motion every frame while the island morphs.
-            property real shownLevel: level
-            Behavior on shownLevel { NumberAnimation { duration: 220 * root.motionScale; easing.type: Easing.OutCubic } }
-            anchors.fill: parent
-            radius: island.radius
-            color: "transparent"
-            opacity: root.volumePill ? 1 : 0
-            visible: opacity > 0.01
-            Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
-
-            // Grey track behind the fill: solid, since the clipping shape
-            // drops translucent colors (it's white at 16% over the black island).
-            Rectangle {
-              anchors.fill: parent
-              color: "#2a2a2a"
-            }
-            Rectangle {
-              id: volumeFill
-              anchors.left: parent.left
-              anchors.top: parent.top
-              anchors.bottom: parent.bottom
-              width: parent.width * volumePillContent.shownLevel
-              color: "#f2f2f2"
-            }
-            Text {
-              id: volumeIcon
-              anchors.left: parent.left
-              anchors.leftMargin: 18
-              anchors.verticalCenter: parent.verticalCenter
-              // Dark on the white fill, light when the fill doesn't reach it.
-              readonly property bool onFill: volumeFill.width > x + width / 2
-              text: volumePillContent.level <= 0 ? "󰖁" : volumePillContent.level < 0.34 ? "󰕿" : volumePillContent.level < 0.67 ? "󰖀" : "󰕾"
-              color: onFill ? "#3a3a3c" : "#f2f2f2"
-              font.family: root.fontFamily
-              font.pixelSize: 26
-              Behavior on color { ColorAnimation { duration: 120 * root.motionScale } }
-            }
-          }
-
-          Text {
-            anchors.centerIn: parent
-            opacity: !root.notificationPill && !root.volumePill && (root.view === "rest" || root.view === "feedback") ? 1 : 0
-            width: parent.width - 24
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-            textFormat: Text.PlainText
-            // Notifications have their own layout; don't flash their text in
-            // this label while it fades out.
-            text: root.view === "feedback" && !root.notificationPill && !root.volumePill ? root.feedback
-              : root.companionNeedsSetup ? "󰀦  " + root.companionWarning
-              : Qt.formatDateTime(clock.date, "HH:mm")
-            // A fixed soft off-white on the always-black island; the setup
-            // warning keeps the theme's urgent color.
-            color: root.view === "rest" && root.companionNeedsSetup ? root.colorUrgent : "#c2c8bd"
-            // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
-            // digits from shifting as the time changes.
-            font.family: "Adwaita Sans"
-            font.pixelSize: 16
-            font.weight: Font.DemiBold
-            font.features: { "tnum": 1 }
-            // Get out of the way fast, fade back in gently.
-            Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
-          }
+          IslandLabel { host: root; anchors.centerIn: parent }
 
           ThemeSwitcher {
             id: themeSwitcher
