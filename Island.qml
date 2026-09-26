@@ -22,6 +22,8 @@ Item {
   readonly property string artist: player ? String(player.trackArtist || "") : ""
   readonly property real volume: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
     ? Pipewire.defaultAudioSink.audio.volume : -1
+  readonly property bool muted: !!(Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
+    && Pipewire.defaultAudioSink.audio.muted)
   readonly property string wantedOutput: String(barConfig.output || "DP-1")
   readonly property string outputName: {
     var screens = Quickshell.screens
@@ -39,6 +41,8 @@ Item {
   // Notification arrivals use the Dynamic Island layout: app icon tile,
   // title, and one line of body.
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
+  // Volume changes use an icon + level bar + percentage layout.
+  readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
 
   property bool surfaceContentReady: false
   property string feedback: ""
@@ -112,7 +116,10 @@ Item {
   }
 
   onVolumeChanged: {
-    if (initialized && volume >= 0) showFeedback("Volume  " + Math.round(volume * 100) + "%", 1800, "volume")
+    if (initialized && volume >= 0) showFeedback("", 1800, "volume")
+  }
+  onMutedChanged: {
+    if (initialized && volume >= 0) showFeedback("", 1800, "volume")
   }
   Component.onCompleted: {
     initialized = true
@@ -321,11 +328,13 @@ Item {
           y: 8
           width: root.view === "controls" ? 470
             : root.notificationPill ? 400
+            : root.volumePill ? 230
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : 110
           height: root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
             : root.notificationPill ? 76
+            : root.volumePill ? 44
             : root.view === "rest" ? 40 : 52
           // Pills stay fully round at every frame of the morph because the
           // radius tracks the animated height; only the cap for the large
@@ -437,22 +446,85 @@ Item {
             }
           }
 
+          // Apple-style volume HUD: speaker glyph and a thick level bar, no
+          // numbers. The glyph pops on every change and the bar springs to
+          // the new level.
+          Item {
+            id: volumePillContent
+            readonly property real level: root.muted ? 0 : Math.max(0, Math.min(1, root.volume))
+            // Animate the level, not the pixel width, so the bar doesn't
+            // restart its spring every frame while the pill itself morphs.
+            property real shownLevel: level
+            Behavior on shownLevel {
+              NumberAnimation { duration: 260 * root.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
+            }
+            anchors.fill: parent
+            anchors.leftMargin: 16
+            anchors.rightMargin: 18
+            opacity: root.volumePill ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
+
+            Connections {
+              target: root
+              function onVolumeChanged() { if (root.volumePill) volumePop.restart() }
+              function onMutedChanged() { if (root.volumePill) volumePop.restart() }
+            }
+
+            Text {
+              id: volumeIcon
+              anchors.left: parent.left
+              anchors.verticalCenter: parent.verticalCenter
+              width: 22
+              horizontalAlignment: Text.AlignHCenter
+              text: root.muted || volumePillContent.level <= 0 ? "󰖁" : volumePillContent.level < 0.34 ? "󰕿" : volumePillContent.level < 0.67 ? "󰖀" : "󰕾"
+              color: root.colorText
+              opacity: root.muted ? 0.6 : 1
+              font.family: root.fontFamily
+              font.pixelSize: 19
+              SequentialAnimation {
+                id: volumePop
+                NumberAnimation { target: volumeIcon; property: "scale"; to: 1.18; duration: 70; easing.type: Easing.OutQuad }
+                NumberAnimation { target: volumeIcon; property: "scale"; to: 1; duration: 220 * root.motionScale; easing.type: Easing.OutBack }
+              }
+            }
+            Rectangle {
+              anchors.left: volumeIcon.right
+              anchors.leftMargin: 12
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              height: 8
+              radius: 4
+              color: root.withAlpha(root.colorText, 0.2)
+              Rectangle {
+                height: parent.height
+                radius: parent.radius
+                width: Math.max(root.muted ? 0 : height, parent.width * Math.max(0, Math.min(1, volumePillContent.shownLevel)))
+                color: root.colorText
+              }
+            }
+          }
+
           Text {
             anchors.centerIn: parent
-            opacity: !root.notificationPill && (root.view === "rest" || root.view === "feedback") ? 1 : 0
+            opacity: !root.notificationPill && !root.volumePill && (root.view === "rest" || root.view === "feedback") ? 1 : 0
             width: parent.width - 24
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
             textFormat: Text.PlainText
             // Notifications have their own layout; don't flash their text in
             // this label while it fades out.
-            text: root.view === "feedback" && !root.notificationPill ? root.feedback
+            text: root.view === "feedback" && !root.notificationPill && !root.volumePill ? root.feedback
               : root.companionNeedsSetup ? "󰀦  " + root.companionWarning
               : Qt.formatDateTime(clock.date, "HH:mm")
             color: root.view === "rest" && root.companionNeedsSetup ? root.colorUrgent : root.colorText
-            font.family: root.fontFamily
-            font.pixelSize: 14
+            // Adwaita Sans (Inter-based) at semibold, like the iOS status
+            // clock; tabular figures keep the digits from shifting as the
+            // time changes.
+            font.family: "Adwaita Sans"
+            font.pixelSize: 15
             font.weight: Font.DemiBold
+            font.features: { "tnum": 1 }
             // Get out of the way fast, fade back in gently.
             Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
           }
