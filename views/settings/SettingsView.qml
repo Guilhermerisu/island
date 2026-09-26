@@ -279,6 +279,27 @@ ColumnLayout {
   }
 
   SettingsGroup {
+    title: "Live Activities"
+    SettingsRow {
+      label: "Downloads"
+      detail: "Show browser downloads in progress on the pill"
+      SettingsSwitch {
+        checked: settingsView.settings.downloads
+        onToggled: function(on) { settingsView.settings.downloads = on }
+      }
+    }
+    SettingsRow {
+      label: "System Updates"
+      detail: "Show pacman, yay, paru, and Omarchy updates on the pill"
+      last: true
+      SettingsSwitch {
+        checked: settingsView.settings.systemUpdates
+        onToggled: function(on) { settingsView.settings.systemUpdates = on }
+      }
+    }
+  }
+
+  SettingsGroup {
     title: "Notifications"
     SettingsRow {
       label: "Banner Duration"

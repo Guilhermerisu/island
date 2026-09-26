@@ -4,9 +4,9 @@ import QtQuick
 // that share its spot.
 Text {
   required property var host
-  // Hidden behind the notification and volume pills (the media pill keeps
-  // the clock in the middle).
-  opacity: !host.notificationPill && !host.volumePill && (host.view === "rest" || host.view === "feedback") ? 1 : 0
+  // Hidden behind the notification, volume, and finished-download pills
+  // (the media and downloading pills keep the clock in the middle).
+  opacity: !host.notificationPill && !host.volumePill && !host.downloadDone && (host.view === "rest" || host.view === "feedback") ? 1 : 0
   width: parent.width - 24
   horizontalAlignment: Text.AlignHCenter
   elide: Text.ElideRight
@@ -20,7 +20,7 @@ Text {
     : Qt.formatDateTime(host.clockDate, "h:mm AP").replace(/\s*[AP]M$/i, "")
   // A fixed soft off-white on the always-black island; the setup
   // warning keeps the theme's urgent color.
-  color: host.view === "rest" && host.companionNeedsSetup ? host.colorUrgent : "#c2c8bd"
+  color: host.view === "rest" && host.companionNeedsSetup ? host.colorUrgent : "#e2e6de"
   // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
   // digits from shifting as the time changes.
   font.family: "Adwaita Sans"

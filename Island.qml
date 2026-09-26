@@ -27,7 +27,28 @@ Item {
   onReportedArtChanged: if (reportedArt) { keptArt = reportedArt; keptArtTitle = mediaTitle }
   onMediaTitleChanged: if (mediaTitle !== keptArtTitle) { keptArt = reportedArt; keptArtTitle = mediaTitle }
   readonly property string mediaArt: reportedArt || (mediaTitle === keptArtTitle ? keptArt : "")
-  readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup && settings.mediaPill
+  readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup && settings.mediaPill && !downloadPill
+
+  readonly property Item downloadTracker: downloadWatcher
+  Downloads { id: downloadWatcher; enabled: root.settings.downloads }
+  readonly property Item packageTracker: packageWatcher
+  PackageUpdates { id: packageWatcher; enabled: root.settings.systemUpdates }
+  readonly property bool downloadDone: view === "rest" && !companionNeedsSetup
+    && (downloadTracker.finishedName !== "" || packageTracker.finishedTitle !== "")
+  readonly property bool downloadActive: view === "rest" && !companionNeedsSetup
+    && (downloadTracker.active || packageTracker.active) && !downloadDone
+  readonly property bool downloadPill: downloadDone || downloadActive
+  Process { id: downloadOpener }
+  function openDownloads() {
+    if (!downloadTracker.active && downloadTracker.finishedName === "") {
+      packageTracker.dismissFinished()
+      return
+    }
+    var path = downloadDone ? downloadTracker.finishedPath : downloadTracker.folder
+    downloadTracker.dismissFinished()
+    downloadOpener.command = ["sh", "-c", '[ -e "$1" ] && exec xdg-open "$1"; exec xdg-open "$(dirname "$1")"', "sh", path]
+    downloadOpener.startDetached()
+  }
 
   ColorQuantizer {
     id: coverColors
@@ -82,6 +103,8 @@ Item {
       property bool volumeHud: true
       property int bannerSeconds: 5
       property bool notch: false
+      property bool downloads: true
+      property bool systemUpdates: true
     }
   }
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
@@ -479,11 +502,14 @@ Item {
             : root.volumePill ? 240
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
+            : root.downloadDone ? 360
+            : root.downloadActive ? (root.downloadTracker.active ? 240 : 280)
             : root.mediaPill ? 240
             : 100
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
-            : root.mediaPill ? (root.settings.notch ? 40 : 44)
+            : root.downloadDone ? 64
+            : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? 56
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
           property real radiusCap: root.volumePill ? 20 : root.surfaceOpen ? 30 : 38
@@ -518,6 +544,7 @@ Item {
               feedbackTimer.stop()
               if (root.notificationPill) root.dismissPillNotification()
               else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
+              else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
               else root.view = "controls"
             }
@@ -528,6 +555,8 @@ Item {
           VolumeSlider { host: root; shape: island; anchors.fill: parent }
 
           MediaPill { host: root; anchors.fill: parent }
+
+          DownloadPill { host: root; anchors.fill: parent }
 
           IslandLabel { host: root; anchors.centerIn: parent }
 
