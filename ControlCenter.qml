@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Bluetooth
@@ -8,8 +7,10 @@ import Quickshell.Networking
 import Quickshell.Services.Pipewire
 import Quickshell.Widgets
 
-// The expanded "controls" surface: quick toggles, sliders, now playing, and
-// notifications. Reads its state from the island root passed in as `host`.
+// The expanded "controls" surface: two rows of toggle pills with a round
+// button at the end of each, Sound and Display cards with sliders, and the
+// recent notifications. Reads its state from the island root passed in as
+// `host`.
 ColumnLayout {
   id: cc
   required property var host
@@ -18,12 +19,13 @@ ColumnLayout {
   // Theme palette from the island (see Island.qml).
   readonly property color accent: host.colorAccent
   readonly property color accentInk: host.colorAccentText
-  readonly property color accentInkMuted: host.withAlpha(accentInk, 0.7)
-  readonly property color tile: host.colorSurface
-  readonly property color tileHover: host.colorSurfaceHover
   readonly property color text: host.colorText
   readonly property color textMuted: host.colorMuted
+  readonly property color tile: host.withAlpha(host.colorText, 0.1)
+  readonly property color card: host.withAlpha(host.colorText, 0.07)
+  readonly property color well: host.withAlpha(host.colorText, 0.08)
   readonly property string iconFont: host.fontFamily
+  readonly property int animDuration: 180 * host.motionScale
 
   // --- Network ---
   readonly property var netDevices: Networking.devices ? Networking.devices.values : []
@@ -49,6 +51,11 @@ ColumnLayout {
   readonly property var sink: Pipewire.defaultAudioSink
   readonly property bool muted: !!(sink && sink.audio && sink.audio.muted)
   readonly property real volume: sink && sink.audio ? sink.audio.volume : 0
+  readonly property var outputs: {
+    var nodes = Pipewire.nodes ? Pipewire.nodes.values : []
+    return nodes.filter(function(n) { return n && n.isSink && !n.isStream && n.audio })
+  }
+  property bool outputsOpen: false
 
   // --- Bluetooth ---
   readonly property var btAdapter: Bluetooth.defaultAdapter
@@ -64,11 +71,38 @@ ColumnLayout {
   readonly property bool dnd: notifications ? !!notifications.doNotDisturb : false
   readonly property bool nightOn: nightlight ? !!nightlight.enabled : false
 
-  // --- Brightness (hidden when the display has no DDC/backlight control) ---
+  // --- Game Mode: Hyprland animations off (restored by a config reload) ---
+  property bool gameMode: false
+  Process {
+    id: gameModeRead
+    command: ["hyprctl", "getoption", "animations:enabled"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: cc.gameMode = /bool:\s*false/.test(String(text || ""))
+    }
+  }
+  Process { id: gameModeWrite; onExited: gameModeRead.running = true }
+  function setGameMode(on) {
+    gameMode = on
+    gameModeWrite.command = ["hyprctl", "eval", "hl.config({ animations = { enabled = " + (on ? "false" : "true") + " } })"]
+    gameModeWrite.running = true
+  }
+
+  // --- Lock ---
+  Process { id: lockRunner; command: ["omarchy-system-lock"] }
+  function lockScreen() {
+    host.view = "rest"
+    lockRunner.startDetached()
+  }
+
+  // --- Brightness (the Display card hides when the output has no control) ---
   property bool brightnessAvailable: false
   property int brightness: 0
-  onActiveChanged: if (active && !brightnessRead.running) brightnessRead.running = true
-
+  onActiveChanged: {
+    if (!active) { outputsOpen = false; return }
+    if (!brightnessRead.running) brightnessRead.running = true
+    if (!gameModeRead.running) gameModeRead.running = true
+  }
   Process {
     id: brightnessRead
     command: ["omarchy-brightness-display", "--monitor", cc.host.outputName]
@@ -97,6 +131,7 @@ ColumnLayout {
 
   // ---------- Reusable pieces ----------
 
+  // Pill toggle: icon badge (accent-filled when on), title, and state.
   component CcTile: Rectangle {
     id: t
     property string icon: ""
@@ -107,21 +142,22 @@ ColumnLayout {
     signal clicked()
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 56
-    radius: 28
-    color: checked ? cc.accent : cc.tile
-    opacity: available ? 1 : 0.55
+    Layout.preferredWidth: 1
+    Layout.preferredHeight: 58
+    radius: 29
+    color: cc.tile
+    opacity: available ? 1 : 0.5
     scale: tileMouse.pressed ? 0.97 : 1
-    Behavior on color { ColorAnimation { duration: 180 * cc.host.motionScale; easing.type: Easing.OutCubic } }
     Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
 
     Rectangle {
       id: badge
       anchors.left: parent.left
-      anchors.leftMargin: 8
+      anchors.leftMargin: 9
       anchors.verticalCenter: parent.verticalCenter
-      width: 36; height: 36; radius: 18
-      color: t.checked ? cc.host.withAlpha(cc.accentInk, 0.14) : cc.host.withAlpha(cc.text, 0.06)
+      width: 40; height: 40; radius: 20
+      color: t.checked ? cc.accent : cc.host.withAlpha(cc.text, 0.1)
+      Behavior on color { ColorAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
       Text {
         anchors.centerIn: parent
         text: t.icon
@@ -132,17 +168,18 @@ ColumnLayout {
     }
     Column {
       anchors.left: badge.right
-      anchors.leftMargin: 9
+      anchors.leftMargin: 11
       anchors.right: parent.right
-      anchors.rightMargin: 12
+      anchors.rightMargin: 14
       anchors.verticalCenter: parent.verticalCenter
       spacing: 1
       Text {
         width: parent.width
         text: t.title
         elide: Text.ElideRight
-        color: t.checked ? cc.accentInk : cc.text
-        font.pixelSize: 13
+        color: cc.text
+        font.family: "Adwaita Sans"
+        font.pixelSize: 14
         font.weight: Font.DemiBold
       }
       Text {
@@ -151,7 +188,8 @@ ColumnLayout {
         text: t.subtitle
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: t.checked ? cc.accentInkMuted : cc.textMuted
+        color: cc.textMuted
+        font.family: "Adwaita Sans"
         font.pixelSize: 11
       }
     }
@@ -164,6 +202,35 @@ ColumnLayout {
     }
   }
 
+  // Round button at the end of a toggle row; accent-filled when on.
+  component CcRound: Rectangle {
+    id: r
+    property string icon: ""
+    property bool checked: false
+    signal clicked()
+
+    Layout.preferredWidth: 58
+    Layout.preferredHeight: 58
+    radius: 29
+    color: checked ? cc.accent : cc.tile
+    scale: roundMouse.pressed ? 0.94 : 1
+    Behavior on color { ColorAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
+    Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
+    Text {
+      anchors.centerIn: parent
+      text: r.icon
+      color: r.checked ? cc.accentInk : cc.text
+      font.family: cc.iconFont
+      font.pixelSize: 18
+    }
+    MouseArea {
+      id: roundMouse
+      anchors.fill: parent
+      cursorShape: Qt.PointingHandCursor
+      onClicked: r.clicked()
+    }
+  }
+
   component CcSlider: Rectangle {
     id: s
     property string icon: ""
@@ -171,9 +238,9 @@ ColumnLayout {
     signal moved(real value)
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 40
-    radius: 20
-    color: cc.tile
+    Layout.preferredHeight: 34
+    radius: 17
+    color: cc.well
     clip: true
 
     Rectangle {
@@ -188,7 +255,7 @@ ColumnLayout {
     }
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 14
+      anchors.leftMargin: 13
       anchors.verticalCenter: parent.verticalCenter
       text: s.icon
       color: cc.accentInk
@@ -206,27 +273,59 @@ ColumnLayout {
     }
   }
 
-  // ---------- Header ----------
+  // Section card with a title row (and an optional › button) over content.
+  component CcSection: Rectangle {
+    id: sec
+    property string title: ""
+    property bool showChevron: false
+    property bool chevronOpen: false
+    signal chevronClicked()
+    default property alias content: body.data
 
-  RowLayout {
     Layout.fillWidth: true
-    Layout.bottomMargin: 2
-    spacing: 8
-    Rectangle {
-      Layout.preferredWidth: 34
-      Layout.preferredHeight: 34
-      radius: 17
-      color: backMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.08) : "transparent"
-      Text { anchors.centerIn: parent; text: "󰁍"; color: cc.text; font.family: cc.iconFont; font.pixelSize: 18 }
-      MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; onClicked: cc.host.view = "rest" }
-    }
-    Text { text: "Control Center"; color: cc.text; font.pixelSize: 18; font.weight: Font.DemiBold }
-    Item { Layout.fillWidth: true }
+    Layout.preferredHeight: body.implicitHeight + 50
+    radius: 22
+    color: cc.card
+
     Text {
-      text: Qt.formatDateTime(cc.host.clockDate, "HH:mm")
-      color: cc.textMuted
-      font.pixelSize: 13
-      Layout.rightMargin: 4
+      anchors.left: parent.left
+      anchors.leftMargin: 14
+      anchors.top: parent.top
+      anchors.topMargin: 12
+      text: sec.title
+      color: cc.text
+      font.family: "Adwaita Sans"
+      font.pixelSize: 14
+      font.weight: Font.DemiBold
+    }
+    Rectangle {
+      visible: sec.showChevron
+      anchors.right: parent.right
+      anchors.rightMargin: 10
+      anchors.top: parent.top
+      anchors.topMargin: 8
+      width: 26; height: 26; radius: 13
+      color: cc.well
+      Text {
+        anchors.centerIn: parent
+        text: "󰅂"
+        rotation: sec.chevronOpen ? 90 : 0
+        color: cc.textMuted
+        font.family: cc.iconFont
+        font.pixelSize: 15
+        Behavior on rotation { NumberAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
+      }
+      MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: sec.chevronClicked() }
+    }
+    ColumnLayout {
+      id: body
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.topMargin: 40
+      anchors.leftMargin: 10
+      anchors.rightMargin: 10
+      spacing: 6
     }
   }
 
@@ -234,9 +333,8 @@ ColumnLayout {
 
   RowLayout {
     Layout.fillWidth: true
-    spacing: 10
+    spacing: 8
     CcTile {
-      Layout.preferredWidth: 4
       readonly property bool wifi: !!cc.wifiDevice
       icon: wifi ? (Networking.wifiEnabled ? "󰖩" : "󰖪") : "󰈀"
       title: wifi ? "Wi-Fi" : "Ethernet"
@@ -249,21 +347,23 @@ ColumnLayout {
       onClicked: Networking.wifiEnabled = !Networking.wifiEnabled
     }
     CcTile {
-      Layout.preferredWidth: 6
-      icon: cc.muted ? "󰖁" : "󰕾"
-      title: "Audio"
-      subtitle: cc.sink ? String(cc.sink.description || cc.sink.nickname || cc.sink.name || "") : "No output"
-      checked: !!cc.sink && !cc.muted
-      available: !!(cc.sink && cc.sink.audio)
-      onClicked: cc.sink.audio.muted = !cc.sink.audio.muted
+      icon: "󰍶"
+      title: "Focus"
+      subtitle: cc.dnd ? "On" : "Off"
+      checked: cc.dnd
+      available: !!cc.notifications
+      onClicked: cc.notifications.setDoNotDisturb(!cc.dnd)
+    }
+    CcRound {
+      icon: "󰍁"
+      onClicked: cc.lockScreen()
     }
   }
 
   RowLayout {
     Layout.fillWidth: true
-    spacing: 10
+    spacing: 8
     CcTile {
-      Layout.preferredWidth: 1
       icon: cc.btAdapter && cc.btAdapter.enabled ? "󰂯" : "󰂲"
       title: "Bluetooth"
       subtitle: !cc.btAdapter ? "Unavailable" : !cc.btAdapter.enabled ? "Off" : cc.btConnected ? String(cc.btConnected.name || "Connected") : "On"
@@ -272,345 +372,250 @@ ColumnLayout {
       onClicked: cc.btAdapter.enabled = !cc.btAdapter.enabled
     }
     CcTile {
-      Layout.preferredWidth: 1
-      icon: "󰂛"
-      title: "Peace"
-      subtitle: cc.dnd ? "On" : "Off"
-      checked: cc.dnd
-      available: !!cc.notifications
-      onClicked: cc.notifications.setDoNotDisturb(!cc.dnd)
+      icon: "󰊗"
+      title: "Game Mode"
+      subtitle: cc.gameMode ? "On" : "Off"
+      checked: cc.gameMode
+      onClicked: cc.setGameMode(!cc.gameMode)
     }
-    CcTile {
-      Layout.preferredWidth: 1
-      icon: "󰔎"
-      title: "Night Light"
-      subtitle: cc.nightOn ? "On" : "Off"
+    CcRound {
+      icon: "󰖔"
       checked: cc.nightOn
-      available: !!cc.nightlight
+      visible: !!cc.nightlight
       onClicked: cc.nightlight.setNightlight(!cc.nightOn)
     }
   }
 
-  // ---------- Sliders ----------
+  // ---------- Sound / Display ----------
 
-  CcSlider {
-    Layout.topMargin: 2
+  CcSection {
+    title: "Sound"
     visible: !!(cc.sink && cc.sink.audio)
-    icon: cc.muted || cc.volume <= 0 ? "󰖁" : cc.volume < 0.5 ? "󰖀" : "󰕾"
-    value: cc.volume
-    onMoved: function(v) {
-      cc.sink.audio.volume = v
-      if (cc.sink.audio.muted && v > 0) cc.sink.audio.muted = false
-    }
-  }
-  CcSlider {
-    visible: cc.brightnessAvailable
-    icon: "󰃠"
-    value: cc.brightness / 100
-    onMoved: function(v) {
-      cc.brightness = Math.round(v * 100)
-      brightnessDebounce.restart()
-    }
-  }
+    showChevron: cc.outputs.length > 1
+    chevronOpen: cc.outputsOpen
+    onChevronClicked: cc.outputsOpen = !cc.outputsOpen
 
-  // ---------- Now playing ----------
-
-  ClippingRectangle {
-    id: mediaCard
-    readonly property var player: cc.host.player
-    readonly property real length: player && player.lengthSupported ? player.length : 0
-    // Over album art the card is darkened, so it uses light text; without art
-    // it's a plain surface and follows the theme.
-    readonly property color ink: art.status === Image.Ready ? "#ffffff" : cc.text
-    property real position: 0
-
-    visible: !!player
-    Layout.fillWidth: true
-    Layout.topMargin: 2
-    Layout.preferredHeight: 128
-    radius: 22
-    color: cc.tile
-
-    // Mpris only publishes position on seeks; re-read it every frame while
-    // the card is on screen so the progress bar glides at display rate.
-    FrameAnimation {
-      running: cc.active && mediaCard.visible && !!mediaCard.player && mediaCard.player.isPlaying
-      onTriggered: mediaCard.position = mediaCard.player.position
-    }
-    onPlayerChanged: position = player ? player.position : 0
-    Connections {
-      target: mediaCard.player
-      function onPositionChanged() { if (!seekMouse.pressed) mediaCard.position = mediaCard.player.position }
-      function onTrackTitleChanged() { mediaCard.position = mediaCard.player.position }
-    }
-
-    Image {
-      id: art
-      anchors.fill: parent
-      source: mediaCard.player && mediaCard.player.trackArtUrl ? mediaCard.player.trackArtUrl : ""
-      fillMode: Image.PreserveAspectCrop
-      asynchronous: true
-      visible: false
-    }
-    MultiEffect {
-      anchors.fill: parent
-      source: art
-      visible: art.status === Image.Ready
-      blurEnabled: true
-      blur: 1.0
-      blurMax: 48
-      saturation: 0.15
-      autoPaddingEnabled: false
-    }
-    Rectangle {
-      anchors.fill: parent
-      gradient: Gradient {
-        orientation: Gradient.Horizontal
-        GradientStop { position: 0; color: Qt.rgba(0, 0, 0, art.status === Image.Ready ? 0.62 : 0) }
-        GradientStop { position: 1; color: Qt.rgba(0, 0, 0, art.status === Image.Ready ? 0.30 : 0) }
+    CcSlider {
+      icon: cc.muted || cc.volume <= 0 ? "󰖁" : cc.volume < 0.34 ? "󰕿" : cc.volume < 0.67 ? "󰖀" : "󰕾"
+      value: cc.muted ? 0 : cc.volume
+      onMoved: function(v) {
+        cc.sink.audio.volume = v
+        if (cc.sink.audio.muted && v > 0) cc.sink.audio.muted = false
       }
     }
-
-    Row {
-      id: sourceLabel
-      anchors.left: parent.left
-      anchors.right: playButton.left
-      anchors.top: parent.top
-      anchors.margins: 14
-      spacing: 6
-      Text { id: sourceIcon; text: "󰕾"; color: cc.host.withAlpha(mediaCard.ink, 0.7); font.family: cc.iconFont; font.pixelSize: 11 }
-      Text {
-        width: parent.width - sourceIcon.width - parent.spacing
-        text: cc.sink ? String(cc.sink.description || cc.sink.nickname || "") : String(mediaCard.player ? mediaCard.player.identity || "" : "")
-        textFormat: Text.PlainText
-        elide: Text.ElideRight
-        color: cc.host.withAlpha(mediaCard.ink, 0.7)
-        font.pixelSize: 11
-      }
-    }
-    Column {
-      anchors.left: parent.left
-      anchors.leftMargin: 14
-      anchors.right: playButton.left
-      anchors.rightMargin: 12
-      anchors.top: sourceLabel.bottom
-      anchors.topMargin: 12
-      spacing: 2
-      Text {
-        width: parent.width
-        text: cc.host.title || "Unknown track"
-        textFormat: Text.PlainText
-        elide: Text.ElideRight
-        color: mediaCard.ink
-        font.pixelSize: 17
-        font.weight: Font.DemiBold
-      }
-      Text {
-        width: parent.width
-        text: cc.host.artist
-        visible: text !== ""
-        textFormat: Text.PlainText
-        elide: Text.ElideRight
-        color: cc.host.withAlpha(mediaCard.ink, 0.72)
-        font.pixelSize: 12
-      }
-    }
-    Rectangle {
-      id: playButton
-      anchors.right: parent.right
-      anchors.rightMargin: 14
-      anchors.top: parent.top
-      anchors.topMargin: 26
-      width: 46; height: 46; radius: 23
-      color: mediaCard.ink
-      scale: playMouse.pressed ? 0.92 : 1
-      Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
-      Text {
-        anchors.centerIn: parent
-        text: mediaCard.player && mediaCard.player.isPlaying ? "󰏤" : "󰐊"
-        color: art.status === Image.Ready ? "#101014" : cc.host.colorBackground
-        font.family: cc.iconFont
-        font.pixelSize: 20
-      }
-      MouseArea { id: playMouse; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: cc.host.media.runAction("playPause", false, "") }
-    }
-
-    RowLayout {
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      anchors.margins: 12
-      spacing: 10
-      Text {
-        text: "󰒮"
-        color: cc.host.withAlpha(mediaCard.ink, mediaCard.player && mediaCard.player.canGoPrevious ? 1 : 0.35)
-        font.family: cc.iconFont
-        font.pixelSize: 15
-        MouseArea { anchors.fill: parent; anchors.margins: -6; onClicked: cc.host.media.runAction("previous", false, "") }
-      }
-      Item {
+    // Output picker, revealed by the › button.
+    Repeater {
+      model: cc.outputsOpen ? cc.outputs : []
+      delegate: Rectangle {
+        id: outputRow
+        required property var modelData
+        readonly property bool isDefault: modelData === cc.sink
         Layout.fillWidth: true
-        Layout.preferredHeight: 16
-        Rectangle {
-          id: track
+        Layout.preferredHeight: 34
+        radius: 12
+        color: outputMouse.containsMouse ? cc.well : "transparent"
+        Text {
+          anchors.left: parent.left
+          anchors.leftMargin: 10
+          anchors.right: outputCheck.left
+          anchors.rightMargin: 8
           anchors.verticalCenter: parent.verticalCenter
-          width: parent.width
-          height: 4
-          radius: 2
-          color: cc.host.withAlpha(mediaCard.ink, 0.22)
-          Rectangle {
-            height: parent.height
-            radius: parent.radius
-            width: mediaCard.length > 0 ? parent.width * Math.max(0, Math.min(1, mediaCard.position / mediaCard.length)) : 0
-            color: mediaCard.ink
-          }
+          text: String(outputRow.modelData.description || outputRow.modelData.nickname || outputRow.modelData.name || "")
+          textFormat: Text.PlainText
+          elide: Text.ElideRight
+          color: outputRow.isDefault ? cc.text : cc.textMuted
+          font.family: "Adwaita Sans"
+          font.pixelSize: 12
+        }
+        Text {
+          id: outputCheck
+          anchors.right: parent.right
+          anchors.rightMargin: 10
+          anchors.verticalCenter: parent.verticalCenter
+          visible: outputRow.isDefault
+          text: "󰄬"
+          color: cc.accent
+          font.family: cc.iconFont
+          font.pixelSize: 14
         }
         MouseArea {
-          id: seekMouse
+          id: outputMouse
           anchors.fill: parent
-          enabled: !!mediaCard.player && mediaCard.player.canSeek && mediaCard.length > 0
-          cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-          function target(x) { return Math.max(0, Math.min(1, x / width)) * mediaCard.length }
-          onPressed: function(e) { mediaCard.position = target(e.x) }
-          onPositionChanged: function(e) { if (pressed) mediaCard.position = target(e.x) }
-          onReleased: function(e) { mediaCard.player.position = target(e.x) }
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: Pipewire.preferredDefaultAudioSink = outputRow.modelData
         }
       }
-      Text {
-        text: "󰒭"
-        color: cc.host.withAlpha(mediaCard.ink, mediaCard.player && mediaCard.player.canGoNext ? 1 : 0.35)
-        font.family: cc.iconFont
-        font.pixelSize: 15
-        MouseArea { anchors.fill: parent; anchors.margins: -6; onClicked: cc.host.media.runAction("next", false, "") }
+    }
+  }
+
+  CcSection {
+    title: "Display"
+    visible: cc.brightnessAvailable
+    CcSlider {
+      icon: "󰃠"
+      value: cc.brightness / 100
+      onMoved: function(v) {
+        cc.brightness = Math.round(v * 100)
+        brightnessDebounce.restart()
       }
     }
   }
 
   // ---------- Notifications ----------
 
-  Rectangle { Layout.fillWidth: true; Layout.topMargin: 4; height: 1; color: cc.host.withAlpha(cc.text, 0.07) }
-
-  RowLayout {
+  Rectangle {
     Layout.fillWidth: true
-    Text { text: "Notifications"; color: cc.textMuted; font.pixelSize: 12 }
-    Item { Layout.fillWidth: true }
-    Text {
-      visible: cc.host.history.length > 0
-      text: "Clear all"
-      color: cc.accent
-      font.pixelSize: 12
-      font.weight: Font.DemiBold
-      MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: cc.host.clearAllNotifications() }
-    }
-  }
+    Layout.preferredHeight: notificationBody.implicitHeight + 20
+    radius: 22
+    color: cc.card
 
-  Text {
-    visible: cc.host.history.length === 0
-    Layout.fillWidth: true
-    Layout.topMargin: 6
-    Layout.bottomMargin: 6
-    horizontalAlignment: Text.AlignHCenter
-    text: "No notifications"
-    color: cc.textMuted
-    font.pixelSize: 12
-  }
+    ColumnLayout {
+      id: notificationBody
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.margins: 10
+      spacing: 8
 
-  ListView {
-    id: notificationList
-    visible: cc.host.history.length > 0
-    Layout.fillWidth: true
-    Layout.preferredHeight: Math.min(contentHeight, 250)
-    clip: true
-    spacing: 8
-    boundsBehavior: Flickable.StopAtBounds
-    model: cc.host.history
-    delegate: Rectangle {
-      id: card
-      required property var modelData
-      readonly property string iconPath: modelData.appIcon ? Quickshell.iconPath(String(modelData.appIcon), true) : ""
-      width: ListView.view.width
-      height: cardBody.implicitHeight + 22
-      radius: 16
-      color: cardMouse.containsMouse && modelData.isActive ? cc.tileHover : cc.tile
-
-      MouseArea {
-        id: cardMouse
-        anchors.fill: parent
-        hoverEnabled: true
-        enabled: !!card.modelData.isActive
-        onClicked: cc.host.notificationCommand("invokeKey", card.modelData)
-      }
-      Rectangle {
-        id: appBadge
-        anchors.left: parent.left
-        anchors.leftMargin: 11
-        anchors.top: parent.top
-        anchors.topMargin: 12
-        width: 28; height: 28; radius: 14
-        color: card.iconPath ? "transparent" : cc.accent
-        IconImage {
-          anchors.fill: parent
-          visible: card.iconPath !== ""
-          source: card.iconPath
-        }
+      RowLayout {
+        Layout.fillWidth: true
+        Layout.leftMargin: 4
+        Layout.rightMargin: 4
+        Layout.topMargin: 2
+        Text { text: "Notifications"; color: cc.textMuted; font.family: "Adwaita Sans"; font.pixelSize: 12 }
+        Item { Layout.fillWidth: true }
         Text {
-          anchors.centerIn: parent
-          visible: card.iconPath === ""
-          text: "󰋼"
-          color: cc.accentInk
-          font.family: cc.iconFont
-          font.pixelSize: 16
-        }
-      }
-      Column {
-        id: cardBody
-        anchors.left: appBadge.right
-        anchors.leftMargin: 11
-        anchors.right: parent.right
-        anchors.rightMargin: 30
-        anchors.top: parent.top
-        anchors.topMargin: 11
-        spacing: 2
-        Text {
-          width: parent.width
-          text: String(card.modelData.app || "")
-          visible: text !== ""
-          textFormat: Text.PlainText
-          elide: Text.ElideRight
+          visible: cc.host.history.length > 0
+          text: "Clear all"
           color: cc.textMuted
-          font.pixelSize: 11
-        }
-        Text {
-          width: parent.width
-          text: String(card.modelData.summary || "Notification")
-          textFormat: Text.PlainText
-          elide: Text.ElideRight
-          color: cc.text
-          font.pixelSize: 13
-          font.weight: Font.DemiBold
-        }
-        Text {
-          width: parent.width
-          text: String(card.modelData.body || "")
-          visible: text !== ""
-          textFormat: Text.PlainText
-          wrapMode: Text.Wrap
-          maximumLineCount: 3
-          elide: Text.ElideRight
-          color: cc.textMuted
+          font.family: "Adwaita Sans"
           font.pixelSize: 12
+          MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: cc.host.clearAllNotifications() }
         }
       }
+
       Text {
-        anchors.right: parent.right
-        anchors.rightMargin: 12
-        anchors.top: parent.top
-        anchors.topMargin: 9
-        text: "󰅖"
-        color: closeMouse.containsMouse ? cc.text : cc.textMuted
-        font.family: cc.iconFont
-        font.pixelSize: 13
-        MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: cc.host.dismissNotification(card.modelData) }
+        visible: cc.host.history.length === 0
+        Layout.fillWidth: true
+        Layout.topMargin: 4
+        Layout.bottomMargin: 8
+        horizontalAlignment: Text.AlignHCenter
+        text: "No notifications"
+        color: cc.textMuted
+        font.family: "Adwaita Sans"
+        font.pixelSize: 12
+      }
+
+      ListView {
+        visible: cc.host.history.length > 0
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.min(contentHeight, 240)
+        clip: true
+        spacing: 8
+        boundsBehavior: Flickable.StopAtBounds
+        model: cc.host.history
+        delegate: Rectangle {
+          id: note
+          required property var modelData
+          readonly property string appName: String(modelData.app || modelData.summary || "?")
+          width: ListView.view.width
+          height: noteBody.implicitHeight + 22
+          radius: 16
+          color: noteMouse.containsMouse && modelData.isActive ? cc.host.withAlpha(cc.text, 0.12) : cc.card
+
+          MouseArea {
+            id: noteMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            enabled: !!note.modelData.isActive
+            onClicked: cc.host.notificationCommand("invokeKey", note.modelData)
+          }
+          // The notification's image or app icon; a letter avatar when
+          // there's none (or it fails to load).
+          ClippingRectangle {
+            id: avatar
+            readonly property string source: cc.host.notificationIconSource(note.modelData)
+            anchors.left: parent.left
+            anchors.leftMargin: 10
+            anchors.top: parent.top
+            anchors.topMargin: 12
+            width: 30; height: 30; radius: 15
+            color: noteIcon.status === Image.Ready ? "transparent" : cc.host.withAlpha(cc.accent, 0.18)
+            Image {
+              id: noteIcon
+              anchors.fill: parent
+              source: avatar.source
+              sourceSize.width: 60
+              sourceSize.height: 60
+              fillMode: Image.PreserveAspectCrop
+              asynchronous: true
+              visible: status === Image.Ready
+            }
+            Text {
+              anchors.centerIn: parent
+              visible: noteIcon.status !== Image.Ready
+              text: note.appName.charAt(0).toUpperCase()
+              color: cc.accent
+              font.family: "Adwaita Sans"
+              font.pixelSize: 13
+              font.weight: Font.DemiBold
+            }
+          }
+          Column {
+            id: noteBody
+            anchors.left: avatar.right
+            anchors.leftMargin: 12
+            anchors.right: parent.right
+            anchors.rightMargin: 32
+            anchors.top: parent.top
+            anchors.topMargin: 11
+            spacing: 2
+            Text {
+              width: parent.width
+              text: String(note.modelData.app || "")
+              visible: text !== ""
+              textFormat: Text.PlainText
+              elide: Text.ElideRight
+              color: cc.textMuted
+              font.family: "Adwaita Sans"
+              font.pixelSize: 11
+            }
+            Text {
+              width: parent.width
+              text: String(note.modelData.summary || "Notification")
+              textFormat: Text.PlainText
+              elide: Text.ElideRight
+              color: cc.text
+              font.family: "Adwaita Sans"
+              font.pixelSize: 13
+              font.weight: Font.DemiBold
+            }
+            Text {
+              width: parent.width
+              text: String(note.modelData.body || "")
+              visible: text !== ""
+              textFormat: Text.PlainText
+              wrapMode: Text.Wrap
+              maximumLineCount: 3
+              elide: Text.ElideRight
+              color: cc.textMuted
+              font.family: "Adwaita Sans"
+              font.pixelSize: 12
+            }
+          }
+          Text {
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            anchors.top: parent.top
+            anchors.topMargin: 10
+            text: "󰅖"
+            color: closeMouse.containsMouse ? cc.text : cc.textMuted
+            font.family: cc.iconFont
+            font.pixelSize: 13
+            MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: cc.host.dismissNotification(note.modelData) }
+          }
+        }
       }
     }
   }

@@ -16,10 +16,6 @@ Item {
   property var barConfig: ({})
   property string omarchyPath: ""
 
-  readonly property var media: shell ? shell.firstPartyServiceFor("omarchy.media") : null
-  readonly property var player: media ? media.activePlayer : null
-  readonly property string title: player ? String(player.trackTitle || "") : ""
-  readonly property string artist: player ? String(player.trackArtist || "") : ""
   readonly property real volume: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
     ? Pipewire.defaultAudioSink.audio.volume : -1
   readonly property bool muted: !!(Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
