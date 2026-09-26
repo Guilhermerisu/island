@@ -15,12 +15,14 @@ ColumnLayout {
   required property var host
   property bool active: false
 
-  readonly property color accent: "#5ccfb6"
-  readonly property color accentInk: "#0b201c"
-  readonly property color accentInkMuted: "#1f4d44"
-  readonly property color tile: "#202027"
-  readonly property color text: "#f2f2f4"
-  readonly property color textMuted: "#a4a4ad"
+  // Theme palette from the island (see Island.qml).
+  readonly property color accent: host.colorAccent
+  readonly property color accentInk: host.colorAccentText
+  readonly property color accentInkMuted: host.withAlpha(accentInk, 0.7)
+  readonly property color tile: host.colorSurface
+  readonly property color tileHover: host.colorSurfaceHover
+  readonly property color text: host.colorText
+  readonly property color textMuted: host.colorMuted
   readonly property string iconFont: host.fontFamily
 
   // --- Network ---
@@ -119,7 +121,7 @@ ColumnLayout {
       anchors.leftMargin: 8
       anchors.verticalCenter: parent.verticalCenter
       width: 36; height: 36; radius: 18
-      color: t.checked ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.06)
+      color: t.checked ? cc.host.withAlpha(cc.accentInk, 0.14) : cc.host.withAlpha(cc.text, 0.06)
       Text {
         anchors.centerIn: parent
         text: t.icon
@@ -214,7 +216,7 @@ ColumnLayout {
       Layout.preferredWidth: 34
       Layout.preferredHeight: 34
       radius: 17
-      color: backMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+      color: backMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.08) : "transparent"
       Text { anchors.centerIn: parent; text: "󰁍"; color: cc.text; font.family: cc.iconFont; font.pixelSize: 18 }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; onClicked: cc.host.view = "rest" }
     }
@@ -317,6 +319,9 @@ ColumnLayout {
     id: mediaCard
     readonly property var player: cc.host.player
     readonly property real length: player && player.lengthSupported ? player.length : 0
+    // Over album art the card is darkened, so it uses light text; without art
+    // it's a plain surface and follows the theme.
+    readonly property color ink: art.status === Image.Ready ? "#ffffff" : cc.text
     property real position: 0
 
     visible: !!player
@@ -324,7 +329,7 @@ ColumnLayout {
     Layout.topMargin: 2
     Layout.preferredHeight: 128
     radius: 22
-    color: "#1b1b22"
+    color: cc.tile
 
     // Mpris only publishes position on seeks; re-read it every frame while
     // the card is on screen so the progress bar glides at display rate.
@@ -373,13 +378,13 @@ ColumnLayout {
       anchors.top: parent.top
       anchors.margins: 14
       spacing: 6
-      Text { id: sourceIcon; text: "󰕾"; color: Qt.rgba(1, 1, 1, 0.7); font.family: cc.iconFont; font.pixelSize: 11 }
+      Text { id: sourceIcon; text: "󰕾"; color: cc.host.withAlpha(mediaCard.ink, 0.7); font.family: cc.iconFont; font.pixelSize: 11 }
       Text {
         width: parent.width - sourceIcon.width - parent.spacing
         text: cc.sink ? String(cc.sink.description || cc.sink.nickname || "") : String(mediaCard.player ? mediaCard.player.identity || "" : "")
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: Qt.rgba(1, 1, 1, 0.7)
+        color: cc.host.withAlpha(mediaCard.ink, 0.7)
         font.pixelSize: 11
       }
     }
@@ -396,7 +401,7 @@ ColumnLayout {
         text: cc.host.title || "Unknown track"
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: cc.text
+        color: mediaCard.ink
         font.pixelSize: 17
         font.weight: Font.DemiBold
       }
@@ -406,7 +411,7 @@ ColumnLayout {
         visible: text !== ""
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: Qt.rgba(1, 1, 1, 0.72)
+        color: cc.host.withAlpha(mediaCard.ink, 0.72)
         font.pixelSize: 12
       }
     }
@@ -417,13 +422,13 @@ ColumnLayout {
       anchors.top: parent.top
       anchors.topMargin: 26
       width: 46; height: 46; radius: 23
-      color: "#f2f2f4"
+      color: mediaCard.ink
       scale: playMouse.pressed ? 0.92 : 1
       Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
       Text {
         anchors.centerIn: parent
         text: mediaCard.player && mediaCard.player.isPlaying ? "󰏤" : "󰐊"
-        color: "#101014"
+        color: art.status === Image.Ready ? "#101014" : cc.host.colorBackground
         font.family: cc.iconFont
         font.pixelSize: 20
       }
@@ -438,7 +443,7 @@ ColumnLayout {
       spacing: 10
       Text {
         text: "󰒮"
-        color: mediaCard.player && mediaCard.player.canGoPrevious ? cc.text : Qt.rgba(1, 1, 1, 0.35)
+        color: cc.host.withAlpha(mediaCard.ink, mediaCard.player && mediaCard.player.canGoPrevious ? 1 : 0.35)
         font.family: cc.iconFont
         font.pixelSize: 15
         MouseArea { anchors.fill: parent; anchors.margins: -6; onClicked: cc.host.media.runAction("previous", false, "") }
@@ -452,12 +457,12 @@ ColumnLayout {
           width: parent.width
           height: 4
           radius: 2
-          color: Qt.rgba(1, 1, 1, 0.22)
+          color: cc.host.withAlpha(mediaCard.ink, 0.22)
           Rectangle {
             height: parent.height
             radius: parent.radius
             width: mediaCard.length > 0 ? parent.width * Math.max(0, Math.min(1, mediaCard.position / mediaCard.length)) : 0
-            color: "#f2f2f4"
+            color: mediaCard.ink
           }
         }
         MouseArea {
@@ -473,7 +478,7 @@ ColumnLayout {
       }
       Text {
         text: "󰒭"
-        color: mediaCard.player && mediaCard.player.canGoNext ? cc.text : Qt.rgba(1, 1, 1, 0.35)
+        color: cc.host.withAlpha(mediaCard.ink, mediaCard.player && mediaCard.player.canGoNext ? 1 : 0.35)
         font.family: cc.iconFont
         font.pixelSize: 15
         MouseArea { anchors.fill: parent; anchors.margins: -6; onClicked: cc.host.media.runAction("next", false, "") }
@@ -483,7 +488,7 @@ ColumnLayout {
 
   // ---------- Notifications ----------
 
-  Rectangle { Layout.fillWidth: true; Layout.topMargin: 4; height: 1; color: Qt.rgba(1, 1, 1, 0.07) }
+  Rectangle { Layout.fillWidth: true; Layout.topMargin: 4; height: 1; color: cc.host.withAlpha(cc.text, 0.07) }
 
   RowLayout {
     Layout.fillWidth: true
@@ -526,7 +531,7 @@ ColumnLayout {
       width: ListView.view.width
       height: cardBody.implicitHeight + 22
       radius: 16
-      color: cardMouse.containsMouse && modelData.isActive ? "#26262e" : "#1b1b21"
+      color: cardMouse.containsMouse && modelData.isActive ? cc.tileHover : cc.tile
 
       MouseArea {
         id: cardMouse
@@ -542,7 +547,7 @@ ColumnLayout {
         anchors.top: parent.top
         anchors.topMargin: 12
         width: 28; height: 28; radius: 14
-        color: card.iconPath ? "transparent" : "#3b82c4"
+        color: card.iconPath ? "transparent" : cc.accent
         IconImage {
           anchors.fill: parent
           visible: card.iconPath !== ""
@@ -552,7 +557,7 @@ ColumnLayout {
           anchors.centerIn: parent
           visible: card.iconPath === ""
           text: "󰋼"
-          color: "#ffffff"
+          color: cc.accentInk
           font.family: cc.iconFont
           font.pixelSize: 16
         }

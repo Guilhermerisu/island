@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import Quickshell.Widgets
+import qs.Commons
 
 Item {
   id: root
@@ -53,6 +54,30 @@ Item {
   readonly property int barSize: 0
   readonly property string position: "top"
   readonly property string fontFamily: "monospace"
+  // Palette. The island itself is always black; text and accents come from
+  // the current Omarchy theme, and Color reloads on theme switches, so
+  // everything bound to these follows along live. Light themes have dark
+  // foregrounds, so their (light) background color is used as text instead.
+  readonly property color colorBackground: "#000000"
+  readonly property bool themeTextIsLight: luminance(Color.foreground) > 0.5
+  readonly property color colorText: themeTextIsLight ? Color.foreground : Color.background
+  readonly property color colorMuted: themeTextIsLight ? Color.muted : withAlpha(colorText, 0.6)
+  readonly property color colorAccent: Color.accent
+  readonly property color colorAccentText: contrastOn(Color.accent)
+  readonly property color colorUrgent: Color.urgent
+  // Raised surfaces (tiles, cards) and their hover state: the text color
+  // washed faintly over the background.
+  readonly property color colorSurface: Qt.tint(colorBackground, withAlpha(colorText, 0.07))
+  readonly property color colorSurfaceHover: Qt.tint(colorBackground, withAlpha(colorText, 0.12))
+
+  function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
+  // Background or text color, whichever reads better on top of `c`.
+  function luminance(x) { return 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b }
+  function contrastOn(c) {
+    var l = luminance(c)
+    return Math.abs(l - luminance(colorBackground)) > Math.abs(l - luminance(colorText)) ? colorBackground : colorText
+  }
+
   // Multiplies every animation duration below; raise to slow the island down.
   readonly property real motionScale: 2
 
@@ -310,7 +335,7 @@ Item {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
           radius: Math.min(height / 2, radiusCap)
-          color: "#000000"
+          color: root.colorBackground
           clip: true
           Behavior on width {
             NumberAnimation {
@@ -360,8 +385,8 @@ Item {
                 anchors.fill: parent
                 visible: appTileImage.status !== Image.Ready
                 gradient: Gradient {
-                  GradientStop { position: 0; color: "#8f8cf5" }
-                  GradientStop { position: 1; color: "#5b57d9" }
+                  GradientStop { position: 0; color: Qt.lighter(root.colorAccent, 1.25) }
+                  GradientStop { position: 1; color: root.colorAccent }
                 }
               }
               Image {
@@ -378,7 +403,7 @@ Item {
                 anchors.centerIn: parent
                 visible: appTileImage.status !== Image.Ready
                 text: String(notificationPillContent.row.glyph || "") || "󰂚"
-                color: "#ffffff"
+                color: root.colorAccentText
                 font.family: root.fontFamily
                 font.pixelSize: 24
               }
@@ -396,7 +421,7 @@ Item {
                 text: String(notificationPillContent.row.summary || notificationPillContent.row.app || "Notification")
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
-                color: "#ffffff"
+                color: root.colorText
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
               }
@@ -406,7 +431,7 @@ Item {
                 visible: text !== ""
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
-                color: "#9b9ba3"
+                color: root.colorMuted
                 font.pixelSize: 13
               }
             }
@@ -424,7 +449,7 @@ Item {
             text: root.view === "feedback" && !root.notificationPill ? root.feedback
               : root.companionNeedsSetup ? "󰀦  " + root.companionWarning
               : Qt.formatDateTime(clock.date, "HH:mm")
-            color: root.view === "rest" && root.companionNeedsSetup ? "#f5c26b" : "#f2f2f4"
+            color: root.view === "rest" && root.companionNeedsSetup ? root.colorUrgent : root.colorText
             font.family: root.fontFamily
             font.pixelSize: 14
             font.weight: Font.DemiBold
