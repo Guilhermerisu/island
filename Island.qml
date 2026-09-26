@@ -87,9 +87,12 @@ Item {
   // Multiplies every animation duration below; raise to slow the island down.
   readonly property real motionScale: 2
 
-  function notificationIconSource(row) {
+  // The notification's own image, else its app icon. `appIconOnly` skips
+  // the image: a live image handle dies with the shell, so a notification
+  // restored after a restart falls back to its app icon.
+  function notificationIconSource(row, appIconOnly) {
     if (!row) return ""
-    var value = String(row.image || row.appIcon || "")
+    var value = String((appIconOnly ? "" : row.image) || row.appIcon || "")
     if (value === "") return ""
     if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
     if (value.charAt(0) === "/") return "file://" + value
@@ -367,8 +370,8 @@ Item {
             : root.view === "power" ? powerMenu.implicitWidth + 36
             : picker ? 820
             : root.view === "controls" ? 470
-            : root.notificationPill ? 400
-            : root.volumePill ? 230
+            : root.notificationPill ? 440
+            : root.volumePill ? 240
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : 100
@@ -376,17 +379,22 @@ Item {
             : root.view === "power" ? powerMenu.implicitHeight + 36
             : picker ? picker.implicitHeight + 40
             : root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
-            : root.notificationPill ? 76
-            : root.volumePill ? 44
+            : root.notificationPill ? 84
+            : root.volumePill ? 56
             : root.view === "rest" ? 40 : 52
           // Pills stay fully round at every frame of the morph because the
           // radius tracks the animated height; only the cap for the large
           // surfaces animates, and its target changes once per view switch.
-          property real radiusCap: root.surfaceOpen ? 30 : 38
+          // The volume slider uses iOS's squircle-ish corners, not a pill.
+          property real radiusCap: root.volumePill ? 20 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
           radius: Math.min(height / 2, radiusCap)
+          // Hovering the resting clock pill gives it a small springy lift.
+          scale: root.view === "rest" && clockHover.hovered ? 1.07 : 1
+          Behavior on scale { NumberAnimation { duration: 240 * root.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.8 } }
+          HoverHandler { id: clockHover; enabled: root.view === "rest" }
           color: root.colorBackground
           clip: true
           Behavior on width {
@@ -417,7 +425,9 @@ Item {
           Item {
             id: notificationPillContent
             readonly property var row: root.lastNotification || ({})
-            readonly property string iconSource: root.notificationIconSource(root.lastNotification)
+            property bool imageFailed: false
+            onRowChanged: imageFailed = false
+            readonly property string iconSource: root.notificationIconSource(root.lastNotification, imageFailed)
             anchors.fill: parent
             opacity: root.notificationPill ? 1 : 0
             visible: opacity > 0.01
@@ -426,11 +436,11 @@ Item {
             ClippingRectangle {
               id: appTile
               anchors.left: parent.left
-              anchors.leftMargin: 13
+              anchors.leftMargin: 15
               anchors.verticalCenter: parent.verticalCenter
               // Grows with the pill so it never pokes past the rounded ends.
               width: height
-              height: Math.max(0, Math.min(50, island.height - 26))
+              height: Math.max(0, Math.min(54, island.height - 30))
               radius: height * 0.28
               color: "transparent"
               Rectangle {
@@ -450,6 +460,7 @@ Item {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 visible: status === Image.Ready
+                onStatusChanged: if (status === Image.Error) notificationPillContent.imageFailed = true
               }
               Text {
                 anchors.centerIn: parent
@@ -463,11 +474,11 @@ Item {
 
             Column {
               anchors.left: appTile.right
-              anchors.leftMargin: 14
+              anchors.leftMargin: 12
               anchors.right: parent.right
-              anchors.rightMargin: 26
+              anchors.rightMargin: 30
               anchors.verticalCenter: parent.verticalCenter
-              spacing: 3
+              spacing: 2
               Text {
                 width: parent.width
                 text: String(notificationPillContent.row.summary || notificationPillContent.row.app || "Notification")
@@ -489,62 +500,49 @@ Item {
             }
           }
 
-          // Apple-style volume HUD: speaker glyph and a thick level bar, no
-          // numbers. The glyph pops on every change and the bar springs to
-          // the new level.
-          Item {
+          // iOS Control Center–style volume, laid on its side: the island
+          // becomes a wide slider that fills with white from the left, speaker
+          // glyph near the left end.
+          ClippingRectangle {
             id: volumePillContent
             readonly property real level: root.muted ? 0 : Math.max(0, Math.min(1, root.volume))
-            // Animate the level, not the pixel width, so the bar doesn't
-            // restart its spring every frame while the pill itself morphs.
+            // Animate the level, not the pixel width, so the fill doesn't
+            // restart its motion every frame while the island morphs.
             property real shownLevel: level
-            Behavior on shownLevel {
-              NumberAnimation { duration: 260 * root.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
-            }
+            Behavior on shownLevel { NumberAnimation { duration: 220 * root.motionScale; easing.type: Easing.OutCubic } }
             anchors.fill: parent
-            anchors.leftMargin: 16
-            anchors.rightMargin: 18
+            radius: island.radius
+            color: "transparent"
             opacity: root.volumePill ? 1 : 0
             visible: opacity > 0.01
             Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
 
-            Connections {
-              target: root
-              function onVolumeChanged() { if (root.volumePill) volumePop.restart() }
-              function onMutedChanged() { if (root.volumePill) volumePop.restart() }
+            // Grey track behind the fill: solid, since the clipping shape
+            // drops translucent colors (it's white at 16% over the black island).
+            Rectangle {
+              anchors.fill: parent
+              color: "#2a2a2a"
             }
-
+            Rectangle {
+              id: volumeFill
+              anchors.left: parent.left
+              anchors.top: parent.top
+              anchors.bottom: parent.bottom
+              width: parent.width * volumePillContent.shownLevel
+              color: "#f2f2f2"
+            }
             Text {
               id: volumeIcon
               anchors.left: parent.left
+              anchors.leftMargin: 18
               anchors.verticalCenter: parent.verticalCenter
-              width: 22
-              horizontalAlignment: Text.AlignHCenter
-              text: root.muted || volumePillContent.level <= 0 ? "󰖁" : volumePillContent.level < 0.34 ? "󰕿" : volumePillContent.level < 0.67 ? "󰖀" : "󰕾"
-              color: root.colorText
-              opacity: root.muted ? 0.6 : 1
+              // Dark on the white fill, light when the fill doesn't reach it.
+              readonly property bool onFill: volumeFill.width > x + width / 2
+              text: volumePillContent.level <= 0 ? "󰖁" : volumePillContent.level < 0.34 ? "󰕿" : volumePillContent.level < 0.67 ? "󰖀" : "󰕾"
+              color: onFill ? "#3a3a3c" : "#f2f2f2"
               font.family: root.fontFamily
-              font.pixelSize: 19
-              SequentialAnimation {
-                id: volumePop
-                NumberAnimation { target: volumeIcon; property: "scale"; to: 1.18; duration: 70; easing.type: Easing.OutQuad }
-                NumberAnimation { target: volumeIcon; property: "scale"; to: 1; duration: 220 * root.motionScale; easing.type: Easing.OutBack }
-              }
-            }
-            Rectangle {
-              anchors.left: volumeIcon.right
-              anchors.leftMargin: 12
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              height: 8
-              radius: 4
-              color: root.withAlpha(root.colorText, 0.2)
-              Rectangle {
-                height: parent.height
-                radius: parent.radius
-                width: Math.max(root.muted ? 0 : height, parent.width * Math.max(0, Math.min(1, volumePillContent.shownLevel)))
-                color: root.colorText
-              }
+              font.pixelSize: 26
+              Behavior on color { ColorAnimation { duration: 120 * root.motionScale } }
             }
           }
 
