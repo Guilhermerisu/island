@@ -32,26 +32,13 @@ Item {
   }
   readonly property string feedPath: Quickshell.env("HOME") + "/.local/state/omarchy/island-feed.json"
   readonly property string historyDir: Quickshell.env("HOME") + "/.local/state/omarchy/notifications/history/"
-  readonly property string hoverPreviewText: {
-    if (activeNotifications.length) {
-      var row = activeNotifications[0]
-      return String(row.summary || row.app || "Notification")
-    }
-    if (title) return "♫  " + title + (artist ? "  ·  " + artist : "")
-    var workspace = Hyprland.focusedWorkspace
-    return Qt.formatDateTime(clock.date, "HH:mm") + (workspace ? "  ·  Workspace " + workspace.id : "")
-  }
 
   readonly property var clockDate: clock.date
   property string view: "rest"
-  // Notification arrivals (and hover previews of one) use the Dynamic Island
-  // layout: app icon tile, title, and one line of body.
-  readonly property bool notificationPill: (view === "feedback" && feedbackKind === "notification")
-    || (view === "peek" && activeNotifications.length > 0)
-  readonly property var pillNotification: view === "feedback" ? lastNotification : activeNotifications[0]
+  // Notification arrivals use the Dynamic Island layout: app icon tile,
+  // title, and one line of body.
+  readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
 
-  property string previousView: "rest"
-  property bool hoverHop: false
   property bool surfaceContentReady: false
   property string feedback: ""
   property string feedbackKind: ""
@@ -79,9 +66,6 @@ Item {
   }
 
   onViewChanged: {
-    hoverHop = (view === "rest" || view === "peek")
-      && (previousView === "rest" || previousView === "peek")
-    previousView = view
     surfaceContentReady = false
     if (view === "controls") {
       surfaceRevealTimer.restart()
@@ -232,14 +216,8 @@ Item {
   }
   Process { id: notificationProc; running: false; onExited: root.refreshHistory() }
 
-  // Set when a click sends the island back to rest under the pointer, so the
-  // re-enabled hover handler doesn't immediately reopen the preview. Cleared
-  // once the pointer leaves the island.
-  property bool suppressHover: false
-
   function dismissPillNotification() {
-    var row = pillNotification
-    suppressHover = true
+    var row = lastNotification
     feedbackKind = ""
     view = "rest"
     if (row) notificationCommand("dismissKey", row)
@@ -318,9 +296,9 @@ Item {
           y: 8
           width: root.view === "controls" ? 470
             : root.notificationPill ? 400
-            : root.view === "feedback" || root.view === "peek" ? 320
+            : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
-            : 150
+            : 110
           height: root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
             : root.notificationPill ? 76
             : root.view === "rest" ? 40 : 52
@@ -329,64 +307,30 @@ Item {
           // surfaces animates, and its target changes once per view switch.
           property real radiusCap: root.view === "controls" ? 30 : 38
           Behavior on radiusCap {
-            NumberAnimation { duration: (root.hoverHop ? 175 : 390) * root.motionScale; easing.type: Easing.OutQuint }
+            NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
           radius: Math.min(height / 2, radiusCap)
-          scale: root.view === "rest" ? 1 : root.view === "peek" ? 1.012 : 1
           color: "#000000"
           clip: true
           Behavior on width {
             NumberAnimation {
-              duration: (root.hoverHop ? 175 : 390) * root.motionScale
-              easing.type: root.hoverHop ? Easing.OutCubic : Easing.OutQuint
+              duration: 390 * root.motionScale
+              easing.type: Easing.OutQuint
             }
           }
           Behavior on height {
             NumberAnimation {
-              duration: (root.hoverHop ? 175 : 390) * root.motionScale
-              easing.type: root.hoverHop ? Easing.OutCubic : Easing.OutQuint
+              duration: 390 * root.motionScale
+              easing.type: Easing.OutQuint
             }
           }
-          Behavior on scale { NumberAnimation { duration: 260 * root.motionScale; easing.type: Easing.OutCubic } }
           Behavior on color { ColorAnimation { duration: 240 * root.motionScale; easing.type: Easing.InOutQuad } }
-
-          HoverHandler {
-            id: islandHover
-            enabled: root.view === "rest" || root.view === "peek"
-            onHoveredChanged: {
-              if (hovered) {
-                if (root.suppressHover) return
-                previewCloseTimer.stop()
-                if (root.view === "rest") root.view = "peek"
-              } else {
-                root.suppressHover = false
-                if (root.view === "peek") previewCloseTimer.restart()
-              }
-            }
-          }
-
-          // If the pill shrank out from under the pointer there's no leave
-          // event, so drop the suppression once the morph has settled.
-          Timer {
-            id: suppressHoverSettle
-            interval: 390 * root.motionScale + 50
-            running: root.suppressHover
-            onTriggered: if (!islandHover.hovered) root.suppressHover = false
-          }
-
-          Timer {
-            id: previewCloseTimer
-            interval: 450
-            repeat: false
-            onTriggered: if (!islandHover.hovered && root.view === "peek") root.view = "rest"
-          }
 
           MouseArea {
             anchors.fill: parent
-            enabled: root.view === "rest" || root.view === "feedback" || root.view === "peek"
+            enabled: root.view === "rest" || root.view === "feedback"
             onClicked: {
               feedbackTimer.stop()
-              previewCloseTimer.stop()
               if (root.notificationPill) root.dismissPillNotification()
               else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
               else root.view = "controls"
@@ -395,8 +339,8 @@ Item {
 
           Item {
             id: notificationPillContent
-            readonly property var row: root.pillNotification || ({})
-            readonly property string iconSource: root.notificationIconSource(root.pillNotification)
+            readonly property var row: root.lastNotification || ({})
+            readonly property string iconSource: root.notificationIconSource(root.lastNotification)
             anchors.fill: parent
             opacity: root.notificationPill ? 1 : 0
             visible: opacity > 0.01
@@ -470,7 +414,7 @@ Item {
 
           Text {
             anchors.centerIn: parent
-            opacity: !root.notificationPill && (root.view === "rest" || root.view === "feedback" || root.view === "peek") ? 1 : 0
+            opacity: !root.notificationPill && (root.view === "rest" || root.view === "feedback") ? 1 : 0
             width: parent.width - 24
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
@@ -478,7 +422,6 @@ Item {
             // Notifications have their own layout; don't flash their text in
             // this label while it fades out.
             text: root.view === "feedback" && !root.notificationPill ? root.feedback
-              : root.view === "peek" && !root.notificationPill ? root.hoverPreviewText
               : root.companionNeedsSetup ? "󰀦  " + root.companionWarning
               : Qt.formatDateTime(clock.date, "HH:mm")
             color: root.view === "rest" && root.companionNeedsSetup ? "#f5c26b" : "#f2f2f4"
