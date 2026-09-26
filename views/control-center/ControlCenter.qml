@@ -543,12 +543,14 @@ ColumnLayout {
             // icon (then the letter) when it no longer loads.
             property bool imageFailed: false
             readonly property string source: cc.host.notificationIconSource(note.modelData, imageFailed)
+            readonly property var brand: cc.host.notificationBrand(note.modelData)
             anchors.left: parent.left
             anchors.leftMargin: 10
             anchors.top: parent.top
             anchors.topMargin: 12
             width: 30; height: 30; radius: 15
-            color: noteIcon.status === Image.Ready ? "transparent" : cc.host.withAlpha(cc.accent, 0.18)
+            color: brand ? brand.tile
+              : noteIcon.status === Image.Ready ? "transparent" : cc.host.withAlpha(cc.accent, 0.18)
             Image {
               id: noteIcon
               anchors.fill: parent
@@ -563,10 +565,10 @@ ColumnLayout {
             Text {
               anchors.centerIn: parent
               visible: noteIcon.status !== Image.Ready
-              text: note.appName.charAt(0).toUpperCase()
-              color: cc.accent
-              font.family: "Adwaita Sans"
-              font.pixelSize: 13
+              text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
+              color: avatar.brand ? avatar.brand.ink : cc.accent
+              font.family: avatar.brand ? "JetBrainsMono Nerd Font" : "Adwaita Sans"
+              font.pixelSize: avatar.brand ? 18 : 13
               font.weight: Font.DemiBold
             }
           }
@@ -579,25 +581,34 @@ ColumnLayout {
             anchors.top: parent.top
             anchors.topMargin: 11
             spacing: 2
-            Text {
+            // Like iOS's Notification Center: the title with the time on the
+            // same line (the icon already says which app).
+            Item {
               width: parent.width
-              text: String(note.modelData.app || "")
-              visible: text !== ""
-              textFormat: Text.PlainText
-              elide: Text.ElideRight
-              color: cc.textMuted
-              font.family: "Adwaita Sans"
-              font.pixelSize: 11
-            }
-            Text {
-              width: parent.width
-              text: String(note.modelData.summary || "Notification")
-              textFormat: Text.PlainText
-              elide: Text.ElideRight
-              color: cc.text
-              font.family: "Adwaita Sans"
-              font.pixelSize: 13
-              font.weight: Font.DemiBold
+              height: noteTitle.height
+              Text {
+                id: noteTitle
+                anchors.left: parent.left
+                anchors.right: noteAge.left
+                anchors.rightMargin: 8
+                text: cc.host.notificationTitle(note.modelData)
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: cc.text
+                font.family: "Adwaita Sans"
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+              }
+              Text {
+                id: noteAge
+                anchors.right: parent.right
+                anchors.baseline: noteTitle.baseline
+                text: cc.host.notificationAge(note.modelData.timestamp)
+                textFormat: Text.PlainText
+                color: cc.textMuted
+                font.family: "Adwaita Sans"
+                font.pixelSize: 11
+              }
             }
             Text {
               width: parent.width

@@ -3,6 +3,8 @@ import Quickshell.Widgets
 
 // Dynamic Island–style notification pill: the notification's image or app
 // icon in a rounded tile, with the title and one line of body beside it.
+// Styled like an iOS banner: the title with the time beside it, and the body
+// below.
 Item {
   id: pill
   required property var host
@@ -12,6 +14,8 @@ Item {
   property bool imageFailed: false
   onRowChanged: imageFailed = false
   readonly property string iconSource: host.notificationIconSource(host.lastNotification, imageFailed)
+  readonly property var brand: host.notificationBrand(row)
+
     opacity: host.notificationPill ? 1 : 0
   visible: opacity > 0.01
   Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.motionScale; easing.type: Easing.InOutQuad } }
@@ -30,8 +34,8 @@ Item {
       anchors.fill: parent
       visible: appTileImage.status !== Image.Ready
       gradient: Gradient {
-        GradientStop { position: 0; color: Qt.lighter(host.colorAccent, 1.25) }
-        GradientStop { position: 1; color: host.colorAccent }
+        GradientStop { position: 0; color: pill.brand ? Qt.lighter(pill.brand.tile, 1.12) : Qt.lighter(host.colorAccent, 1.25) }
+        GradientStop { position: 1; color: pill.brand ? pill.brand.tile : host.colorAccent }
       }
     }
     Image {
@@ -48,10 +52,10 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: appTileImage.status !== Image.Ready
-      text: String(pill.row.glyph || "") || "󰂚"
-      color: host.colorAccentText
-      font.family: host.fontFamily
-      font.pixelSize: 24
+      text: pill.brand ? pill.brand.glyph : String(pill.row.glyph || "") || "󰂚"
+      color: pill.brand ? pill.brand.ink : host.colorAccentText
+      font.family: pill.brand ? "JetBrainsMono Nerd Font" : host.fontFamily
+      font.pixelSize: pill.brand ? Math.round(parent.height * 0.6) : 24
     }
   }
 
@@ -62,14 +66,35 @@ Item {
     anchors.rightMargin: 30
     anchors.verticalCenter: parent.verticalCenter
     spacing: 2
-    Text {
+    Item {
       width: parent.width
-      text: String(pill.row.summary || pill.row.app || "Notification")
-      textFormat: Text.PlainText
-      elide: Text.ElideRight
-      color: host.colorText
-      font.pixelSize: 16
-      font.weight: Font.DemiBold
+      height: title.height
+      Text {
+        id: title
+        anchors.left: parent.left
+        anchors.right: age.left
+        anchors.rightMargin: 8
+        text: host.notificationTitle(pill.row)
+        textFormat: Text.PlainText
+        elide: Text.ElideRight
+        // iOS's type: a semibold title and a regular body of nearly the same
+        // size, in SF's stand-in (Adwaita Sans).
+        color: "#ffffff"
+        font.family: "Adwaita Sans"
+        font.pixelSize: 15
+        font.weight: Font.DemiBold
+        font.letterSpacing: -0.2
+      }
+      Text {
+        id: age
+        anchors.right: parent.right
+        anchors.baseline: title.baseline
+        text: host.notificationAge(pill.row.timestamp)
+        textFormat: Text.PlainText
+        color: Qt.rgba(1, 1, 1, 0.45)
+        font.family: "Adwaita Sans"
+        font.pixelSize: 13
+      }
     }
     Text {
       width: parent.width
@@ -77,8 +102,10 @@ Item {
       visible: text !== ""
       textFormat: Text.PlainText
       elide: Text.ElideRight
-      color: host.colorMuted
-      font.pixelSize: 13
+      color: Qt.rgba(1, 1, 1, 0.72)
+      font.family: "Adwaita Sans"
+      font.pixelSize: 14
+      font.letterSpacing: -0.1
     }
   }
 }

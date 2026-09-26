@@ -17,13 +17,9 @@ Item {
   property var barConfig: ({})
   property string omarchyPath: ""
 
-  // Now playing (Omarchy's media service): the resting pill widens into a
-  // media pill while something plays.
   readonly property var media: shell ? shell.firstPartyServiceFor("omarchy.media") : null
   readonly property var player: media ? media.activePlayer : null
   readonly property bool mediaPlaying: !!(player && player.isPlaying)
-  // Browsers stop reporting a track's cover after a while (the page drops its
-  // media artwork); keep showing the last cover until the track changes.
   readonly property string reportedArt: player && player.trackArtUrl ? String(player.trackArtUrl) : ""
   readonly property string mediaTitle: player ? String(player.trackTitle || "") : ""
   property string keptArt: ""
@@ -33,8 +29,6 @@ Item {
   readonly property string mediaArt: reportedArt || (mediaTitle === keptArtTitle ? keptArt : "")
   readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup
 
-  // The most vivid of the cover's main colors, lifted so it reads on black;
-  // tints the media pill's and the player's sound wave.
   ColorQuantizer {
     id: coverColors
     source: root.mediaArt
@@ -68,24 +62,18 @@ Item {
   readonly property string home: Quickshell.env("HOME")
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
   readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
-  // Active theme's folder name; shared by the theme and wallpaper switchers.
   property string themeName: ""
 
   readonly property var clockDate: clock.date
   property string view: "rest"
-  // Notification arrivals use the Dynamic Island layout: app icon tile,
-  // title, and one line of body.
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
-  // Volume changes use an icon + level bar + percentage layout.
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
 
   property bool surfaceContentReady: false
   property string feedback: ""
   property string feedbackKind: ""
   property var activeNotifications: []
-  // Latest notification snapshot, shown by the notification pill.
   property var lastNotification: null
-  // Views (views/Views.qml) register their names here as they're created.
   property var surfaceNames: []
   function registerSurface(name) {
     if (surfaceNames.indexOf(name) === -1) surfaceNames = surfaceNames.concat([name])
@@ -98,10 +86,6 @@ Item {
   readonly property int barSize: 0
   readonly property string position: "top"
   readonly property string fontFamily: "monospace"
-  // Palette. The island itself is always black; text and accents come from
-  // the current Omarchy theme, and Color reloads on theme switches, so
-  // everything bound to these follows along live. Light themes have dark
-  // foregrounds, so their (light) background color is used as text instead.
   readonly property color colorBackground: "#000000"
   readonly property bool themeTextIsLight: luminance(Color.foreground) > 0.5
   readonly property color colorText: themeTextIsLight ? Color.foreground : Color.background
@@ -109,27 +93,21 @@ Item {
   readonly property color colorAccent: Color.accent
   readonly property color colorAccentText: contrastOn(Color.accent)
   readonly property color colorUrgent: Color.urgent
-  // Raised surfaces (tiles, cards) and their hover state: the text color
-  // washed faintly over the background.
   readonly property color colorSurface: Qt.tint(colorBackground, withAlpha(colorText, 0.07))
   readonly property color colorSurfaceHover: Qt.tint(colorBackground, withAlpha(colorText, 0.12))
 
   function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
-  // Background or text color, whichever reads better on top of `c`.
   function luminance(x) { return 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b }
   function contrastOn(c) {
     var l = luminance(c)
     return Math.abs(l - luminance(colorBackground)) > Math.abs(l - luminance(colorText)) ? colorBackground : colorText
   }
 
-  // Multiplies every animation duration below; raise to slow the island down.
   readonly property real motionScale: 1.5
 
-  // The notification's own image, else its app icon. `appIconOnly` skips
-  // the image: a live image handle dies with the shell, so a notification
-  // restored after a restart falls back to its app icon.
   function notificationIconSource(row, appIconOnly) {
     if (!row) return ""
+    if (notificationAgent(row)) return ""
     var value = String((appIconOnly ? "" : row.image) || row.appIcon || "")
     if (value === "") return ""
     if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
@@ -137,7 +115,34 @@ Item {
     return Quickshell.iconPath(value, true)
   }
 
-  // surfaceOpen itself may not have re-evaluated yet inside onViewChanged.
+  function notificationAgent(row) {
+    var summary = String(row.summary || "")
+    if (summary === "Claude Code") return "claude"
+    var fromTerminal = /ghostty|kitty|alacritty|foot|wezterm/i.test(String(row.appIcon || "") + " " + String(row.app || ""))
+    if (summary === "Codex" || (fromTerminal && /^(Ghostty|kitty|Alacritty|foot|WezTerm)$/.test(summary))) return "codex"
+    return ""
+  }
+  readonly property var notificationBrands: ({
+    claude: { glyph: "\uec82", tile: "#d97757", ink: "#ffffff" },
+    codex: { glyph: "\uec81", tile: "#f2f2f2", ink: "#000000" }
+  })
+  function notificationBrand(row) {
+    var agent = row ? notificationAgent(row) : ""
+    return agent ? notificationBrands[agent] : null
+  }
+  function notificationTitle(row) {
+    if (!row) return "Notification"
+    if (notificationAgent(row) === "codex") return "Codex"
+    return String(row.summary || row.app || "Notification")
+  }
+  function notificationAge(timestamp) {
+    var ms = Date.now() - Number(timestamp || 0)
+    if (!timestamp || ms < 60000) return "now"
+    if (ms < 3600000) return Math.floor(ms / 60000) + "m ago"
+    if (ms < 86400000) return Math.floor(ms / 3600000) + "h ago"
+    return Qt.formatDateTime(new Date(Number(timestamp)), "d MMM")
+  }
+
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   FileView {
@@ -179,9 +184,6 @@ Item {
     companionCheck.running = true
   }
 
-  // The notification server lives in the separate guilhermerisu.notifications
-  // companion (see README). Check it on load; the resting pill turns into a
-  // one-click installer when it's missing, stale, or not enabled.
   readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "").replace(/\/$/, "")
   readonly property string companionDir: pluginDir + "/companion"
   property string companionStatus: ""
@@ -212,7 +214,6 @@ Item {
   Process {
     id: companionInstall
     stderr: StdioCollector { waitForEnd: true; onStreamFinished: if (text) console.warn("island: companion install:", text) }
-    // On success the shell restarts; on failure recheck so the pill stays honest.
     onExited: function(code) {
       root.companionInstalling = false
       companionCheck.running = true
@@ -316,8 +317,6 @@ Item {
     notificationProc.running = true
   }
 
-  // Active rows go through the service; archived rows are plain files in the
-  // history dir, named <timestamp>-<originalId>.json like their image copies.
   function dismissNotification(row) {
     var key = notificationKey(row)
     history = history.filter(function(r) { return notificationKey(r) !== key })
@@ -330,7 +329,6 @@ Item {
     notificationProc.running = true
   }
 
-  // Where the Omarchy menu view opens (set by the openMenu IPC).
   property string menuRoute: "root"
 
   function toggleView(name) {
@@ -340,18 +338,15 @@ Item {
 
   IpcHandler {
     target: "guilhermerisu.island"
-    // Open or close any view by name (see views/Views.qml).
     function show(name: string): string {
       if (name === "menu") root.menuRoute = "root"
       return root.toggleView(name)
     }
-    // Open the Omarchy menu at a submenu, by id or alias (e.g. "capture").
     function openMenu(route: string): string {
       root.menuRoute = String(route || "root")
       root.view = "menu"
       return root.view
     }
-    // Shortcuts kept for the menu entries and keybindings that use them.
     function toggle(): string { return root.toggleView("controls") }
     function themes(): string { return root.toggleView("themes") }
     function wallpapers(): string { return root.toggleView("wallpapers") }
@@ -362,7 +357,6 @@ Item {
       root.installCompanion()
       return "installing"
     }
-    // Kept for existing bindings; notifications now live in the control center.
     function showHistory(): string {
       root.view = "controls"
       return root.view
@@ -388,20 +382,13 @@ Item {
         implicitHeight: 800
         WlrLayershell.namespace: "omarchy-island"
         WlrLayershell.layer: WlrLayer.Overlay
-        // Only the switchers type; everything else stays click-only.
-        // The switchers, launcher, power menu, and control center (Esc) take
-        // the keyboard while open; the resting island stays click-only.
         WlrLayershell.keyboardFocus: island.activeSurface && island.activeSurface.wantsKeyboard
           ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         mask: Region { item: island }
 
-        // Clicking anywhere outside the island clears the grab and closes it.
         HyprlandFocusGrab {
           id: focusGrab
           windows: [window]
-          // Armed a beat after the surface opens: the theme switcher switches
-          // the layer to exclusive keyboard focus, and a grab taken in the same
-          // frame is cleared by that focus change.
           property bool armed: false
           active: window.visible && root.surfaceOpen && armed
           onCleared: if (root.surfaceOpen) root.view = "rest"
@@ -420,47 +407,40 @@ Item {
           id: island
           x: (parent.width - width) / 2
           y: 8
-          // The open view, if any; it sizes the island (see Surface.qml).
           readonly property Item activeSurface: views.surfaceFor(root.view)
-          width: activeSurface ? activeSurface.islandWidth
+          readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
             : root.volumePill ? 240
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : root.mediaPill ? 240
             : 100
-          height: activeSurface ? activeSurface.islandHeight
+          readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
             : root.mediaPill ? 44
             : root.volumePill ? 56
             : root.view === "rest" ? 40 : 52
-          // Pills stay fully round at every frame of the morph because the
-          // radius tracks the animated height; only the cap for the large
-          // surfaces animates, and its target changes once per view switch.
-          // The volume slider uses iOS's squircle-ish corners, not a pill.
           property real radiusCap: root.volumePill ? 20 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
           radius: Math.min(height / 2, radiusCap)
-          // Hovering the resting clock pill gives it a small springy lift.
           scale: root.view === "rest" && clockHover.hovered ? 1.07 : 1
           Behavior on scale { NumberAnimation { duration: 240 * root.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.8 } }
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
           color: root.colorBackground
           clip: true
-          Behavior on width {
-            NumberAnimation {
-              duration: 390 * root.motionScale
-              easing.type: Easing.OutQuint
-            }
+          readonly property real springStiffness: 6.5 / root.motionScale
+          property real springWidth: targetWidth
+          property real springHeight: targetHeight
+          Behavior on springWidth {
+            SpringAnimation { spring: island.springStiffness; damping: 0.4; mass: 1; epsilon: 0.2 }
           }
-          Behavior on height {
-            NumberAnimation {
-              duration: 390 * root.motionScale
-              easing.type: Easing.OutQuint
-            }
+          Behavior on springHeight {
+            SpringAnimation { spring: island.springStiffness; damping: 0.4; mass: 1; epsilon: 0.2 }
           }
+          width: Math.max(40, springWidth)
+          height: Math.max(28, springHeight)
           Behavior on color { ColorAnimation { duration: 240 * root.motionScale; easing.type: Easing.InOutQuad } }
 
           MouseArea {
@@ -470,8 +450,6 @@ Item {
               feedbackTimer.stop()
               if (root.notificationPill) root.dismissPillNotification()
               else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
-              // The media pill's cover and wave open the player; its clock
-              // (the middle) still opens the control center.
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
               else root.view = "controls"
             }
