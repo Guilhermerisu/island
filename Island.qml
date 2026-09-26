@@ -49,8 +49,9 @@ Item {
   property var activeNotifications: []
   // Latest notification snapshot, shown by the notification pill.
   property var lastNotification: null
-  // The switchers (Picker.qml) are keyboard-driven surfaces.
-  readonly property bool pickerOpen: view === "themes" || view === "wallpapers"
+  // Keyboard-driven surfaces: the switchers (Picker.qml), the launcher, and
+  // the power menu.
+  readonly property bool pickerOpen: view === "themes" || view === "wallpapers" || view === "apps" || view === "power"
   readonly property bool surfaceOpen: view === "controls" || pickerOpen
   property var history: []
   property string lastNotificationKey: ""
@@ -96,7 +97,7 @@ Item {
   }
 
   // surfaceOpen itself may not have re-evaluated yet inside onViewChanged.
-  function surfaceOpenFor(v) { return v === "controls" || v === "themes" || v === "wallpapers" }
+  function surfaceOpenFor(v) { return v === "controls" || v === "themes" || v === "wallpapers" || v === "apps" || v === "power" }
 
   FileView {
     path: root.home + "/.local/state/omarchy/current/theme.name"
@@ -298,6 +299,8 @@ Item {
     function toggle(): string { return root.toggleView("controls") }
     function themes(): string { return root.toggleView("themes") }
     function wallpapers(): string { return root.toggleView("wallpapers") }
+    function apps(): string { return root.toggleView("apps") }
+    function power(): string { return root.toggleView("power") }
     function companionStatus(): string { return root.companionStatus }
     function installCompanion(): string {
       root.installCompanion()
@@ -360,14 +363,18 @@ Item {
           y: 8
           readonly property Item picker: root.view === "themes" ? themeSwitcher
             : root.view === "wallpapers" ? wallpaperSwitcher : null
-          width: picker ? 820
+          width: root.view === "apps" ? 480
+            : root.view === "power" ? powerMenu.implicitWidth + 36
+            : picker ? 820
             : root.view === "controls" ? 470
             : root.notificationPill ? 400
             : root.volumePill ? 230
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
-            : 110
-          height: picker ? picker.implicitHeight + 40
+            : 100
+          height: root.view === "apps" ? appLauncher.implicitHeight + 32
+            : root.view === "power" ? powerMenu.implicitHeight + 36
+            : picker ? picker.implicitHeight + 40
             : root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
             : root.notificationPill ? 76
             : root.volumePill ? 44
@@ -553,12 +560,13 @@ Item {
             text: root.view === "feedback" && !root.notificationPill && !root.volumePill ? root.feedback
               : root.companionNeedsSetup ? "󰀦  " + root.companionWarning
               : Qt.formatDateTime(clock.date, "HH:mm")
-            color: root.view === "rest" && root.companionNeedsSetup ? root.colorUrgent : root.colorText
-            // Adwaita Sans (Inter-based) at semibold, like the iOS status
-            // clock; tabular figures keep the digits from shifting as the
-            // time changes.
+            // A fixed soft off-white on the always-black island; the setup
+            // warning keeps the theme's urgent color.
+            color: root.view === "rest" && root.companionNeedsSetup ? root.colorUrgent : "#c2c8bd"
+            // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
+            // digits from shifting as the time changes.
             font.family: "Adwaita Sans"
-            font.pixelSize: 15
+            font.pixelSize: 16
             font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
             // Get out of the way fast, fade back in gently.
@@ -574,6 +582,15 @@ Item {
             anchors.margins: 20
           }
 
+          AppLauncher {
+            id: appLauncher
+            host: root
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 16
+          }
+
           WallpaperSwitcher {
             id: wallpaperSwitcher
             host: root
@@ -581,6 +598,15 @@ Item {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.margins: 20
+          }
+
+          PowerMenu {
+            id: powerMenu
+            host: root
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 18
           }
 
           ControlCenter {

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs (or updates) the guilhermerisu.notifications companion from this repo,
 # enables it in shell.json in place of the stock notification service, points
-# the Omarchy menu's Theme and Background entries at the island's switchers,
+# the Omarchy menu's Theme, Background, System, and Apps entries at the island,
 # and restarts
 # the shell so the new notification server takes over.
 set -euo pipefail
@@ -33,14 +33,18 @@ jq --argjson disable "$disable" '
 ' "$config" >"$tmp"
 mv "$tmp" "$config"
 
-# Menu entries: SUPER+SHIFT+CTRL+SPACE runs `omarchy-menu toggle theme` and
-# SUPER+CTRL+SPACE `omarchy-menu toggle background`, which resolve to
-# style.theme and style.background. The menu merge resets omitted fields, so
-# the icon, label, and aliases are repeated from Omarchy's default entries.
-# An existing override of either entry is left alone.
+# Menu entries: SUPER+SHIFT+CTRL+SPACE runs `omarchy-menu toggle theme`,
+# SUPER+CTRL+SPACE `omarchy-menu toggle background`, SUPER+ESCAPE and the
+# power key `omarchy-menu toggle system`, and `omarchy-menu toggle apps` (the
+# menu's Apps row, or any key bound to it) resolves to apps. The
+# menu merge resets omitted fields, so the icon, label, and aliases are
+# repeated from Omarchy's default entries. An existing override of any of
+# them is left alone.
 menu_entries=(
   'style.theme|  "style.theme": {"icon":"󰸌","label":"Theme","aliases":["theme","themes"],"action":"omarchy-shell guilhermerisu.island themes"},'
   'style.background|  "style.background": {"icon":"","label":"Background","aliases":["background","wallpaper"],"action":"omarchy-shell guilhermerisu.island wallpapers"},'
+  'apps|  "apps": {"icon":"󰀻","label":"Apps","aliases":["app","applications"],"action":"omarchy-shell guilhermerisu.island apps"},'
+  'system|  "system": {"icon":"","label":"System","aliases":["power-menu"],"action":"omarchy-shell guilhermerisu.island power"},'
 )
 if [[ ! -f $menu ]]; then
   mkdir -p "$(dirname "$menu")"
