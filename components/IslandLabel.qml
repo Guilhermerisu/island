@@ -4,6 +4,8 @@ import QtQuick
 // that share its spot.
 Text {
   required property var host
+  // Hidden behind the notification and volume pills (the media pill keeps
+  // the clock in the middle).
   opacity: !host.notificationPill && !host.volumePill && (host.view === "rest" || host.view === "feedback") ? 1 : 0
   width: parent.width - 24
   horizontalAlignment: Text.AlignHCenter
@@ -22,7 +24,10 @@ Text {
   font.family: "Adwaita Sans"
   font.pixelSize: 16
   font.weight: Font.DemiBold
-  font.features: { "tnum": 1 }
+  // Apple-style: tabular digits, the colon raised to sit centered on them
+  // (Inter's "case" forms), and SF's tight tracking.
+  font.features: { "tnum": 1, "case": 1 }
+  font.letterSpacing: -0.4
   // Get out of the way fast, fade back in gently.
   Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.motionScale; easing.type: Easing.InOutQuad } }
 }

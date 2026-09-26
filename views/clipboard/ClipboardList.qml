@@ -17,6 +17,8 @@ ListPicker {
   emptyText: history.length ? "Nothing matches" : "Clipboard history is empty"
   rowHeight: 44
   visibleRows: 9
+  // Room for the image preview even when only a few entries match.
+  minRows: 5
   fillSelection: true
   items: ClipboardHistory.displayRows(history, query, 50)
   onChosen: function(entry) { paste(entry, false) }

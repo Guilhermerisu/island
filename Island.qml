@@ -17,6 +17,41 @@ Item {
   property var barConfig: ({})
   property string omarchyPath: ""
 
+  // Now playing (Omarchy's media service): the resting pill widens into a
+  // media pill while something plays.
+  readonly property var media: shell ? shell.firstPartyServiceFor("omarchy.media") : null
+  readonly property var player: media ? media.activePlayer : null
+  readonly property bool mediaPlaying: !!(player && player.isPlaying)
+  // Browsers stop reporting a track's cover after a while (the page drops its
+  // media artwork); keep showing the last cover until the track changes.
+  readonly property string reportedArt: player && player.trackArtUrl ? String(player.trackArtUrl) : ""
+  readonly property string mediaTitle: player ? String(player.trackTitle || "") : ""
+  property string keptArt: ""
+  property string keptArtTitle: ""
+  onReportedArtChanged: if (reportedArt) { keptArt = reportedArt; keptArtTitle = mediaTitle }
+  onMediaTitleChanged: if (mediaTitle !== keptArtTitle) { keptArt = reportedArt; keptArtTitle = mediaTitle }
+  readonly property string mediaArt: reportedArt || (mediaTitle === keptArtTitle ? keptArt : "")
+  readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup
+
+  // The most vivid of the cover's main colors, lifted so it reads on black;
+  // tints the media pill's and the player's sound wave.
+  ColorQuantizer {
+    id: coverColors
+    source: root.mediaArt
+    depth: 2
+    rescaleSize: 64
+  }
+  readonly property color mediaTint: {
+    var best = null, bestScore = -1
+    var colors = coverColors.colors || []
+    for (var i = 0; i < colors.length; i++) {
+      var c = colors[i]
+      var score = c.hsvSaturation * 0.7 + c.hsvValue * 0.3
+      if (score > bestScore) { bestScore = score; best = c }
+    }
+    if (!best || best.hsvSaturation < 0.12) return colorAccent
+    return Qt.hsva(best.hsvHue, Math.min(1, best.hsvSaturation), Math.max(0.75, best.hsvValue), 1)
+  }
   readonly property real volume: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
     ? Pipewire.defaultAudioSink.audio.volume : -1
   readonly property bool muted: !!(Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
@@ -392,9 +427,11 @@ Item {
             : root.volumePill ? 240
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
+            : root.mediaPill ? 240
             : 100
           height: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
+            : root.mediaPill ? 44
             : root.volumePill ? 56
             : root.view === "rest" ? 40 : 52
           // Pills stay fully round at every frame of the morph because the
@@ -429,10 +466,13 @@ Item {
           MouseArea {
             anchors.fill: parent
             enabled: root.view === "rest" || root.view === "feedback"
-            onClicked: {
+            onClicked: function(mouse) {
               feedbackTimer.stop()
               if (root.notificationPill) root.dismissPillNotification()
               else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
+              // The media pill's cover and wave open the player; its clock
+              // (the middle) still opens the control center.
+              else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
               else root.view = "controls"
             }
           }
@@ -440,6 +480,8 @@ Item {
           NotificationPill { host: root; shape: island; anchors.fill: parent }
 
           VolumeSlider { host: root; shape: island; anchors.fill: parent }
+
+          MediaPill { host: root; anchors.fill: parent }
 
           IslandLabel { host: root; anchors.centerIn: parent }
 

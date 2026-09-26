@@ -26,7 +26,12 @@ Item {
   property string placeholder: "Search"
   property string emptyText: "Nothing matches"
   property int rowHeight: 50
+  // The list fits its contents, from `minRows` up to `visibleRows` rows, so
+  // the island morphs as you type or change menus instead of leaving space.
   property int visibleRows: 7
+  property int minRows: 1
+  readonly property int contentRows: grid ? Math.ceil(items.length / columns) : items.length
+  readonly property int shownRows: Math.max(minRows, Math.min(visibleRows, contentRows))
   property int columns: 1
   readonly property bool grid: columns > 1
   // Spotlight-style selection: the selected row fills with the theme accent
@@ -116,7 +121,7 @@ Item {
     anchors.rightMargin: picker.showSide ? 12 : 0
     anchors.top: divider.bottom
     anchors.topMargin: 8
-    height: picker.rowHeight * picker.visibleRows
+    height: picker.rowHeight * picker.shownRows
     cellWidth: Math.floor(width / picker.columns)
     cellHeight: picker.rowHeight
     clip: true
