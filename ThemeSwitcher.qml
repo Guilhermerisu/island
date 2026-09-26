@@ -17,7 +17,7 @@ Picker {
     Rectangle {
       id: themeCard
       property var entry: ({})
-      radius: 14
+      radius: ts.cardRadius
       color: entry.background || ts.host.colorSurface
 
       Row {

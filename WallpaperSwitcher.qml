@@ -30,7 +30,7 @@ Picker {
     ClippingRectangle {
       id: wallpaperCard
       property var entry: ({})
-      radius: 14
+      radius: ws.cardRadius
       color: ws.host.colorSurface
 
       Image {

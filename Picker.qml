@@ -24,11 +24,16 @@ Item {
   property int cardWidth: 196
   property int cardHeight: 102
   property Component card
-  // The selected card grows past full size and the rest shrink back; the
-  // strip is padded so the enlarged card never gets clipped.
-  property real selectedScale: 1.06
-  property real restScale: 0.9
-  readonly property int pad: Math.ceil(cardWidth * (selectedScale - 1) / 2) + 2
+  // The selected card grows past full size and the rest shrink back. It's
+  // marked by a ring set just outside the card (macOS picker style); the
+  // strip is padded so the enlarged card and its ring never get clipped.
+  property real selectedScale: 1.05
+  property real restScale: 0.92
+  readonly property int cardRadius: 16
+  readonly property real ringGap: 4
+  readonly property real ringWidth: 2.5
+  readonly property real ringReach: (ringGap + ringWidth) * selectedScale
+  readonly property int pad: Math.ceil(cardWidth * (selectedScale - 1) / 2 + ringReach) + 2
   // Emitted after the apply command finishes, before the picker closes.
   signal applied(var entry)
 
@@ -158,20 +163,20 @@ Item {
       text: "󰍉"
       color: picker.host.colorMuted
       font.family: picker.host.fontFamily
-      font.pixelSize: 17
+      font.pixelSize: 16
     }
     TextInput {
       id: search
       anchors.left: searchIcon.right
-      anchors.leftMargin: 12
+      anchors.leftMargin: 10
       anchors.right: parent.right
-      anchors.rightMargin: 4
+      anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       color: picker.host.colorText
       selectionColor: picker.host.withAlpha(picker.host.colorAccent, 0.4)
       selectedTextColor: picker.host.colorText
       font.family: "Adwaita Sans"
-      font.pixelSize: 15
+      font.pixelSize: 14
       clip: true
       onTextChanged: picker.query = text
       Keys.onPressed: function(event) {
@@ -204,7 +209,7 @@ Item {
     anchors.right: parent.right
     anchors.top: header.bottom
     anchors.topMargin: 14
-    height: Math.ceil(picker.cardHeight * picker.selectedScale) + 4
+    height: Math.ceil(picker.cardHeight * picker.selectedScale + 2 * picker.ringReach) + 4
     leftMargin: picker.pad
     rightMargin: picker.pad
     orientation: ListView.Horizontal
@@ -234,10 +239,11 @@ Item {
       readonly property bool isSelected: ListView.isCurrentItem
       width: picker.cardWidth
       height: carousel.height
-      opacity: isSelected ? 1 : 0.55
+      opacity: isSelected ? 1 : 0.6
       scale: isSelected ? picker.selectedScale : picker.restScale
       Behavior on opacity { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
-      Behavior on scale { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
+      // A gentle spring as the card settles into its size.
+      Behavior on scale { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutBack; easing.overshoot: 1.15 } }
 
       Item {
         anchors.centerIn: parent
@@ -249,25 +255,42 @@ Item {
           sourceComponent: picker.card
           onLoaded: item.entry = Qt.binding(function() { return slot.modelData })
         }
-        // Selection outline, drawn over the card so image cards get it too.
+        // Hairline so dark cards still read against the black island.
         Rectangle {
           anchors.fill: parent
-          radius: 14
+          radius: picker.cardRadius
           color: "transparent"
-          border.width: slot.isSelected ? 2 : 1
-          border.color: slot.isSelected ? picker.host.colorAccent : picker.host.withAlpha(picker.host.colorText, 0.08)
-          Behavior on border.color { ColorAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
+          border.width: 1
+          border.color: picker.host.withAlpha(picker.host.colorText, 0.06)
         }
-        // Marks the item that's active right now.
+        // Selection ring, set a few pixels outside the card; fades in.
+        Rectangle {
+          anchors.fill: parent
+          anchors.margins: -(picker.ringGap + picker.ringWidth)
+          radius: picker.cardRadius + picker.ringGap + picker.ringWidth
+          color: "transparent"
+          border.width: picker.ringWidth
+          border.color: picker.host.colorAccent
+          opacity: slot.isSelected ? 1 : 0
+          Behavior on opacity { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
+        }
+        // Checkmark badge on the item that's active right now.
         Rectangle {
           visible: slot.modelData.key === picker.currentKey
           anchors.right: parent.right
           anchors.top: parent.top
-          anchors.margins: 9
-          width: 7; height: 7; radius: 3.5
+          anchors.margins: 7
+          width: 18; height: 18; radius: 9
           color: picker.host.colorAccent
           border.width: 1
-          border.color: Qt.rgba(0, 0, 0, 0.35)
+          border.color: Qt.rgba(0, 0, 0, 0.25)
+          Text {
+            anchors.centerIn: parent
+            text: "󰄬"
+            color: picker.host.colorAccentText
+            font.family: picker.host.fontFamily
+            font.pixelSize: 12
+          }
         }
         MouseArea {
           anchors.fill: parent
