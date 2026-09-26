@@ -5,7 +5,7 @@
 #   outdated     installed but differs from this repo's copy
 #   not-enabled  installed, but shell.json doesn't load it (or still loads
 #                the stock omarchy.notifications alongside it)
-#   menu         the Omarchy menu's Theme, Background, Apps, or System entry
+#   menu         the Omarchy menu's Theme, Background, Apps, System, or Emoji entry
 #                (and the shortcuts that open them) doesn't open the island yet
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -34,7 +34,7 @@ fi
 
 # A user's own override of either entry is theirs to keep; only nag when a
 # default entry is still in charge.
-for entry in style.theme style.background apps system; do
+for entry in style.theme style.background apps system trigger.emoji; do
   if ! grep -q "\"$entry\"" "$menu" 2>/dev/null; then
     echo menu
     exit 0

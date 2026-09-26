@@ -5,6 +5,7 @@ import "power"
 import "launcher"
 import "themes"
 import "wallpapers"
+import "emoji"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -14,7 +15,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface]
+  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     return null
@@ -53,6 +54,14 @@ Item {
     viewName: "apps"
     fixedWidth: 600
     AppLauncher { host: views.host; active: appsSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: emojiSurface
+    host: views.host
+    viewName: "emoji"
+    fixedWidth: 600
+    EmojiPicker { host: views.host; active: emojiSurface.active; anchors.fill: parent }
   }
 
   Surface {
