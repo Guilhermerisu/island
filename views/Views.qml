@@ -8,6 +8,7 @@ import "wallpapers"
 import "emoji"
 import "keybinds"
 import "clipboard"
+import "menu"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -17,7 +18,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface]
+  readonly property var surfaces: [controlsSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     return null
@@ -80,6 +81,14 @@ Item {
     viewName: "clipboard"
     fixedWidth: 780
     ClipboardList { host: views.host; active: clipboardSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: menuSurface
+    host: views.host
+    viewName: "menu"
+    fixedWidth: 520
+    OmarchyMenu { host: views.host; active: menuSurface.active; anchors.fill: parent }
   }
 
   Surface {

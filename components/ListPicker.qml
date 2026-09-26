@@ -49,6 +49,7 @@ Item {
   }
   onQueryChanged: reset()
 
+  function clearSearch() { search.clear() }
   function reset() {
     list.currentIndex = 0
     list.positionViewAtBeginning()

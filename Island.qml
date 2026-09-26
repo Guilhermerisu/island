@@ -88,7 +88,7 @@ Item {
   }
 
   // Multiplies every animation duration below; raise to slow the island down.
-  readonly property real motionScale: 2
+  readonly property real motionScale: 1.5
 
   // The notification's own image, else its app icon. `appIconOnly` skips
   // the image: a live image handle dies with the shell, so a notification
@@ -295,6 +295,9 @@ Item {
     notificationProc.running = true
   }
 
+  // Where the Omarchy menu view opens (set by the openMenu IPC).
+  property string menuRoute: "root"
+
   function toggleView(name) {
     view = view === name ? "rest" : name
     return view
@@ -303,7 +306,16 @@ Item {
   IpcHandler {
     target: "guilhermerisu.island"
     // Open or close any view by name (see views/Views.qml).
-    function show(name: string): string { return root.toggleView(name) }
+    function show(name: string): string {
+      if (name === "menu") root.menuRoute = "root"
+      return root.toggleView(name)
+    }
+    // Open the Omarchy menu at a submenu, by id or alias (e.g. "capture").
+    function openMenu(route: string): string {
+      root.menuRoute = String(route || "root")
+      root.view = "menu"
+      return root.view
+    }
     // Shortcuts kept for the menu entries and keybindings that use them.
     function toggle(): string { return root.toggleView("controls") }
     function themes(): string { return root.toggleView("themes") }
