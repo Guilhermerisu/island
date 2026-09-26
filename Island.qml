@@ -29,6 +29,19 @@ Item {
   readonly property string mediaArt: reportedArt || (mediaTitle === keptArtTitle ? keptArt : "")
   readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup && settings.mediaPill && !downloadPill
 
+  property string askQuestion: ""
+  readonly property var askProviders: ({
+    claude: { name: "Claude", cli: "claude", url: "https://claude.ai/new?q=", glyph: "\uec82", tile: "#d97757", ink: "#ffffff" },
+    chatgpt: { name: "ChatGPT", cli: "codex", url: "https://chatgpt.com/?q=", glyph: "\uec81", tile: "#f2f2f2", ink: "#000000" }
+  })
+  readonly property var askProvider: settings.askAi === "none" ? null : askProviders[settings.askAi] || askProviders.chatgpt
+  function ask(question) {
+    question = String(question || "").trim()
+    if (!question || !askProvider) return
+    askQuestion = question
+    view = "answer"
+  }
+
   readonly property Item downloadTracker: downloadWatcher
   Downloads { id: downloadWatcher; enabled: root.settings.downloads }
   readonly property Item packageTracker: packageWatcher
@@ -105,6 +118,7 @@ Item {
       property bool notch: false
       property bool downloads: true
       property bool systemUpdates: true
+      property string askAi: "chatgpt"
     }
   }
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
@@ -512,7 +526,7 @@ Item {
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? 56
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
-          property real radiusCap: root.volumePill ? 20 : root.surfaceOpen ? 30 : 38
+          property real radiusCap: root.volumePill ? 20 : root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }

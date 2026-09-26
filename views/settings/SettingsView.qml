@@ -56,7 +56,7 @@ ColumnLayout {
       for (var i = 0; i < options.length; i++) if (options[i].value === value) return i
       return -1
     }
-    implicitWidth: options.length * 62 + 4
+    implicitWidth: options.length * (options.length > 3 ? 70 : 62) + 4
     implicitHeight: 28
     radius: 9
     color: settingsView.well
@@ -274,6 +274,20 @@ ColumnLayout {
       SettingsSwitch {
         checked: settingsView.settings.volumeHud
         onToggled: function(on) { settingsView.settings.volumeHud = on }
+      }
+    }
+  }
+
+  SettingsGroup {
+    title: "Search"
+    SettingsRow {
+      label: "Ask With"
+      detail: "Answers launcher questions in the island"
+      last: true
+      SettingsSegments {
+        options: [{ label: "Claude", value: "claude" }, { label: "ChatGPT", value: "chatgpt" }, { label: "None", value: "none" }]
+        value: settingsView.settings.askAi
+        onPicked: function(v) { settingsView.settings.askAi = v }
       }
     }
   }
