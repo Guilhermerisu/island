@@ -5,8 +5,9 @@
 #   outdated     installed but differs from this repo's copy
 #   not-enabled  installed, but shell.json doesn't load it (or still loads
 #                the stock omarchy.notifications alongside it)
-#   theme-menu   the Omarchy menu's Theme entry (and its SUPER+SHIFT+CTRL+SPACE
-#                shortcut) doesn't open the island's theme switcher yet
+#   menu         the Omarchy menu's Theme or Background entry (and their
+#                SUPER+SHIFT+CTRL+SPACE / SUPER+CTRL+SPACE shortcuts) doesn't
+#                open the island's switchers yet
 
 here=$(cd "$(dirname "$0")" && pwd)
 source_dir="$here/guilhermerisu.notifications"
@@ -32,11 +33,13 @@ if ! jq -e '
   exit 0
 fi
 
-# A user's own style.theme override is theirs to keep; only nag when the
+# A user's own override of either entry is theirs to keep; only nag when a
 # default entry is still in charge.
-if ! grep -q '"style.theme"' "$menu" 2>/dev/null; then
-  echo theme-menu
-  exit 0
-fi
+for entry in style.theme style.background; do
+  if ! grep -q "\"$entry\"" "$menu" 2>/dev/null; then
+    echo menu
+    exit 0
+  fi
+done
 
 echo ok

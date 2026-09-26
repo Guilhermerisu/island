@@ -33,8 +33,11 @@ Item {
     if (focused && focused.name) return String(focused.name)
     return screens.length ? String(screens[0].name) : ""
   }
-  readonly property string feedPath: Quickshell.env("HOME") + "/.local/state/omarchy/island-feed.json"
-  readonly property string historyDir: Quickshell.env("HOME") + "/.local/state/omarchy/notifications/history/"
+  readonly property string home: Quickshell.env("HOME")
+  readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
+  readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
+  // Active theme's folder name; shared by the theme and wallpaper switchers.
+  property string themeName: ""
 
   readonly property var clockDate: clock.date
   property string view: "rest"
@@ -50,7 +53,9 @@ Item {
   property var activeNotifications: []
   // Latest notification snapshot, shown by the notification pill.
   property var lastNotification: null
-  readonly property bool surfaceOpen: view === "controls" || view === "themes"
+  // The switchers (Picker.qml) are keyboard-driven surfaces.
+  readonly property bool pickerOpen: view === "themes" || view === "wallpapers"
+  readonly property bool surfaceOpen: view === "controls" || pickerOpen
   property var history: []
   property string lastNotificationKey: ""
   property bool initialized: false
@@ -94,9 +99,20 @@ Item {
     return Quickshell.iconPath(value, true)
   }
 
+  // surfaceOpen itself may not have re-evaluated yet inside onViewChanged.
+  function surfaceOpenFor(v) { return v === "controls" || v === "themes" || v === "wallpapers" }
+
+  FileView {
+    path: root.home + "/.local/state/omarchy/current/theme.name"
+    watchChanges: true
+    printErrors: false
+    onLoaded: root.themeName = text().trim()
+    onFileChanged: reload()
+  }
+
   onViewChanged: {
     surfaceContentReady = false
-    if (view === "controls" || view === "themes") surfaceRevealTimer.restart()
+    if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
     else surfaceRevealTimer.stop()
     if (view === "controls") refreshHistory()
   }
@@ -137,7 +153,7 @@ Item {
     : companionStatus === "missing" ? "Set up notifications"
     : companionStatus === "outdated" ? "Update notifications"
     : companionStatus === "not-enabled" ? "Enable notifications"
-    : companionStatus === "theme-menu" ? "Set up theme switcher"
+    : companionStatus === "menu" ? "Set up switchers"
     : "Notifications need setup"
 
   Process {
@@ -276,16 +292,16 @@ Item {
     notificationProc.running = true
   }
 
+  function toggleView(name) {
+    view = view === name ? "rest" : name
+    return view
+  }
+
   IpcHandler {
     target: "guilhermerisu.island"
-    function toggle(): string {
-      root.view = root.view === "controls" ? "rest" : "controls"
-      return root.view
-    }
-    function themes(): string {
-      root.view = root.view === "themes" ? "rest" : "themes"
-      return root.view
-    }
+    function toggle(): string { return root.toggleView("controls") }
+    function themes(): string { return root.toggleView("themes") }
+    function wallpapers(): string { return root.toggleView("wallpapers") }
     function companionStatus(): string { return root.companionStatus }
     function installCompanion(): string {
       root.installCompanion()
@@ -317,8 +333,8 @@ Item {
         implicitHeight: 800
         WlrLayershell.namespace: "omarchy-island"
         WlrLayershell.layer: WlrLayer.Overlay
-        // Only the theme switcher types; everything else stays click-only.
-        WlrLayershell.keyboardFocus: root.view === "themes" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        // Only the switchers type; everything else stays click-only.
+        WlrLayershell.keyboardFocus: root.pickerOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         mask: Region { item: island }
 
         // Clicking anywhere outside the island clears the grab and closes it.
@@ -346,14 +362,16 @@ Item {
           id: island
           x: (parent.width - width) / 2
           y: 8
-          width: root.view === "themes" ? 820
+          readonly property Item picker: root.view === "themes" ? themeSwitcher
+            : root.view === "wallpapers" ? wallpaperSwitcher : null
+          width: picker ? 820
             : root.view === "controls" ? 470
             : root.notificationPill ? 400
             : root.volumePill ? 230
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : 110
-          height: root.view === "themes" ? themeSwitcher.implicitHeight + 40
+          height: picker ? picker.implicitHeight + 40
             : root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
             : root.notificationPill ? 76
             : root.volumePill ? 44
@@ -361,7 +379,7 @@ Item {
           // Pills stay fully round at every frame of the morph because the
           // radius tracks the animated height; only the cap for the large
           // surfaces animates, and its target changes once per view switch.
-          property real radiusCap: root.view === "controls" || root.view === "themes" ? 30 : 38
+          property real radiusCap: root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
@@ -554,16 +572,19 @@ Item {
           ThemeSwitcher {
             id: themeSwitcher
             host: root
-            active: root.view === "themes"
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.margins: 20
-            onCloseRequested: root.view = "rest"
-            visible: root.view === "themes" || opacity > 0.01
-            enabled: root.view === "themes"
-            opacity: root.view === "themes" && root.surfaceContentReady ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: (root.surfaceContentReady ? 190 : 110) * root.motionScale; easing.type: Easing.InOutQuad } }
+          }
+
+          WallpaperSwitcher {
+            id: wallpaperSwitcher
+            host: root
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 20
           }
 
           ControlCenter {

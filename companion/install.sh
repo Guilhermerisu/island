@@ -1,7 +1,8 @@
 #!/bin/bash
 # Installs (or updates) the guilhermerisu.notifications companion from this repo,
 # enables it in shell.json in place of the stock notification service, points
-# the Omarchy menu's Theme entry at the island's theme switcher, and restarts
+# the Omarchy menu's Theme and Background entries at the island's switchers,
+# and restarts
 # the shell so the new notification server takes over.
 set -euo pipefail
 
@@ -32,19 +33,27 @@ jq --argjson disable "$disable" '
 ' "$config" >"$tmp"
 mv "$tmp" "$config"
 
-# Theme entry: SUPER+SHIFT+CTRL+SPACE runs `omarchy-menu toggle theme`, which
-# resolves to style.theme. The menu merge resets omitted fields, so the icon,
-# label, and aliases are repeated from Omarchy's default entry. An existing
-# style.theme override is left alone.
-theme_entry='  "style.theme": {"icon":"󰸌","label":"Theme","aliases":["theme","themes"],"action":"omarchy-shell guilhermerisu.island themes"},'
+# Menu entries: SUPER+SHIFT+CTRL+SPACE runs `omarchy-menu toggle theme` and
+# SUPER+CTRL+SPACE `omarchy-menu toggle background`, which resolve to
+# style.theme and style.background. The menu merge resets omitted fields, so
+# the icon, label, and aliases are repeated from Omarchy's default entries.
+# An existing override of either entry is left alone.
+menu_entries=(
+  'style.theme|  "style.theme": {"icon":"󰸌","label":"Theme","aliases":["theme","themes"],"action":"omarchy-shell guilhermerisu.island themes"},'
+  'style.background|  "style.background": {"icon":"","label":"Background","aliases":["background","wallpaper"],"action":"omarchy-shell guilhermerisu.island wallpapers"},'
+)
 if [[ ! -f $menu ]]; then
   mkdir -p "$(dirname "$menu")"
-  printf '{\n%s\n}\n' "$theme_entry" >"$menu"
-elif ! grep -q '"style.theme"' "$menu"; then
-  cp "$menu" "$menu.bak.$(date +%s)"
+  printf '{\n}\n' >"$menu"
+fi
+backed_up=false
+for spec in "${menu_entries[@]}"; do
+  id=${spec%%|*} line=${spec#*|}
+  grep -q "\"$id\"" "$menu" && continue
+  if ! $backed_up; then cp "$menu" "$menu.bak.$(date +%s)"; backed_up=true; fi
   tmp=$(mktemp "$menu.XXXXXX")
   # Insert before the file's final closing brace.
-  awk -v entry="$theme_entry" '
+  awk -v entry="$line" '
     { lines[NR] = $0 }
     /^[[:space:]]*}[[:space:]]*$/ { last = NR }
     END {
@@ -54,7 +63,7 @@ elif ! grep -q '"style.theme"' "$menu"; then
       }
     }' "$menu" >"$tmp"
   mv "$tmp" "$menu"
-fi
+done
 omarchy-menu refresh >/dev/null 2>&1 || true
 
 # Detached: this script usually runs from inside the shell being restarted.

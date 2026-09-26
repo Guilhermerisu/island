@@ -3,50 +3,50 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 
-// Theme picker hosted by the island: search field, a centered carousel of
-// theme cards (background + palette), and Enter to apply. Reads its palette
-// and timings from the island root passed in as `host`.
-Item {
+// Theme picker: one card per installed theme showing its background color
+// and palette. Applying runs omarchy-theme-set.
+Picker {
   id: ts
-  required property var host
-  property bool active: false
-  signal closeRequested()
+  viewName: "themes"
+  placeholder: "Search themes…"
+  emptyText: "No themes match"
+  currentKey: host.themeName
+  applyCommand: function(entry) { return ["omarchy-theme-set", entry.name] }
 
-  property var themes: []
-  property string query: ""
-  property bool applying: false
-  readonly property var filtered: {
-    var q = query.trim().toLowerCase().replace(/\s+/g, "-")
-    if (!q) return themes
-    return themes.filter(function(t) { return t.name.indexOf(q) !== -1 })
-  }
-  readonly property var selected: filtered[carousel.currentIndex] || null
+  card: Component {
+    Rectangle {
+      id: themeCard
+      property var entry: ({})
+      radius: 14
+      color: entry.background || ts.host.colorSurface
 
-  implicitHeight: header.height + 14 + carousel.height
-
-  onActiveChanged: {
-    if (!active) return
-    applying = false
-    search.text = ""
-    selectCurrent()
-    Qt.callLater(function() { search.forceActiveFocus() })
-  }
-  // Typing jumps to the first match; list rebuilds keep the selection.
-  onQueryChanged: jumpTo(0)
-
-  // Move the selection without the carousel scrolling through everything in
-  // between (a model reset otherwise animates back from card 0).
-  property bool snapping: false
-  function jumpTo(index) {
-    snapping = true
-    carousel.currentIndex = index
-    carousel.positionViewAtIndex(index, ListView.Center)
-    Qt.callLater(function() { ts.snapping = false })
-  }
-
-  function selectCurrent() {
-    for (var i = 0; i < filtered.length; i++) {
-      if (filtered[i].name === currentName) { jumpTo(i); return }
+      Row {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: 27
+        spacing: 7
+        Repeater {
+          model: themeCard.entry.swatches || []
+          delegate: Rectangle {
+            required property var modelData
+            width: 16; height: 16; radius: 8
+            color: modelData
+          }
+        }
+      }
+      Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 16
+        width: parent.width - 20
+        horizontalAlignment: Text.AlignHCenter
+        elide: Text.ElideRight
+        text: themeCard.entry.name || ""
+        color: themeCard.entry.foreground || ts.host.colorText
+        font.family: "Adwaita Sans"
+        font.pixelSize: 13
+        font.weight: Font.DemiBold
+      }
     }
   }
 
@@ -55,20 +55,10 @@ Item {
   // Themes are the folders in ~/.config/omarchy/themes and Omarchy's stock
   // themes dir; a user folder shadows the stock one of the same name. Each
   // card reads the theme's colors.toml, falling back to the stock copy when
-  // the user folder has none. theme.name holds the active theme's folder name.
+  // the user folder has none.
 
-  readonly property string home: Quickshell.env("HOME")
-  readonly property string userThemesDir: home + "/.config/omarchy/themes"
+  readonly property string userThemesDir: host.home + "/.config/omarchy/themes"
   readonly property string stockThemesDir: (Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy") + "/themes"
-  property string currentName: ""
-
-  FileView {
-    path: ts.home + "/.local/state/omarchy/current/theme.name"
-    watchChanges: true
-    printErrors: false
-    onLoaded: ts.currentName = text().trim()
-    onFileChanged: reload()
-  }
 
   FolderListModel {
     id: userThemes
@@ -164,218 +154,9 @@ Item {
       var name = themeNames[j]
       var colors = parsedColors[name + "/0"] || parsedColors[name + "/1"]
       if (!colors) continue
-      list.push({ name: name, background: colors.background, foreground: colors.foreground,
+      list.push({ key: name, name: name, background: colors.background, foreground: colors.foreground,
                   accent: colors.accent, swatches: colors.swatches })
     }
-    var keep = selected ? selected.name : ""
-    themes = list
-    if (!active) return
-    for (var k = 0; k < filtered.length; k++) {
-      if (filtered[k].name === keep) { jumpTo(k); return }
-    }
-    selectCurrent()
-  }
-
-  Process {
-    id: applier
-    onExited: {
-      ts.applying = false
-      ts.closeRequested()
-    }
-  }
-
-  function move(delta) {
-    if (!filtered.length) return
-    carousel.currentIndex = (carousel.currentIndex + delta + filtered.length) % filtered.length
-  }
-
-  function apply() {
-    if (!selected || applying) return
-    if (selected.name === currentName) { closeRequested(); return }
-    applying = true
-    applier.command = ["omarchy-theme-set", selected.name]
-    applier.running = true
-  }
-
-  // ---------- Search ----------
-
-  Item {
-    id: header
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: parent.top
-    height: 30
-
-    Text {
-      id: searchIcon
-      anchors.left: parent.left
-      anchors.leftMargin: 4
-      anchors.verticalCenter: parent.verticalCenter
-      text: "󰍉"
-      color: ts.host.colorMuted
-      font.family: ts.host.fontFamily
-      font.pixelSize: 17
-    }
-    TextInput {
-      id: search
-      anchors.left: searchIcon.right
-      anchors.leftMargin: 12
-      anchors.right: parent.right
-      anchors.rightMargin: 4
-      anchors.verticalCenter: parent.verticalCenter
-      color: ts.host.colorText
-      selectionColor: ts.host.withAlpha(ts.host.colorAccent, 0.4)
-      selectedTextColor: ts.host.colorText
-      font.family: "Adwaita Sans"
-      font.pixelSize: 15
-      clip: true
-      onTextChanged: ts.query = text
-      Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
-          ts.move(1); event.accepted = true
-        } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
-          ts.move(-1); event.accepted = true
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-          ts.apply(); event.accepted = true
-        } else if (event.key === Qt.Key_Escape) {
-          ts.closeRequested(); event.accepted = true
-        }
-      }
-      Text {
-        anchors.fill: parent
-        verticalAlignment: Text.AlignVCenter
-        visible: search.text === ""
-        text: "Search themes…"
-        color: ts.host.colorMuted
-        font: search.font
-      }
-    }
-  }
-
-  // ---------- Carousel ----------
-
-  ListView {
-    id: carousel
-    readonly property int cardWidth: 196
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: header.bottom
-    anchors.topMargin: 14
-    height: 106
-    orientation: ListView.Horizontal
-    spacing: 12
-    clip: true
-    model: ts.filtered
-    boundsBehavior: Flickable.StopAtBounds
-    highlightRangeMode: ListView.StrictlyEnforceRange
-    preferredHighlightBegin: (width - cardWidth) / 2
-    preferredHighlightEnd: (width + cardWidth) / 2
-    highlightMoveDuration: ts.snapping ? 0 : 240 * ts.host.motionScale
-    keyNavigationEnabled: false
-
-    WheelHandler {
-      onWheel: function(event) {
-        var d = event.angleDelta.y !== 0 ? event.angleDelta.y : event.angleDelta.x
-        ts.move(d > 0 ? -1 : 1)
-      }
-    }
-
-    delegate: Rectangle {
-      id: card
-      required property var modelData
-      required property int index
-      readonly property bool isSelected: ListView.isCurrentItem
-      width: carousel.cardWidth
-      height: carousel.height - 4
-      y: 2
-      radius: 14
-      color: modelData.background || ts.host.colorSurface
-      border.width: isSelected ? 2 : 1
-      border.color: isSelected ? ts.host.colorAccent : ts.host.withAlpha(ts.host.colorText, 0.08)
-      opacity: isSelected ? 1 : 0.55
-      scale: isSelected ? 1 : 0.95
-      Behavior on opacity { NumberAnimation { duration: 180 * ts.host.motionScale; easing.type: Easing.OutCubic } }
-      Behavior on scale { NumberAnimation { duration: 180 * ts.host.motionScale; easing.type: Easing.OutCubic } }
-      Behavior on border.color { ColorAnimation { duration: 180 * ts.host.motionScale } }
-
-      Row {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: parent.top
-        anchors.topMargin: 27
-        spacing: 7
-        Repeater {
-          model: card.modelData.swatches || []
-          delegate: Rectangle {
-            required property var modelData
-            width: 16; height: 16; radius: 8
-            color: modelData
-          }
-        }
-      }
-      Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 16
-        width: parent.width - 20
-        horizontalAlignment: Text.AlignHCenter
-        elide: Text.ElideRight
-        text: card.modelData.name
-        color: card.modelData.foreground || ts.host.colorText
-        font.family: "Adwaita Sans"
-        font.pixelSize: 13
-        font.weight: Font.DemiBold
-      }
-      // Marks the theme that's active right now.
-      Rectangle {
-        visible: card.modelData.name === ts.currentName
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.margins: 9
-        width: 6; height: 6; radius: 3
-        color: card.modelData.foreground || ts.host.colorText
-      }
-      MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-          if (card.isSelected) ts.apply()
-          else carousel.currentIndex = card.index
-          search.forceActiveFocus()
-        }
-      }
-    }
-
-    Text {
-      anchors.centerIn: parent
-      visible: ts.filtered.length === 0 && ts.themes.length > 0
-      text: "No themes match"
-      color: ts.host.colorMuted
-      font.family: "Adwaita Sans"
-      font.pixelSize: 13
-    }
-  }
-
-  // Fade the cards out toward the ends, into the island's background.
-  Rectangle {
-    anchors.left: carousel.left
-    anchors.top: carousel.top
-    anchors.bottom: carousel.bottom
-    width: 56
-    gradient: Gradient {
-      orientation: Gradient.Horizontal
-      GradientStop { position: 0; color: ts.host.colorBackground }
-      GradientStop { position: 1; color: ts.host.withAlpha(ts.host.colorBackground, 0) }
-    }
-  }
-  Rectangle {
-    anchors.right: carousel.right
-    anchors.top: carousel.top
-    anchors.bottom: carousel.bottom
-    width: 56
-    gradient: Gradient {
-      orientation: Gradient.Horizontal
-      GradientStop { position: 0; color: ts.host.withAlpha(ts.host.colorBackground, 0) }
-      GradientStop { position: 1; color: ts.host.colorBackground }
-    }
+    items = list
   }
 }
