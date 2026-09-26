@@ -50,7 +50,7 @@ Item {
   property var activeNotifications: []
   // Latest notification snapshot, shown by the notification pill.
   property var lastNotification: null
-  readonly property bool surfaceOpen: view === "controls"
+  readonly property bool surfaceOpen: view === "controls" || view === "themes"
   property var history: []
   property string lastNotificationKey: ""
   property bool initialized: false
@@ -96,10 +96,9 @@ Item {
 
   onViewChanged: {
     surfaceContentReady = false
-    if (view === "controls") {
-      surfaceRevealTimer.restart()
-      refreshHistory()
-    } else surfaceRevealTimer.stop()
+    if (view === "controls" || view === "themes") surfaceRevealTimer.restart()
+    else surfaceRevealTimer.stop()
+    if (view === "controls") refreshHistory()
   }
 
   SystemClock { id: clock; precision: SystemClock.Minutes }
@@ -129,7 +128,8 @@ Item {
   // The notification server lives in the separate guilhermerisu.notifications
   // companion (see README). Check it on load; the resting pill turns into a
   // one-click installer when it's missing, stale, or not enabled.
-  readonly property string companionDir: String(Qt.resolvedUrl("companion")).replace(/^file:\/\//, "")
+  readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "").replace(/\/$/, "")
+  readonly property string companionDir: pluginDir + "/companion"
   property string companionStatus: ""
   property bool companionInstalling: false
   readonly property bool companionNeedsSetup: companionStatus !== "" && companionStatus !== "ok"
@@ -137,6 +137,7 @@ Item {
     : companionStatus === "missing" ? "Set up notifications"
     : companionStatus === "outdated" ? "Update notifications"
     : companionStatus === "not-enabled" ? "Enable notifications"
+    : companionStatus === "theme-menu" ? "Set up theme switcher"
     : "Notifications need setup"
 
   Process {
@@ -281,6 +282,10 @@ Item {
       root.view = root.view === "controls" ? "rest" : "controls"
       return root.view
     }
+    function themes(): string {
+      root.view = root.view === "themes" ? "rest" : "themes"
+      return root.view
+    }
     function companionStatus(): string { return root.companionStatus }
     function installCompanion(): string {
       root.installCompanion()
@@ -312,34 +317,51 @@ Item {
         implicitHeight: 800
         WlrLayershell.namespace: "omarchy-island"
         WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        // Only the theme switcher types; everything else stays click-only.
+        WlrLayershell.keyboardFocus: root.view === "themes" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         mask: Region { item: island }
 
         // Clicking anywhere outside the island clears the grab and closes it.
         HyprlandFocusGrab {
+          id: focusGrab
           windows: [window]
-          active: window.visible && root.surfaceOpen
+          // Armed a beat after the surface opens: the theme switcher switches
+          // the layer to exclusive keyboard focus, and a grab taken in the same
+          // frame is cleared by that focus change.
+          property bool armed: false
+          active: window.visible && root.surfaceOpen && armed
           onCleared: if (root.surfaceOpen) root.view = "rest"
+        }
+        Timer {
+          interval: 120
+          running: root.surfaceOpen
+          onTriggered: focusGrab.armed = true
+        }
+        Connections {
+          target: root
+          function onSurfaceOpenChanged() { if (!root.surfaceOpen) focusGrab.armed = false }
         }
 
         Rectangle {
           id: island
           x: (parent.width - width) / 2
           y: 8
-          width: root.view === "controls" ? 470
+          width: root.view === "themes" ? 820
+            : root.view === "controls" ? 470
             : root.notificationPill ? 400
             : root.volumePill ? 230
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : 110
-          height: root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
+          height: root.view === "themes" ? themeSwitcher.implicitHeight + 40
+            : root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
             : root.notificationPill ? 76
             : root.volumePill ? 44
             : root.view === "rest" ? 40 : 52
           // Pills stay fully round at every frame of the morph because the
           // radius tracks the animated height; only the cap for the large
           // surfaces animates, and its target changes once per view switch.
-          property real radiusCap: root.view === "controls" ? 30 : 38
+          property real radiusCap: root.view === "controls" || root.view === "themes" ? 30 : 38
           Behavior on radiusCap {
             NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
           }
@@ -527,6 +549,21 @@ Item {
             font.features: { "tnum": 1 }
             // Get out of the way fast, fade back in gently.
             Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * root.motionScale; easing.type: Easing.InOutQuad } }
+          }
+
+          ThemeSwitcher {
+            id: themeSwitcher
+            host: root
+            active: root.view === "themes"
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 20
+            onCloseRequested: root.view = "rest"
+            visible: root.view === "themes" || opacity > 0.01
+            enabled: root.view === "themes"
+            opacity: root.view === "themes" && root.surfaceContentReady ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: (root.surfaceContentReady ? 190 : 110) * root.motionScale; easing.type: Easing.InOutQuad } }
           }
 
           ControlCenter {
