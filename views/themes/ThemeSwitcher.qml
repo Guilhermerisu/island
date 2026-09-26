@@ -2,12 +2,12 @@ import QtQuick
 import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
+import "../../components"
 
 // Theme picker: one card per installed theme showing its background color
 // and palette. Applying runs omarchy-theme-set.
 Picker {
   id: ts
-  viewName: "themes"
   placeholder: "Search themes…"
   emptyText: "No themes match"
   currentKey: host.themeName

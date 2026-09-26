@@ -5,6 +5,8 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import qs.Commons
+import "components"
+import "views"
 
 Item {
   id: root
@@ -48,10 +50,12 @@ Item {
   property var activeNotifications: []
   // Latest notification snapshot, shown by the notification pill.
   property var lastNotification: null
-  // Keyboard-driven surfaces: the switchers (Picker.qml), the launcher, and
-  // the power menu.
-  readonly property bool pickerOpen: view === "themes" || view === "wallpapers" || view === "apps" || view === "power"
-  readonly property bool surfaceOpen: view === "controls" || pickerOpen
+  // Views (views/Views.qml) register their names here as they're created.
+  property var surfaceNames: []
+  function registerSurface(name) {
+    if (surfaceNames.indexOf(name) === -1) surfaceNames = surfaceNames.concat([name])
+  }
+  readonly property bool surfaceOpen: surfaceNames.indexOf(view) !== -1
   property var history: []
   property string lastNotificationKey: ""
   property bool initialized: false
@@ -99,7 +103,7 @@ Item {
   }
 
   // surfaceOpen itself may not have re-evaluated yet inside onViewChanged.
-  function surfaceOpenFor(v) { return v === "controls" || v === "themes" || v === "wallpapers" || v === "apps" || v === "power" }
+  function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   FileView {
     path: root.home + "/.local/state/omarchy/current/theme.name"
@@ -298,6 +302,9 @@ Item {
 
   IpcHandler {
     target: "guilhermerisu.island"
+    // Open or close any view by name (see views/Views.qml).
+    function show(name: string): string { return root.toggleView(name) }
+    // Shortcuts kept for the menu entries and keybindings that use them.
     function toggle(): string { return root.toggleView("controls") }
     function themes(): string { return root.toggleView("themes") }
     function wallpapers(): string { return root.toggleView("wallpapers") }
@@ -337,7 +344,7 @@ Item {
         // Only the switchers type; everything else stays click-only.
         // The switchers, launcher, power menu, and control center (Esc) take
         // the keyboard while open; the resting island stays click-only.
-        WlrLayershell.keyboardFocus: root.pickerOpen || root.view === "controls"
+        WlrLayershell.keyboardFocus: island.activeSurface && island.activeSurface.wantsKeyboard
           ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         mask: Region { item: island }
 
@@ -366,21 +373,15 @@ Item {
           id: island
           x: (parent.width - width) / 2
           y: 8
-          readonly property Item picker: root.view === "themes" ? themeSwitcher
-            : root.view === "wallpapers" ? wallpaperSwitcher : null
-          width: root.view === "apps" ? 600
-            : root.view === "power" ? powerMenu.implicitWidth + 36
-            : picker ? 820
-            : root.view === "controls" ? 470
+          // The open view, if any; it sizes the island (see Surface.qml).
+          readonly property Item activeSurface: views.surfaceFor(root.view)
+          width: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
             : root.volumePill ? 240
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : 100
-          height: root.view === "apps" ? appLauncher.implicitHeight + 32
-            : root.view === "power" ? powerMenu.implicitHeight + 36
-            : picker ? picker.implicitHeight + 40
-            : root.view === "controls" ? Math.min(controlCenter.implicitHeight + 32, 780)
+          height: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
             : root.volumePill ? 56
             : root.view === "rest" ? 40 : 52
@@ -430,55 +431,7 @@ Item {
 
           IslandLabel { host: root; anchors.centerIn: parent }
 
-          ThemeSwitcher {
-            id: themeSwitcher
-            host: root
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 20
-          }
-
-          AppLauncher {
-            id: appLauncher
-            host: root
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 16
-          }
-
-          WallpaperSwitcher {
-            id: wallpaperSwitcher
-            host: root
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 20
-          }
-
-          PowerMenu {
-            id: powerMenu
-            host: root
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 18
-          }
-
-          ControlCenter {
-            id: controlCenter
-            host: root
-            active: root.view === "controls"
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 16
-            visible: root.view === "controls" || opacity > 0.01
-            enabled: root.view === "controls" && root.surfaceContentReady
-            opacity: root.view === "controls" && root.surfaceContentReady ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: (root.surfaceContentReady ? 190 : 110) * root.motionScale; easing.type: Easing.InOutQuad } }
-          }
+          Views { id: views; host: root; anchors.fill: parent }
         }
       }
     }

@@ -7,15 +7,16 @@ import Quickshell.Io
 // the edges. Keyboard: type to filter, ←/→ (or Tab, or the wheel) to move,
 // Enter to apply, Esc to close. Clicking the selected card applies it.
 //
-// A switcher provides `viewName` (the island view that shows it), `items`
-// ([{ key, name, … }], filtered by name), `currentKey` (the active item),
+// A switcher provides `items` ([{ key, name, … }], filtered by name),
+// `currentKey` (the active item),
 // `applyCommand` (entry -> argv), and a `card` component whose root declares
 // `property var entry`. The picker draws the selection outline and the
 // active-item dot over each card, runs the command, and closes.
 Item {
   id: picker
   required property var host
-  property string viewName: ""
+  // Set by the Surface that shows this picker.
+  property bool active: false
   property var items: []
   property string currentKey: ""
   property var applyCommand: null
@@ -37,17 +38,11 @@ Item {
   // Emitted after the apply command finishes, before the picker closes.
   signal applied(var entry)
 
-  readonly property bool active: viewName !== "" && host.view === viewName
-  visible: active || opacity > 0.01
-  enabled: active
-  opacity: active && host.surfaceContentReady ? 1 : 0
-  Behavior on opacity { NumberAnimation { duration: (picker.host.surfaceContentReady ? 190 : 110) * picker.host.motionScale; easing.type: Easing.InOutQuad } }
-
-  implicitHeight: header.height + 14 + carousel.height
+  implicitHeight: search.height + 14 + carousel.height
 
   function close() { if (active) host.view = "rest" }
 
-  property string query: ""
+  readonly property string query: search.text
   readonly property var filtered: {
     var q = query.trim().toLowerCase().replace(/\s+/g, "-")
     if (!q) return items
@@ -57,9 +52,9 @@ Item {
 
   onActiveChanged: {
     if (!active) return
-    search.text = ""
+    search.clear()
     selectCurrent()
-    Qt.callLater(function() { search.forceActiveFocus() })
+    Qt.callLater(function() { search.focusInput() })
   }
   // Typing jumps to the first match.
   onQueryChanged: jumpTo(0)
@@ -148,55 +143,22 @@ Item {
 
   // ---------- Search ----------
 
-  Item {
-    id: header
+  SearchField {
+    id: search
+    host: picker.host
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    height: 30
-
-    Text {
-      id: searchIcon
-      anchors.left: parent.left
-      anchors.leftMargin: 4
-      anchors.verticalCenter: parent.verticalCenter
-      text: "󰍉"
-      color: picker.host.colorMuted
-      font.family: picker.host.fontFamily
-      font.pixelSize: 16
-    }
-    TextInput {
-      id: search
-      anchors.left: searchIcon.right
-      anchors.leftMargin: 10
-      anchors.right: parent.right
-      anchors.rightMargin: 12
-      anchors.verticalCenter: parent.verticalCenter
-      color: picker.host.colorText
-      selectionColor: picker.host.withAlpha(picker.host.colorAccent, 0.4)
-      selectedTextColor: picker.host.colorText
-      font.family: "Adwaita Sans"
-      font.pixelSize: 14
-      clip: true
-      onTextChanged: picker.query = text
-      Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
-          picker.move(1); event.accepted = true
-        } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
-          picker.move(-1); event.accepted = true
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-          picker.apply(); event.accepted = true
-        } else if (event.key === Qt.Key_Escape) {
-          picker.close(); event.accepted = true
-        }
-      }
-      Text {
-        anchors.fill: parent
-        verticalAlignment: Text.AlignVCenter
-        visible: search.text === ""
-        text: picker.placeholder
-        color: picker.host.colorMuted
-        font: search.font
+    placeholder: picker.placeholder
+    onKeyPressed: function(event) {
+      if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
+        picker.move(1); event.accepted = true
+      } else if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
+        picker.move(-1); event.accepted = true
+      } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+        picker.apply(); event.accepted = true
+      } else if (event.key === Qt.Key_Escape) {
+        picker.close(); event.accepted = true
       }
     }
   }
@@ -207,7 +169,7 @@ Item {
     id: carousel
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.top: header.bottom
+    anchors.top: search.bottom
     anchors.topMargin: 14
     height: Math.ceil(picker.cardHeight * picker.selectedScale + 2 * picker.ringReach) + 4
     leftMargin: picker.pad
@@ -298,7 +260,7 @@ Item {
           onClicked: {
             if (slot.isSelected) picker.apply()
             else carousel.currentIndex = slot.index
-            search.forceActiveFocus()
+            search.focusInput()
           }
         }
       }

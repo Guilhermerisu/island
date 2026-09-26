@@ -3,6 +3,7 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
+import "../../components"
 
 // Wallpaper picker for the current theme: the images in the theme's
 // backgrounds/ folder plus ~/.config/omarchy/backgrounds/<theme>/, the same
@@ -10,7 +11,6 @@ import Quickshell.Widgets
 // omarchy-theme-bg-set.
 Picker {
   id: ws
-  viewName: "wallpapers"
   cardHeight: 110
   placeholder: "Search wallpapers…"
   emptyText: "No wallpapers match"

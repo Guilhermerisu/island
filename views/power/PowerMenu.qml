@@ -10,11 +10,8 @@ Item {
   id: power
   required property var host
 
-  readonly property bool active: host.view === "power"
-  visible: active || opacity > 0.01
-  enabled: active
-  opacity: active && host.surfaceContentReady ? 1 : 0
-  Behavior on opacity { NumberAnimation { duration: (power.host.surfaceContentReady ? 190 : 110) * power.host.motionScale; easing.type: Easing.InOutQuad } }
+  // Set by the Surface that shows this menu.
+  property bool active: false
 
   readonly property int tileWidth: 116
   readonly property int tileHeight: 92
