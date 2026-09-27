@@ -32,12 +32,12 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
 
 ## Screenshots
 
-### The pill
+### The island
 
 <table>
   <tr>
-    <td width="50%" align="center"><strong>Now playing</strong><br><img src="assets/media.png" alt="Album art and sound wave on the pill" width="100%"></td>
-    <td width="50%" align="center"><strong>Copied</strong><br><img src="assets/clipboard-copied.png" alt="Copied text on the pill" width="100%"></td>
+    <td width="50%" align="center"><strong>Island</strong><br><img src="assets/island.png" alt="The resting island with album art and a sound wave" width="100%"></td>
+    <td width="50%" align="center"><strong>Now playing</strong><br><img src="assets/media.png" alt="Now playing player with controls" width="100%"></td>
   </tr>
 </table>
 
@@ -51,28 +51,27 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
   </tr>
 </table>
 
-### Live activities
+### Personalization
 
 <table>
   <tr>
-    <td width="50%" align="center"><strong>Downloading</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
-    <td width="50%" align="center"><strong>Downloaded</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
+    <td width="50%" align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme switcher" width="100%"></td>
+    <td width="50%" align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper switcher" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><strong>Updating</strong><br><img src="assets/update.png" alt="System update progress" width="100%"></td>
-    <td align="center"><strong>Updated</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
+    <td colspan="2" align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="50%"></td>
   </tr>
 </table>
-
-### Launcher and Ask AI
+### Launcher
 
 <table>
   <tr>
     <td width="50%" align="center"><strong>App launcher</strong><br><img src="assets/launcher.png" alt="App launcher" width="100%"></td>
-    <td width="50%" align="center"><strong>Ask AI</strong><br><img src="assets/launcher-ask.png" alt="Launcher with a question for the AI" width="100%"></td>
+    <td width="50%" align="center"><strong>Omarchy menu</strong><br><img src="assets/menu.png" alt="Omarchy menu" width="100%"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><strong>Answer</strong><br><img src="assets/ai-answer.png" alt="The AI's answer in the island" width="50%"></td>
+    <td align="center"><strong>Ask AI</strong><br><img src="assets/launcher-ask.png" alt="Launcher with a question for the AI" width="100%"></td>
+    <td align="center"><strong>Answer</strong><br><img src="assets/ai-answer.png" alt="The AI's answer in the island" width="100%"></td>
   </tr>
 </table>
 
@@ -88,16 +87,14 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
   </tr>
 </table>
 
-### Menus and personalization
+
+### Live activities
 
 <table>
   <tr>
-    <td width="50%" align="center"><strong>Omarchy menu</strong><br><img src="assets/menu.png" alt="Omarchy menu" width="100%"></td>
-    <td width="50%" align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme switcher" width="100%"></td>
-    <td align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper switcher" width="100%"></td>
+    <td width="33%" align="center"><strong>Downloading</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
+    <td width="33%" align="center"><strong>Downloaded</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
+    <td width="33%" align="center"><strong>Updated</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
   </tr>
 </table>
 
