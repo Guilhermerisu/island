@@ -109,7 +109,7 @@ omarchy bar use guilhermerisu.island
 ```
 
 On first launch, click the amber **Set up notifications** pill. It installs
-Island's notification companion, connects supported Omarchy menu entries, and
+Island's notification companion, connects supported Omarchy menu entries
 
 ## Usage
 
