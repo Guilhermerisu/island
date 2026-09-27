@@ -8,102 +8,17 @@
 
 All Omarchy's menus rewritten as one fluid island.
 
-[Install](#install) · [Features](#features) · [Uninstall](#uninstall) · [Controls](#controls)
+[Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [Usage](#usage) · [Uninstall](#uninstall)
 
 </div>
-
-<p align="center"><sub>Island uses your Omarchy theme colors.</sub></p>
-
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <strong>Now playing</strong><br>
-      Album art, an animated sound wave, playback controls, and seeking.
-    </td>
-    <td width="50%" align="center">
-      <strong>Control center</strong><br>
-      Audio, network, Bluetooth, Focus, Night Light, and recent notifications.
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <strong>Find things</strong><br>
-      Apps, emoji, keybindings, clipboard history, and Omarchy menus.
-    </td>
-    <td align="center">
-      <strong>Make it yours</strong><br>
-      Browse themes and wallpapers from the island.
-    </td>
-  </tr>
-</table>
-
-## Screenshots
-
-### Launcher and tools
-
-<table>
-  <tr>
-    <td width="50%" align="center"><strong>App launcher</strong><br><img src="assets/launcher.png" alt="App launcher" width="100%"></td>
-    <td width="50%" align="center"><strong>Ask AI</strong><br><img src="assets/launcher-ask.png" alt="Launcher with Ask AI" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>AI answer</strong><br><img src="assets/ai-answer.png" alt="AI answer in the island" width="100%"></td>
-    <td align="center"><strong>Emoji picker</strong><br><img src="assets/emoji.png" alt="Emoji picker" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Keybindings</strong><br><img src="assets/keybinds.png" alt="Keybinding search" width="100%"></td>
-    <td align="center"><strong>Clipboard history</strong><br><img src="assets/clipboard.png" alt="Clipboard history" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Clipboard copied</strong><br><img src="assets/clipboard-copied.png" alt="Clipboard copied notification" width="100%"></td>
-    <td></td>
-  </tr>
-</table>
-
-### Player and menus
-
-<table>
-  <tr>
-    <td width="50%" align="center"><strong>Now playing</strong><br><img src="assets/media.png" alt="Now playing controls" width="100%"></td>
-    <td width="50%" align="center"><strong>Omarchy menu</strong><br><img src="assets/menu.png" alt="Omarchy menu" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="100%"></td>
-    <td align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme browser" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper browser" width="100%"></td>
-    <td></td>
-  </tr>
-</table>
-
-### Notifications and live activities
-
-<table>
-  <tr>
-    <td width="50%" align="center"><strong>Notification</strong><br><img src="assets/notification.png" alt="Notification preview" width="100%"></td>
-    <td width="50%" align="center"><strong>Claude notification</strong><br><img src="assets/notification-claude.png" alt="Claude notification" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Codex notification</strong><br><img src="assets/notification-codex.png" alt="Codex notification" width="100%"></td>
-    <td align="center"><strong>Update progress</strong><br><img src="assets/update.png" alt="System update progress" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Update complete</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
-    <td align="center"><strong>Download progress</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Download complete</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
-    <td></td>
-  </tr>
-</table>
 
 ## Features
 
 - **At rest:** a clock, or album art and an animated sound wave while music plays.
-- **Live activities:** browser downloads and system updates (pacman, yay, paru,
-  and Omarchy updates) show their progress on the pill.
-- **Live feedback:** notification previews and animated volume and mute feedback.
+- **Live activities:** browser downloads, system updates (pacman, yay, paru, and
+  Omarchy updates), and anything you copy show up on the pill.
+- **Live feedback:** notification previews and animated volume and mute feedback,
+  with Claude Code and Codex notifications getting their own icons.
 - **Ask AI:** type a question in the launcher and Claude or Codex answers right in
   the island, Siri-style, using the command-line tool you're already signed in to.
 - **Expanded views:** a control center, player, app launcher, clipboard history,
@@ -111,10 +26,80 @@ All Omarchy's menus rewritten as one fluid island.
   power menu.
 - **Theme aware:** text and accent colors follow your current Omarchy theme.
 - **Settings:** a pane in the control center for animation speed, a MacBook
-  notch style, the clock, live activities, and the AI; saved to
-  `~/.config/omarchy/island.json`.
+  notch style, the clock, live activities, and the AI.
 
 Island runs inside Omarchy's Quickshell process and reserves no screen space.
+
+## Screenshots
+
+### The pill
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Now playing</strong><br><img src="assets/media.png" alt="Album art and sound wave on the pill" width="100%"></td>
+    <td width="50%" align="center"><strong>Copied</strong><br><img src="assets/clipboard-copied.png" alt="Copied text on the pill" width="100%"></td>
+  </tr>
+</table>
+
+### Notifications
+
+<table>
+  <tr>
+    <td width="33%" align="center"><strong>Notification</strong><br><img src="assets/notification.png" alt="Notification preview" width="100%"></td>
+    <td width="33%" align="center"><strong>Claude Code</strong><br><img src="assets/notification-claude.png" alt="Claude Code notification" width="100%"></td>
+    <td width="33%" align="center"><strong>Codex</strong><br><img src="assets/notification-codex.png" alt="Codex notification" width="100%"></td>
+  </tr>
+</table>
+
+### Live activities
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Downloading</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
+    <td width="50%" align="center"><strong>Downloaded</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Updating</strong><br><img src="assets/update.png" alt="System update progress" width="100%"></td>
+    <td align="center"><strong>Updated</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
+  </tr>
+</table>
+
+### Launcher and Ask AI
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>App launcher</strong><br><img src="assets/launcher.png" alt="App launcher" width="100%"></td>
+    <td width="50%" align="center"><strong>Ask AI</strong><br><img src="assets/launcher-ask.png" alt="Launcher with a question for the AI" width="100%"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><strong>Answer</strong><br><img src="assets/ai-answer.png" alt="The AI's answer in the island" width="50%"></td>
+  </tr>
+</table>
+
+### Search
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Emoji</strong><br><img src="assets/emoji.png" alt="Emoji picker" width="100%"></td>
+    <td width="50%" align="center"><strong>Keybindings</strong><br><img src="assets/keybinds.png" alt="Keybinding search" width="100%"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><strong>Clipboard history</strong><br><img src="assets/clipboard.png" alt="Clipboard history with an image preview" width="50%"></td>
+  </tr>
+</table>
+
+### Menus and personalization
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Omarchy menu</strong><br><img src="assets/menu.png" alt="Omarchy menu" width="100%"></td>
+    <td width="50%" align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme switcher" width="100%"></td>
+    <td align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper switcher" width="100%"></td>
+  </tr>
+</table>
 
 ## Install
 
@@ -128,6 +113,35 @@ omarchy bar use guilhermerisu.island
 On first launch, click the amber **Set up notifications** pill. It installs
 Island's notification companion, connects supported Omarchy menu entries, and
 restarts the shell.
+
+## Usage
+
+### Controls
+
+| Action | Result |
+| --- | --- |
+| Click the clock | Open the control center. |
+| Click album art or sound wave | Open the player. |
+| Click a notification | Dismiss it. |
+| Click a download or update | Open the file (or your Downloads folder). |
+| Click the copied pill | Open the clipboard history. |
+| Press Esc | Close the open view. |
+| Super + Shift + Space | Hide or show the pill (notifications and views still appear). |
+
+### Settings
+
+Open the control center and click the gear. Changes apply right away and are
+saved to `~/.config/omarchy/island.json`, which you can also edit by hand.
+
+### Ask AI
+
+Questions typed in the launcher are answered by the AI chosen under **Ask With**
+in Settings, through its command-line tool:
+
+- **Claude:** [Claude Code](https://claude.com/claude-code), signed in (`claude`).
+- **Codex:** [Codex CLI](https://github.com/openai/codex), signed in (`codex`).
+
+Choose **None** to turn asking and all AI features off.
 
 ## Uninstall
 
@@ -155,12 +169,6 @@ restarts the shell.
    omarchy plugin remove guilhermerisu.island
    ```
 
+## License
 
-## Controls
-
-| Action | Result |
-| --- | --- |
-| Click the clock | Open the control center. |
-| Click album art or sound wave | Open the player. |
-| Click a download or update | Open the file (or your Downloads folder). |
-| Press Esc | Close the open view. |
+[MIT](LICENSE)
