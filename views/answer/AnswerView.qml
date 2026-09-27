@@ -27,9 +27,9 @@ Item {
   // configured, the Omarchy commands for common jobs, and the live list of
   // key bindings (loaded once, like the Keybindings view does).
   readonly property string systemPrompt: "You answer questions typed into the search bar of Omarchy, "
-    + "an opinionated Arch Linux desktop setup built on the Hyprland tiling window manager (by DHH). "
     + "Be brief: give the direct answer first, then at most a few short sentences or a short list. "
-    + "Use simple Markdown (bold, lists, inline code) only when it helps. For questions about this "
+    + "Reply in plain text like Siri: no Markdown, no bold, no headings, no code formatting; "
+    + "write key combinations as Super+Alt+Space. For questions about this "
     + "desktop, prefer Omarchy's own tools and the facts below. Only name commands, menu entries, or "
     + "key bindings that appear below or that you are sure exist; if you are unsure, say so.\n\n"
     + "Facts about this install:\n"
@@ -159,15 +159,20 @@ Item {
       Text {
         id: body
         width: scroller.width
-        text: answer.error || answer.text
-        textFormat: answer.error ? Text.PlainText : Text.MarkdownText
+        // Plain text, like Siri; strip any Markdown the model slips in, and
+        // Codex's web-search citation markers (wrapped in private-use
+        // characters, e.g. "citeturn2search1").
+        text: answer.error || answer.text.replace(/[^]*/g, "").replace(/[-]/g, "")
+          .replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1")
+          .replace(/`([^`]+)`/g, "$1").replace(/^#+\s*/gm, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+          .replace(/[ \t]+$/gm, "").trim()
+        textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: answer.error ? answer.host.colorUrgent : "#ffffff"
         font.family: "Adwaita Sans"
         font.pixelSize: 21
         font.letterSpacing: -0.3
         lineHeight: 1.1
-        onLinkActivated: function(link) { Qt.openUrlExternally(link) }
       }
     }
   }

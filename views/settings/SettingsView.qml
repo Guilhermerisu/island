@@ -221,115 +221,132 @@ ColumnLayout {
 
   // ---------- Groups ----------
 
-  SettingsGroup {
-    title: "Motion"
-    SettingsRow {
-      label: "Animation Speed"
-      SettingsSegments {
-        options: [{ label: "Fast", value: 1 }, { label: "Normal", value: 1.5 }, { label: "Relaxed", value: 2 }]
-        value: settingsView.settings.motionScale
-        onPicked: function(v) { settingsView.settings.motionScale = v }
-      }
-    }
-    SettingsRow {
-      label: "Hover Lift"
-      detail: "The clock pill lifts slightly under the pointer"
-      last: true
-      SettingsSwitch {
-        checked: settingsView.settings.hoverLift
-        onToggled: function(on) { settingsView.settings.hoverLift = on }
-      }
-    }
-  }
+  // The groups scroll under the navigation bar once they outgrow the
+  // island's window (which is 800 px tall).
+  Flickable {
+    id: scroller
+    Layout.fillWidth: true
+    Layout.preferredHeight: Math.min(groups.implicitHeight, 680)
+    contentHeight: groups.implicitHeight
+    clip: true
+    boundsBehavior: Flickable.StopAtBounds
 
-  SettingsGroup {
-    title: "Pill"
-    SettingsRow {
-      label: "Notch Style"
-      detail: "Attach the island to the top edge, like a MacBook notch"
-      SettingsSwitch {
-        checked: settingsView.settings.notch
-        onToggled: function(on) { settingsView.settings.notch = on }
-      }
-    }
-    SettingsRow {
-      label: "24-Hour Clock"
-      SettingsSwitch {
-        checked: settingsView.settings.clock24h
-        onToggled: function(on) { settingsView.settings.clock24h = on }
-      }
-    }
-    SettingsRow {
-      label: "Now Playing"
-      detail: "Show the cover and sound wave while media plays"
-      SettingsSwitch {
-        checked: settingsView.settings.mediaPill
-        onToggled: function(on) { settingsView.settings.mediaPill = on }
-      }
-    }
-    SettingsRow {
-      label: "Volume HUD"
-      detail: "Show the level when the volume changes"
-      last: true
-      SettingsSwitch {
-        checked: settingsView.settings.volumeHud
-        onToggled: function(on) { settingsView.settings.volumeHud = on }
-      }
-    }
-  }
+    ColumnLayout {
+      id: groups
+      width: scroller.width
+      spacing: 8
 
-  SettingsGroup {
-    title: "Search"
-    SettingsRow {
-      label: "Ask With"
-      detail: "Answers launcher questions in the island"
-      last: true
-      SettingsSegments {
-        options: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "chatgpt" }, { label: "None", value: "none" }]
-        value: settingsView.settings.askAi
-        onPicked: function(v) { settingsView.settings.askAi = v }
+      SettingsGroup {
+        title: "Motion"
+        SettingsRow {
+          label: "Animation Speed"
+          SettingsSegments {
+            options: [{ label: "Fast", value: 1 }, { label: "Normal", value: 1.5 }, { label: "Relaxed", value: 2 }]
+            value: settingsView.settings.motionScale
+            onPicked: function(v) { settingsView.settings.motionScale = v }
+          }
+        }
+        SettingsRow {
+          label: "Hover Lift"
+          detail: "The clock pill lifts slightly under the pointer"
+          last: true
+          SettingsSwitch {
+            checked: settingsView.settings.hoverLift
+            onToggled: function(on) { settingsView.settings.hoverLift = on }
+          }
+        }
       }
-    }
-  }
 
-  SettingsGroup {
-    title: "Live Activities"
-    SettingsRow {
-      label: "Clipboard"
-      detail: "Show what you copied for a moment"
-      SettingsSwitch {
-        checked: settingsView.settings.clipboard
-        onToggled: function(on) { settingsView.settings.clipboard = on }
+      SettingsGroup {
+        title: "Pill"
+        SettingsRow {
+          label: "Notch Style"
+          detail: "Attach the island to the top edge, like a MacBook notch"
+          SettingsSwitch {
+            checked: settingsView.settings.notch
+            onToggled: function(on) { settingsView.settings.notch = on }
+          }
+        }
+        SettingsRow {
+          label: "24-Hour Clock"
+          SettingsSwitch {
+            checked: settingsView.settings.clock24h
+            onToggled: function(on) { settingsView.settings.clock24h = on }
+          }
+        }
+        SettingsRow {
+          label: "Now Playing"
+          detail: "Show the cover and sound wave while media plays"
+          SettingsSwitch {
+            checked: settingsView.settings.mediaPill
+            onToggled: function(on) { settingsView.settings.mediaPill = on }
+          }
+        }
+        SettingsRow {
+          label: "Volume HUD"
+          detail: "Show the level when the volume changes"
+          last: true
+          SettingsSwitch {
+            checked: settingsView.settings.volumeHud
+            onToggled: function(on) { settingsView.settings.volumeHud = on }
+          }
+        }
       }
-    }
-    SettingsRow {
-      label: "Downloads"
-      detail: "Show browser downloads in progress on the pill"
-      SettingsSwitch {
-        checked: settingsView.settings.downloads
-        onToggled: function(on) { settingsView.settings.downloads = on }
-      }
-    }
-    SettingsRow {
-      label: "System Updates"
-      detail: "Show pacman, yay, paru, and Omarchy updates on the pill"
-      last: true
-      SettingsSwitch {
-        checked: settingsView.settings.systemUpdates
-        onToggled: function(on) { settingsView.settings.systemUpdates = on }
-      }
-    }
-  }
 
-  SettingsGroup {
-    title: "Notifications"
-    SettingsRow {
-      label: "Banner Duration"
-      last: true
-      SettingsSegments {
-        options: [{ label: "3 s", value: 3 }, { label: "5 s", value: 5 }, { label: "8 s", value: 8 }]
-        value: settingsView.settings.bannerSeconds
-        onPicked: function(v) { settingsView.settings.bannerSeconds = v }
+      SettingsGroup {
+        title: "Search"
+        SettingsRow {
+          label: "Ask With"
+          detail: "Answers launcher questions in the island"
+          last: true
+          SettingsSegments {
+            options: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "chatgpt" }, { label: "None", value: "none" }]
+            value: settingsView.settings.askAi
+            onPicked: function(v) { settingsView.settings.askAi = v }
+          }
+        }
+      }
+
+      SettingsGroup {
+        title: "Live Activities"
+        SettingsRow {
+          label: "Clipboard"
+          detail: "Show what you copied for a moment"
+          SettingsSwitch {
+            checked: settingsView.settings.clipboard
+            onToggled: function(on) { settingsView.settings.clipboard = on }
+          }
+        }
+        SettingsRow {
+          label: "Downloads"
+          detail: "Show browser downloads in progress on the pill"
+          SettingsSwitch {
+            checked: settingsView.settings.downloads
+            onToggled: function(on) { settingsView.settings.downloads = on }
+          }
+        }
+        SettingsRow {
+          label: "System Updates"
+          detail: "Show pacman, yay, paru, and Omarchy updates on the pill"
+          last: true
+          SettingsSwitch {
+            checked: settingsView.settings.systemUpdates
+            onToggled: function(on) { settingsView.settings.systemUpdates = on }
+          }
+        }
+      }
+
+      SettingsGroup {
+        title: "Notifications"
+        SettingsRow {
+          label: "Banner Duration"
+          last: true
+          SettingsSegments {
+            options: [{ label: "3 s", value: 3 }, { label: "5 s", value: 5 }, { label: "8 s", value: 8 }]
+            value: settingsView.settings.bannerSeconds
+            onPicked: function(v) { settingsView.settings.bannerSeconds = v }
+          }
+        }
       }
     }
   }

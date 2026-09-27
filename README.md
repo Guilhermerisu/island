@@ -2,7 +2,7 @@
 
 # Island
 
-<img src="assets/island-preview.svg" alt="Illustration of Island's resting, music, and control center states" width="100%">
+<img src="assets/main.png" alt="Island running on the desktop" width="100%">
 
 ### A dynamic island for Omarchy
 
@@ -12,7 +12,7 @@ All Omarchy's menus rewritten as one fluid island.
 
 </div>
 
-<p align="center"><sub>The preview is an illustration. Island uses your Omarchy theme colors.</sub></p>
+<p align="center"><sub>Island uses your Omarchy theme colors.</sub></p>
 
 <table>
   <tr>
@@ -34,6 +34,67 @@ All Omarchy's menus rewritten as one fluid island.
       <strong>Make it yours</strong><br>
       Browse themes and wallpapers from the island.
     </td>
+  </tr>
+</table>
+
+## Screenshots
+
+### Launcher and tools
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>App launcher</strong><br><img src="assets/launcher.png" alt="App launcher" width="100%"></td>
+    <td width="50%" align="center"><strong>Ask AI</strong><br><img src="assets/launcher-ask.png" alt="Launcher with Ask AI" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>AI answer</strong><br><img src="assets/ai-answer.png" alt="AI answer in the island" width="100%"></td>
+    <td align="center"><strong>Emoji picker</strong><br><img src="assets/emoji.png" alt="Emoji picker" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Keybindings</strong><br><img src="assets/keybinds.png" alt="Keybinding search" width="100%"></td>
+    <td align="center"><strong>Clipboard history</strong><br><img src="assets/clipboard.png" alt="Clipboard history" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Clipboard copied</strong><br><img src="assets/clipboard-copied.png" alt="Clipboard copied notification" width="100%"></td>
+    <td></td>
+  </tr>
+</table>
+
+### Player and menus
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Now playing</strong><br><img src="assets/media.png" alt="Now playing controls" width="100%"></td>
+    <td width="50%" align="center"><strong>Omarchy menu</strong><br><img src="assets/menu.png" alt="Omarchy menu" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="100%"></td>
+    <td align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme browser" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper browser" width="100%"></td>
+    <td></td>
+  </tr>
+</table>
+
+### Notifications and live activities
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Notification</strong><br><img src="assets/notification.png" alt="Notification preview" width="100%"></td>
+    <td width="50%" align="center"><strong>Claude notification</strong><br><img src="assets/notification-claude.png" alt="Claude notification" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Codex notification</strong><br><img src="assets/notification-codex.png" alt="Codex notification" width="100%"></td>
+    <td align="center"><strong>Update progress</strong><br><img src="assets/update.png" alt="System update progress" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Update complete</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
+    <td align="center"><strong>Download progress</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Download complete</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
+    <td></td>
   </tr>
 </table>
 
