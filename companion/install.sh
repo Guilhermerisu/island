@@ -87,13 +87,16 @@ backed_up=false
 for spec in "${menu_entries[@]}"; do
   id=${spec%%|*} line=${spec#*|}
   grep -q "\"$id\"" "$menu" && continue
-  if ! $backed_up; then cp "$menu" "$menu.bak.$(date +%s)"; backed_up=true; fi
+  if ! $backed_up; then menu_backup="$menu.bak.$(date +%s)"; cp "$menu" "$menu_backup"; backed_up=true; fi
   tmp=$(mktemp "$menu.XXXXXX")
-  # Insert before the file's final closing brace.
+  # Insert before the file's final closing brace, adding a comma to the entry
+  # above it when that entry doesn't already end in one.
   awk -v entry="$line" '
     { lines[NR] = $0 }
     /^[[:space:]]*}[[:space:]]*$/ { last = NR }
     END {
+      for (i = last - 1; i >= 1; i--) if (lines[i] !~ /^[[:space:]]*(\/\/.*)?$/) break
+      if (i >= 1 && lines[i] !~ /[{,][[:space:]]*$/) sub(/[[:space:]]*$/, ",", lines[i])
       for (i = 1; i <= NR; i++) {
         if (i == last) print entry
         print lines[i]
@@ -101,8 +104,16 @@ for spec in "${menu_entries[@]}"; do
     }' "$menu" >"$tmp"
   mv "$tmp" "$menu"
 done
+# Omarchy drops every override in a menu file it can't parse (MenuModel.js
+# strips whole-line // comments and trailing commas, then parses JSON), so
+# put the original back rather than leave a broken file.
+if $backed_up && ! perl -0pe 's#^\s*//[^\n]*(\n|$)##gm; s#,(\s*[}\]])#$1#g' "$menu" | jq -e 'type == "object"' >/dev/null 2>&1; then
+  cp "$menu_backup" "$menu"
+  menu_restored=true
+  echo "install.sh: couldn't add the Island entries to $menu; restored it from $menu_backup" >&2
+fi
 omarchy-menu refresh >/dev/null 2>&1 || true
 
 # Detached: this script usually runs from inside the shell being restarted.
 setsid -f omarchy restart shell >/dev/null 2>&1 </dev/null
-echo installed
+${menu_restored:-false} && echo "installed, but the Omarchy menu entries weren't added" || echo installed
