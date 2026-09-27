@@ -295,6 +295,14 @@ ColumnLayout {
   SettingsGroup {
     title: "Live Activities"
     SettingsRow {
+      label: "Clipboard"
+      detail: "Show what you copied for a moment"
+      SettingsSwitch {
+        checked: settingsView.settings.clipboard
+        onToggled: function(on) { settingsView.settings.clipboard = on }
+      }
+    }
+    SettingsRow {
       label: "Downloads"
       detail: "Show browser downloads in progress on the pill"
       SettingsSwitch {

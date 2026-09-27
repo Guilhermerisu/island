@@ -8,6 +8,7 @@ import Quickshell.Wayland
 import qs.Commons
 import "components"
 import "views"
+import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" as ClipboardHistory
 
 Item {
   id: root
@@ -118,6 +119,7 @@ Item {
       property int bannerSeconds: 5
       property bool notch: false
       property bool downloads: true
+      property bool clipboard: true
       property bool systemUpdates: true
       property string askAi: "chatgpt"
     }
@@ -130,6 +132,30 @@ Item {
   property string view: "rest"
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
+  readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
+
+  property var lastClip: null
+  property string lastClipKey: ""
+  property bool clipSeeded: false
+  property double clipboardQuietUntil: 0
+  FileView {
+    path: root.home + "/.local/state/omarchy/clipboard-history.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.clipboardChanged(text())
+  }
+  function clipboardChanged(raw) {
+    var history = ClipboardHistory.parseHistory(raw)
+    var top = history.length ? history[0] : null
+    var key = top ? ClipboardHistory.entryKey(top) : ""
+    var fresh = clipSeeded && key !== "" && key !== lastClipKey
+    lastClipKey = key
+    clipSeeded = true
+    if (!fresh || !settings.clipboard || Date.now() < clipboardQuietUntil) return
+    lastClip = top
+    showFeedback("", 2200, "clipboard")
+  }
 
   property bool surfaceContentReady: false
   property string feedback: ""
@@ -525,6 +551,7 @@ Item {
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
             : root.volumePill ? 240
+            : root.clipboardPill ? 320
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? 250
             : root.downloadDone ? 360
@@ -533,6 +560,7 @@ Item {
             : 100
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
+            : root.clipboardPill ? (root.settings.notch ? 40 : 44)
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? 56
@@ -568,6 +596,7 @@ Item {
             onClicked: function(mouse) {
               feedbackTimer.stop()
               if (root.notificationPill) root.dismissPillNotification()
+              else if (root.clipboardPill) root.view = "clipboard"
               else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
@@ -578,6 +607,8 @@ Item {
           NotificationPill { host: root; shape: island; anchors.fill: parent }
 
           VolumeSlider { host: root; shape: island; anchors.fill: parent }
+
+          ClipboardPill { host: root; anchors.fill: parent }
 
           MediaPill { host: root; anchors.fill: parent }
 
