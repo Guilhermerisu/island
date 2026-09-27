@@ -14,17 +14,46 @@ config="$HOME/.config/omarchy/shell.json"
 menu="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
 
 mkdir -p "$plugins_dir"
-staging=$(mktemp -d "$plugins_dir/.guilhermerisu.notifications.XXXXXX")
-cp -a "$source_dir/." "$staging/"
-rm -rf "$target_dir"
-mv "$staging" "$target_dir"
+if [[ -L $target_dir || ( -e $target_dir && ! -d $target_dir ) ]]; then
+  echo "Refusing to replace a non-directory companion: $target_dir" >&2
+  exit 1
+fi
+if [[ -e $target_dir/.git || -L $target_dir/.git ]]; then
+  echo "Refusing to replace a git-managed companion: $target_dir" >&2
+  exit 1
+fi
+
+if [[ ! -d $target_dir ]] || ! diff -rq "$source_dir" "$target_dir" >/dev/null 2>&1; then
+  staging=$(mktemp -d "$plugins_dir/.guilhermerisu.notifications.XXXXXX")
+  trap '[[ ! -d ${staging:-} ]] || rm -rf -- "$staging"' EXIT
+  cp -a "$source_dir/." "$staging/"
+  omarchy-plugin-validate "$staging"
+
+  backup=""
+  if [[ -d $target_dir ]]; then
+    base="$plugins_dir/.guilhermerisu.notifications.bak.$(date -u +%Y%m%d%H%M%S)"
+    backup="$base"
+    n=1
+    while [[ -e $backup || -L $backup ]]; do
+      backup="${base}-${n}"
+      n=$((n + 1))
+    done
+    mv -- "$target_dir" "$backup"
+  fi
+
+  if ! mv -- "$staging" "$target_dir"; then
+    [[ -z $backup ]] || mv -- "$backup" "$target_dir"
+    echo "Could not install notification companion; previous copy restored." >&2
+    exit 1
+  fi
+  staging=""
+  [[ -z $backup ]] || echo "Previous notification companion saved at $backup"
+fi
 
 [[ -f $config ]] || echo '{}' >"$config"
 cp "$config" "$config.bak.$(date +%s)"
 
 disable='["omarchy.notifications"]'
-# The OLED guard paints a full-width strip that is useless around the island.
-[[ -d $plugins_dir/oled.guard ]] && disable='["omarchy.notifications", "oled.guard"]'
 
 tmp=$(mktemp "$config.XXXXXX")
 jq --argjson disable "$disable" '

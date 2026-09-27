@@ -62,6 +62,7 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
     <td colspan="2" align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="50%"></td>
   </tr>
 </table>
+
 ### Launcher
 
 <table>
@@ -109,7 +110,6 @@ omarchy bar use guilhermerisu.island
 
 On first launch, click the amber **Set up notifications** pill. It installs
 Island's notification companion, connects supported Omarchy menu entries, and
-restarts the shell.
 
 ## Usage
 
@@ -142,29 +142,16 @@ Choose **None** to turn asking and all AI features off.
 
 ## Uninstall
 
-1. Switch back to the stock bar:
+```sh
+bash ~/.config/omarchy/plugins/guilhermerisu.island/companion/uninstall.sh
+```
 
-   ```sh
-   omarchy bar use omarchy.bar
-   ```
-
-2. In `~/.config/omarchy/shell.json`, remove `guilhermerisu.notifications`
-   from `plugins` and remove `omarchy.notifications` from `disabledPlugins`.
-   Remove `oled.guard` from `disabledPlugins` too if it was enabled before
-   Island was installed.
-   Compare with the `shell.json.bak.<timestamp>` backup the setup script made.
-3. In `~/.config/omarchy/extensions/omarchy-menu.jsonc`, remove the Island
-   overrides for `style.theme`, `style.background`, `apps`, `system`,
-   `trigger.emoji`, and `learn.keybindings` **only if their actions still point
-   to Island**. The setup script also made a timestamped backup of this file.
-   Restore any keybindings you changed manually.
-4. Restart the shell and remove both plugins:
-
-   ```sh
-   omarchy restart shell
-   omarchy plugin remove guilhermerisu.notifications
-   omarchy plugin remove guilhermerisu.island
-   ```
+It switches back to the stock bar, removes the notification companion (Omarchy's
+own notifications come back), undoes the `shell.json` and Omarchy menu changes
+the setup made, removes Island, and restarts the shell. Backups of both config
+files are kept next to them, and your settings stay in
+`~/.config/omarchy/island.json`. Add `--dry-run` to see what it would change
+first. Keybindings you pointed at Island yourself are listed, not changed.
 
 ## License
 
