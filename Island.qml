@@ -1,4 +1,5 @@
 import QtQuick
+import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
@@ -31,8 +32,8 @@ Item {
 
   property string askQuestion: ""
   readonly property var askProviders: ({
-    claude: { name: "Claude", cli: "claude", url: "https://claude.ai/new?q=", glyph: "\uec82", tile: "#d97757", ink: "#ffffff" },
-    chatgpt: { name: "ChatGPT", cli: "codex", url: "https://chatgpt.com/?q=", glyph: "\uec81", tile: "#f2f2f2", ink: "#000000" }
+    claude: { name: "Claude", cli: "claude", glyph: "\uec82", tile: "#d97757", ink: "#ffffff" },
+    chatgpt: { name: "Codex", cli: "codex", glyph: "\uec81", tile: "#f2f2f2", ink: "#000000" }
   })
   readonly property var askProvider: settings.askAi === "none" ? null : askProviders[settings.askAi] || askProviders.chatgpt
   function ask(question) {
@@ -143,7 +144,14 @@ Item {
   property var history: []
   property string lastNotificationKey: ""
   property bool initialized: false
-  property bool barHidden: false
+  readonly property bool barHidden: barOffFlag.count > 0
+  FolderListModel {
+    id: barOffFlag
+    folder: "file://" + root.home + "/.local/state/omarchy/toggles"
+    nameFilters: ["bar-off"]
+    showDirs: false
+    showHidden: true
+  }
   readonly property int barSize: 0
   readonly property string position: "top"
   readonly property string fontFamily: "monospace"
@@ -155,7 +163,6 @@ Item {
   readonly property color colorAccentText: contrastOn(Color.accent)
   readonly property color colorUrgent: Color.urgent
   readonly property color colorSurface: Qt.tint(colorBackground, withAlpha(colorText, 0.07))
-  readonly property color colorSurfaceHover: Qt.tint(colorBackground, withAlpha(colorText, 0.12))
 
   function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
   function luminance(x) { return 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b }
@@ -413,6 +420,10 @@ Item {
     function wallpapers(): string { return root.toggleView("wallpapers") }
     function apps(): string { return root.toggleView("apps") }
     function power(): string { return root.toggleView("power") }
+    function ask(question: string): string {
+      root.ask(question)
+      return root.view
+    }
     function companionStatus(): string { return root.companionStatus }
     function installCompanion(): string {
       root.installCompanion()
@@ -435,7 +446,7 @@ Item {
         id: window
         required property var modelData
         screen: modelData
-        visible: !root.barHidden && modelData.name === root.outputName
+        visible: modelData.name === root.outputName
         color: "transparent"
         surfaceFormat.opaque: false
         exclusionMode: ExclusionMode.Ignore
@@ -508,7 +519,7 @@ Item {
         Rectangle {
           id: island
           x: (parent.width - width) / 2
-          y: root.settings.notch ? 0 : 8
+          y: root.barHidden && root.view === "rest" ? -height - 12 : root.settings.notch ? 0 : 8
           Behavior on y { NumberAnimation { duration: 300 * root.motionScale; easing.type: Easing.OutCubic } }
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth

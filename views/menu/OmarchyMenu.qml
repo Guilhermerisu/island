@@ -64,7 +64,6 @@ ListPicker {
     var merged = MenuModel.mergeMenuSources(defaultItems, userItems)
     items_ = merged.items
     itemOrder = merged.itemOrder
-    providersLoaded = ({})
     evaluateGuards()
   }
 
@@ -117,7 +116,6 @@ ListPicker {
       actionFor: function(value) { return "omarchy-powerprofiles-set autodetect " + menu.shellQuote(value) }
     }
   })
-  property var providersLoaded: ({})
   Process {
     id: providerProc
     property string menuId: ""

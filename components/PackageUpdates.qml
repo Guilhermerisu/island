@@ -17,7 +17,6 @@ Item {
   property bool active: false
   // "Syncing", "Downloading", "Installing", "Building", "Finishing"
   property string phase: ""
-  property string current: ""
   property int count: 0
   property int removedCount: 0
   property real speed: 0
@@ -58,7 +57,6 @@ Item {
     active = true
     finishedTitle = ""
     phase = "Syncing"
-    current = ""
     count = 0
     removedCount = 0
     speed = 0
@@ -134,7 +132,7 @@ Item {
     lastRxAt = now
 
     var log = parts.length > 1 ? parts[1] : ""
-    var done = 0, removed = 0, last = "", completed = false, hooks = false, started = sawTransaction
+    var done = 0, removed = 0, completed = false, hooks = false, started = sawTransaction
     log.split("\n").forEach(function(line) {
       var m = line.match(/^\[([^\]]+)\] \[(\w+)\] (.*)$/)
       if (!m) return
@@ -146,19 +144,17 @@ Item {
       if (msg === "transaction started") { started = true; completed = false; hooks = false }
       else if (msg === "transaction completed") completed = true
       else if (/^running '.*\.hook'/.test(msg)) hooks = true
-      else if (pkg) { done++; last = pkg[2]; if (pkg[1] === "removed") removed++ }
+      else if (pkg) { done++; if (pkg[1] === "removed") removed++ }
     })
     sawTransaction = started
     count = done
     removedCount = removed
-    if (last) current = last
 
     phase = building && !locked ? "Building"
       : completed || hooks ? "Finishing"
       : started ? "Installing"
       : locked && speed > 20480 ? "Downloading"
       : "Syncing"
-    if (phase === "Building") current = building
 
     if (!locked && tools.length === 0 && !building) finish()
   }

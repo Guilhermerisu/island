@@ -22,7 +22,6 @@ Item {
   property string finishedName: ""
   property real finishedBytes: 0
   readonly property string finishedPath: finishedName ? folder + "/" + finishedName : ""
-  signal finished(string name)
 
   property var previous: ({})
   property var lastBytes: ({})
@@ -107,7 +106,6 @@ Item {
       finishedBytes = lastBytes[finishedName] || 0
       lastBytes = ({})
       finishedTimer.restart()
-      finished(finishedName)
     }
     if (vanished.length) Qt.callLater(poll)
   }

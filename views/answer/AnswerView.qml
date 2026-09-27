@@ -6,11 +6,11 @@ import "../../components"
 
 // Siri-style answers: a question typed in the launcher is sent to the chosen
 // AI through its command-line tool, signed in with your own account (Claude
-// Code's `claude -p`, or Codex's `codex exec` for ChatGPT). Like Siri in the
+// Code's `claude -p`, or `codex exec`). Like Siri in the
 // Dynamic Island, a compact pill with glowing dots while it thinks, then the
 // answer in large type as it arrives (Claude streams word by word; Codex
-// answers at once). Copy and Open (continue on the AI's site) appear on
-// hover. Esc closes (and stops a pending answer).
+// answers at once). Copy appears on hover. Esc closes (and stops a pending
+// answer).
 Item {
   id: answer
   required property var host
@@ -130,11 +130,6 @@ Item {
     helper.command = ["wl-copy", "--", text]
     helper.startDetached()
   }
-  function openOnSite() {
-    host.view = "rest"
-    helper.command = ["omarchy-launch-webapp", provider.url + encodeURIComponent(question)]
-    helper.startDetached()
-  }
 
   readonly property bool thinking: busy && !text && !error
   HoverHandler { id: hover }
@@ -177,13 +172,13 @@ Item {
     }
   }
 
-  // Copy and continue on the site: out of the way until you hover, floating
-  // over the bottom corner so they don't take space from the answer.
+  // Copy: out of the way until you hover, floating over the bottom corner so
+  // it doesn't take space from the answer.
   Rectangle {
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     anchors.bottomMargin: -4
-    visible: !answer.thinking && opacity > 0.01
+    visible: answer.text !== "" && opacity > 0.01
     width: actions.implicitWidth + 24
     height: actions.implicitHeight + 12
     radius: height / 2
@@ -194,34 +189,26 @@ Item {
       id: actions
       anchors.centerIn: parent
       spacing: 8
-      Repeater {
-        model: [
-          { label: "Copy", action: "copy", shown: answer.text !== "" },
-          { label: "Open in " + (answer.provider ? answer.provider.name : ""), action: "open", shown: !!answer.provider }
-        ]
-        delegate: Rectangle {
-          required property var modelData
-          visible: modelData.shown
-          implicitWidth: buttonLabel.implicitWidth + 26
-          implicitHeight: 28
-          radius: 14
-          color: buttonMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(1, 1, 1, 0.12)
-          Text {
-            id: buttonLabel
-            anchors.centerIn: parent
-            text: modelData.label
-            color: "#ffffff"
-            font.family: "Adwaita Sans"
-            font.pixelSize: 12
-            font.weight: Font.DemiBold
-          }
-          MouseArea {
-            id: buttonMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: modelData.action === "copy" ? answer.copy() : answer.openOnSite()
-          }
+      Rectangle {
+        implicitWidth: copyLabel.implicitWidth + 26
+        implicitHeight: 28
+        radius: 14
+        color: copyMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(1, 1, 1, 0.12)
+        Text {
+          id: copyLabel
+          anchors.centerIn: parent
+          text: "Copy"
+          color: "#ffffff"
+          font.family: "Adwaita Sans"
+          font.pixelSize: 12
+          font.weight: Font.DemiBold
+        }
+        MouseArea {
+          id: copyMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: answer.copy()
         }
       }
     }

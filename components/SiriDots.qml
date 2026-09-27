@@ -34,11 +34,13 @@ Item {
           y: spinner.height / 2 + Math.sin(angle) * dots.orbit - height / 2
         }
       }
-      RotationAnimation on rotation {
+      // One turn every 2.4 s, stepped ~40 times a second rather than at the
+      // display's refresh rate (each frame also re-runs the glow).
+      Timer {
+        interval: 25
+        repeat: true
         running: dots.running && dots.visible
-        from: 0; to: 360
-        duration: 2400
-        loops: Animation.Infinite
+        onTriggered: spinner.rotation = (spinner.rotation + 360 * 25 / 2400) % 360
       }
     }
   }

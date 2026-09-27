@@ -285,7 +285,7 @@ ColumnLayout {
       detail: "Answers launcher questions in the island"
       last: true
       SettingsSegments {
-        options: [{ label: "Claude", value: "claude" }, { label: "ChatGPT", value: "chatgpt" }, { label: "None", value: "none" }]
+        options: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "chatgpt" }, { label: "None", value: "none" }]
         value: settingsView.settings.askAi
         onPicked: function(v) { settingsView.settings.askAi = v }
       }
@@ -324,15 +324,5 @@ ColumnLayout {
         onPicked: function(v) { settingsView.settings.bannerSeconds = v }
       }
     }
-  }
-
-  Text {
-    Layout.fillWidth: true
-    Layout.topMargin: 2
-    Layout.leftMargin: 16
-    text: "Saved to ~/.config/omarchy/island.json"
-    color: settingsView.textMuted
-    font.family: "Adwaita Sans"
-    font.pixelSize: 11
   }
 }
