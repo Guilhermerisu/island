@@ -2,7 +2,7 @@
 
 # Island
 
-<img src="assets/main.png" alt="Island running on the desktop" width="100%">
+<img src="assets/showcase-full.gif" alt="Island morphing between its views, live activities, and an AI answer" width="100%">
 
 ### A dynamic island for Omarchy
 
