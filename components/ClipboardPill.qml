@@ -13,13 +13,22 @@ Item {
   required property var host
   readonly property var entry: host.lastClip
   readonly property bool shown: host.clipboardPill
+  // Copied files: file:// URIs (most apps), or plain absolute paths, one per
+  // line (Nautilus).
+  readonly property var files: {
+    if (!entry || entry.type !== "text") return []
+    var uris = ClipboardHistory.filePaths(entry)
+    if (uris.length) return uris
+    var lines = String(entry.text || "").split(/\r?\n/).map(function(l) { return l.trim() }).filter(function(l) { return l })
+    return lines.length && lines.every(function(l) { return /^\/[^\0]+$/.test(l) }) ? lines : []
+  }
+  readonly property bool isFiles: files.length > 0
   readonly property string imagePath: {
     if (!entry) return ""
     if (entry.type === "image") return String(entry.path || "")
-    var files = ClipboardHistory.filePaths(entry)
     return files.length === 1 && ClipboardHistory.isImagePath(files[0]) ? files[0] : ""
   }
-  readonly property bool isFiles: !!entry && ClipboardHistory.filePaths(entry).length > 0
+  readonly property bool thumbnailReady: thumbnail.status === Image.Ready
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
@@ -36,10 +45,11 @@ Item {
     Behavior on scale { NumberAnimation { duration: 360 * pill.host.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
     ClippingRectangle {
       anchors.fill: parent
-      visible: !!pill.imagePath
+      visible: pill.thumbnailReady
       radius: 6
       color: "transparent"
       Image {
+        id: thumbnail
         anchors.fill: parent
         source: pill.imagePath ? "file://" + pill.imagePath : ""
         sourceSize.width: 52
@@ -51,7 +61,7 @@ Item {
     }
     Text {
       anchors.centerIn: parent
-      visible: !pill.imagePath
+      visible: !pill.thumbnailReady
       text: pill.isFiles ? "󰈔" : "󰆏"
       color: pill.host.colorAccent
       font.family: pill.host.fontFamily
@@ -66,7 +76,19 @@ Item {
     anchors.right: trailing.left
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.entry ? ClipboardHistory.previewText(pill.entry) : ""
+    text: {
+      if (!pill.entry) return ""
+      // Omarchy labels every PNG "Screenshot from …", even a copied image.
+      if (pill.entry.type === "image") return "Image"
+      if (pill.isFiles) return pill.files.length === 1 ? ClipboardHistory.fileName(pill.files[0]) : pill.files.length + " files"
+      var preview = ClipboardHistory.previewText(pill.entry)
+      if (pill.entry.type !== "text" || !pill.host.isHtml(pill.entry.text)) return preview
+      // Rich text from a browser arrives as HTML; show its words, not tags.
+      var plain = String(pill.entry.text).replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
+        .replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/\s+/g, " ").trim()
+      return plain || "Rich text"
+    }
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: "#ffffff"

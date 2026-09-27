@@ -145,9 +145,14 @@ Item {
     onFileChanged: reload()
     onLoaded: root.clipboardChanged(text())
   }
+  function isHtml(text) {
+    return /^\s*<(img|meta|html|!doctype|body|div|span|p|a|picture|figure|table)\b/i.test(String(text || ""))
+  }
   function clipboardChanged(raw) {
     var history = ClipboardHistory.parseHistory(raw)
     var top = history.length ? history[0] : null
+    if (top && top.type === "text" && isHtml(top.text) && history.length > 1 && history[1].type === "image")
+      top = history[1]
     var key = top ? ClipboardHistory.entryKey(top) : ""
     var fresh = clipSeeded && key !== "" && key !== lastClipKey
     lastClipKey = key
