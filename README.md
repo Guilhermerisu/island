@@ -131,11 +131,8 @@ use for the menu, launcher, emoji, clipboard, and other views at the island.
 
 Open the control center and click the gear. Changes apply right away and are
 saved to `~/.config/omarchy/island.json`, which you can also edit by hand.
-Under General → Appearance, turn off **Colorful Sidebar Icons** to use the
-neutral, theme-based icons instead.
 In Control Center, click the pencil to edit its cards. Drag cards to rearrange
 them, click a minus badge to hide one, or use **Add Controls** to restore it.
-Click **Done** when finished. Changes are saved in the same file.
 Under **Keybinds**, click a shortcut's keys and type new ones to change it, or
 press Backspace to remove it and give the key back to Omarchy. **Restore
 Defaults** matches your keys again. These are saved to
@@ -160,10 +157,7 @@ bash ~/.config/omarchy/plugins/guilhermerisu.island/companion/uninstall.sh
 It switches back to the stock bar, removes the notification companion (Omarchy's
 own notifications come back), undoes the `shell.json` and Omarchy menu changes
 the setup made, deletes `island-bindings.lua`, removes Island, and restarts the
-shell. Backups of both config
-files are kept next to them, and your settings stay in
-`~/.config/omarchy/island.json`. Add `--dry-run` to see what it would change
-first. Keybindings you pointed at Island yourself are listed, not changed.
+shell.
 
 ## License
 
