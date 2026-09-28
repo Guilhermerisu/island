@@ -17,9 +17,10 @@ ColumnLayout {
   readonly property color accent: host.colorAccent
   readonly property color accentInk: host.colorAccentText
   readonly property color text: host.colorText
-  readonly property color textMuted: Qt.tint(host.colorBackground, host.withAlpha(text, 0.65))
-  readonly property color tile: Qt.tint(host.colorBackground, host.withAlpha(text, 0.10))
-  readonly property color card: Qt.tint(host.colorBackground, host.withAlpha(text, 0.07))
+  readonly property color textMuted: Qt.tint(host.colorBackground, host.withAlpha(text, 0.6))
+  readonly property color tile: Qt.tint(host.colorBackground, host.withAlpha(text, 0.11))
+  readonly property color card: Qt.tint(host.colorBackground, host.withAlpha(text, 0.075))
+  readonly property color edge: host.withAlpha(text, 0.05)
   readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
   readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
   readonly property string iconFont: host.fontFamily
@@ -219,9 +220,11 @@ ColumnLayout {
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
-    Layout.preferredHeight: 64
+    Layout.preferredHeight: 72
     radius: 16
     color: tileMouse.containsMouse ? cc.tile : cc.card
+    border.width: 1
+    border.color: cc.edge
     opacity: available ? 1 : 0.5
     scale: tileMouse.pressed ? 0.97 : 1
     Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
@@ -229,7 +232,7 @@ ColumnLayout {
     Rectangle {
       id: badge
       anchors.left: parent.left
-      anchors.leftMargin: 8
+      anchors.leftMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       width: 42; height: 42; radius: 21
       color: t.checked ? cc.accent : cc.well
@@ -280,35 +283,49 @@ ColumnLayout {
     }
   }
 
-  component CcSlider: Rectangle {
+  // macOS Control Center slider: a capsule with a white fill that ends in a
+  // round knob, and the icon inside on the left.
+  component CcSlider: Item {
     id: s
     property string icon: ""
     property real value: 0
     signal moved(real value)
+    readonly property real clamped: Math.max(0, Math.min(1, value))
 
     Layout.fillWidth: true
     Layout.preferredHeight: 38
-    radius: 19
-    color: sliderMouse.containsMouse ? cc.wellHover : cc.well
-    clip: true
 
+    Rectangle {
+      anchors.fill: parent
+      radius: height / 2
+      color: sliderMouse.containsMouse ? cc.wellHover : cc.well
+    }
     Rectangle {
       id: sliderFill
       height: parent.height
-      radius: parent.radius
-      width: parent.width * Math.max(0, Math.min(1, s.value))
+      radius: height / 2
+      width: height + (parent.width - height) * s.clamped
       color: cc.text
       Behavior on width {
         enabled: !sliderMouse.pressed
         NumberAnimation { duration: 140 * cc.host.motionScale; easing.type: Easing.OutCubic }
       }
     }
+    Rectangle {
+      x: sliderFill.width - width
+      width: parent.height
+      height: parent.height
+      radius: height / 2
+      color: "#ffffff"
+      border.width: 1
+      border.color: Qt.rgba(0, 0, 0, 0.14)
+    }
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 16
+      anchors.leftMargin: 14
       anchors.verticalCenter: parent.verticalCenter
       text: s.icon
-      color: sliderFill.width > x + width / 2 ? cc.card : cc.text
+      color: sliderFill.width - parent.height > x + width ? cc.host.colorBackground : cc.textMuted
       font.family: cc.iconFont
       font.pixelSize: 18
     }
@@ -317,7 +334,7 @@ ColumnLayout {
       anchors.fill: parent
       hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
-      function apply(x) { s.moved(Math.max(0, Math.min(1, x / width))) }
+      function apply(x) { s.moved(Math.max(0, Math.min(1, (x - height / 2) / (width - height)))) }
       onPressed: function(e) { apply(e.x) }
       onPositionChanged: function(e) { if (pressed) apply(e.x) }
       onWheel: function(e) { s.moved(Math.max(0, Math.min(1, s.value + (e.angleDelta.y > 0 ? 0.05 : -0.05)))) }
@@ -336,12 +353,14 @@ ColumnLayout {
 
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 54
-    radius: 20
+    radius: 16
     color: cc.card
+    border.width: 1
+    border.color: cc.edge
 
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 18
+      anchors.leftMargin: 16
       anchors.top: parent.top
       anchors.topMargin: 14
       text: sec.title
@@ -353,7 +372,7 @@ ColumnLayout {
     }
     Text {
       anchors.right: parent.right
-      anchors.rightMargin: sec.showChevron ? 50 : 18
+      anchors.rightMargin: sec.showChevron ? 44 : 16
       anchors.top: parent.top
       anchors.topMargin: 15
       text: sec.detail
@@ -365,10 +384,10 @@ ColumnLayout {
       id: chevron
       visible: sec.showChevron
       anchors.right: parent.right
-      anchors.rightMargin: 14
+      anchors.rightMargin: 12
       anchors.top: parent.top
-      anchors.topMargin: 8
-      width: 26; height: 26; radius: 13
+      anchors.topMargin: 10
+      width: 24; height: 24; radius: 12
       color: chevronMouse.containsMouse ? cc.wellHover : cc.well
       Text {
         anchors.centerIn: parent
@@ -387,8 +406,8 @@ ColumnLayout {
       anchors.right: parent.right
       anchors.top: parent.top
       anchors.topMargin: 42
-      anchors.leftMargin: 14
-      anchors.rightMargin: 14
+      anchors.leftMargin: 12
+      anchors.rightMargin: 12
       spacing: 6
     }
   }
@@ -457,12 +476,12 @@ ColumnLayout {
     spacing: 6
     Rectangle {
       Layout.fillWidth: true
-      Layout.preferredHeight: 34
-      radius: 12
+      Layout.preferredHeight: 28
+      radius: 7
       color: addMouse.containsMouse ? cc.wellHover : cc.well
       Text {
         anchors.centerIn: parent
-        text: cc.addPickerOpen ? "Hide Add Controls" : "+ Add Controls"
+        text: cc.addPickerOpen ? "Hide Add Controls" : "Add Controls…"
         color: cc.text
         font.family: "Adwaita Sans"
         font.pixelSize: 12
@@ -483,7 +502,9 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 32
         radius: 10
-        color: addItemMouse.containsMouse ? cc.wellHover : cc.card
+        color: addItemMouse.containsMouse ? cc.tile : cc.card
+        border.width: 1
+        border.color: cc.edge
         Text {
           anchors.left: parent.left
           anchors.leftMargin: 12
@@ -517,18 +538,18 @@ ColumnLayout {
       for (var i = 0; i < cc.visibleControlKeys.length; i++) {
         var key = cc.visibleControlKeys[i]
         var wide = key === "sound" || key === "display"
-        var cardHeight = key === "sound" ? 96 + (cc.outputsOpen && !cc.editMode ? cc.outputs.length * 40 : 0) : wide ? 96 : 66
+        var cardHeight = key === "sound" ? 100 + (cc.outputsOpen && !cc.editMode ? cc.outputs.length * 40 : 0) : wide ? 100 : 74
         if (wide) {
-          if (halfUsed) { rowY += 66 + gap; halfUsed = false }
+          if (halfUsed) { rowY += 74 + gap; halfUsed = false }
           result[key] = { x: 0, y: rowY, width: width, height: cardHeight }
           rowY += cardHeight + gap
         } else {
-          result[key] = { x: halfUsed ? halfWidth + gap : 0, y: rowY, width: halfWidth, height: 66 }
-          if (halfUsed) { rowY += 66 + gap; halfUsed = false }
+          result[key] = { x: halfUsed ? halfWidth + gap : 0, y: rowY, width: halfWidth, height: 74 }
+          if (halfUsed) { rowY += 74 + gap; halfUsed = false }
           else halfUsed = true
         }
       }
-      result.height = Math.max(0, rowY + (halfUsed ? 66 : -gap))
+      result.height = Math.max(0, rowY + (halfUsed ? 74 : -gap))
       return result
     }
     Repeater {
@@ -593,7 +614,7 @@ ColumnLayout {
           width: 24; height: 24; radius: 12
           color: cc.wellHover
           border.width: 1
-          border.color: cc.textMuted
+          border.color: cc.edge
           Text { anchors.centerIn: parent; text: "−"; color: cc.text; font.pixelSize: 18 }
           MouseArea {
             anchors.fill: parent
@@ -608,9 +629,11 @@ ColumnLayout {
   Rectangle {
     visible: cc.visibleControlKeys.length === 0
     Layout.fillWidth: true
-    Layout.preferredHeight: 66
-    radius: 20
+    Layout.preferredHeight: 74
+    radius: 16
     color: cc.card
+    border.width: 1
+    border.color: cc.edge
     Text {
       anchors.centerIn: parent
       text: cc.editMode ? "Use Add Controls to restore a card" : "Click the pencil to add controls"
@@ -628,7 +651,7 @@ ColumnLayout {
     Rectangle {
       id: dragProxy
       visible: cc.draggedKey !== ""
-      radius: 20
+      radius: 16
       color: cc.card
       border.width: 1
       border.color: cc.accent
@@ -686,9 +709,9 @@ ColumnLayout {
         required property var modelData
         readonly property bool isDefault: modelData === cc.sink
         Layout.fillWidth: true
-        Layout.preferredHeight: 34
-        radius: 12
-        color: outputMouse.containsMouse ? cc.well : "transparent"
+        Layout.preferredHeight: 32
+        radius: 7
+        color: outputMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.08) : "transparent"
         Text {
           anchors.left: parent.left
           anchors.leftMargin: 10
@@ -765,8 +788,10 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: notificationBody.implicitHeight + 20
-    radius: 20
+    radius: 16
     color: cc.card
+    border.width: 1
+    border.color: cc.edge
 
     ColumnLayout {
       id: notificationBody
@@ -790,18 +815,18 @@ ColumnLayout {
           font.letterSpacing: -0.2
         }
         Item { Layout.fillWidth: true }
-        // iOS's grey capsule button.
+        // macOS push button.
         Rectangle {
           visible: cc.host.history.length > 0
           implicitWidth: clearLabel.implicitWidth + 20
-          implicitHeight: 24
-          radius: 12
-          color: clearMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.16) : cc.well
+          implicitHeight: 22
+          radius: 6
+          color: clearMouse.containsMouse ? cc.wellHover : cc.well
           Behavior on color { ColorAnimation { duration: cc.animDuration } }
           Text {
             id: clearLabel
             anchors.centerIn: parent
-            text: "Clear"
+            text: "Clear All"
             color: cc.text
             font.family: "Adwaita Sans"
             font.pixelSize: 12
@@ -842,9 +867,9 @@ ColumnLayout {
           required property var modelData
           readonly property string appName: String(modelData.app || modelData.summary || "?")
           width: ListView.view.width
-          height: noteBody.implicitHeight + 24
-          radius: 20
-          color: noteMouse.containsMouse && modelData.isActive ? cc.host.withAlpha(cc.text, 0.12) : cc.card
+          height: noteBody.implicitHeight + 22
+          radius: 14
+          color: noteMouse.containsMouse && modelData.isActive ? cc.wellHover : cc.tile
 
           MouseArea {
             id: noteMouse
@@ -866,7 +891,7 @@ ColumnLayout {
             anchors.leftMargin: 12
             anchors.top: parent.top
             anchors.topMargin: 12
-            width: 34; height: 34; radius: 9
+            width: 32; height: 32; radius: 8
             color: brand ? brand.tile
               : noteIcon.status === Image.Ready ? "transparent" : cc.host.withAlpha(cc.accent, 0.18)
             Image {
