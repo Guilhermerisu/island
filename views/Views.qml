@@ -117,7 +117,8 @@ Item {
     id: settingsSurface
     host: views.host
     viewName: "settings"
-    fixedWidth: 540
+    fixedWidth: 760
+    padding: 16
     SettingsView { host: views.host; active: settingsSurface.active; anchors.fill: parent }
   }
 

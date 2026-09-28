@@ -121,8 +121,33 @@ Item {
       property bool downloads: true
       property bool clipboard: true
       property bool systemUpdates: true
+      property bool colorfulSettingsIcons: true
+      property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,display"
+      property string controlCenterHidden: "game"
       property string askAi: "chatgpt"
     }
+  }
+  readonly property var controlCenterKeys: {
+    var known = ["wifi", "bluetooth", "focus", "game", "night", "sound", "display"]
+    var saved = String(settings.controlCenterOrder || "").split(",")
+    var result = []
+    for (var i = 0; i < saved.length; i++)
+      if (known.indexOf(saved[i]) !== -1 && result.indexOf(saved[i]) === -1) result.push(saved[i])
+    for (var j = 0; j < known.length; j++)
+      if (result.indexOf(known[j]) === -1) result.push(known[j])
+    return result
+  }
+  function controlCenterTitle(key) {
+    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", sound: "Sound", display: "Display" }
+    return names[key] || key
+  }
+  function controlCenterIsShown(key) {
+    return String(settings.controlCenterHidden || "").split(",").indexOf(key) === -1
+  }
+  function setControlCenterShown(key, shown) {
+    var hidden = String(settings.controlCenterHidden || "").split(",").filter(function(item) { return item !== "" && item !== key })
+    if (!shown) hidden.push(key)
+    settings.controlCenterHidden = hidden.join(",")
   }
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
   readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
@@ -253,6 +278,7 @@ Item {
   }
 
   onViewChanged: {
+    if (view === "rest" && updateAnnouncePending) Qt.callLater(announceUpdate)
     surfaceContentReady = false
     if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
     else surfaceRevealTimer.stop()
@@ -288,12 +314,7 @@ Item {
   property string companionStatus: ""
   property bool companionInstalling: false
   readonly property bool companionNeedsSetup: companionStatus !== "" && companionStatus !== "ok"
-  readonly property string companionWarning: companionInstalling ? "Installing notifications…"
-    : companionStatus === "missing" ? "Set up notifications"
-    : companionStatus === "outdated" ? "Update notifications"
-    : companionStatus === "not-enabled" ? "Enable notifications"
-    : companionStatus === "menu" ? "Set up switchers"
-    : "Notifications need setup"
+  readonly property string companionWarning: companionInstalling ? "Setting up…" : "Click to Setup"
 
   Process {
     id: companionCheck
@@ -301,6 +322,56 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.companionStatus = String(text || "").trim()
+    }
+  }
+
+  property string updateState: ""
+  property bool updateAnnouncePending: false
+  function updateRow(body) {
+    return { summary: "Island Update", body: body, glyph: "󰚰", timestamp: Date.now(), islandUpdate: true }
+  }
+  function announceUpdate() {
+    if (surfaceOpen || view === "feedback") { updateAnnouncePending = true; return }
+    updateAnnouncePending = false
+    lastNotification = updateRow("A new version is ready. Click to update.")
+    showFeedback("", 10000, "notification")
+  }
+  function updateIsland() {
+    if (updateState === "updating") return
+    updateState = "updating"
+    lastNotification = updateRow("Updating Island…")
+    showFeedback("", 120000, "notification")
+    islandUpdate.running = true
+  }
+  Timer {
+    interval: 20000
+    running: true
+    repeat: true
+    onTriggered: {
+      interval = 6 * 3600 * 1000
+      if (!updateCheck.running && root.updateState !== "updating") updateCheck.running = true
+    }
+  }
+  Process {
+    id: updateCheck
+    command: ["bash", "-c", "cd \"$1\" && [ -d .git ] || exit 0; export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -oBatchMode=yes'; remote=$(timeout 30 git ls-remote origin HEAD 2>/dev/null | cut -f1); [ -n \"$remote\" ] || exit 0; git cat-file -e \"$remote^{commit}\" 2>/dev/null || echo available", "update-check", root.pluginDir]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        if (String(text || "").trim() !== "available" || root.updateState === "updating") return
+        root.updateState = "available"
+        root.announceUpdate()
+      }
+    }
+  }
+  Process {
+    id: islandUpdate
+    command: ["bash", "-c", "omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1 || exit 1; setsid -f omarchy restart shell >/dev/null 2>&1 </dev/null", "island-update", root.pluginDir.replace(/.*\//, "")]
+    onExited: function(code) {
+      if (code === 0) return
+      root.updateState = "available"
+      root.lastNotification = root.updateRow("Couldn't update. The plugin folder has local changes.")
+      root.showFeedback("", 6000, "notification")
     }
   }
 
@@ -600,7 +671,8 @@ Item {
             enabled: root.view === "rest" || root.view === "feedback"
             onClicked: function(mouse) {
               feedbackTimer.stop()
-              if (root.notificationPill) root.dismissPillNotification()
+              if (root.notificationPill && root.lastNotification && root.lastNotification.islandUpdate) root.updateIsland()
+              else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
               else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()

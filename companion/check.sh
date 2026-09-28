@@ -7,6 +7,7 @@
 #                the stock omarchy.notifications alongside it)
 #   menu         the Omarchy menu's Theme, Background, Apps, System, Emoji, or Keybindings entry
 #                (and the shortcuts that open them) doesn't open the island yet
+#   bindings     ~/.config/hypr/island-bindings.lua hasn't been written yet
 
 here=$(cd "$(dirname "$0")" && pwd)
 source_dir="$here/guilhermerisu.notifications"
@@ -40,5 +41,10 @@ for entry in style.theme style.background apps system trigger.emoji learn.keybin
     exit 0
   fi
 done
+
+if [[ ! -f $HOME/.config/hypr/island-bindings.lua ]]; then
+  echo bindings
+  exit 0
+fi
 
 echo ok

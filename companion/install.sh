@@ -2,8 +2,8 @@
 # Installs (or updates) the guilhermerisu.notifications companion from this repo,
 # enables it in shell.json in place of the stock notification service, points
 # the Omarchy menu's Theme, Background, System, and Apps entries at the island,
-# and restarts
-# the shell so the new notification server takes over.
+# writes ~/.config/hypr/island-bindings.lua (see bindings.sh), and restarts the
+# shell so the new notification server takes over.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -113,6 +113,8 @@ if $backed_up && ! perl -0pe 's#^\s*//[^\n]*(\n|$)##gm; s#,(\s*[}\]])#$1#g' "$me
   echo "install.sh: couldn't add the Island entries to $menu; restored it from $menu_backup" >&2
 fi
 omarchy-menu refresh >/dev/null 2>&1 || true
+
+bash "$here/bindings.sh" init
 
 # Detached: this script usually runs from inside the shell being restarted.
 setsid -f omarchy restart shell >/dev/null 2>&1 </dev/null

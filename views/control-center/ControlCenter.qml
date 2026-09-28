@@ -7,25 +7,28 @@ import Quickshell.Networking
 import Quickshell.Services.Pipewire
 import Quickshell.Widgets
 
-// The expanded "controls" surface: two rows of toggle pills with a round
-// button at the end of each, Sound and Display cards with sliders, and the
-// recent notifications. Reads its state from the island root passed in as
-// `host`.
+// A compact Control Center with grouped switches, sliders, and notifications.
 ColumnLayout {
   id: cc
   required property var host
   property bool active: false
 
-  // Theme palette from the island (see Island.qml).
+  // Keep the black island while deriving its controls from the active theme.
   readonly property color accent: host.colorAccent
   readonly property color accentInk: host.colorAccentText
   readonly property color text: host.colorText
-  readonly property color textMuted: host.colorMuted
-  readonly property color tile: host.withAlpha(host.colorText, 0.1)
-  readonly property color card: host.withAlpha(host.colorText, 0.07)
-  readonly property color well: host.withAlpha(host.colorText, 0.08)
+  readonly property color textMuted: Qt.tint(host.colorBackground, host.withAlpha(text, 0.65))
+  readonly property color tile: Qt.tint(host.colorBackground, host.withAlpha(text, 0.10))
+  readonly property color card: Qt.tint(host.colorBackground, host.withAlpha(text, 0.07))
+  readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
+  readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
   readonly property string iconFont: host.fontFamily
   readonly property int animDuration: 180 * host.motionScale
+  property bool editMode: false
+  property bool addPickerOpen: false
+  property string draggedKey: ""
+  property var previewOrder: []
+  readonly property var hiddenControlKeys: host.controlCenterKeys.filter(function(key) { return !host.controlCenterIsShown(key) })
 
   // --- Network ---
   readonly property var netDevices: Networking.devices ? Networking.devices.values : []
@@ -70,6 +73,79 @@ ColumnLayout {
   readonly property var nightlight: host.shell ? host.shell.firstPartyServiceFor("omarchy.nightlight") : null
   readonly property bool dnd: notifications ? !!notifications.doNotDisturb : false
   readonly property bool nightOn: nightlight ? !!nightlight.enabled : false
+  readonly property var visibleControlKeys: {
+    var hidden = String(host.settings.controlCenterHidden || "").split(",")
+    var order = cc.editMode && cc.previewOrder.length ? cc.previewOrder : host.controlCenterKeys
+    return order.filter(function(key) {
+      return hidden.indexOf(key) === -1 && (cc.editMode || cc.controlPresent(key))
+    })
+  }
+  function controlPresent(key) {
+    if (key === "night") return !!nightlight
+    if (key === "sound") return !!(sink && sink.audio)
+    if (key === "display") return brightnessAvailable
+    return true
+  }
+  function endDrag() { draggedKey = "" }
+  function previewMoveAt(x, y) {
+    if (x < 0 || y < 0 || x > cardArea.width || y > cardArea.height) return
+    var slots = cardArea.positions
+    for (var i = 0; i < visibleControlKeys.length; i++) {
+      var key = visibleControlKeys[i]
+      if (key === draggedKey) continue
+      var slot = slots[key]
+      if (!slot) continue
+      var marginX = Math.min(30, slot.width * 0.2)
+      var marginY = Math.min(18, slot.height * 0.2)
+      if (x < slot.x + marginX || x > slot.x + slot.width - marginX ||
+          y < slot.y + marginY || y > slot.y + slot.height - marginY) continue
+      var order = previewOrder.slice()
+      var from = order.indexOf(draggedKey)
+      var to = order.indexOf(key)
+      if (from < 0 || to < 0) return
+      order.splice(from, 1)
+      order.splice(to, 0, draggedKey)
+      previewOrder = order
+      return
+    }
+  }
+  function controlIcon(key) {
+    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "󰖩" : "󰖪") : "󰈀"
+    if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
+    if (key === "focus") return "󰍶"
+    if (key === "game") return "󰊗"
+    return "󰖔"
+  }
+  function controlTitle(key) { return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : host.controlCenterTitle(key) }
+  function controlSubtitle(key) {
+    if (key === "wifi") return wifiDevice
+      ? (!Networking.wifiEnabled ? "Off" : wifiNetwork ? wifiNetwork.name : "Not connected")
+      : (wiredDevice && wiredDevice.connected ? "Connected" : "Disconnected")
+    if (key === "bluetooth") return !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
+    if (key === "focus") return dnd ? "On" : "Off"
+    if (key === "game") return gameMode ? "On" : "Off"
+    return nightOn ? "On" : "Off"
+  }
+  function controlChecked(key) {
+    if (key === "wifi") return wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
+    if (key === "bluetooth") return !!(btAdapter && btAdapter.enabled)
+    if (key === "focus") return dnd
+    if (key === "game") return gameMode
+    return nightOn
+  }
+  function controlAvailable(key) {
+    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : false
+    if (key === "bluetooth") return !!btAdapter
+    if (key === "focus") return !!notifications
+    return true
+  }
+  function toggleControl(key) {
+    if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
+    else if (key === "bluetooth" && btAdapter) btAdapter.enabled = !btAdapter.enabled
+    else if (key === "focus" && notifications) notifications.setDoNotDisturb(!dnd)
+    else if (key === "game") setGameMode(!gameMode)
+    else if (key === "night" && nightlight) nightlight.setNightlight(!nightOn)
+  }
 
   // --- Game Mode: Hyprland animations off (restored by a config reload) ---
   property bool gameMode: false
@@ -92,7 +168,7 @@ ColumnLayout {
   property bool brightnessAvailable: false
   property int brightness: 0
   onActiveChanged: {
-    if (!active) { outputsOpen = false; return }
+    if (!active) { outputsOpen = false; editMode = false; addPickerOpen = false; endDrag(); return }
     Qt.callLater(function() { cc.forceActiveFocus() })
     if (!brightnessRead.running) brightnessRead.running = true
     if (!gameModeRead.running) gameModeRead.running = true
@@ -124,11 +200,14 @@ ColumnLayout {
   spacing: 10
 
   // Esc closes the control center.
-  Keys.onEscapePressed: cc.host.view = "rest"
+  Keys.onEscapePressed: {
+    if (cc.editMode) { cc.editMode = false; cc.addPickerOpen = false; cc.endDrag() }
+    else cc.host.view = "rest"
+  }
 
   // ---------- Reusable pieces ----------
 
-  // Pill toggle: icon badge (accent-filled when on), title, and state.
+  // A switch row inside a grouped card.
   component CcTile: Rectangle {
     id: t
     property string icon: ""
@@ -140,9 +219,9 @@ ColumnLayout {
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
-    Layout.preferredHeight: 62
-    radius: 31
-    color: cc.tile
+    Layout.preferredHeight: 64
+    radius: 16
+    color: tileMouse.containsMouse ? cc.tile : cc.card
     opacity: available ? 1 : 0.5
     scale: tileMouse.pressed ? 0.97 : 1
     Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
@@ -150,10 +229,10 @@ ColumnLayout {
     Rectangle {
       id: badge
       anchors.left: parent.left
-      anchors.leftMargin: 10
+      anchors.leftMargin: 8
       anchors.verticalCenter: parent.verticalCenter
       width: 42; height: 42; radius: 21
-      color: t.checked ? cc.accent : cc.host.withAlpha(cc.text, 0.1)
+      color: t.checked ? cc.accent : cc.well
       Behavior on color { ColorAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
       Text {
         anchors.centerIn: parent
@@ -165,9 +244,9 @@ ColumnLayout {
     }
     Column {
       anchors.left: badge.right
-      anchors.leftMargin: 11
+      anchors.leftMargin: 10
       anchors.right: parent.right
-      anchors.rightMargin: 14
+      anchors.rightMargin: 8
       anchors.verticalCenter: parent.verticalCenter
       spacing: 1
       Text {
@@ -195,37 +274,9 @@ ColumnLayout {
       id: tileMouse
       anchors.fill: parent
       enabled: t.available
+      hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
       onClicked: t.clicked()
-    }
-  }
-
-  // Round button at the end of a toggle row; accent-filled when on.
-  component CcRound: Rectangle {
-    id: r
-    property string icon: ""
-    property bool checked: false
-    signal clicked()
-
-    Layout.preferredWidth: 62
-    Layout.preferredHeight: 62
-    radius: 31
-    color: checked ? cc.accent : cc.tile
-    scale: roundMouse.pressed ? 0.94 : 1
-    Behavior on color { ColorAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
-    Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
-    Text {
-      anchors.centerIn: parent
-      text: r.icon
-      color: r.checked ? cc.accentInk : cc.text
-      font.family: cc.iconFont
-      font.pixelSize: 20
-    }
-    MouseArea {
-      id: roundMouse
-      anchors.fill: parent
-      cursorShape: Qt.PointingHandCursor
-      onClicked: r.clicked()
     }
   }
 
@@ -236,16 +287,17 @@ ColumnLayout {
     signal moved(real value)
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 46
-    radius: 23
-    color: cc.well
+    Layout.preferredHeight: 38
+    radius: 19
+    color: sliderMouse.containsMouse ? cc.wellHover : cc.well
     clip: true
 
     Rectangle {
+      id: sliderFill
       height: parent.height
       radius: parent.radius
-      width: Math.max(parent.height, parent.width * Math.max(0, Math.min(1, s.value)))
-      color: cc.accent
+      width: parent.width * Math.max(0, Math.min(1, s.value))
+      color: cc.text
       Behavior on width {
         enabled: !sliderMouse.pressed
         NumberAnimation { duration: 140 * cc.host.motionScale; easing.type: Easing.OutCubic }
@@ -256,13 +308,14 @@ ColumnLayout {
       anchors.leftMargin: 16
       anchors.verticalCenter: parent.verticalCenter
       text: s.icon
-      color: cc.accentInk
+      color: sliderFill.width > x + width / 2 ? cc.card : cc.text
       font.family: cc.iconFont
       font.pixelSize: 18
     }
     MouseArea {
       id: sliderMouse
       anchors.fill: parent
+      hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
       function apply(x) { s.moved(Math.max(0, Math.min(1, x / width))) }
       onPressed: function(e) { apply(e.x) }
@@ -275,21 +328,22 @@ ColumnLayout {
   component CcSection: Rectangle {
     id: sec
     property string title: ""
+    property string detail: ""
     property bool showChevron: false
     property bool chevronOpen: false
     signal chevronClicked()
     default property alias content: body.data
 
     Layout.fillWidth: true
-    Layout.preferredHeight: body.implicitHeight + 52
-    radius: 26
+    Layout.preferredHeight: body.implicitHeight + 54
+    radius: 20
     color: cc.card
 
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 16
+      anchors.leftMargin: 18
       anchors.top: parent.top
-      anchors.topMargin: 13
+      anchors.topMargin: 14
       text: sec.title
       color: cc.text
       font.family: "Adwaita Sans"
@@ -297,14 +351,25 @@ ColumnLayout {
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
     }
+    Text {
+      anchors.right: parent.right
+      anchors.rightMargin: sec.showChevron ? 50 : 18
+      anchors.top: parent.top
+      anchors.topMargin: 15
+      text: sec.detail
+      color: cc.textMuted
+      font.family: "Adwaita Sans"
+      font.pixelSize: 12
+    }
     Rectangle {
+      id: chevron
       visible: sec.showChevron
       anchors.right: parent.right
-      anchors.rightMargin: 10
+      anchors.rightMargin: 14
       anchors.top: parent.top
       anchors.topMargin: 8
       width: 26; height: 26; radius: 13
-      color: cc.well
+      color: chevronMouse.containsMouse ? cc.wellHover : cc.well
       Text {
         anchors.centerIn: parent
         text: "󰅂"
@@ -314,7 +379,7 @@ ColumnLayout {
         font.pixelSize: 15
         Behavior on rotation { NumberAnimation { duration: cc.animDuration; easing.type: Easing.OutCubic } }
       }
-      MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: sec.chevronClicked() }
+      MouseArea { id: chevronMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sec.chevronClicked() }
     }
     ColumnLayout {
       id: body
@@ -322,79 +387,290 @@ ColumnLayout {
       anchors.right: parent.right
       anchors.top: parent.top
       anchors.topMargin: 42
-      anchors.leftMargin: 10
-      anchors.rightMargin: 10
+      anchors.leftMargin: 14
+      anchors.rightMargin: 14
       spacing: 6
     }
   }
 
-  // ---------- Toggles ----------
+  // ---------- Header and grouped controls ----------
 
   RowLayout {
     Layout.fillWidth: true
-    spacing: 8
-    CcTile {
-      readonly property bool wifi: !!cc.wifiDevice
-      icon: wifi ? (Networking.wifiEnabled ? "󰖩" : "󰖪") : "󰈀"
-      title: wifi ? "Wi-Fi" : "Ethernet"
-      subtitle: wifi
-        ? (!Networking.wifiEnabled ? "Off" : cc.wifiNetwork ? cc.wifiNetwork.name : "Not connected")
-        : (cc.wiredDevice && cc.wiredDevice.connected ? "Connected" : "Disconnected")
-      checked: wifi ? Networking.wifiEnabled : !!(cc.wiredDevice && cc.wiredDevice.connected)
-      available: wifi ? Networking.wifiHardwareEnabled !== false : false
-      opacity: 1
-      onClicked: Networking.wifiEnabled = !Networking.wifiEnabled
+    Layout.preferredHeight: 34
+    Layout.leftMargin: 4
+    Layout.rightMargin: 4
+    Text {
+      text: "Control Center"
+      color: cc.text
+      font.family: "Adwaita Sans"
+      font.pixelSize: 17
+      font.weight: Font.DemiBold
     }
-    CcTile {
-      icon: "󰍶"
-      title: "Focus"
-      subtitle: cc.dnd ? "On" : "Off"
-      checked: cc.dnd
-      available: !!cc.notifications
-      onClicked: cc.notifications.setDoNotDisturb(!cc.dnd)
+    Item { Layout.fillWidth: true }
+    Rectangle {
+      Layout.preferredWidth: cc.editMode ? 64 : 32
+      Layout.preferredHeight: 32
+      radius: 16
+      color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
+      Text {
+        anchors.centerIn: parent
+        text: cc.editMode ? "Done" : "󰏫"
+        color: cc.text
+        font.family: cc.editMode ? "Adwaita Sans" : cc.iconFont
+        font.pixelSize: cc.editMode ? 12 : 17
+        font.weight: Font.DemiBold
+      }
+      MouseArea {
+        id: editMouse
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: { cc.editMode = !cc.editMode; cc.addPickerOpen = false; cc.endDrag(); cc.outputsOpen = false }
+      }
     }
-    CcRound {
-      icon: "󰒓"
-      onClicked: cc.host.view = "settings"
+    Rectangle {
+      Layout.preferredWidth: 32
+      Layout.preferredHeight: 32
+      radius: 16
+      color: settingsMouse.containsMouse ? cc.well : cc.card
+      Text {
+        anchors.centerIn: parent
+        text: "󰒓"
+        color: cc.text
+        font.family: cc.iconFont
+        font.pixelSize: 17
+      }
+      MouseArea {
+        id: settingsMouse
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: cc.host.view = "settings"
+      }
     }
   }
 
-  RowLayout {
+  ColumnLayout {
+    visible: cc.editMode && cc.hiddenControlKeys.length > 0
     Layout.fillWidth: true
-    spacing: 8
-    CcTile {
-      icon: cc.btAdapter && cc.btAdapter.enabled ? "󰂯" : "󰂲"
-      title: "Bluetooth"
-      subtitle: !cc.btAdapter ? "Unavailable" : !cc.btAdapter.enabled ? "Off" : cc.btConnected ? String(cc.btConnected.name || "Connected") : "On"
-      checked: !!(cc.btAdapter && cc.btAdapter.enabled)
-      available: !!cc.btAdapter
-      onClicked: cc.btAdapter.enabled = !cc.btAdapter.enabled
+    spacing: 6
+    Rectangle {
+      Layout.fillWidth: true
+      Layout.preferredHeight: 34
+      radius: 12
+      color: addMouse.containsMouse ? cc.wellHover : cc.well
+      Text {
+        anchors.centerIn: parent
+        text: cc.addPickerOpen ? "Hide Add Controls" : "+ Add Controls"
+        color: cc.text
+        font.family: "Adwaita Sans"
+        font.pixelSize: 12
+        font.weight: Font.DemiBold
+      }
+      MouseArea {
+        id: addMouse
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: cc.addPickerOpen = !cc.addPickerOpen
+      }
     }
-    CcTile {
-      icon: "󰊗"
-      title: "Game Mode"
-      subtitle: cc.gameMode ? "On" : "Off"
-      checked: cc.gameMode
-      onClicked: cc.setGameMode(!cc.gameMode)
+    Repeater {
+      model: cc.addPickerOpen ? cc.hiddenControlKeys : []
+      delegate: Rectangle {
+        required property string modelData
+        Layout.fillWidth: true
+        Layout.preferredHeight: 32
+        radius: 10
+        color: addItemMouse.containsMouse ? cc.wellHover : cc.card
+        Text {
+          anchors.left: parent.left
+          anchors.leftMargin: 12
+          anchors.verticalCenter: parent.verticalCenter
+          text: "+  " + cc.host.controlCenterTitle(modelData)
+          color: cc.text
+          font.family: "Adwaita Sans"
+          font.pixelSize: 12
+        }
+        MouseArea {
+          id: addItemMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: cc.host.setControlCenterShown(modelData, true)
+        }
+      }
     }
-    CcRound {
-      icon: "󰖔"
-      checked: cc.nightOn
-      visible: !!cc.nightlight
-      onClicked: cc.nightlight.setNightlight(!cc.nightOn)
+  }
+
+  Item {
+    id: cardArea
+    Layout.fillWidth: true
+    Layout.preferredHeight: positions.height
+    readonly property var positions: {
+      var result = {}
+      var gap = 10
+      var halfWidth = (width - gap) / 2
+      var rowY = 0
+      var halfUsed = false
+      for (var i = 0; i < cc.visibleControlKeys.length; i++) {
+        var key = cc.visibleControlKeys[i]
+        var wide = key === "sound" || key === "display"
+        var cardHeight = key === "sound" ? 96 + (cc.outputsOpen && !cc.editMode ? cc.outputs.length * 40 : 0) : wide ? 96 : 66
+        if (wide) {
+          if (halfUsed) { rowY += 66 + gap; halfUsed = false }
+          result[key] = { x: 0, y: rowY, width: width, height: cardHeight }
+          rowY += cardHeight + gap
+        } else {
+          result[key] = { x: halfUsed ? halfWidth + gap : 0, y: rowY, width: halfWidth, height: 66 }
+          if (halfUsed) { rowY += 66 + gap; halfUsed = false }
+          else halfUsed = true
+        }
+      }
+      result.height = Math.max(0, rowY + (halfUsed ? 66 : -gap))
+      return result
+    }
+    Repeater {
+      model: ["wifi", "bluetooth", "focus", "game", "night", "sound", "display"]
+      delegate: Item {
+        id: controlCard
+        required property string modelData
+        readonly property var slot: cardArea.positions[modelData] || null
+        visible: !!slot
+        x: slot ? slot.x : 0
+        y: slot ? slot.y : 0
+        width: slot ? slot.width : 0
+        height: slot ? slot.height : 0
+        opacity: cc.draggedKey === modelData ? 0.25 : 1
+        Behavior on x { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
+        Behavior on y { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: 120 * cc.host.motionScale } }
+
+        Loader {
+          anchors.fill: parent
+          property string controlKey: controlCard.modelData
+          sourceComponent: controlCard.modelData === "sound" ? soundCard
+            : controlCard.modelData === "display" ? displayCard : quickCard
+        }
+        MouseArea {
+          id: editDragMouse
+          anchors.fill: parent
+          visible: cc.editMode
+          enabled: cc.editMode
+          cursorShape: Qt.OpenHandCursor
+          property real pressX: 0
+          property real pressY: 0
+          onPressed: function(mouse) { pressX = mouse.x; pressY = mouse.y }
+          onPositionChanged: function(mouse) {
+            if (!pressed) return
+            if (cc.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
+            if (cc.draggedKey === "") {
+              cc.previewOrder = cc.host.controlCenterKeys.slice()
+              cc.draggedKey = controlCard.modelData
+              dragProxy.width = controlCard.width
+              dragProxy.height = controlCard.height
+            }
+            var point = editDragMouse.mapToItem(dragLayer, mouse.x, mouse.y)
+            dragProxy.x = point.x - dragProxy.width / 2
+            dragProxy.y = point.y - dragProxy.height / 2
+            point = editDragMouse.mapToItem(cardArea, mouse.x, mouse.y)
+            cc.previewMoveAt(point.x, point.y)
+          }
+          onReleased: {
+            if (cc.draggedKey === controlCard.modelData) cc.host.settings.controlCenterOrder = cc.previewOrder.join(",")
+            cc.endDrag()
+          }
+          onCanceled: { cc.previewOrder = cc.host.controlCenterKeys.slice(); cc.endDrag() }
+        }
+        Rectangle {
+          visible: cc.editMode
+          anchors.left: parent.left
+          anchors.top: parent.top
+          anchors.leftMargin: -4
+          anchors.topMargin: -4
+          z: 2
+          width: 24; height: 24; radius: 12
+          color: cc.wellHover
+          border.width: 1
+          border.color: cc.textMuted
+          Text { anchors.centerIn: parent; text: "−"; color: cc.text; font.pixelSize: 18 }
+          MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: { cc.host.setControlCenterShown(controlCard.modelData, false); cc.endDrag() }
+          }
+        }
+      }
+    }
+  }
+
+  Rectangle {
+    visible: cc.visibleControlKeys.length === 0
+    Layout.fillWidth: true
+    Layout.preferredHeight: 66
+    radius: 20
+    color: cc.card
+    Text {
+      anchors.centerIn: parent
+      text: cc.editMode ? "Use Add Controls to restore a card" : "Click the pencil to add controls"
+      color: cc.textMuted
+      font.family: "Adwaita Sans"
+      font.pixelSize: 12
+    }
+  }
+
+  Item {
+    id: dragLayer
+    parent: cc.parent
+    anchors.fill: cc
+    z: 100
+    Rectangle {
+      id: dragProxy
+      visible: cc.draggedKey !== ""
+      radius: 20
+      color: cc.card
+      border.width: 1
+      border.color: cc.accent
+      opacity: 0.96
+      scale: 1.04
+      Loader {
+        anchors.fill: parent
+        enabled: false
+        property string controlKey: cc.draggedKey
+        sourceComponent: cc.draggedKey === "sound" ? soundCard
+          : cc.draggedKey === "display" ? displayCard : quickCard
+      }
+    }
+  }
+
+  Component {
+    id: quickCard
+    CcTile {
+      anchors.fill: parent
+      icon: cc.controlIcon(parent.controlKey)
+      title: cc.controlTitle(parent.controlKey)
+      subtitle: cc.controlSubtitle(parent.controlKey)
+      checked: cc.controlChecked(parent.controlKey)
+      available: cc.controlAvailable(parent.controlKey)
+      onClicked: cc.toggleControl(parent.controlKey)
     }
   }
 
   // ---------- Sound / Display ----------
 
-  CcSection {
+  Component {
+    id: soundCard
+    CcSection {
+    anchors.fill: parent
     title: "Sound"
-    visible: !!(cc.sink && cc.sink.audio)
-    showChevron: cc.outputs.length > 1
+    detail: !cc.controlPresent("sound") ? "Unavailable" : cc.muted ? "Muted" : Math.round(cc.volume * 100) + "%"
+    showChevron: !cc.editMode && cc.outputs.length > 1
     chevronOpen: cc.outputsOpen
     onChevronClicked: cc.outputsOpen = !cc.outputsOpen
 
     CcSlider {
+      visible: cc.controlPresent("sound")
       icon: cc.muted || cc.volume <= 0 ? "󰖁" : cc.volume < 0.34 ? "󰕿" : cc.volume < 0.67 ? "󰖀" : "󰕾"
       value: cc.muted ? 0 : cc.volume
       onMoved: function(v) {
@@ -404,7 +680,7 @@ ColumnLayout {
     }
     // Output picker, revealed by the › button.
     Repeater {
-      model: cc.outputsOpen ? cc.outputs : []
+      model: cc.outputsOpen && !cc.editMode ? cc.outputs : []
       delegate: Rectangle {
         id: outputRow
         required property var modelData
@@ -446,18 +722,40 @@ ColumnLayout {
         }
       }
     }
+    Text {
+      visible: !cc.controlPresent("sound")
+      text: "No audio output available"
+      color: cc.textMuted
+      font.family: "Adwaita Sans"
+      font.pixelSize: 12
+      Layout.fillWidth: true
+    }
+    }
   }
 
-  CcSection {
+  Component {
+    id: displayCard
+    CcSection {
+    anchors.fill: parent
     title: "Display"
-    visible: cc.brightnessAvailable
+    detail: cc.brightnessAvailable ? cc.brightness + "%" : "Unavailable"
     CcSlider {
+      visible: cc.brightnessAvailable
       icon: "󰃠"
       value: cc.brightness / 100
       onMoved: function(v) {
         cc.brightness = Math.round(v * 100)
         brightnessDebounce.restart()
       }
+    }
+    Text {
+      visible: !cc.brightnessAvailable
+      text: "No brightness control available"
+      color: cc.textMuted
+      font.family: "Adwaita Sans"
+      font.pixelSize: 12
+      Layout.fillWidth: true
+    }
     }
   }
 
@@ -467,7 +765,7 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: notificationBody.implicitHeight + 20
-    radius: 26
+    radius: 20
     color: cc.card
 
     ColumnLayout {

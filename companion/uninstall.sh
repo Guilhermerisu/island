@@ -2,7 +2,9 @@
 # Uninstalls Island: switches back to the stock bar, removes the notification
 # companion (Omarchy's own notification service comes back with it), cleans
 # shell.json, takes out the Omarchy menu overrides that still point at the
-# island, removes the island plugin itself, and restarts the shell.
+# island, deletes ~/.config/hypr/island-bindings.lua and the line in
+# hyprland.lua that loads it, removes the island plugin itself, and restarts
+# the shell.
 #
 # Kept: ~/.config/omarchy/island.json (your settings) and keybindings you
 # pointed at the island yourself, which are listed so you can restore them.
@@ -24,7 +26,7 @@ for arg in "$@"; do
   case "$arg" in
     --yes | -y) assume_yes=true ;;
     --dry-run | -n) dry_run=true ;;
-    -h | --help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h | --help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "uninstall.sh: unknown option: $arg" >&2; exit 1 ;;
   esac
 done
@@ -84,14 +86,24 @@ if [[ -f $menu ]]; then
   fi
 fi
 
-# 5. Keybindings are yours: list any that still open the island.
-bindings=$(grep -nH "$island_id" "$HOME"/.config/hypr/*.lua 2>/dev/null || true)
+# 5. The keybindings file setup wrote, and its loader line in hyprland.lua.
+if [[ -f $HOME/.config/hypr/island-bindings.lua ]]; then
+  step "Removing ~/.config/hypr/island-bindings.lua"
+  if $dry_run; then
+    bash "$(dirname "$0")/bindings.sh" remove --dry-run
+  else
+    bash "$(dirname "$0")/bindings.sh" remove
+  fi
+fi
+
+# 6. Keybindings of your own: list any that still open the island.
+bindings=$(grep -nH "$island_id" "$HOME"/.config/hypr/*.lua 2>/dev/null | grep -v "/island-bindings.lua:" || true)
 if [[ -n $bindings ]]; then
   step "These keybindings still open the island; restore them yourself:"
   printf '%s\n' "$bindings" | sed "s|$HOME|~|; s/^/    /"
 fi
 
-# 6. The island itself, last: this script lives inside it. Detached, so the
+# 7. The island itself, last: this script lives inside it. Detached, so the
 # removal and the shell restart outlive this process. `omarchy plugin remove`
 # deletes a git checkout outright, so a checkout holding work that exists
 # nowhere else (uncommitted changes, or commits not on its upstream) is kept.
