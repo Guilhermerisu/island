@@ -354,7 +354,7 @@ Item {
   }
   Process {
     id: updateCheck
-    command: ["bash", "-c", "cd \"$1\" && [ -d .git ] || exit 0; export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -oBatchMode=yes'; remote=$(timeout 30 git ls-remote origin HEAD 2>/dev/null | cut -f1); [ -n \"$remote\" ] || exit 0; git cat-file -e \"$remote^{commit}\" 2>/dev/null || echo available", "update-check", root.pluginDir]
+    command: ["bash", "-c", "cd \"$1\" && [ -d .git ] || exit 0; export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -oBatchMode=yes'; remote=$(timeout 30 git ls-remote origin HEAD 2>/dev/null | cut -f1); [ -n \"$remote\" ] || exit 0; git merge-base --is-ancestor \"$remote\" HEAD 2>/dev/null || echo available", "update-check", root.pluginDir]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -366,13 +366,7 @@ Item {
   }
   Process {
     id: islandUpdate
-    command: ["bash", "-c", "omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1 || exit 1; setsid -f omarchy restart shell >/dev/null 2>&1 </dev/null", "island-update", root.pluginDir.replace(/.*\//, "")]
-    onExited: function(code) {
-      if (code === 0) return
-      root.updateState = "available"
-      root.lastNotification = root.updateRow("Couldn't update. The plugin folder has local changes.")
-      root.showFeedback("", 6000, "notification")
-    }
+    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", root.pluginDir.replace(/.*\//, "")]
   }
 
   function installCompanion() {
