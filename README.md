@@ -113,12 +113,6 @@ Island's notification companion, connects supported Omarchy menu entries, and
 writes `~/.config/hypr/island-bindings.lua`, which points the keys you already
 use for the menu, launcher, emoji, clipboard, and other views at the island.
 
-### Updates
-
-Island checks GitHub for a new version at startup and every six hours. When
-one is out, an **Island Update** banner appears; click it to update Island and
-restart the shell. Or run `omarchy plugin update guilhermerisu.island`.
-
 ## Usage
 
 ### Controls
