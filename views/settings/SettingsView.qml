@@ -2,10 +2,11 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 
-// The island's own settings, with a macOS-style sidebar and detail pane.
-// Opened from the control center's gear button; Esc goes back to it. Changes
-// apply live and are saved to ~/.config/omarchy/island.json (see Island.qml).
-ColumnLayout {
+// The island's own settings, laid out like macOS System Settings: a sidebar
+// with search, and a pane of grouped rows. Opened from
+// the control center's gear; Esc goes back to it. Changes apply live and are
+// saved to ~/.config/omarchy/island.json (see Island.qml).
+Item {
   id: settingsView
   required property var host
   property bool active: false
@@ -13,6 +14,13 @@ ColumnLayout {
   property string currentPage: "General"
   property string searchQuery: ""
   readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Keybinds"]
+  readonly property var pageInfo: ({
+    "General": { icon: "󰒓", color: "#8e8e93", about: "Appearance, motion, and how the pill looks at rest." },
+    "Search": { icon: "󰍉", color: "#5e7a99", about: "Get answers to launcher questions right in the island." },
+    "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
+    "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
+    "Keybinds": { icon: "󰌌", color: "#8e8e93", about: "Keyboard shortcuts that open each part of the island." }
+  })
   function pageMatches(page) {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
@@ -34,44 +42,57 @@ ColumnLayout {
 
   readonly property color panel: host.colorBackground
   readonly property color text: host.colorText
-  readonly property color textMuted: Qt.tint(panel, host.withAlpha(text, 0.65))
-  readonly property color sidebar: Qt.tint(panel, host.withAlpha(text, 0.06))
-  readonly property color card: Qt.tint(panel, host.withAlpha(text, 0.08))
-  readonly property color well: Qt.tint(panel, host.withAlpha(text, 0.14))
-  readonly property color divider: host.withAlpha(text, 0.12)
+  readonly property color textMuted: Qt.tint(panel, host.withAlpha(text, 0.6))
+  readonly property color sidebar: Qt.tint(panel, host.withAlpha(text, 0.07))
+  readonly property color card: Qt.tint(panel, host.withAlpha(text, 0.075))
+  readonly property color well: Qt.tint(panel, host.withAlpha(text, 0.16))
+  readonly property color wellHover: Qt.tint(panel, host.withAlpha(text, 0.22))
+  readonly property color divider: host.withAlpha(text, 0.09)
   readonly property color accent: host.colorAccent
   readonly property color accentInk: host.colorAccentText
   readonly property int animDuration: 180 * host.motionScale
 
-  spacing: 8
+  implicitHeight: 640
   onActiveChanged: {
     if (active) Qt.callLater(function() { settingsView.forceActiveFocus() })
-    else stopRecording()
+    else { stopRecording(); menuButton = null }
     if (active && currentPage === "Keybinds") { shortcutList.running = true; boundList.running = true }
   }
   onCurrentPageChanged: {
     stopRecording()
     cancelPending()
+    menuButton = null
+    scroller.contentY = 0
     if (currentPage === "Keybinds") { shortcutList.running = true; boundList.running = true }
   }
   Component.onDestruction: if (recordingId !== "") submapReset.running = true
-  Keys.onEscapePressed: host.view = "controls"
+  Keys.onEscapePressed: {
+    if (menuButton) menuButton = null
+    else host.view = "controls"
+  }
 
-  // macOS switch: theme accent track when on, white knob sliding across.
+
+
+
+  // ---------- Controls ----------
+
+  // The small switch System Settings uses in its lists.
   component SettingsSwitch: Rectangle {
     id: sw
     property bool checked: false
     signal toggled(bool checked)
-    implicitWidth: 46
-    implicitHeight: 28
-    radius: 14
+    implicitWidth: 34
+    implicitHeight: 20
+    radius: 10
     color: checked ? settingsView.accent : settingsView.well
     Behavior on color { ColorAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
     Rectangle {
-      width: 24; height: 24; radius: 12
+      width: 16; height: 16; radius: 8
       y: 2
       x: sw.checked ? sw.width - width - 2 : 2
       color: "#ffffff"
+      border.width: 1
+      border.color: Qt.rgba(0, 0, 0, 0.12)
       Behavior on x { NumberAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
     }
     MouseArea {
@@ -81,56 +102,112 @@ ColumnLayout {
     }
   }
 
-  // Segmented control for a few fixed values.
-  component SettingsSegments: Rectangle {
-    id: seg
+  // Pop-up button: the current choice with up/down chevrons; the choices open
+  // in a menu (see popMenu below).
+  component SettingsPopUp: Rectangle {
+    id: pop
     property var options: []   // [{ label, value }]
     property var value
     signal picked(var value)
-    readonly property int index: {
-      for (var i = 0; i < options.length; i++) if (options[i].value === value) return i
-      return -1
+    readonly property string currentLabel: {
+      for (var i = 0; i < options.length; i++) if (options[i].value === value) return options[i].label
+      return ""
     }
-    implicitWidth: options.length * (options.length > 3 ? 70 : 62) + 4
-    implicitHeight: 28
-    radius: 9
-    color: settingsView.well
-    Rectangle {
-      visible: seg.index >= 0
-      y: 2
-      height: parent.height - 4
-      width: (parent.width - 4) / Math.max(1, seg.options.length)
-      x: 2 + Math.max(0, seg.index) * width
-      radius: 7
-      color: settingsView.panel
-      Behavior on x { NumberAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
+    readonly property bool open: settingsView.menuButton === pop
+    implicitWidth: Math.max(96, popLabel.implicitWidth + 40)
+    implicitHeight: 24
+    radius: 6
+    color: open || popMouse.containsMouse ? settingsView.wellHover : settingsView.well
+    Text {
+      id: popLabel
+      anchors.left: parent.left
+      anchors.leftMargin: 10
+      anchors.verticalCenter: parent.verticalCenter
+      text: pop.currentLabel
+      color: settingsView.text
+      font.family: "Adwaita Sans"
+      font.pixelSize: 13
     }
-    Row {
-      anchors.fill: parent
-      anchors.margins: 2
+    Column {
+      anchors.right: parent.right
+      anchors.rightMargin: 8
+      anchors.verticalCenter: parent.verticalCenter
+      spacing: -5
       Repeater {
-        model: seg.options
-        delegate: Item {
-          required property var modelData
-          width: parent.width / seg.options.length
-          height: parent.height
-          Text {
-            anchors.centerIn: parent
-            text: modelData.label
-            color: settingsView.text
-            font.family: "Adwaita Sans"
-            font.pixelSize: 12
-            font.weight: seg.value === modelData.value ? Font.DemiBold : Font.Normal
-          }
-          MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: seg.picked(modelData.value)
-          }
+        model: ["󰅃", "󰅀"]
+        delegate: Text {
+          required property string modelData
+          text: modelData
+          color: settingsView.textMuted
+          font.family: settingsView.host.fontFamily
+          font.pixelSize: 10
         }
       }
     }
+    MouseArea {
+      id: popMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: pop.open ? settingsView.menuButton = null : settingsView.openMenu(pop)
+    }
   }
+
+  // macOS push button: small rounded rectangle, accent for the default action.
+  component SettingsButton: Rectangle {
+    id: button
+    property string label: ""
+    property bool primary: false
+    signal clicked()
+    implicitWidth: buttonText.implicitWidth + 24
+    implicitHeight: 24
+    radius: 6
+    color: primary ? settingsView.accent : buttonMouse.containsMouse ? settingsView.wellHover : settingsView.well
+    Text {
+      id: buttonText
+      anchors.centerIn: parent
+      text: button.label
+      color: button.primary ? settingsView.accentInk : settingsView.text
+      font.family: "Adwaita Sans"
+      font.pixelSize: 13
+      font.weight: button.primary ? Font.DemiBold : Font.Normal
+    }
+    MouseArea {
+      id: buttonMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: button.clicked()
+    }
+  }
+
+  // An app-icon squircle with a soft top-to-bottom gradient, as macOS draws
+  // its settings icons. Neutral when colorful icons are off.
+  component PaneIcon: Rectangle {
+    id: paneIcon
+    property string glyph: ""
+    property color tint: settingsView.accent
+    property bool neutral: !settingsView.settings.colorfulSettingsIcons
+    property bool onAccent: false
+    implicitWidth: 20
+    implicitHeight: 20
+    radius: width * 0.26
+    gradient: Gradient {
+      GradientStop { position: 0; color: paneIcon.neutral ? (paneIcon.onAccent ? settingsView.accentInk : settingsView.well) : Qt.lighter(paneIcon.tint, 1.18) }
+      GradientStop { position: 1; color: paneIcon.neutral ? (paneIcon.onAccent ? settingsView.accentInk : settingsView.well) : paneIcon.tint }
+    }
+    border.width: paneIcon.neutral ? 0 : 1
+    border.color: Qt.rgba(1, 1, 1, 0.16)
+    Text {
+      anchors.centerIn: parent
+      text: paneIcon.glyph
+      color: paneIcon.neutral ? (paneIcon.onAccent ? settingsView.accent : settingsView.textMuted) : "#ffffff"
+      font.family: settingsView.host.fontFamily
+      font.pixelSize: Math.round(paneIcon.width * 0.62)
+    }
+  }
+
+  // ---------- Rows and groups ----------
 
   // One row of a group: label (and optional detail) on the left, a control
   // on the right, and a hairline under every row but the last.
@@ -141,10 +218,10 @@ ColumnLayout {
     property bool last: false
     default property alias control: slot.data
     Layout.fillWidth: true
-    implicitHeight: detail !== "" ? 58 : 48
+    implicitHeight: detail !== "" ? 50 : 38
     Column {
       anchors.left: parent.left
-      anchors.leftMargin: 18
+      anchors.leftMargin: 14
       anchors.right: slot.left
       anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
@@ -155,8 +232,7 @@ ColumnLayout {
         elide: Text.ElideRight
         color: settingsView.text
         font.family: "Adwaita Sans"
-        font.pixelSize: 14
-        font.letterSpacing: -0.2
+        font.pixelSize: 13
       }
       Text {
         width: parent.width
@@ -171,7 +247,7 @@ ColumnLayout {
     Item {
       id: slot
       anchors.right: parent.right
-      anchors.rightMargin: 18
+      anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       width: childrenRect.width
       height: childrenRect.height
@@ -179,34 +255,39 @@ ColumnLayout {
     Rectangle {
       visible: !row.last
       anchors.left: parent.left
-      anchors.leftMargin: 18
+      anchors.leftMargin: 14
       anchors.right: parent.right
+      anchors.rightMargin: 14
       anchors.bottom: parent.bottom
       height: 1
       color: settingsView.divider
     }
   }
 
-  // A titled inset group of rows.
+  // A group of rows under a bold section title, with an optional footnote.
   component SettingsGroup: ColumnLayout {
     id: group
     property string title: ""
+    property string footer: ""
     default property alias rows: groupBody.data
     Layout.fillWidth: true
     spacing: 6
     Text {
-      Layout.leftMargin: 4
+      visible: group.title !== ""
+      Layout.leftMargin: 2
       text: group.title
-      color: settingsView.textMuted
+      color: settingsView.text
       font.family: "Adwaita Sans"
-      font.pixelSize: 12
+      font.pixelSize: 13
       font.weight: Font.DemiBold
     }
     Rectangle {
       Layout.fillWidth: true
       Layout.preferredHeight: groupBody.implicitHeight
-      radius: 12
+      radius: 10
       color: settingsView.card
+      border.width: 1
+      border.color: settingsView.host.withAlpha(settingsView.text, 0.04)
       ColumnLayout {
         id: groupBody
         anchors.left: parent.left
@@ -214,48 +295,94 @@ ColumnLayout {
         spacing: 0
       }
     }
+    Text {
+      visible: group.footer !== ""
+      Layout.fillWidth: true
+      Layout.leftMargin: 2
+      text: group.footer
+      wrapMode: Text.WordWrap
+      color: settingsView.textMuted
+      font.family: "Adwaita Sans"
+      font.pixelSize: 11
+    }
+  }
+
+  // The header System Settings puts at the top of a pane: the pane's icon,
+  // its name, and what it's for.
+  component PaneHeader: Rectangle {
+    id: header
+    property string page: ""
+    readonly property var info: settingsView.pageInfo[page] || ({})
+    Layout.fillWidth: true
+    implicitHeight: headerColumn.implicitHeight + 36
+    radius: 12
+    color: settingsView.card
+    border.width: 1
+    border.color: settingsView.host.withAlpha(settingsView.text, 0.04)
+    Column {
+      id: headerColumn
+      anchors.centerIn: parent
+      width: Math.min(parent.width - 48, 380)
+      spacing: 8
+      PaneIcon {
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: 48
+        height: 48
+        glyph: header.info.icon || ""
+        tint: header.info.color || settingsView.accent
+      }
+      Text {
+        width: parent.width
+        horizontalAlignment: Text.AlignHCenter
+        text: header.page
+        color: settingsView.text
+        font.family: "Adwaita Sans"
+        font.pixelSize: 17
+        font.weight: Font.Bold
+      }
+      Text {
+        width: parent.width
+        visible: text !== ""
+        horizontalAlignment: Text.AlignHCenter
+        text: header.info.about || ""
+        wrapMode: Text.WordWrap
+        lineHeight: 1.1
+        color: settingsView.textMuted
+        font.family: "Adwaita Sans"
+        font.pixelSize: 12
+      }
+    }
   }
 
   component SidebarItem: Rectangle {
     id: side
     property string title: ""
-    property string icon: ""
-    property color iconColor: settingsView.accent
+    readonly property var info: settingsView.pageInfo[title] || ({})
     readonly property bool selected: settingsView.currentPage === title
     Layout.fillWidth: true
     Layout.preferredHeight: 36
     radius: 8
     visible: settingsView.pageMatches(title)
-    color: selected ? settingsView.accent : sideMouse.containsMouse ? settingsView.well : "transparent"
+    color: selected ? settingsView.accent : sideMouse.containsMouse ? settingsView.host.withAlpha(settingsView.text, 0.06) : "transparent"
     RowLayout {
       anchors.fill: parent
-      anchors.leftMargin: 10
+      anchors.leftMargin: 8
       anchors.rightMargin: 8
       spacing: 10
-      Rectangle {
-        Layout.preferredWidth: 24
-        Layout.preferredHeight: 24
-        radius: 6
-        color: settingsView.settings.colorfulSettingsIcons ? side.iconColor
-          : side.selected ? settingsView.accentInk : settingsView.well
-        border.width: settingsView.settings.colorfulSettingsIcons ? 1 : 0
-        border.color: Qt.rgba(1, 1, 1, 0.18)
-        Text {
-          anchors.centerIn: parent
-          text: side.icon
-          color: settingsView.settings.colorfulSettingsIcons ? "#ffffff"
-            : side.selected ? settingsView.accent : settingsView.textMuted
-          font.family: settingsView.host.fontFamily
-          font.pixelSize: 14
-        }
+      PaneIcon {
+        Layout.preferredWidth: 26
+        Layout.preferredHeight: 26
+        glyph: side.info.icon || ""
+        tint: side.info.color || settingsView.accent
+        onAccent: side.selected
       }
       Text {
         Layout.fillWidth: true
         text: side.title
+        elide: Text.ElideRight
         color: side.selected ? settingsView.accentInk : settingsView.text
         font.family: "Adwaita Sans"
-        font.pixelSize: 13
-        font.weight: side.selected ? Font.DemiBold : Font.Normal
+        font.pixelSize: 15
       }
     }
     MouseArea {
@@ -263,7 +390,7 @@ ColumnLayout {
       anchors.fill: parent
       hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
-      onClicked: { settingsView.currentPage = side.title; scroller.contentY = 0 }
+      onClicked: settingsView.currentPage = side.title
     }
   }
 
@@ -418,34 +545,6 @@ ColumnLayout {
     }).join(" + ")
   }
 
-  // macOS push button: small rounded rectangle, accent for the default action.
-  component SettingsButton: Rectangle {
-    id: button
-    property string label: ""
-    property bool primary: false
-    signal clicked()
-    implicitWidth: buttonText.implicitWidth + 24
-    implicitHeight: 24
-    radius: 6
-    color: primary ? settingsView.accent : buttonMouse.containsMouse ? Qt.tint(settingsView.well, settingsView.host.withAlpha(settingsView.text, 0.06)) : settingsView.well
-    Text {
-      id: buttonText
-      anchors.centerIn: parent
-      text: button.label
-      color: button.primary ? settingsView.accentInk : settingsView.text
-      font.family: "Adwaita Sans"
-      font.pixelSize: 12
-      font.weight: button.primary ? Font.DemiBold : Font.Normal
-    }
-    MouseArea {
-      id: buttonMouse
-      anchors.fill: parent
-      hoverEnabled: true
-      cursorShape: Qt.PointingHandCursor
-      onClicked: button.clicked()
-    }
-  }
-
   // One shortcut, like a row of macOS's Keyboard Shortcuts: the name, and the
   // keys on the right. Click the keys to type new ones; keys that are
   // taken add a warning line with Cancel and Replace.
@@ -456,15 +555,15 @@ ColumnLayout {
     readonly property bool recording: settingsView.recordingId === entry.id
     readonly property bool asking: settingsView.pendingId === entry.id && settingsView.pendingConflict !== ""
     Layout.fillWidth: true
-    implicitHeight: asking ? 64 : 40
+    implicitHeight: asking ? 60 : 38
     Behavior on implicitHeight { NumberAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
 
     Text {
       anchors.left: parent.left
-      anchors.leftMargin: 16
+      anchors.leftMargin: 14
       anchors.right: keysField.left
       anchors.rightMargin: 10
-      y: 11
+      y: 10
       text: shortcutRow.entry.label
       elide: Text.ElideRight
       color: settingsView.text
@@ -474,9 +573,9 @@ ColumnLayout {
     Rectangle {
       id: keysField
       anchors.right: parent.right
-      anchors.rightMargin: 12
-      y: 8
-      width: Math.max(shortcutRow.recording ? 150 : 0, keysText.implicitWidth + 20)
+      anchors.rightMargin: 10
+      y: 7
+      width: Math.max(shortcutRow.recording ? 150 : 0, keysText.implicitWidth + 16)
       height: 24
       radius: 6
       visible: !shortcutRow.asking
@@ -518,21 +617,21 @@ ColumnLayout {
     }
     Row {
       anchors.right: parent.right
-      anchors.rightMargin: 12
-      y: 8
+      anchors.rightMargin: 10
+      y: 7
       spacing: 6
       visible: shortcutRow.asking
       SettingsButton { label: "Cancel"; onClicked: settingsView.cancelPending() }
       SettingsButton { label: "Replace"; primary: true; onClicked: settingsView.applyPending() }
     }
     Row {
-      x: 16
-      y: 38
+      x: 14
+      y: 36
       spacing: 5
       visible: shortcutRow.asking
       Text {
         text: "󰀪"
-        color: "#f5b83d"
+        color: "#febc2e"
         font.family: settingsView.host.fontFamily
         font.pixelSize: 12
       }
@@ -546,8 +645,9 @@ ColumnLayout {
     Rectangle {
       visible: !shortcutRow.last
       anchors.left: parent.left
-      anchors.leftMargin: 16
+      anchors.leftMargin: 14
       anchors.right: parent.right
+      anchors.rightMargin: 14
       anchors.bottom: parent.bottom
       height: 1
       color: settingsView.divider
@@ -561,148 +661,70 @@ ColumnLayout {
     { title: "Island", ids: ["controls", "player", "settings"] }
   ]
 
-  // ---------- Navigation bar ----------
+  // ---------- Window ----------
 
   RowLayout {
-    Layout.fillWidth: true
-    Layout.preferredHeight: 34
-    Layout.leftMargin: 4
-    Layout.rightMargin: 4
-    Text {
-      text: "Settings"
-      color: settingsView.text
-      font.family: "Adwaita Sans"
-      font.pixelSize: 17
-      font.weight: Font.DemiBold
-      // Takes the keyboard while a shortcut is being recorded.
-      Item {
-        id: recorder
-        width: 0
-        height: 0
-        // A modifier's own press doesn't include itself in event.modifiers yet.
-        function modifierFor(key) {
-          if (key === Qt.Key_Meta || key === Qt.Key_Super_L || key === Qt.Key_Super_R) return Qt.MetaModifier
-          if (key === Qt.Key_Shift) return Qt.ShiftModifier
-          if (key === Qt.Key_Control) return Qt.ControlModifier
-          if (key === Qt.Key_Alt) return Qt.AltModifier
-          return 0
-        }
-        onActiveFocusChanged: if (!activeFocus) settingsView.stopRecording()
-        function heldMods(modifiers) {
-          var mods = []
-          if (modifiers & Qt.MetaModifier) mods.push("SUPER")
-          if (modifiers & Qt.ShiftModifier) mods.push("SHIFT")
-          if (modifiers & Qt.ControlModifier) mods.push("CTRL")
-          if (modifiers & Qt.AltModifier) mods.push("ALT")
-          return mods
-        }
-        function showHeld(modifiers) {
-          var mods = heldMods(modifiers)
-          settingsView.recordHint = mods.length ? settingsView.shortcutText(mods.join(" + ")) + " + …" : ""
-        }
-        Keys.onReleased: function(event) {
-          event.accepted = true
-          if (settingsView.recordingId !== "" && settingsView.keyName(event) === "") showHeld(event.modifiers & ~recorder.modifierFor(event.key))
-        }
-        Keys.onPressed: function(event) {
-          event.accepted = true
-          var name = settingsView.keyName(event)
-          if (name === "") { showHeld(event.modifiers | recorder.modifierFor(event.key)); return }
-          var mods = heldMods(event.modifiers)
-          if (name === "ESCAPE" && mods.length === 0) { settingsView.stopRecording(); return }
-          if ((name === "BACKSPACE" || name === "DELETE") && mods.length === 0) {
-            var id = settingsView.recordingId
-            settingsView.stopRecording()
-            settingsView.setShortcut(id, "")
-            return
-          }
-          if (mods.length === 0 && !/^F\d+$/.test(name)) { settingsView.recordHint = "Add a Modifier"; return }
-          settingsView.captured(mods.concat([name]).join(" + "))
-        }
-      }
-    }
-    Item { Layout.fillWidth: true }
-    Rectangle {
-      Layout.preferredWidth: 32
-      Layout.preferredHeight: 32
-      radius: 16
-      color: backMouse.containsMouse ? settingsView.well : settingsView.card
-      Text {
-        anchors.centerIn: parent
-        text: "󰅁"
-        color: settingsView.text
-        font.family: settingsView.host.fontFamily
-        font.pixelSize: 17
-      }
-      MouseArea {
-        id: backMouse
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: settingsView.host.view = "controls"
-      }
-    }
-  }
+    anchors.fill: parent
+    spacing: 10
 
-  RowLayout {
-    Layout.fillWidth: true
-    Layout.preferredHeight: 602
-    spacing: 8
-
+    // Sidebar: search and the panes.
     Rectangle {
-      Layout.preferredWidth: 222
+      Layout.preferredWidth: 212
       Layout.fillHeight: true
-      radius: 16
+      radius: 14
       color: settingsView.sidebar
+      border.width: 1
+      border.color: settingsView.host.withAlpha(settingsView.text, 0.05)
       ColumnLayout {
         anchors.fill: parent
         anchors.leftMargin: 10
         anchors.rightMargin: 10
-        anchors.topMargin: 12
+        anchors.topMargin: 14
         anchors.bottomMargin: 12
-        spacing: 4
+        spacing: 2
         Rectangle {
           Layout.fillWidth: true
-          Layout.preferredHeight: 30
-          Layout.bottomMargin: 8
-          radius: 6
-          color: settingsView.well
+          Layout.preferredHeight: 28
+          Layout.bottomMargin: 10
+          radius: 7
+          color: settingsView.host.withAlpha(settingsView.text, 0.08)
+          border.width: searchInput.activeFocus ? 2 : 0
+          border.color: settingsView.host.withAlpha(settingsView.accent, 0.6)
           Text {
             anchors.left: parent.left
-            anchors.leftMargin: 9
+            anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             text: "󰍉"
             color: settingsView.textMuted
             font.family: settingsView.host.fontFamily
-            font.pixelSize: 15
+            font.pixelSize: 14
           }
           Text {
             anchors.left: parent.left
-            anchors.leftMargin: 30
+            anchors.leftMargin: 28
             anchors.verticalCenter: parent.verticalCenter
             visible: searchInput.text === ""
             text: "Search"
             color: settingsView.textMuted
             font.family: "Adwaita Sans"
-            font.pixelSize: 12
+            font.pixelSize: 13
           }
           TextInput {
             id: searchInput
             anchors.left: parent.left
-            anchors.leftMargin: 30
+            anchors.leftMargin: 28
             anchors.right: parent.right
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             color: settingsView.text
             font.family: "Adwaita Sans"
-            font.pixelSize: 12
+            font.pixelSize: 13
             onTextChanged: {
               settingsView.searchQuery = text
               if (text.trim() === "" || settingsView.pageMatches(settingsView.currentPage)) return
               for (var i = 0; i < settingsView.pages.length; i++) {
                 if (settingsView.pageMatches(settingsView.pages[i])) {
                   settingsView.currentPage = settingsView.pages[i]
-                  scroller.contentY = 0
                   break
                 }
               }
@@ -713,73 +735,46 @@ ColumnLayout {
             }
           }
         }
-        Text {
-          text: "ISLAND"
-          color: settingsView.textMuted
-          font.family: "Adwaita Sans"
-          font.pixelSize: 10
-          font.weight: Font.DemiBold
-          font.letterSpacing: 0.8
-          Layout.leftMargin: 10
-          Layout.topMargin: 10
-          Layout.bottomMargin: 6
+        Repeater {
+          model: settingsView.pages
+          delegate: SidebarItem {
+            required property string modelData
+            title: modelData
+          }
         }
-        SidebarItem { title: "General"; icon: "󰒓"; iconColor: "#85878e" }
-        SidebarItem { title: "Search"; icon: "󰍉"; iconColor: "#586f88" }
-        SidebarItem { title: "Live Activities"; icon: "󰨚"; iconColor: "#35ba6d" }
-        SidebarItem { title: "Notifications"; icon: "󰂚"; iconColor: "#e54d58" }
-        SidebarItem { title: "Keybinds"; icon: "󰌌"; iconColor: "#8e8e93" }
         Text {
           visible: settingsView.searchQuery !== "" && !settingsView.hasSearchResults
-          text: "No matching settings"
+          text: "No Results"
           color: settingsView.textMuted
           font.family: "Adwaita Sans"
-          font.pixelSize: 12
-          Layout.leftMargin: 10
-          Layout.topMargin: 8
+          font.pixelSize: 13
+          Layout.alignment: Qt.AlignHCenter
+          Layout.topMargin: 18
         }
         Item { Layout.fillHeight: true }
       }
     }
 
-    Rectangle {
+    // Detail pane: the pane's groups, under its header.
+    ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
-      radius: 16
-      color: settingsView.sidebar
-      ColumnLayout {
-        anchors.fill: parent
-        anchors.leftMargin: 22
-        anchors.rightMargin: 22
-        anchors.topMargin: 8
-        anchors.bottomMargin: 20
-        spacing: 12
-        ColumnLayout {
-          Layout.fillWidth: true
-          Layout.preferredHeight: 50
-          spacing: 4
-          Text {
-            Layout.alignment: Qt.AlignLeft
-            text: settingsView.currentPage
-            color: settingsView.text
-            font.family: "Adwaita Sans"
-            font.pixelSize: 22
-            font.weight: Font.Bold
-            font.letterSpacing: -0.5
-          }
-        }
-        Flickable {
-          id: scroller
-          Layout.fillWidth: true
-          Layout.fillHeight: true
-          contentHeight: groups.implicitHeight
-          clip: true
-          boundsBehavior: Flickable.StopAtBounds
+      spacing: 6
+      Flickable {
+        id: scroller
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        contentHeight: groups.implicitHeight + 16
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
-          ColumnLayout {
-            id: groups
-            width: scroller.width
-            spacing: 18
+        ColumnLayout {
+          id: groups
+          x: 4
+          width: scroller.width - 8
+          spacing: 20
+
+          PaneHeader { page: settingsView.currentPage; Layout.topMargin: 4 }
 
       SettingsGroup {
         title: "Appearance"
@@ -800,7 +795,7 @@ ColumnLayout {
         visible: settingsView.currentPage === "General"
         SettingsRow {
           label: "Animation Speed"
-          SettingsSegments {
+          SettingsPopUp {
             options: [{ label: "Fast", value: 1 }, { label: "Normal", value: 1.5 }, { label: "Relaxed", value: 2 }]
             value: settingsView.settings.motionScale
             onPicked: function(v) { settingsView.settings.motionScale = v }
@@ -847,13 +842,14 @@ ColumnLayout {
       }
 
       SettingsGroup {
-        title: "Search"
+        title: "Ask AI"
         visible: settingsView.currentPage === "Search"
+        footer: "Uses the command-line tool you're signed in to. Choose None to turn asking off."
         SettingsRow {
           label: "Ask With"
           detail: "Answers launcher questions in the island"
           last: true
-          SettingsSegments {
+          SettingsPopUp {
             options: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "chatgpt" }, { label: "None", value: "none" }]
             value: settingsView.settings.askAi
             onPicked: function(v) { settingsView.settings.askAi = v }
@@ -862,7 +858,7 @@ ColumnLayout {
       }
 
       SettingsGroup {
-        title: "Live Activities"
+        title: "Show on the Pill"
         visible: settingsView.currentPage === "Live Activities"
         SettingsRow {
           label: "Now Playing"
@@ -900,13 +896,14 @@ ColumnLayout {
       }
 
       SettingsGroup {
-        title: "Notifications"
+        title: "Banners"
         visible: settingsView.currentPage === "Notifications"
         SettingsRow {
           label: "Banner Duration"
+          detail: "How long a notification stays on the pill"
           last: true
-          SettingsSegments {
-            options: [{ label: "3 s", value: 3 }, { label: "5 s", value: 5 }, { label: "8 s", value: 8 }]
+          SettingsPopUp {
+            options: [{ label: "3 seconds", value: 3 }, { label: "5 seconds", value: 5 }, { label: "8 seconds", value: 8 }]
             value: settingsView.settings.bannerSeconds
             onPicked: function(v) { settingsView.settings.bannerSeconds = v }
           }
@@ -935,12 +932,147 @@ ColumnLayout {
       RowLayout {
         visible: settingsView.currentPage === "Keybinds"
         Layout.fillWidth: true
-        Item { Layout.fillWidth: true }
         SettingsButton { label: "Restore Defaults"; onClicked: settingsView.restoreDefaults() }
+        Item { Layout.fillWidth: true }
       }
+        }
+      }
+    }
+  }
+
+  // ---------- Pop-up menu ----------
+
+  // The open pop-up button; its choices show in popMenu, under it.
+  property Item menuButton: null
+  property var menuOptions: []
+  property var menuValue
+  FontMetrics { id: menuFont; font.family: "Adwaita Sans"; font.pixelSize: 13 }
+  function openMenu(button) {
+    var widest = 0
+    for (var i = 0; i < button.options.length; i++) widest = Math.max(widest, menuFont.advanceWidth(button.options[i].label))
+    menuOptions = button.options
+    menuValue = button.value
+    popMenu.width = Math.max(button.width, Math.ceil(widest) + 52)
+    popMenu.height = button.options.length * 24 + 10
+    var p = button.mapToItem(settingsView, 0, 0)
+    popMenu.x = Math.max(4, p.x + button.width - popMenu.width)
+    var below = p.y + button.height + 4
+    popMenu.y = below + popMenu.height <= height - 4 ? below : p.y - popMenu.height - 4
+    menuButton = button
+  }
+  MouseArea {
+    anchors.fill: parent
+    z: 49
+    visible: settingsView.menuButton !== null
+    onClicked: settingsView.menuButton = null
+    onWheel: function(wheel) { settingsView.menuButton = null }
+  }
+  Rectangle {
+    id: popMenu
+    z: 50
+    visible: opacity > 0.01
+    opacity: settingsView.menuButton ? 1 : 0
+    scale: settingsView.menuButton ? 1 : 0.96
+    transformOrigin: Item.Top
+    Behavior on opacity { NumberAnimation { duration: 110 * settingsView.host.motionScale } }
+    Behavior on scale { NumberAnimation { duration: 110 * settingsView.host.motionScale; easing.type: Easing.OutCubic } }
+    radius: 9
+    color: Qt.tint(settingsView.panel, settingsView.host.withAlpha(settingsView.text, 0.13))
+    border.width: 1
+    border.color: settingsView.host.withAlpha(settingsView.text, 0.1)
+    Column {
+      id: menuColumn
+      x: 5
+      y: 5
+      width: parent.width - 10
+      Repeater {
+        model: settingsView.menuOptions
+        delegate: Rectangle {
+          id: menuItem
+          required property var modelData
+          readonly property bool chosen: settingsView.menuValue === modelData.value
+          width: menuColumn.width
+          height: 24
+          radius: 5
+          color: itemMouse.containsMouse ? settingsView.accent : "transparent"
+          Text {
+            x: 8
+            anchors.verticalCenter: parent.verticalCenter
+            visible: menuItem.chosen
+            text: "󰄬"
+            color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
+            font.family: settingsView.host.fontFamily
+            font.pixelSize: 12
+          }
+          Text {
+            id: menuText
+            x: 26
+            anchors.verticalCenter: parent.verticalCenter
+            text: menuItem.modelData.label
+            color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
+            font.family: "Adwaita Sans"
+            font.pixelSize: 13
+          }
+          MouseArea {
+            id: itemMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+              var button = settingsView.menuButton
+              settingsView.menuButton = null
+              if (button) button.picked(menuItem.modelData.value)
+            }
           }
         }
       }
+    }
+  }
+
+  // Takes the keyboard while a shortcut is being recorded.
+  Item {
+    id: recorder
+    width: 0
+    height: 0
+    // A modifier's own press doesn't include itself in event.modifiers yet.
+    function modifierFor(key) {
+      if (key === Qt.Key_Meta || key === Qt.Key_Super_L || key === Qt.Key_Super_R) return Qt.MetaModifier
+      if (key === Qt.Key_Shift) return Qt.ShiftModifier
+      if (key === Qt.Key_Control) return Qt.ControlModifier
+      if (key === Qt.Key_Alt) return Qt.AltModifier
+      return 0
+    }
+    onActiveFocusChanged: if (!activeFocus) settingsView.stopRecording()
+    function heldMods(modifiers) {
+      var mods = []
+      if (modifiers & Qt.MetaModifier) mods.push("SUPER")
+      if (modifiers & Qt.ShiftModifier) mods.push("SHIFT")
+      if (modifiers & Qt.ControlModifier) mods.push("CTRL")
+      if (modifiers & Qt.AltModifier) mods.push("ALT")
+      return mods
+    }
+    function showHeld(modifiers) {
+      var mods = heldMods(modifiers)
+      settingsView.recordHint = mods.length ? settingsView.shortcutText(mods.join(" + ")) + " + …" : ""
+    }
+    Keys.onReleased: function(event) {
+      event.accepted = true
+      if (settingsView.recordingId !== "" && settingsView.keyName(event) === "") showHeld(event.modifiers & ~recorder.modifierFor(event.key))
+    }
+    Keys.onPressed: function(event) {
+      event.accepted = true
+      var name = settingsView.keyName(event)
+      if (name === "") { showHeld(event.modifiers | recorder.modifierFor(event.key)); return }
+      var mods = heldMods(event.modifiers)
+      if (name === "ESCAPE" && mods.length === 0) { settingsView.stopRecording(); return }
+      if ((name === "BACKSPACE" || name === "DELETE") && mods.length === 0) {
+        var id = settingsView.recordingId
+        settingsView.stopRecording()
+        settingsView.setShortcut(id, "")
+        return
+      }
+      if (mods.length === 0 && !/^F\d+$/.test(name)) { settingsView.recordHint = "Add a Modifier"; return }
+      settingsView.captured(mods.concat([name]).join(" + "))
     }
   }
 }
