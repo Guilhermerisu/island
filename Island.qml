@@ -298,12 +298,25 @@ Item {
     feedbackTimer.restart()
   }
 
-  onVolumeChanged: {
-    if (initialized && volume >= 0 && settings.volumeHud) showFeedback("", 1800, "volume")
+  // The HUD shows when the volume or mute state differs from the last one seen
+  // on the same output. An output's first reading (at startup, or after
+  // switching outputs) is it reporting in, so it's only remembered.
+  property var hudSink: null
+  property real hudVolume: -1
+  property bool hudMuted: false
+  function volumeFeedback() {
+    var sink = Pipewire.defaultAudioSink
+    if (!initialized || !sink || !sink.ready || volume < 0) return
+    var changed = hudSink === sink && (volume !== hudVolume || muted !== hudMuted)
+    hudSink = sink
+    hudVolume = volume
+    hudMuted = muted
+    if (changed && settings.volumeHud) showFeedback("", 1800, "volume")
   }
-  onMutedChanged: {
-    if (initialized && volume >= 0 && settings.volumeHud) showFeedback("", 1800, "volume")
-  }
+  readonly property bool sinkReady: !!(Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.ready)
+  onVolumeChanged: volumeFeedback()
+  onMutedChanged: volumeFeedback()
+  onSinkReadyChanged: volumeFeedback()
   Component.onCompleted: {
     initialized = true
     companionCheck.running = true
@@ -313,15 +326,27 @@ Item {
   readonly property string companionDir: pluginDir + "/companion"
   property string companionStatus: ""
   property bool companionInstalling: false
+  property bool setupRunning: false
+  // Why the last setup failed, from the status file; empty when it didn't.
+  property string companionFailure: ""
+  property bool companionRecheck: false
   readonly property bool companionNeedsSetup: companionStatus !== "" && companionStatus !== "ok"
-  readonly property string companionWarning: companionInstalling ? "Setting up…" : "Click to Setup"
+  readonly property string companionWarning: companionInstalling ? "Setting up…"
+    : companionStatus === "menu-invalid" ? "Fix omarchy-menu.jsonc"
+    : companionFailure !== "" ? "Setup failed · Click for details" : "Click to Setup"
+  readonly property string menuExtensionPath: home + "/.config/omarchy/extensions/omarchy-menu.jsonc"
+  readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy"
 
   Process {
     id: companionCheck
     command: ["bash", root.companionDir + "/check.sh"]
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.companionStatus = String(text || "").trim()
+      onStreamFinished: {
+        root.companionStatus = String(text || "").trim()
+        if (root.companionRecheck) { root.companionRecheck = false; Qt.callLater(function() { companionCheck.running = true }); return }
+        if (!root.setupRunning) root.companionInstalling = false
+      }
     }
   }
 
@@ -369,17 +394,80 @@ Item {
     command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", root.pluginDir.replace(/.*\//, "")]
   }
 
+  // Setup runs detached and reports through a status file: installing the
+  // companion makes the shell reload the island, which would otherwise end
+  // setup with it and lose track of how it went. Its output goes to
+  // island-setup.log next to the status file.
+  // A broken menu file can't take the island's entries, so the pill opens it
+  // for fixing; the check runs again whenever it's saved.
+  Process { id: menuEditor; command: ["omarchy-launch-editor", root.menuExtensionPath] }
+  FileView {
+    path: root.menuExtensionPath
+    watchChanges: true
+    printErrors: false
+    onFileChanged: {
+      reload()
+      if (!companionCheck.running && !root.companionInstalling) companionCheck.running = true
+    }
+  }
+  // A failed setup shows its reason as a banner first; clicking the banner
+  // runs setup again.
+  function companionPillClicked() {
+    if (companionStatus === "menu-invalid") menuEditor.running = true
+    else if (companionFailure !== "") {
+      lastNotification = { summary: "Island Setup Failed · Click to Retry", body: companionFailure.charAt(0).toUpperCase() + companionFailure.slice(1),
+        glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true }
+      showFeedback("", 10000, "notification")
+    }
+    else installCompanion()
+  }
   function installCompanion() {
-    if (companionInstall.running) return
+    if (companionInstalling) return
+    companionFailure = ""
     companionInstalling = true
-    companionInstall.command = ["bash", companionDir + "/install.sh"]
     companionInstall.running = true
   }
   Process {
     id: companionInstall
-    stderr: StdioCollector { waitForEnd: true; onStreamFinished: if (text) console.warn("island: companion install:", text) }
-    onExited: function(code) {
+    command: ["setsid", "-f", "bash", "-c", "mkdir -p \"$(dirname \"$2\")\"; exec bash \"$1\" >\"$2\" 2>&1 </dev/null",
+      "island-setup", root.companionDir + "/install.sh", root.stateDir + "/island-setup.log"]
+  }
+  FileView {
+    id: setupStatusFile
+    path: root.stateDir + "/island-setup"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: root.setupStatusChanged(text())
+  }
+  // "running <started>", "done", or "failed". A run older than two minutes
+  // was cut short.
+  function setupStatusChanged(raw) {
+    var parts = String(raw || "").trim().split(/\s+/)
+    var running = parts[0] === "running" && Date.now() / 1000 - Number(parts[1] || 0) < 120
+    setupRunning = running
+    if (running) { companionInstalling = true; return }
+    companionFailure = parts[0] === "failed" ? parts.slice(1).join(" ") || "setup stopped unexpectedly"
+      : parts[0] === "running" ? "setup stopped before it finished" : ""
+    // Keep showing "Setting up…" until the check below says how it went.
+    if (companionCheck.running) companionRecheck = true
+    else companionCheck.running = true
+  }
+  // The status file may not exist until setup creates it, which a file watch
+  // can miss; look again while setup runs, and give up after two minutes.
+  Timer {
+    interval: 2000
+    repeat: true
+    running: root.companionInstalling
+    onTriggered: setupStatusFile.reload()
+  }
+  Timer {
+    interval: 120000
+    running: root.companionInstalling
+    onTriggered: {
+      root.setupRunning = false
       root.companionInstalling = false
+      root.companionFailure = "setup didn't finish within two minutes"
       companionCheck.running = true
     }
   }
@@ -623,7 +711,7 @@ Item {
             : root.volumePill ? 240
             : root.clipboardPill ? 320
             : root.view === "feedback" ? 280
-            : root.companionNeedsSetup ? 250
+            : root.companionNeedsSetup ? (root.companionWarning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
             : root.downloadActive ? (root.downloadTracker.active ? 240 : 280)
             : root.mediaPill ? 240
@@ -666,9 +754,10 @@ Item {
             onClicked: function(mouse) {
               feedbackTimer.stop()
               if (root.notificationPill && root.lastNotification && root.lastNotification.islandUpdate) root.updateIsland()
+              else if (root.notificationPill && root.lastNotification && root.lastNotification.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.installCompanion() }
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
-              else if (root.view === "rest" && root.companionNeedsSetup) root.installCompanion()
+              else if (root.view === "rest" && root.companionNeedsSetup) root.companionPillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
               else root.view = "controls"

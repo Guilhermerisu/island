@@ -5,6 +5,8 @@
 #   outdated     installed but differs from this repo's copy
 #   not-enabled  installed, but shell.json doesn't load it (or still loads
 #                the stock omarchy.notifications alongside it)
+#   menu-invalid the Omarchy menu extension isn't valid JSONC, so Omarchy
+#                ignores it and setup can't add the island's entries to it
 #   menu         the Omarchy menu's Theme, Background, Apps, System, Emoji, or Keybindings entry
 #                (and the shortcuts that open them) doesn't open the island yet
 #   bindings     ~/.config/hypr/island-bindings.lua hasn't been written yet
@@ -30,6 +32,12 @@ if ! jq -e '
   and ((.disabledPlugins // []) | index("omarchy.notifications")) != null
 ' "$config" >/dev/null 2>&1; then
   echo not-enabled
+  exit 0
+fi
+
+if [[ -f $menu ]] && ! perl -0pe 's#^\s*//[^\n]*(\n|$)##gm; s#,(\s*[}\]])#$1#g' "$menu" |
+  jq -e 'type == "object"' >/dev/null 2>&1; then
+  echo menu-invalid
   exit 0
 fi
 

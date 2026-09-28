@@ -54,7 +54,8 @@ normalize() {
 }
 
 # Every live binding as "keys<TAB>description<TAB>command", from Omarchy's own
-# keybinding list.
+# keybinding list. A list that can't be read counts as empty, so setup falls
+# back to Omarchy's default keys instead of failing.
 records() {
   bash -c 'set -- --print; source "$(command -v omarchy-menu-keybindings)" >/dev/null; output_binding_records' 2>/dev/null |
     while IFS=$'\t' read -r label _ arg; do
@@ -63,7 +64,7 @@ records() {
       keys=$(normalize "$keys")
       description=$(sed 's/^[[:space:]]*//; s/[[:space:]]*$//' <<<"$description")
       [[ -n $keys ]] && printf '%s\t%s\t%s\n' "$keys" "$description" "$arg"
-    done
+    done || true
 }
 
 # The file's current keys, as "command<TAB>keys".
