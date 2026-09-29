@@ -634,6 +634,16 @@ Item {
     }
   }
 
+  // An open view closes on a click outside the island (see outsideArea),
+  // armed a moment after it opens so the click that opened it can't count.
+  property bool outsideClickArmed: false
+  readonly property bool closesOnOutsideClick: surfaceOpen && outsideClickArmed
+  Timer {
+    interval: 120
+    running: root.surfaceOpen && !root.outsideClickArmed
+    onTriggered: root.outsideClickArmed = true
+  }
+  onSurfaceOpenChanged: if (!surfaceOpen) outsideClickArmed = false
   Variants {
     model: Quickshell.screens
     delegate: Component {
@@ -645,30 +655,28 @@ Item {
         color: "transparent"
         surfaceFormat.opaque: false
         exclusionMode: ExclusionMode.Ignore
-        anchors { top: true; left: true; right: true }
-        implicitHeight: 800
+        anchors { top: true; bottom: true; left: true; right: true }
         WlrLayershell.namespace: "omarchy-island"
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: island.activeSurface && island.activeSurface.wantsKeyboard
           ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-        mask: Region { item: island }
+        // Only the island takes input, except while a view is open: then the
+        // whole screen does, so outsideArea can close it. The island holds the
+        // keyboard exclusively then, and Hyprland sends no pointer input to
+        // any other surface, so a focus grab or a separate layer never sees
+        // the click. The click that closes the view goes no further.
+        mask: Region { item: root.closesOnOutsideClick ? outsideArea : island }
+        MouseArea {
+          id: outsideArea
+          anchors.fill: parent
+          enabled: root.closesOnOutsideClick
+          acceptedButtons: Qt.AllButtons
+          // Clicks on the island's blank space fall through to here too.
+          onPressed: function(mouse) {
+            if (!island.contains(mapToItem(island, mouse.x, mouse.y))) root.view = "rest"
+          }
+        }
 
-        HyprlandFocusGrab {
-          id: focusGrab
-          windows: [window]
-          property bool armed: false
-          active: window.visible && root.surfaceOpen && armed
-          onCleared: if (root.surfaceOpen) root.view = "rest"
-        }
-        Timer {
-          interval: 120
-          running: root.surfaceOpen
-          onTriggered: focusGrab.armed = true
-        }
-        Connections {
-          target: root
-          function onSurfaceOpenChanged() { if (!root.surfaceOpen) focusGrab.armed = false }
-        }
 
         Canvas {
           id: leftEar
