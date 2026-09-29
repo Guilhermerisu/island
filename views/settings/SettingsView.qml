@@ -27,7 +27,7 @@ Item {
     var terms = {
       "General": "general appearance colorful sidebar icons neutral motion animation speed hover lift pill notch style 24-hour clock volume hud",
       "Search": "search ask with claude codex launcher answers",
-      "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates",
+      "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices",
       "Notifications": "notifications banner duration",
       "Keybinds": "keybinds keybindings keyboard shortcuts keys"
     }
@@ -902,10 +902,26 @@ Item {
         SettingsRow {
           label: "System Updates"
           detail: "Show pacman, yay, paru, and Omarchy updates on the pill"
-          last: true
           SettingsSwitch {
             checked: settingsView.settings.systemUpdates
             onToggled: function(on) { settingsView.settings.systemUpdates = on }
+          }
+        }
+        SettingsRow {
+          label: "Battery"
+          detail: "Show when charging starts and when the battery runs low"
+          SettingsSwitch {
+            checked: settingsView.settings.batteryActivity
+            onToggled: function(on) { settingsView.settings.batteryActivity = on }
+          }
+        }
+        SettingsRow {
+          label: "Bluetooth Devices"
+          detail: "Show devices connecting and disconnecting"
+          last: true
+          SettingsSwitch {
+            checked: settingsView.settings.bluetoothActivity
+            onToggled: function(on) { settingsView.settings.bluetoothActivity = on }
           }
         }
       }

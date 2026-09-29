@@ -459,7 +459,6 @@ ColumnLayout {
                 visible: !!row.modelData.connected && row.modelData.battery >= 0 && !row.modelData.pending
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
-                readonly property real level: Math.max(0, Math.min(100, row.modelData.battery)) / 100
                 readonly property bool low: row.modelData.battery <= 20
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
@@ -469,36 +468,11 @@ ColumnLayout {
                   font.pixelSize: 13
                   font.features: { "tnum": 1 }
                 }
-                Item {
+                BatteryIcon {
                   anchors.verticalCenter: parent.verticalCenter
-                  width: 27
-                  height: 13
-                  Rectangle {
-                    id: batteryBody
-                    width: 24
-                    height: 13
-                    radius: 3.5
-                    color: "transparent"
-                    border.width: 1.2
-                    border.color: bt.host.withAlpha(bt.text, 0.45)
-                    Rectangle {
-                      x: 2
-                      y: 2
-                      height: parent.height - 4
-                      width: Math.max(2, (parent.width - 4) * parent.parent.parent.level)
-                      radius: 1.8
-                      color: parent.parent.parent.low ? "#ff453a" : bt.text
-                    }
-                  }
-                  Rectangle {
-                    anchors.left: batteryBody.right
-                    anchors.leftMargin: 1
-                    anchors.verticalCenter: batteryBody.verticalCenter
-                    width: 2
-                    height: 5
-                    radius: 1
-                    color: bt.host.withAlpha(bt.text, 0.45)
-                  }
+                  level: row.modelData.battery || 0
+                  low: parent.low
+                  color: bt.text
                 }
               }
               Rectangle {

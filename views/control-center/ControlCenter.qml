@@ -577,46 +577,14 @@ ColumnLayout {
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }
       }
-      Item {
+      BatteryIcon {
         anchors.verticalCenter: parent.verticalCenter
         width: 30
         height: 14
-        Rectangle {
-          id: batteryBody
-          width: 27
-          height: 14
-          radius: 4
-          color: "transparent"
-          border.width: 1.2
-          border.color: cc.host.withAlpha(cc.text, 0.45)
-          Rectangle {
-            x: 2
-            y: 2
-            height: parent.height - 4
-            width: Math.max(2, (parent.width - 4) * Math.max(0, Math.min(100, cc.batteryPercent)) / 100)
-            radius: 2
-            color: cc.charging ? "#30d158" : parent.parent.parent.low ? "#ff453a" : cc.text
-          }
-          Text {
-            anchors.centerIn: parent
-            visible: cc.charging
-            text: "󱐋"
-            color: "#ffffff"
-            style: Text.Outline
-            styleColor: Qt.rgba(0, 0, 0, 0.5)
-            font.family: cc.iconFont
-            font.pixelSize: 11
-          }
-        }
-        Rectangle {
-          anchors.left: batteryBody.right
-          anchors.leftMargin: 1
-          anchors.verticalCenter: batteryBody.verticalCenter
-          width: 2
-          height: 5
-          radius: 1
-          color: cc.host.withAlpha(cc.text, 0.45)
-        }
+        level: cc.batteryPercent
+        charging: cc.charging
+        low: parent.low
+        color: cc.text
       }
     }
   }

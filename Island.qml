@@ -1,9 +1,11 @@
 import QtQuick
 import Qt.labs.folderlistmodel
 import Quickshell
+import Quickshell.Bluetooth
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import Quickshell.Services.UPower
 import Quickshell.Wayland
 import qs.Commons
 import "components"
@@ -121,6 +123,8 @@ Item {
       property bool downloads: true
       property bool clipboard: true
       property bool systemUpdates: true
+      property bool batteryActivity: true
+      property bool bluetoothActivity: true
       property bool hardwarePreview: false
       property bool colorfulSettingsIcons: true
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,display"
@@ -169,6 +173,78 @@ Item {
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
+  readonly property bool activityPill: view === "feedback" && feedbackKind === "activity"
+
+  // ---------- Device live activities: battery, Bluetooth ----------
+
+  // The last one shown by the DevicePill; see its header for the fields.
+  property var activity: ({})
+  function showActivity(a) {
+    activity = a
+    showFeedback("", 3200, "activity")
+  }
+  // For a few seconds after the shell starts, everything is only recorded:
+  // devices reporting in aren't news.
+  property bool activitiesReady: false
+  Timer {
+    interval: 3000
+    running: true
+    onTriggered: {
+      root.batteryWarned = root.batteryLevel <= 10 ? 10 : root.batteryLevel <= 20 ? 20 : 101
+      root.btKnown = root.btConnected
+      root.activitiesReady = true
+    }
+  }
+
+  // Battery: charging started, and the level falling to 20% and to 10%, each
+  // once per discharge.
+  readonly property var batteryDevice: UPower.displayDevice
+  readonly property bool hasBattery: settings.hardwarePreview || !!(batteryDevice && batteryDevice.isLaptopBattery)
+  readonly property int batteryLevel: settings.hardwarePreview ? previewBatteryPercent
+    : hasBattery ? Math.round(batteryDevice.percentage * 100) : -1
+  readonly property bool onPower: settings.hardwarePreview ? previewCharging : hasBattery && !UPower.onBattery
+  property int batteryWarned: 101
+  onOnPowerChanged: {
+    if (onPower) batteryWarned = 101
+    if (!activitiesReady || !onPower || !hasBattery || !settings.batteryActivity) return
+    showActivity({ kind: "charging", title: "Charging", status: batteryLevel + "%", battery: batteryLevel, connected: true })
+  }
+  onBatteryLevelChanged: {
+    if (!activitiesReady || !hasBattery || onPower || batteryLevel < 0) return
+    var threshold = batteryLevel <= 10 ? 10 : batteryLevel <= 20 ? 20 : 101
+    if (threshold >= batteryWarned) return
+    batteryWarned = threshold
+    if (settings.batteryActivity)
+      showActivity({ kind: "lowBattery", title: "Low Battery", status: batteryLevel + "%", battery: batteryLevel, connected: true })
+  }
+
+  // Bluetooth: a device connecting or disconnecting.
+  readonly property var btConnected: {
+    if (settings.hardwarePreview)
+      return previewBluetoothConnected ? [{ key: previewBluetoothConnected, name: previewBluetoothConnected, battery: 83, icon: "audio-headset" }] : []
+    var devs = Bluetooth.devices ? Bluetooth.devices.values : []
+    return devs.filter(function(d) { return d && d.connected }).map(function(d) {
+      return { key: String(d.address), name: String(d.deviceName || d.name || d.address), icon: String(d.icon || ""),
+        battery: d.batteryAvailable ? Math.round(d.battery * 100) : -1 }
+    })
+  }
+  property var btKnown: []
+  onBtConnectedChanged: {
+    if (!activitiesReady) return
+    var known = btKnown, now = btConnected
+    function has(list, key) { return list.some(function(d) { return d.key === key }) }
+    btKnown = now
+    if (!settings.bluetoothActivity) return
+    var joined = now.filter(function(d) { return !has(known, d.key) })
+    var left = known.filter(function(d) { return !has(now, d.key) })
+    if (joined.length) {
+      var d = joined[joined.length - 1]
+      showActivity({ kind: "bluetooth", title: d.name, status: "Connected", battery: d.battery, connected: true, icon: d.icon })
+    } else if (left.length) {
+      showActivity({ kind: "bluetooth", title: left[left.length - 1].name, status: "Disconnected", battery: -1, connected: false, icon: left[left.length - 1].icon })
+    }
+  }
+
 
   property var lastClip: null
   property string lastClipKey: ""
@@ -619,6 +695,13 @@ Item {
       root.ask(question)
       return root.view
     }
+    function testActivity(what: string): string { // TMP
+      if (what === "charge") { root.previewCharging = false; root.previewCharging = true } // TMP
+      else if (what === "low") { root.previewCharging = false; root.previewBatteryPercent = 67; root.batteryWarned = 101; root.previewBatteryPercent = 15 } // TMP
+      else if (what === "btoff") root.previewBluetoothConnected = "" // TMP
+      else if (what === "bton") root.previewBluetoothConnected = "Studio Headphones" // TMP
+      return what // TMP
+    } // TMP
     function companionStatus(): string { return root.companionStatus }
     function installCompanion(): string {
       root.installCompanion()
@@ -728,7 +811,8 @@ Item {
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
             : root.volumePill ? 240
-            : root.clipboardPill ? 320
+            : root.activityPill && root.activity.kind === "bluetooth" ? 360
+            : root.clipboardPill || root.activityPill ? 320
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? (root.companionWarning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
@@ -737,7 +821,8 @@ Item {
             : 100
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
-            : root.clipboardPill ? (root.settings.notch ? 40 : 44)
+            : root.activityPill && root.activity.kind === "bluetooth" ? 64
+            : root.clipboardPill || root.activityPill ? (root.settings.notch ? 40 : 44)
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? 56
@@ -776,6 +861,7 @@ Item {
               else if (root.notificationPill && root.lastNotification && root.lastNotification.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.installCompanion() }
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
+              else if (root.activityPill) root.view = root.activity.kind === "bluetooth" ? "bluetooth" : "controls"
               else if (root.view === "rest" && root.companionNeedsSetup) root.companionPillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
@@ -788,6 +874,8 @@ Item {
           VolumeSlider { host: root; shape: island; anchors.fill: parent }
 
           ClipboardPill { host: root; anchors.fill: parent }
+
+          DevicePill { host: root; anchors.fill: parent }
 
           MediaPill { host: root; anchors.fill: parent }
 
