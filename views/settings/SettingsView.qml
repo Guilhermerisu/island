@@ -791,6 +791,21 @@ Item {
       }
 
       SettingsGroup {
+        title: "Preview"
+        visible: settingsView.currentPage === "General"
+        footer: "Shows sample battery, Wi-Fi, and Bluetooth data without changing your system settings."
+        SettingsRow {
+          label: "Mock Hardware"
+          detail: "Preview battery, Wi-Fi, and Bluetooth controls"
+          last: true
+          SettingsSwitch {
+            checked: settingsView.settings.hardwarePreview
+            onToggled: function(on) { settingsView.settings.hardwarePreview = on }
+          }
+        }
+      }
+
+      SettingsGroup {
         title: "Motion"
         visible: settingsView.currentPage === "General"
         SettingsRow {

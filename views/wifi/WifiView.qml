@@ -1,14 +1,16 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Io
 import Quickshell.Networking
 
-// Wi-Fi networks, opened from the Control Center's Wi-Fi tile. Same layout as
-// the Bluetooth view: connected, saved, and available networks, with
-// connect/disconnect/forget through NetworkManager. Secured networks that
-// aren't saved ask for a password inline.
-// Keyboard: ↑/↓ (or Tab, j/k) to move between the power switch and networks,
-// Enter/Space to toggle or connect/disconnect, Delete/x to forget, Esc to
-// cancel a password or go back to the Control Center.
+// Wi-Fi networks, opened from the Control Center's Wi-Fi tile, laid out like
+// macOS's Wi-Fi module: Known Networks (the connected one first),
+// a collapsible Other Networks, and Wi-Fi Settings. Connect, disconnect, and
+// forget go through NetworkManager; secured networks that aren't saved ask for
+// a password inline.
+// Keyboard: ↑/↓ (or Tab, j/k) to move, Enter/Space to toggle, connect or
+// disconnect, open Other Networks, or open settings; Delete/x to forget; Esc
+// to cancel a password or go back to the Control Center.
 ColumnLayout {
   id: wf
   required property var host
@@ -24,6 +26,7 @@ ColumnLayout {
   readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
   readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
   readonly property string iconFont: host.fontFamily
+  readonly property bool mockMode: !!host.settings.hardwarePreview
 
   readonly property var device: {
     var devs = Networking.devices ? Networking.devices.values : []
@@ -36,8 +39,8 @@ ColumnLayout {
     }
     return fallback
   }
-  readonly property bool powered: !!device && Networking.wifiEnabled
-  readonly property bool scanning: !!(device && device.scannerEnabled)
+  readonly property bool powered: mockMode ? host.previewWifiEnabled : !!device && Networking.wifiEnabled
+  readonly property bool scanning: mockMode ? active && powered : !!(device && device.scannerEnabled)
 
   // Network being joined, so its connectionFailed can be reported.
   property var attempt: null
@@ -51,6 +54,32 @@ ColumnLayout {
   // Rows hold plain values only, as in the Bluetooth view: networks come and
   // go during scans. Actions look the network up again by name.
   readonly property var rows: {
+    if (mockMode) {
+      if (!host.previewWifiEnabled) return []
+      var demoNetworks = [
+        { name: "Studio Wi-Fi", section: "known", secure: true, strength: 0.9 },
+        { name: "Home Network", section: "known", secure: true, strength: 0.76 },
+        { name: "Cafe Guest", section: "nearby", secure: false, strength: 0.68 },
+        { name: "Omarchy Guest", section: "nearby", secure: true, strength: 0.52 }
+      ]
+      var demoGroups = { connected: [], known: [], nearby: [] }
+      for (var j = 0; j < demoNetworks.length; j++) {
+        var demo = demoNetworks[j]
+        var isConnected = host.previewWifiConnected === demo.name
+        demoGroups[isConnected ? "connected" : demo.section].push({
+          address: demo.name, name: demo.name, section: isConnected ? "connected" : demo.section,
+          connected: isConnected, secure: demo.secure, strength: demo.strength, pending: ""
+        })
+      }
+      var demoTitles = { connected: "Connected", known: "Saved Networks", nearby: "Available" }
+      var demoRows = []
+      for (var demoKey in demoTitles) {
+        if (!demoGroups[demoKey].length) continue
+        demoRows.push({ header: demoTitles[demoKey] })
+        demoRows = demoRows.concat(demoGroups[demoKey])
+      }
+      return demoRows
+    }
     var nets = device && device.networks ? device.networks.values : []
     var groups = { connected: [], known: [], nearby: [] }
     for (var i = 0; i < nets.length; i++) {
@@ -84,19 +113,47 @@ ColumnLayout {
     return list
   }
 
-  // Keyboard cursor, by name so it survives rows reordering; "power" is the
-  // header switch.
+  // What the list shows: Known Networks (connected first, then saved) and
+  // Other Networks, which starts collapsed while a network is connected, as
+  // on macOS.
+  readonly property bool anyConnected: rows.some(function(r) { return !!r.connected })
+  property var otherOpenChoice: null
+  readonly property bool otherOpen: otherOpenChoice !== null ? otherOpenChoice : !anyConnected
+  readonly property var displayRows: {
+    var known = rows.filter(function(r) { return r.address && r.section !== "nearby" })
+    var other = rows.filter(function(r) { return r.address && r.section === "nearby" })
+    var out = []
+    if (known.length) out = out.concat([{ header: "Known Networks" }], known)
+    if (other.length) {
+      out.push({ header: "Other Networks", toggle: true })
+      if (otherOpen) out = out.concat(other)
+    }
+    return out
+  }
+
+  // Keyboard cursor, by name so it survives rows reordering; "other" is the
+  // Other Networks header, "settings" the footer.
   property string selectedKey: ""
+  // The keyboard highlight appears once the keys are used, as on macOS.
+  property bool usingKeys: false
   readonly property var navKeys: {
-    var keys = wf.device ? ["power"] : []
-    for (var i = 0; i < rows.length; i++) if (rows[i].address) keys.push(rows[i].address)
+    var keys = []
+    for (var i = 0; i < displayRows.length; i++) {
+      if (displayRows[i].address) keys.push(displayRows[i].address)
+      else if (displayRows[i].toggle) keys.push("other")
+    }
+    keys.push("settings")
     return keys
   }
-  readonly property string cursor: navKeys.indexOf(selectedKey) !== -1 ? selectedKey : navKeys.length > 1 ? navKeys[1] : navKeys[0] || ""
+  readonly property string cursor: navKeys.indexOf(selectedKey) !== -1 ? selectedKey : navKeys[0] || ""
   onCursorChanged: {
-    for (var i = 0; i < rows.length; i++) if (rows[i].address === cursor) { list.positionViewAtIndex(i, ListView.Contain); return }
+    for (var i = 0; i < displayRows.length; i++) {
+      var r = displayRows[i]
+      if (r.address === cursor || (cursor === "other" && r.toggle)) { list.positionViewAtIndex(i, ListView.Contain); return }
+    }
   }
   function move(delta) {
+    if (!usingKeys) { usingKeys = true; return }
     var i = navKeys.indexOf(cursor)
     if (i !== -1) selectedKey = navKeys[Math.max(0, Math.min(navKeys.length - 1, i + delta))]
   }
@@ -110,9 +167,19 @@ ColumnLayout {
     for (var i = 0; i < nets.length; i++) if (nets[i] && nets[i].name === name) return nets[i]
     return null
   }
-  function togglePower() { if (device) Networking.wifiEnabled = !Networking.wifiEnabled }
+  Process { id: settingsLauncher; command: ["omarchy-launch-tui", "nmtui"] }
+  function openSettings() {
+    host.view = "rest"
+    settingsLauncher.running = true
+  }
   function activate(row) {
     if (row.pending) return
+    if (mockMode) {
+      if (row.connected) host.previewWifiConnected = ""
+      else if (row.section === "nearby" && row.secure) { passwordText = ""; passwordFor = row.address }
+      else host.previewWifiConnected = row.address
+      return
+    }
     var n = networkFor(row.address)
     if (!n) return
     failedName = ""
@@ -122,6 +189,11 @@ ColumnLayout {
     n.connect()
   }
   function join(name, psk) {
+    if (mockMode) {
+      passwordFor = ""
+      if (psk) host.previewWifiConnected = name
+      return
+    }
     var n = networkFor(name)
     passwordFor = ""
     if (!n || !psk) return
@@ -130,6 +202,7 @@ ColumnLayout {
     n.connectWithPsk(psk)
   }
   function forget(row) {
+    if (mockMode) return
     var n = networkFor(row.address)
     if (n && !row.pending) n.forget()
   }
@@ -145,21 +218,24 @@ ColumnLayout {
 
   // Scan only while the view is open.
   Binding {
-    when: !!wf.device
+    when: !wf.mockMode && !!wf.device
     target: wf.device
     property: "scannerEnabled"
     value: wf.active && wf.powered
     restoreMode: Binding.RestoreNone
   }
 
-  onActiveChanged: if (active) { selectedKey = ""; passwordFor = ""; failedName = ""; Qt.callLater(function() { wf.forceActiveFocus() }) }
+  onActiveChanged: if (active) { selectedKey = ""; passwordFor = ""; failedName = ""; otherOpenChoice = null; usingKeys = false; Qt.callLater(function() { wf.forceActiveFocus() }) }
   Keys.onPressed: function(event) {
     var k = event.key
     var row = wf.rowFor(wf.cursor)
     if (k === Qt.Key_Down || k === Qt.Key_J || (k === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) wf.move(1)
     else if (k === Qt.Key_Up || k === Qt.Key_K || k === Qt.Key_Backtab) wf.move(-1)
+    else if (!wf.usingKeys && (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space || k === Qt.Key_Delete || k === Qt.Key_X))
+      wf.usingKeys = true
     else if (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space) {
-      if (wf.cursor === "power") wf.togglePower()
+      if (wf.cursor === "other") wf.otherOpenChoice = !wf.otherOpen
+      else if (wf.cursor === "settings") wf.openSettings()
       else if (row) wf.activate(row)
     } else if (k === Qt.Key_Delete || k === Qt.Key_X) {
       if (row && row.section !== "nearby") wf.forget(row)
@@ -168,13 +244,15 @@ ColumnLayout {
     event.accepted = true
   }
 
-  spacing: 10
+  spacing: 8
 
+  // Header: back to the Control Center and the title. Wi-Fi itself turns on
+  // and off from the Control Center's tile.
   RowLayout {
     Layout.fillWidth: true
     Layout.preferredHeight: 34
     Layout.leftMargin: 4
-    Layout.rightMargin: 4
+    Layout.rightMargin: 6
     spacing: 8
     Rectangle {
       Layout.preferredWidth: 32
@@ -192,230 +270,309 @@ ColumnLayout {
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
-    Text {
-      visible: wf.scanning
-      text: "Scanning…"
-      color: wf.textMuted
-      font.family: "Adwaita Sans"
-      font.pixelSize: 12
-    }
-    // Power switch.
-    Rectangle {
-      Layout.preferredWidth: 42
-      Layout.preferredHeight: 24
-      radius: 12
-      opacity: wf.device && Networking.wifiHardwareEnabled !== false ? 1 : 0.5
-      color: wf.powered ? wf.accent : wf.well
-      border.width: wf.cursor === "power" ? 2 : 0
-      border.color: wf.text
-      Behavior on color { ColorAnimation { duration: 180 * wf.host.motionScale } }
-      Rectangle {
-        width: 20; height: 20; radius: 10
-        y: 2
-        x: wf.powered ? parent.width - width - 2 : 2
-        color: "#ffffff"
-        Behavior on x { NumberAnimation { duration: 180 * wf.host.motionScale; easing.type: Easing.OutCubic } }
-      }
-      MouseArea {
-        anchors.fill: parent
-        enabled: !!wf.device
-        cursorShape: Qt.PointingHandCursor
-        onClicked: wf.togglePower()
-      }
-    }
   }
 
   Rectangle {
     Layout.fillWidth: true
-    Layout.preferredHeight: wf.rows.length ? list.height + 16 : 74
+    Layout.preferredHeight: body.implicitHeight + 12
     radius: 16
     color: wf.card
     border.width: 1
     border.color: wf.edge
 
-    Text {
-      visible: !wf.rows.length
-      anchors.centerIn: parent
-      text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
-      color: wf.textMuted
-      font.family: "Adwaita Sans"
-      font.pixelSize: 12
-    }
-
-    ListView {
-      id: list
-      visible: wf.rows.length > 0
+    ColumnLayout {
+      id: body
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.top: parent.top
-      anchors.margins: 8
-      height: Math.min(contentHeight, 520)
-      clip: true
-      boundsBehavior: Flickable.StopAtBounds
-      model: wf.rows
-      delegate: Item {
-        id: row
-        required property var modelData
-        readonly property bool isHeader: modelData.header !== undefined
-        readonly property bool isSelected: !isHeader && modelData.address === wf.cursor
-        readonly property bool askingPassword: !isHeader && modelData.address === wf.passwordFor
-        width: ListView.view.width
-        height: isHeader ? 30 : 44
+      anchors.margins: 6
+      spacing: 0
 
-        Text {
-          visible: row.isHeader
-          anchors.left: parent.left
-          anchors.leftMargin: 8
-          anchors.bottom: parent.bottom
-          anchors.bottomMargin: 6
-          text: row.modelData.header || ""
-          color: wf.textMuted
-          font.family: "Adwaita Sans"
-          font.pixelSize: 12
-          font.weight: Font.DemiBold
-        }
+      Text {
+        visible: !wf.displayRows.length
+        Layout.fillWidth: true
+        Layout.preferredHeight: 70
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        text: !wf.mockMode && !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
+        color: wf.textMuted
+        font.family: "Adwaita Sans"
+        font.pixelSize: 14
+      }
 
-        Rectangle {
-          visible: !row.isHeader
-          anchors.fill: parent
-          radius: 10
-          color: rowMouse.containsMouse || row.isSelected || row.askingPassword ? wf.tile : "transparent"
+      ListView {
+        id: list
+        visible: wf.displayRows.length > 0
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.min(contentHeight, 460)
+        clip: true
+        interactive: contentHeight > height
+        boundsBehavior: Flickable.StopAtBounds
+        model: wf.displayRows
+        delegate: Item {
+          id: row
+          required property var modelData
+          required property int index
+          readonly property bool isHeader: modelData.header !== undefined
+          readonly property bool isSelected: wf.usingKeys && (isHeader ? (!!modelData.toggle && wf.cursor === "other") : modelData.address === wf.cursor)
+          readonly property bool askingPassword: !isHeader && modelData.address === wf.passwordFor
+          width: ListView.view.width
+          height: isHeader ? 38 : 48
 
-          // Accent bar marking the keyboard cursor, as in ListPicker.
+          // Section header; Other Networks opens and closes, with a spinner
+          // while Wi-Fi scans.
           Rectangle {
-            visible: row.isSelected
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            width: 3; height: 22; radius: 1.5
-            color: wf.accent
-          }
-
-          Rectangle {
-            id: badge
-            anchors.left: parent.left
-            anchors.leftMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            width: 32; height: 32; radius: 16
-            color: row.modelData.connected ? wf.accent : wf.well
-            Text {
-              anchors.centerIn: parent
-              readonly property int bars: Math.max(0, Math.min(4, Math.floor((row.modelData.strength || 0) * 5)))
-              text: (row.modelData.secure ? ["󰤬", "󰤡", "󰤤", "󰤧", "󰤪"] : ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"])[bars]
-              color: row.modelData.connected ? wf.accentInk : wf.text
-              font.family: wf.iconFont
-              font.pixelSize: 16
-            }
-          }
-          Column {
-            visible: !row.askingPassword
-            anchors.left: badge.right
-            anchors.leftMargin: 10
-            anchors.right: actions.left
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            Text {
-              width: parent.width
-              text: row.modelData.name || ""
-              textFormat: Text.PlainText
-              elide: Text.ElideRight
-              color: wf.text
-              font.family: "Adwaita Sans"
-              font.pixelSize: 13
-              font.weight: Font.Medium
-            }
-            Text {
-              width: parent.width
-              readonly property string status: row.modelData.pending === "connecting" ? "Connecting…"
-                : row.modelData.pending === "disconnecting" ? "Disconnecting…"
-                : row.modelData.name === wf.failedName ? wf.failedReason
-                : ""
-              visible: status !== ""
-              text: status
-              color: wf.textMuted
-              font.family: "Adwaita Sans"
-              font.pixelSize: 11
-            }
-          }
-          MouseArea {
-            id: rowMouse
+            visible: row.isHeader
             anchors.fill: parent
-            enabled: !row.askingPassword
-            hoverEnabled: true
-            cursorShape: row.modelData.pending ? Qt.BusyCursor : Qt.PointingHandCursor
-            onClicked: wf.activate(row.modelData)
-          }
-          // Password for joining a secured network; Enter joins, Esc cancels.
-          TextInput {
-            id: password
-            visible: row.askingPassword
-            anchors.left: badge.right
-            anchors.leftMargin: 10
-            anchors.right: parent.right
-            anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            echoMode: TextInput.Password
-            color: wf.text
-            selectionColor: wf.host.withAlpha(wf.accent, 0.4)
-            selectedTextColor: wf.text
-            font.family: "Adwaita Sans"
-            font.pixelSize: 13
-            clip: true
-            function sync() { if (visible) { text = wf.passwordText; forceActiveFocus() } }
-            Component.onCompleted: sync()
-            onVisibleChanged: sync()
-            onTextChanged: if (visible) wf.passwordText = text
-            Keys.onPressed: function(event) {
-              if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) wf.join(row.modelData.address, text)
-              else if (event.key === Qt.Key_Escape) wf.passwordFor = ""
-              else return
-              event.accepted = true
-              wf.forceActiveFocus()
+            anchors.topMargin: row.index > 0 ? 4 : 0
+            radius: 8
+            color: row.modelData.toggle && (headerMouse.containsMouse || row.isSelected) ? wf.tile : "transparent"
+            Rectangle {
+              visible: row.index > 0
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.leftMargin: 10
+              anchors.rightMargin: 10
+              anchors.bottom: parent.top
+              anchors.bottomMargin: 2
+              height: 1
+              color: wf.host.withAlpha(wf.text, 0.09)
             }
             Text {
-              anchors.fill: parent
-              verticalAlignment: Text.AlignVCenter
-              visible: password.text === ""
-              text: "Password for " + (row.modelData.name || "")
-              color: wf.textMuted
-              font: password.font
-            }
-          }
-          Row {
-            id: actions
-            visible: !row.askingPassword
-            anchors.right: parent.right
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 6
-            Text {
+              anchors.left: parent.left
+              anchors.leftMargin: 10
               anchors.verticalCenter: parent.verticalCenter
-              text: row.modelData.pending ? "" : row.modelData.connected ? "Disconnect" : "Connect"
-              visible: rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected
+              text: row.modelData.header || ""
               color: wf.textMuted
               font.family: "Adwaita Sans"
-              font.pixelSize: 11
+              font.pixelSize: 14
+              font.weight: Font.DemiBold
             }
-            // Forget, for saved networks.
+            Row {
+              anchors.right: parent.right
+              anchors.rightMargin: 10
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: 8
+              visible: !!row.modelData.toggle
+              Text {
+                id: spinner
+                anchors.verticalCenter: parent.verticalCenter
+                visible: wf.scanning
+                text: "󰑓"
+                color: wf.textMuted
+                font.family: wf.iconFont
+                font.pixelSize: 14
+                // Stepped, so scanning doesn't repaint the island at the
+                // display's full refresh rate.
+                Timer {
+                  interval: 40
+                  repeat: true
+                  running: spinner.visible && wf.active
+                  onTriggered: spinner.rotation = (spinner.rotation + 360 * 40 / 1200) % 360
+                }
+              }
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "󰅂"
+                rotation: wf.otherOpen ? 90 : 0
+                color: wf.textMuted
+                font.family: wf.iconFont
+                font.pixelSize: 17
+                Behavior on rotation { NumberAnimation { duration: 160 * wf.host.motionScale; easing.type: Easing.OutCubic } }
+              }
+            }
+            MouseArea {
+              id: headerMouse
+              anchors.fill: parent
+              enabled: !!row.modelData.toggle
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: wf.otherOpenChoice = !wf.otherOpen
+            }
+          }
+
+          // A network: round signal icon (accent when connected), the name,
+          // and a lock for secured ones.
+          Rectangle {
+            visible: !row.isHeader
+            anchors.fill: parent
+            radius: 8
+            color: rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected || row.askingPassword ? wf.tile : "transparent"
+
             Rectangle {
-              visible: row.modelData.section !== "nearby" && !row.modelData.pending
-              width: 24; height: 24; radius: 12
-              color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
+              id: badge
+              anchors.left: parent.left
+              anchors.leftMargin: 8
+              anchors.verticalCenter: parent.verticalCenter
+              width: 34; height: 34; radius: 17
+              color: row.modelData.connected ? wf.accent : wf.well
+              // The same glyph as the Control Center's Wi-Fi tile.
               Text {
                 anchors.centerIn: parent
-                text: "󰅖"
-                color: forgetMouse.containsMouse ? wf.text : wf.textMuted
+                text: "\uf1eb"
+                color: row.modelData.connected ? wf.accentInk : wf.text
                 font.family: wf.iconFont
-                font.pixelSize: 13
+                font.pixelSize: 18
               }
-              MouseArea {
-                id: forgetMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: wf.forget(row.modelData)
+            }
+            Column {
+              visible: !row.askingPassword
+              anchors.left: badge.right
+              anchors.leftMargin: 10
+              anchors.right: trailing.left
+              anchors.rightMargin: 8
+              anchors.verticalCenter: parent.verticalCenter
+              Text {
+                width: parent.width
+                text: row.modelData.name || ""
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: wf.text
+                font.family: "Adwaita Sans"
+                font.pixelSize: 15
+              }
+              Text {
+                width: parent.width
+                readonly property string status: row.modelData.pending === "connecting" ? "Connecting…"
+                  : row.modelData.pending === "disconnecting" ? "Disconnecting…"
+                  : row.modelData.name === wf.failedName ? wf.failedReason
+                  : ""
+                visible: status !== ""
+                text: status
+                color: wf.textMuted
+                font.family: "Adwaita Sans"
+                font.pixelSize: 12
+              }
+            }
+            MouseArea {
+              id: rowMouse
+              anchors.fill: parent
+              enabled: !row.askingPassword
+              hoverEnabled: true
+              cursorShape: row.modelData.pending ? Qt.BusyCursor : Qt.PointingHandCursor
+              onClicked: wf.activate(row.modelData)
+            }
+            // Password for joining a secured network: a macOS-style field.
+            // Enter joins, Esc cancels.
+            Rectangle {
+              visible: row.askingPassword
+              anchors.left: badge.right
+              anchors.leftMargin: 10
+              anchors.right: parent.right
+              anchors.rightMargin: 8
+              anchors.verticalCenter: parent.verticalCenter
+              height: 32
+              radius: 7
+              color: wf.well
+              border.width: 2
+              border.color: wf.host.withAlpha(wf.accent, 0.55)
+              TextInput {
+                id: password
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                echoMode: TextInput.Password
+                color: wf.text
+                selectionColor: wf.host.withAlpha(wf.accent, 0.4)
+                selectedTextColor: wf.text
+                font.family: "Adwaita Sans"
+                font.pixelSize: 15
+                clip: true
+                function sync() { if (row.askingPassword) { text = wf.passwordText; forceActiveFocus() } }
+                Component.onCompleted: sync()
+                onVisibleChanged: sync()
+                onTextChanged: if (row.askingPassword) wf.passwordText = text
+                Keys.onPressed: function(event) {
+                  if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) wf.join(row.modelData.address, text)
+                  else if (event.key === Qt.Key_Escape) wf.passwordFor = ""
+                  else return
+                  event.accepted = true
+                  wf.forceActiveFocus()
+                }
+                Text {
+                  anchors.fill: parent
+                  verticalAlignment: Text.AlignVCenter
+                  visible: password.text === ""
+                  text: "Password for " + (row.modelData.name || "")
+                  color: wf.textMuted
+                  font: password.font
+                }
+              }
+            }
+            // Trailing: forget (saved networks, on hover) and the lock.
+            Row {
+              id: trailing
+              visible: !row.askingPassword
+              anchors.right: parent.right
+              anchors.rightMargin: 10
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: 6
+              Rectangle {
+                visible: row.modelData.section !== "nearby" && !row.modelData.pending
+                  && (rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected)
+                anchors.verticalCenter: parent.verticalCenter
+                width: 26; height: 26; radius: 13
+                color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
+                Text {
+                  anchors.centerIn: parent
+                  text: "󰅖"
+                  color: forgetMouse.containsMouse ? wf.text : wf.textMuted
+                  font.family: wf.iconFont
+                  font.pixelSize: 15
+                }
+                MouseArea {
+                  id: forgetMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: wf.forget(row.modelData)
+                }
+              }
+              Text {
+                visible: !!row.modelData.secure
+                anchors.verticalCenter: parent.verticalCenter
+                text: "󰌾"
+                color: wf.textMuted
+                font.family: wf.iconFont
+                font.pixelSize: 15
               }
             }
           }
+        }
+      }
+
+      // Footer: Wi-Fi Settings, below a hairline, as on macOS.
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.leftMargin: 10
+        Layout.rightMargin: 10
+        Layout.topMargin: 4
+        Layout.bottomMargin: 4
+        Layout.preferredHeight: 1
+        color: wf.host.withAlpha(wf.text, 0.09)
+      }
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 42
+        radius: 8
+        color: settingsMouse.containsMouse || (wf.usingKeys && wf.cursor === "settings") ? wf.tile : "transparent"
+        Text {
+          anchors.left: parent.left
+          anchors.leftMargin: 10
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Wi-Fi Settings…"
+          color: wf.text
+          font.family: "Adwaita Sans"
+          font.pixelSize: 15
+        }
+        MouseArea {
+          id: settingsMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: wf.openSettings()
         }
       }
     }

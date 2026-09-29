@@ -121,14 +121,15 @@ Item {
       property bool downloads: true
       property bool clipboard: true
       property bool systemUpdates: true
+      property bool hardwarePreview: false
       property bool colorfulSettingsIcons: true
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,display"
-      property string controlCenterHidden: "game"
+      property string controlCenterHidden: "game,power,keyboard"
       property string askAi: "chatgpt"
     }
   }
   readonly property var controlCenterKeys: {
-    var known = ["wifi", "bluetooth", "focus", "game", "night", "sound", "display"]
+    var known = ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "display"]
     var saved = String(settings.controlCenterOrder || "").split(",")
     var result = []
     for (var i = 0; i < saved.length; i++)
@@ -138,7 +139,7 @@ Item {
     return result
   }
   function controlCenterTitle(key) {
-    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", sound: "Sound", display: "Display" }
+    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", power: "Power Mode", keyboard: "Keyboard", sound: "Sound", display: "Display" }
     return names[key] || key
   }
   function controlCenterIsShown(key) {
@@ -155,6 +156,16 @@ Item {
 
   readonly property var clockDate: clock.date
   property string view: "rest"
+  // Local fixture state for previewing hardware-backed controls without
+  // changing the machine's real Wi-Fi or power settings.
+  property bool previewWifiEnabled: true
+  property string previewWifiConnected: "Studio Wi-Fi"
+  property int previewBatteryPercent: 67
+  property bool previewCharging: false
+  property string previewPowerProfile: "balanced"
+  property bool previewBluetoothEnabled: true
+  property string previewBluetoothConnected: "Studio Headphones"
+  property var previewBluetoothForgotten: []
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"

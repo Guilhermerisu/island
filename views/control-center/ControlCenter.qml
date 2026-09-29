@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Networking
 import Quickshell.Services.Pipewire
@@ -46,6 +47,7 @@ ColumnLayout {
   }
   readonly property var wifiDevice: findDevice(DeviceType.Wifi)
   readonly property var wiredDevice: findDevice(DeviceType.Wired)
+  readonly property bool hardwarePreview: !!host.settings.hardwarePreview
   readonly property var wifiNetwork: {
     var nets = wifiDevice && wifiDevice.networks ? wifiDevice.networks.values : []
     for (var i = 0; i < nets.length; i++) if (nets[i] && nets[i].connected) return nets[i]
@@ -64,6 +66,7 @@ ColumnLayout {
 
   // --- Bluetooth ---
   readonly property var btAdapter: Bluetooth.defaultAdapter
+  readonly property bool bluetoothPreview: hardwarePreview
   readonly property var btConnected: {
     var devs = Bluetooth.devices ? Bluetooth.devices.values : []
     for (var i = 0; i < devs.length; i++) if (devs[i] && devs[i].connected) return devs[i]
@@ -72,17 +75,56 @@ ColumnLayout {
 
   // --- Battery / power profile ---
   readonly property var battery: UPower.displayDevice
-  readonly property bool hasBattery: !!(battery && battery.isLaptopBattery)
-  readonly property int batteryPercent: hasBattery ? Math.round(battery.percentage * 100) : 0
-  readonly property bool charging: hasBattery && battery.state === UPowerDeviceState.Charging
+  readonly property bool hasBattery: hardwarePreview || !!(battery && battery.isLaptopBattery)
+  readonly property int batteryPercent: hardwarePreview ? host.previewBatteryPercent : hasBattery ? Math.round(battery.percentage * 100) : 0
+  readonly property bool charging: hardwarePreview ? host.previewCharging : hasBattery && battery.state === UPowerDeviceState.Charging
   readonly property var profileNames: ["power-saver", "balanced", "performance"]
-  readonly property string profileName: profileNames[PowerProfiles.profile] || "balanced"
-  readonly property string batteryIcon: charging ? "󰂄" : ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"][Math.round(batteryPercent / 10)]
+  readonly property string profileName: hardwarePreview ? host.previewPowerProfile : profileNames[PowerProfiles.profile] || "balanced"
+  readonly property var profileLabels: ({ "power-saver": "Power Saver", balanced: "Balanced", performance: "Performance" })
+  readonly property var profileIcons: ({ "power-saver": "󰾆", balanced: "󰾅", performance: "󰓅" })
   // Through Omarchy so the choice is remembered per AC/battery, as in its menu.
   function cycleProfile() {
+    if (hardwarePreview) {
+      var previewUsable = host.previewPowerProfile === "performance" ? profileNames : profileNames.slice(0, 2)
+      host.previewPowerProfile = previewUsable[(previewUsable.indexOf(host.previewPowerProfile) + 1) % previewUsable.length]
+      return
+    }
     var usable = PowerProfiles.hasPerformanceProfile ? profileNames : profileNames.slice(0, 2)
     var next = usable[(usable.indexOf(profileName) + 1) % usable.length]
     Quickshell.execDetached(["omarchy-powerprofiles-set", "autodetect", next])
+  }
+
+  // --- Keyboard layout: the main keyboard's, from Hyprland ---
+  property string keyboardLayout: ""
+  property int keyboardLayoutCount: 1
+  readonly property var previewLayouts: ["English (US)", "Português (Brasil)"]
+  property int previewLayoutIndex: 0
+  readonly property string keyboardLabel: hardwarePreview ? previewLayouts[previewLayoutIndex] : keyboardLayout || "Unknown"
+  Process {
+    id: keyboardRead
+    command: ["hyprctl", "devices", "-j"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        try {
+          var boards = JSON.parse(text).keyboards || []
+          var main = boards.filter(function(k) { return k.main })[0] || boards[0]
+          if (!main) return
+          cc.keyboardLayout = String(main.active_keymap || "")
+          cc.keyboardLayoutCount = String(main.layout || "").split(",").filter(function(l) { return l !== "" }).length || 1
+        } catch (e) {}
+      }
+    }
+  }
+  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) { if (event.name === "activelayout" && !keyboardRead.running) keyboardRead.running = true }
+  }
+  Process { id: keyboardSwitch; command: ["hyprctl", "switchxkblayout", "all", "next"] }
+  function nextKeyboardLayout() {
+    if (hardwarePreview) previewLayoutIndex = (previewLayoutIndex + 1) % previewLayouts.length
+    else if (keyboardLayoutCount > 1) keyboardSwitch.running = true
   }
 
   // --- Shell services ---
@@ -127,40 +169,58 @@ ColumnLayout {
     }
   }
   function controlIcon(key) {
-    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "󰖩" : "󰖪") : "󰈀"
-    if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
+    if (key === "wifi") return hardwarePreview
+      ? (host.previewWifiEnabled ? "\uf1eb" : "󰖪")
+      : wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"
+    if (key === "bluetooth") return bluetoothPreview
+      ? (host.previewBluetoothEnabled ? "󰂯" : "󰂲")
+      : btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
     if (key === "focus") return "󰍶"
     if (key === "game") return "󰊗"
+    if (key === "power") return profileIcons[profileName] || "󰾅"
+    if (key === "keyboard") return "󰌌"
     return "󰖔"
   }
-  function controlTitle(key) { return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : host.controlCenterTitle(key) }
+  function controlTitle(key) { return key === "wifi" ? (hardwarePreview || wifiDevice ? "Wi-Fi" : "Ethernet") : host.controlCenterTitle(key) }
   function controlSubtitle(key) {
-    if (key === "wifi") return wifiDevice
+    if (key === "wifi") return hardwarePreview
+      ? (!host.previewWifiEnabled ? "Off" : host.previewWifiConnected || "Not connected")
+      : wifiDevice
       ? (!Networking.wifiEnabled ? "Off" : wifiNetwork ? wifiNetwork.name : "Not connected")
       : (wiredDevice && wiredDevice.connected ? "Connected" : "Disconnected")
-    if (key === "bluetooth") return !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
+    if (key === "bluetooth") return bluetoothPreview
+      ? (!host.previewBluetoothEnabled ? "Off" : host.previewBluetoothConnected || "On")
+      : !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
     if (key === "focus") return dnd ? "On" : "Off"
     if (key === "game") return gameMode ? "On" : "Off"
+    if (key === "power") return profileLabels[profileName] || "Balanced"
+    if (key === "keyboard") return keyboardLabel
     return nightOn ? "On" : "Off"
   }
   function controlChecked(key) {
-    if (key === "wifi") return wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
-    if (key === "bluetooth") return !!(btAdapter && btAdapter.enabled)
+    if (key === "wifi") return hardwarePreview ? host.previewWifiEnabled : wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
+    if (key === "bluetooth") return bluetoothPreview ? host.previewBluetoothEnabled : !!(btAdapter && btAdapter.enabled)
     if (key === "focus") return dnd
     if (key === "game") return gameMode
+    if (key === "power") return profileName !== "balanced"
+    if (key === "keyboard") return false
     return nightOn
   }
   function controlAvailable(key) {
-    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : false
-    if (key === "bluetooth") return !!btAdapter
+    if (key === "wifi") return hardwarePreview || (wifiDevice ? Networking.wifiHardwareEnabled !== false : false)
+    if (key === "bluetooth") return bluetoothPreview || !!btAdapter
     if (key === "focus") return !!notifications
     return true
   }
   function toggleControl(key) {
-    if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
+    if (key === "wifi" && hardwarePreview) host.previewWifiEnabled = !host.previewWifiEnabled
+    else if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
+    else if (key === "bluetooth" && bluetoothPreview) host.previewBluetoothEnabled = !host.previewBluetoothEnabled
     else if (key === "bluetooth" && btAdapter) btAdapter.enabled = !btAdapter.enabled
     else if (key === "focus" && notifications) notifications.setDoNotDisturb(!dnd)
     else if (key === "game") setGameMode(!gameMode)
+    else if (key === "power") cycleProfile()
+    else if (key === "keyboard") nextKeyboardLayout()
     else if (key === "night" && nightlight) nightlight.setNightlight(!nightOn)
   }
 
@@ -189,6 +249,7 @@ ColumnLayout {
     Qt.callLater(function() { cc.forceActiveFocus() })
     if (!brightnessRead.running) brightnessRead.running = true
     if (!gameModeRead.running) gameModeRead.running = true
+    if (!keyboardRead.running) keyboardRead.running = true
   }
   Process {
     id: brightnessRead
@@ -453,41 +514,6 @@ ColumnLayout {
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
-    // Battery and power profile; clicking cycles the profile.
-    Rectangle {
-      visible: cc.hasBattery
-      Layout.preferredWidth: batteryRow.implicitWidth + 24
-      Layout.preferredHeight: 32
-      radius: 16
-      color: batteryMouse.containsMouse ? cc.well : cc.card
-      Row {
-        id: batteryRow
-        anchors.centerIn: parent
-        spacing: 6
-        Text {
-          anchors.verticalCenter: parent.verticalCenter
-          text: cc.batteryIcon
-          color: cc.charging ? cc.accent : cc.text
-          font.family: cc.iconFont
-          font.pixelSize: 16
-        }
-        Text {
-          anchors.verticalCenter: parent.verticalCenter
-          text: cc.batteryPercent + "% · " + ({ "power-saver": "Saver", balanced: "Balanced", performance: "Performance" })[cc.profileName]
-          color: cc.text
-          font.family: "Adwaita Sans"
-          font.pixelSize: 12
-          font.weight: Font.DemiBold
-        }
-      }
-      MouseArea {
-        id: batteryMouse
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: cc.cycleProfile()
-      }
-    }
     Rectangle {
       Layout.preferredWidth: cc.editMode ? 64 : 32
       Layout.preferredHeight: 32
@@ -527,6 +553,66 @@ ColumnLayout {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: cc.host.view = "settings"
+      }
+    }
+    // Battery, as macOS's menu bar shows it: the percentage, then a battery
+    // filled to the level (green while charging, red when low), with a bolt
+    // while charging.
+    Row {
+      visible: cc.hasBattery
+      Layout.leftMargin: 6
+      Layout.rightMargin: 6
+      spacing: 6
+      readonly property bool low: cc.batteryPercent <= 20 && !cc.charging
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        text: cc.batteryPercent + "%"
+        color: parent.low ? "#ff453a" : cc.text
+        font.family: "Adwaita Sans"
+        font.pixelSize: 13
+        font.weight: Font.DemiBold
+        font.features: { "tnum": 1 }
+      }
+      Item {
+        anchors.verticalCenter: parent.verticalCenter
+        width: 30
+        height: 14
+        Rectangle {
+          id: batteryBody
+          width: 27
+          height: 14
+          radius: 4
+          color: "transparent"
+          border.width: 1.2
+          border.color: cc.host.withAlpha(cc.text, 0.45)
+          Rectangle {
+            x: 2
+            y: 2
+            height: parent.height - 4
+            width: Math.max(2, (parent.width - 4) * Math.max(0, Math.min(100, cc.batteryPercent)) / 100)
+            radius: 2
+            color: cc.charging ? "#30d158" : parent.parent.parent.low ? "#ff453a" : cc.text
+          }
+          Text {
+            anchors.centerIn: parent
+            visible: cc.charging
+            text: "󱐋"
+            color: "#ffffff"
+            style: Text.Outline
+            styleColor: Qt.rgba(0, 0, 0, 0.5)
+            font.family: cc.iconFont
+            font.pixelSize: 11
+          }
+        }
+        Rectangle {
+          anchors.left: batteryBody.right
+          anchors.leftMargin: 1
+          anchors.verticalCenter: batteryBody.verticalCenter
+          width: 2
+          height: 5
+          radius: 1
+          color: cc.host.withAlpha(cc.text, 0.45)
+        }
       }
     }
   }
@@ -614,7 +700,7 @@ ColumnLayout {
       return result
     }
     Repeater {
-      model: ["wifi", "bluetooth", "focus", "game", "night", "sound", "display"]
+      model: ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "display"]
       delegate: Item {
         id: controlCard
         required property string modelData
@@ -737,7 +823,7 @@ ColumnLayout {
       subtitle: cc.controlSubtitle(parent.controlKey)
       checked: cc.controlChecked(parent.controlKey)
       available: cc.controlAvailable(parent.controlKey)
-      opens: parent.controlKey === "bluetooth" || (parent.controlKey === "wifi" && !!cc.wifiDevice)
+      opens: (parent.controlKey === "bluetooth" && (cc.bluetoothPreview || !!cc.btAdapter)) || (parent.controlKey === "wifi" && (cc.hardwarePreview || !!cc.wifiDevice))
       onClicked: cc.toggleControl(parent.controlKey)
       onOpened: cc.host.view = parent.controlKey
     }
