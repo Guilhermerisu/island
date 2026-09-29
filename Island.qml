@@ -125,7 +125,7 @@ Item {
       property bool systemUpdates: true
       property bool batteryActivity: true
       property bool bluetoothActivity: true
-      property bool hardwarePreview: false
+      property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,display"
       property string controlCenterHidden: "game,power,keyboard"
@@ -160,20 +160,29 @@ Item {
 
   readonly property var clockDate: clock.date
   property string view: "rest"
-  // Local fixture state for previewing hardware-backed controls without
-  // changing the machine's real Wi-Fi or power settings.
-  property bool previewWifiEnabled: true
-  property string previewWifiConnected: "Studio Wi-Fi"
-  property int previewBatteryPercent: 67
-  property bool previewCharging: false
-  property string previewPowerProfile: "balanced"
-  property bool previewBluetoothEnabled: true
-  property string previewBluetoothConnected: "Studio Headphones"
-  property var previewBluetoothForgotten: []
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
   readonly property bool activityPill: view === "feedback" && feedbackKind === "activity"
+  readonly property bool workspacesPill: view === "feedback" && feedbackKind === "workspaces"
+
+  // ---------- Workspace switches ----------
+
+  // Omarchy's bar's workspaces: 1–5 always, and any other up to 10 that
+  // exists. Switching shows them for a moment (see WorkspacePill).
+  readonly property var workspaceIds: {
+    var ids = [1, 2, 3, 4, 5]
+    var values = Hyprland.workspaces.values
+    for (var i = 0; i < values.length; i++) {
+      var id = values[i].id
+      if (id > 0 && id <= 10 && ids.indexOf(id) === -1) ids.push(id)
+    }
+    return ids.sort(function(a, b) { return a - b })
+  }
+  readonly property int focusedWorkspaceId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
+  onFocusedWorkspaceIdChanged: {
+    if (activitiesReady && settings.workspaceHud && focusedWorkspaceId > 0) showFeedback("", 1200, "workspaces")
+  }
 
   // ---------- Device live activities: battery, Bluetooth ----------
 
@@ -199,10 +208,9 @@ Item {
   // Battery: charging started, and the level falling to 20% and to 10%, each
   // once per discharge.
   readonly property var batteryDevice: UPower.displayDevice
-  readonly property bool hasBattery: settings.hardwarePreview || !!(batteryDevice && batteryDevice.isLaptopBattery)
-  readonly property int batteryLevel: settings.hardwarePreview ? previewBatteryPercent
-    : hasBattery ? Math.round(batteryDevice.percentage * 100) : -1
-  readonly property bool onPower: settings.hardwarePreview ? previewCharging : hasBattery && !UPower.onBattery
+  readonly property bool hasBattery: !!(batteryDevice && batteryDevice.isLaptopBattery)
+  readonly property int batteryLevel: hasBattery ? Math.round(batteryDevice.percentage * 100) : -1
+  readonly property bool onPower: hasBattery && !UPower.onBattery
   property int batteryWarned: 101
   onOnPowerChanged: {
     if (onPower) batteryWarned = 101
@@ -220,8 +228,6 @@ Item {
 
   // Bluetooth: a device connecting or disconnecting.
   readonly property var btConnected: {
-    if (settings.hardwarePreview)
-      return previewBluetoothConnected ? [{ key: previewBluetoothConnected, name: previewBluetoothConnected, battery: 83, icon: "audio-headset" }] : []
     var devs = Bluetooth.devices ? Bluetooth.devices.values : []
     return devs.filter(function(d) { return d && d.connected }).map(function(d) {
       return { key: String(d.address), name: String(d.deviceName || d.name || d.address), icon: String(d.icon || ""),
@@ -695,13 +701,6 @@ Item {
       root.ask(question)
       return root.view
     }
-    function testActivity(what: string): string { // TMP
-      if (what === "charge") { root.previewCharging = false; root.previewCharging = true } // TMP
-      else if (what === "low") { root.previewCharging = false; root.previewBatteryPercent = 67; root.batteryWarned = 101; root.previewBatteryPercent = 15 } // TMP
-      else if (what === "btoff") root.previewBluetoothConnected = "" // TMP
-      else if (what === "bton") root.previewBluetoothConnected = "Studio Headphones" // TMP
-      return what // TMP
-    } // TMP
     function companionStatus(): string { return root.companionStatus }
     function installCompanion(): string {
       root.installCompanion()
@@ -813,6 +812,7 @@ Item {
             : root.volumePill ? 240
             : root.activityPill && root.activity.kind === "bluetooth" ? 360
             : root.clipboardPill || root.activityPill ? 320
+            : root.workspacesPill ? root.workspaceIds.length * 24 + 42
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? (root.companionWarning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
@@ -823,6 +823,7 @@ Item {
             : root.notificationPill ? 84
             : root.activityPill && root.activity.kind === "bluetooth" ? 64
             : root.clipboardPill || root.activityPill ? (root.settings.notch ? 40 : 44)
+            : root.workspacesPill ? (root.settings.notch ? 36 : 40)
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? 56
@@ -876,6 +877,8 @@ Item {
           ClipboardPill { host: root; anchors.fill: parent }
 
           DevicePill { host: root; anchors.fill: parent }
+
+          WorkspacePill { host: root; anchors.fill: parent }
 
           MediaPill { host: root; anchors.fill: parent }
 

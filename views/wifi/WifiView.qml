@@ -27,7 +27,6 @@ ColumnLayout {
   readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
   readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
   readonly property string iconFont: host.fontFamily
-  readonly property bool mockMode: !!host.settings.hardwarePreview
 
   readonly property var device: {
     var devs = Networking.devices ? Networking.devices.values : []
@@ -40,8 +39,8 @@ ColumnLayout {
     }
     return fallback
   }
-  readonly property bool powered: mockMode ? host.previewWifiEnabled : !!device && Networking.wifiEnabled
-  readonly property bool scanning: mockMode ? active && powered : !!(device && device.scannerEnabled)
+  readonly property bool powered: !!device && Networking.wifiEnabled
+  readonly property bool scanning: !!(device && device.scannerEnabled)
 
   // Network being joined, so its connectionFailed can be reported.
   property var attempt: null
@@ -55,32 +54,6 @@ ColumnLayout {
   // Rows hold plain values only, as in the Bluetooth view: networks come and
   // go during scans. Actions look the network up again by name.
   readonly property var rows: {
-    if (mockMode) {
-      if (!host.previewWifiEnabled) return []
-      var demoNetworks = [
-        { name: "Studio Wi-Fi", section: "known", secure: true, strength: 0.9 },
-        { name: "Home Network", section: "known", secure: true, strength: 0.76 },
-        { name: "Cafe Guest", section: "nearby", secure: false, strength: 0.68 },
-        { name: "Omarchy Guest", section: "nearby", secure: true, strength: 0.52 }
-      ]
-      var demoGroups = { connected: [], known: [], nearby: [] }
-      for (var j = 0; j < demoNetworks.length; j++) {
-        var demo = demoNetworks[j]
-        var isConnected = host.previewWifiConnected === demo.name
-        demoGroups[isConnected ? "connected" : demo.section].push({
-          address: demo.name, name: demo.name, section: isConnected ? "connected" : demo.section,
-          connected: isConnected, secure: demo.secure, strength: demo.strength, pending: ""
-        })
-      }
-      var demoTitles = { connected: "Connected", known: "Saved Networks", nearby: "Available" }
-      var demoRows = []
-      for (var demoKey in demoTitles) {
-        if (!demoGroups[demoKey].length) continue
-        demoRows.push({ header: demoTitles[demoKey] })
-        demoRows = demoRows.concat(demoGroups[demoKey])
-      }
-      return demoRows
-    }
     var nets = device && device.networks ? device.networks.values : []
     var groups = { connected: [], known: [], nearby: [] }
     for (var i = 0; i < nets.length; i++) {
@@ -175,12 +148,6 @@ ColumnLayout {
   }
   function activate(row) {
     if (row.pending) return
-    if (mockMode) {
-      if (row.connected) host.previewWifiConnected = ""
-      else if (row.section === "nearby" && row.secure) { passwordText = ""; passwordFor = row.address }
-      else host.previewWifiConnected = row.address
-      return
-    }
     var n = networkFor(row.address)
     if (!n) return
     failedName = ""
@@ -190,11 +157,6 @@ ColumnLayout {
     n.connect()
   }
   function join(name, psk) {
-    if (mockMode) {
-      passwordFor = ""
-      if (psk) host.previewWifiConnected = name
-      return
-    }
     var n = networkFor(name)
     passwordFor = ""
     if (!n || !psk) return
@@ -203,7 +165,6 @@ ColumnLayout {
     n.connectWithPsk(psk)
   }
   function forget(row) {
-    if (mockMode) return
     var n = networkFor(row.address)
     if (n && !row.pending) n.forget()
   }
@@ -219,7 +180,7 @@ ColumnLayout {
 
   // Scan only while the view is open.
   Binding {
-    when: !wf.mockMode && !!wf.device
+    when: !!wf.device
     target: wf.device
     property: "scannerEnabled"
     value: wf.active && wf.powered
@@ -296,7 +257,7 @@ ColumnLayout {
         Layout.preferredHeight: 70
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        text: !wf.mockMode && !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
+        text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
         color: wf.textMuted
         font.family: "Adwaita Sans"
         font.pixelSize: 14

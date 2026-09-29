@@ -8,8 +8,7 @@ import Quickshell.Bluetooth
 // like the Wi-Fi view and macOS's Bluetooth module: My Devices (connected
 // first, then remembered) and a collapsible Other Devices, found while the
 // view scans. Bluetooth itself turns on and off from the Control Center's
-// tile. Actions use omarchy-bluetooth-device, or sample state when hardware
-// preview is enabled.
+// tile. Actions use omarchy-bluetooth-device.
 // Keyboard: ↑/↓ (or Tab, j/k) to move, Enter/Space to connect, disconnect, or
 // open Other Devices; Delete/x to forget; Esc to go back to the Control
 // Center.
@@ -30,9 +29,8 @@ ColumnLayout {
   readonly property string iconFont: host.fontFamily
 
   readonly property var adapter: Bluetooth.defaultAdapter
-  readonly property bool mockMode: !!host.settings.hardwarePreview
-  readonly property bool powered: mockMode ? host.previewBluetoothEnabled : !!(adapter && adapter.enabled)
-  readonly property bool scanning: mockMode ? active && powered : !!(adapter && adapter.discovering)
+  readonly property bool powered: !!(adapter && adapter.enabled)
+  readonly property bool scanning: !!(adapter && adapter.discovering)
   // Set once we start a scan, cleared once BlueZ reports it down. Nothing
   // else ends the scan quickshell holds, and a lingering one starves A2DP.
   property bool owesDiscoveryStop: false
@@ -43,34 +41,6 @@ ColumnLayout {
   // destroyed mid-incubation during discovery churn and crash quickshell.
   // Actions look the device up again by address.
   readonly property var rows: {
-    if (mockMode) {
-      if (!powered) return []
-      var demoDevices = [
-        { address: "demo-headphones", name: "Studio Headphones", section: "known", battery: 83 },
-        { address: "demo-keyboard", name: "Mechanical Keyboard", section: "known", battery: 100 },
-        { address: "demo-speaker", name: "Portable Speaker", section: "nearby", battery: -1 }
-      ]
-      var demoGroups = { connected: [], known: [], nearby: [] }
-      for (var j = 0; j < demoDevices.length; j++) {
-        var demo = demoDevices[j]
-        if (host.previewBluetoothForgotten.indexOf(demo.address) !== -1) continue
-        var isConnected = host.previewBluetoothConnected === demo.name
-        var section = isConnected ? "connected" : demo.section
-        if (section === "nearby" && !scanning) continue
-        demoGroups[section].push({
-          address: demo.address, name: demo.name, section: section, connected: isConnected,
-          battery: demo.battery, pending: ""
-        })
-      }
-      var demoTitles = { connected: "Connected", known: "My Devices", nearby: "Nearby" }
-      var demoRows = []
-      for (var demoKey in demoTitles) {
-        if (!demoGroups[demoKey].length) continue
-        demoRows.push({ header: demoTitles[demoKey] })
-        demoRows = demoRows.concat(demoGroups[demoKey].sort(function(a, b) { return a.name.localeCompare(b.name) }))
-      }
-      return demoRows
-    }
     var devs = Bluetooth.devices ? Bluetooth.devices.values : []
     var groups = { connected: [], known: [], nearby: [] }
     for (var i = 0; i < devs.length; i++) {
@@ -165,25 +135,11 @@ ColumnLayout {
     if (action) pendingTimeout.restart()
   }
   function run(row, action, label) {
-    if (mockMode) {
-      if (action === "forget") {
-        if (host.previewBluetoothConnected === row.name) host.previewBluetoothConnected = ""
-        var forgotten = host.previewBluetoothForgotten.slice()
-        if (forgotten.indexOf(row.address) === -1) forgotten.push(row.address)
-        host.previewBluetoothForgotten = forgotten
-      } else if (action === "disconnect") host.previewBluetoothConnected = ""
-      else if (action === "connect" || action === "pair") host.previewBluetoothConnected = row.name
-      return
-    }
     setPending(row.address, label)
     Quickshell.execDetached(["omarchy-bluetooth-device", action, row.address])
   }
   function activate(row) {
     if (row.pending) return
-    if (mockMode) {
-      host.previewBluetoothConnected = row.connected ? "" : row.name
-      return
-    }
     if (row.connected) {
       var d = deviceFor(row.address)
       if (d && d.disconnect) d.disconnect()
@@ -201,7 +157,7 @@ ColumnLayout {
     interval: 1000
     repeat: true
     triggeredOnStart: true
-    running: !bt.mockMode && bt.active && bt.powered && !bt.scanning
+    running: bt.active && bt.powered && !bt.scanning
     onTriggered: { bt.owesDiscoveryStop = true; bt.adapter.discovering = true }
   }
   // Stop bound to BlueZ's confirmed state, not a write at close: quickshell
@@ -212,7 +168,7 @@ ColumnLayout {
     repeat: true
     triggeredOnStart: true
     property int attempts: 0
-    running: !bt.mockMode && !bt.active && bt.owesDiscoveryStop && bt.scanning
+    running: !bt.active && bt.owesDiscoveryStop && bt.scanning
     onRunningChanged: if (running) attempts = 0
     onTriggered: {
       if (++attempts > 3) { bt.owesDiscoveryStop = false; return }
@@ -221,7 +177,6 @@ ColumnLayout {
   }
   Connections {
     target: bt.adapter
-    enabled: !bt.mockMode
     function onDiscoveringChanged() { if (!bt.adapter.discovering) bt.owesDiscoveryStop = false }
   }
 
@@ -293,7 +248,7 @@ ColumnLayout {
         Layout.preferredHeight: 70
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        text: !bt.mockMode && !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
+        text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
         color: bt.textMuted
         font.family: "Adwaita Sans"
         font.pixelSize: 14

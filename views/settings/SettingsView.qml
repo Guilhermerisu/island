@@ -25,7 +25,7 @@ Item {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance colorful sidebar icons neutral motion animation speed hover lift pill notch style 24-hour clock volume hud",
+      "General": "general appearance colorful sidebar icons neutral motion animation speed hover lift pill notch style 24-hour clock volume hud workspace workspaces",
       "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices",
       "Notifications": "notifications banner duration",
@@ -777,6 +777,43 @@ Item {
           PaneHeader { page: settingsView.currentPage; Layout.topMargin: 4 }
 
       SettingsGroup {
+        title: "Pill"
+        visible: settingsView.currentPage === "General"
+        SettingsRow {
+          label: "Workspace Indicator"
+          detail: "Show which workspace you're on when you switch"
+          SettingsSwitch {
+            checked: settingsView.settings.workspaceHud
+            onToggled: function(on) { settingsView.settings.workspaceHud = on }
+          }
+        }
+        SettingsRow {
+          label: "24-Hour Clock"
+          SettingsSwitch {
+            checked: settingsView.settings.clock24h
+            onToggled: function(on) { settingsView.settings.clock24h = on }
+          }
+        }
+        SettingsRow {
+          label: "Volume HUD"
+          detail: "Show the level when the volume changes"
+          SettingsSwitch {
+            checked: settingsView.settings.volumeHud
+            onToggled: function(on) { settingsView.settings.volumeHud = on }
+          }
+        }
+        SettingsRow {
+          label: "Notch Style"
+          detail: "Attach the island to the top edge, like a MacBook notch"
+          last: true
+          SettingsSwitch {
+            checked: settingsView.settings.notch
+            onToggled: function(on) { settingsView.settings.notch = on }
+          }
+        }
+      }
+
+      SettingsGroup {
         title: "Appearance"
         visible: settingsView.currentPage === "General"
         SettingsRow {
@@ -786,21 +823,6 @@ Item {
           SettingsSwitch {
             checked: settingsView.settings.colorfulSettingsIcons
             onToggled: function(on) { settingsView.settings.colorfulSettingsIcons = on }
-          }
-        }
-      }
-
-      SettingsGroup {
-        title: "Preview"
-        visible: settingsView.currentPage === "General"
-        footer: "Shows sample battery, Wi-Fi, and Bluetooth data without changing your system settings."
-        SettingsRow {
-          label: "Mock Hardware"
-          detail: "Preview battery, Wi-Fi, and Bluetooth controls"
-          last: true
-          SettingsSwitch {
-            checked: settingsView.settings.hardwarePreview
-            onToggled: function(on) { settingsView.settings.hardwarePreview = on }
           }
         }
       }
@@ -823,35 +845,6 @@ Item {
           SettingsSwitch {
             checked: settingsView.settings.hoverLift
             onToggled: function(on) { settingsView.settings.hoverLift = on }
-          }
-        }
-      }
-
-      SettingsGroup {
-        title: "Pill"
-        visible: settingsView.currentPage === "General"
-        SettingsRow {
-          label: "Notch Style"
-          detail: "Attach the island to the top edge, like a MacBook notch"
-          SettingsSwitch {
-            checked: settingsView.settings.notch
-            onToggled: function(on) { settingsView.settings.notch = on }
-          }
-        }
-        SettingsRow {
-          label: "24-Hour Clock"
-          SettingsSwitch {
-            checked: settingsView.settings.clock24h
-            onToggled: function(on) { settingsView.settings.clock24h = on }
-          }
-        }
-        SettingsRow {
-          label: "Volume HUD"
-          detail: "Show the level when the volume changes"
-          last: true
-          SettingsSwitch {
-            checked: settingsView.settings.volumeHud
-            onToggled: function(on) { settingsView.settings.volumeHud = on }
           }
         }
       }

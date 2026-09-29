@@ -48,7 +48,6 @@ ColumnLayout {
   }
   readonly property var wifiDevice: findDevice(DeviceType.Wifi)
   readonly property var wiredDevice: findDevice(DeviceType.Wired)
-  readonly property bool hardwarePreview: !!host.settings.hardwarePreview
   readonly property var wifiNetwork: {
     var nets = wifiDevice && wifiDevice.networks ? wifiDevice.networks.values : []
     for (var i = 0; i < nets.length; i++) if (nets[i] && nets[i].connected) return nets[i]
@@ -67,7 +66,6 @@ ColumnLayout {
 
   // --- Bluetooth ---
   readonly property var btAdapter: Bluetooth.defaultAdapter
-  readonly property bool bluetoothPreview: hardwarePreview
   readonly property var btConnected: {
     var devs = Bluetooth.devices ? Bluetooth.devices.values : []
     for (var i = 0; i < devs.length; i++) if (devs[i] && devs[i].connected) return devs[i]
@@ -76,20 +74,15 @@ ColumnLayout {
 
   // --- Battery / power profile ---
   readonly property var battery: UPower.displayDevice
-  readonly property bool hasBattery: hardwarePreview || !!(battery && battery.isLaptopBattery)
-  readonly property int batteryPercent: hardwarePreview ? host.previewBatteryPercent : hasBattery ? Math.round(battery.percentage * 100) : 0
-  readonly property bool charging: hardwarePreview ? host.previewCharging : hasBattery && battery.state === UPowerDeviceState.Charging
+  readonly property bool hasBattery: !!(battery && battery.isLaptopBattery)
+  readonly property int batteryPercent: hasBattery ? Math.round(battery.percentage * 100) : 0
+  readonly property bool charging: hasBattery && battery.state === UPowerDeviceState.Charging
   readonly property var profileNames: ["power-saver", "balanced", "performance"]
-  readonly property string profileName: hardwarePreview ? host.previewPowerProfile : profileNames[PowerProfiles.profile] || "balanced"
+  readonly property string profileName: profileNames[PowerProfiles.profile] || "balanced"
   readonly property var profileLabels: ({ "power-saver": "Power Saver", balanced: "Balanced", performance: "Performance" })
   readonly property var profileIcons: ({ "power-saver": "󰾆", balanced: "󰾅", performance: "󰓅" })
   // Through Omarchy so the choice is remembered per AC/battery, as in its menu.
   function cycleProfile() {
-    if (hardwarePreview) {
-      var previewUsable = host.previewPowerProfile === "performance" ? profileNames : profileNames.slice(0, 2)
-      host.previewPowerProfile = previewUsable[(previewUsable.indexOf(host.previewPowerProfile) + 1) % previewUsable.length]
-      return
-    }
     var usable = PowerProfiles.hasPerformanceProfile ? profileNames : profileNames.slice(0, 2)
     var next = usable[(usable.indexOf(profileName) + 1) % usable.length]
     Quickshell.execDetached(["omarchy-powerprofiles-set", "autodetect", next])
@@ -98,9 +91,7 @@ ColumnLayout {
   // --- Keyboard layout: the main keyboard's, from Hyprland ---
   property string keyboardLayout: ""
   property int keyboardLayoutCount: 1
-  readonly property var previewLayouts: ["English (US)", "Português (Brasil)"]
-  property int previewLayoutIndex: 0
-  readonly property string keyboardLabel: hardwarePreview ? previewLayouts[previewLayoutIndex] : keyboardLayout || "Unknown"
+  readonly property string keyboardLabel: keyboardLayout || "Unknown"
   Process {
     id: keyboardRead
     command: ["hyprctl", "devices", "-j"]
@@ -124,8 +115,7 @@ ColumnLayout {
   }
   Process { id: keyboardSwitch; command: ["hyprctl", "switchxkblayout", "all", "next"] }
   function nextKeyboardLayout() {
-    if (hardwarePreview) previewLayoutIndex = (previewLayoutIndex + 1) % previewLayouts.length
-    else if (keyboardLayoutCount > 1) keyboardSwitch.running = true
+    if (keyboardLayoutCount > 1) keyboardSwitch.running = true
   }
 
   // --- Shell services ---
@@ -170,28 +160,20 @@ ColumnLayout {
     }
   }
   function controlIcon(key) {
-    if (key === "wifi") return hardwarePreview
-      ? (host.previewWifiEnabled ? "\uf1eb" : "󰖪")
-      : wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"
-    if (key === "bluetooth") return bluetoothPreview
-      ? (host.previewBluetoothEnabled ? "󰂯" : "󰂲")
-      : btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
+    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"
+    if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
     if (key === "focus") return "󰍶"
     if (key === "game") return "󰊗"
     if (key === "power") return profileIcons[profileName] || "󰾅"
     if (key === "keyboard") return "󰌌"
     return "󰖔"
   }
-  function controlTitle(key) { return key === "wifi" ? (hardwarePreview || wifiDevice ? "Wi-Fi" : "Ethernet") : host.controlCenterTitle(key) }
+  function controlTitle(key) { return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : host.controlCenterTitle(key) }
   function controlSubtitle(key) {
-    if (key === "wifi") return hardwarePreview
-      ? (!host.previewWifiEnabled ? "Off" : host.previewWifiConnected || "Not connected")
-      : wifiDevice
+    if (key === "wifi") return wifiDevice
       ? (!Networking.wifiEnabled ? "Off" : wifiNetwork ? wifiNetwork.name : "Not connected")
       : (wiredDevice && wiredDevice.connected ? "Connected" : "Disconnected")
-    if (key === "bluetooth") return bluetoothPreview
-      ? (!host.previewBluetoothEnabled ? "Off" : host.previewBluetoothConnected || "On")
-      : !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
+    if (key === "bluetooth") return !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
     if (key === "focus") return dnd ? "On" : "Off"
     if (key === "game") return gameMode ? "On" : "Off"
     if (key === "power") return profileLabels[profileName] || "Balanced"
@@ -199,8 +181,8 @@ ColumnLayout {
     return nightOn ? "On" : "Off"
   }
   function controlChecked(key) {
-    if (key === "wifi") return hardwarePreview ? host.previewWifiEnabled : wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
-    if (key === "bluetooth") return bluetoothPreview ? host.previewBluetoothEnabled : !!(btAdapter && btAdapter.enabled)
+    if (key === "wifi") return wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
+    if (key === "bluetooth") return !!(btAdapter && btAdapter.enabled)
     if (key === "focus") return dnd
     if (key === "game") return gameMode
     if (key === "power") return profileName !== "balanced"
@@ -208,15 +190,13 @@ ColumnLayout {
     return nightOn
   }
   function controlAvailable(key) {
-    if (key === "wifi") return hardwarePreview || (wifiDevice ? Networking.wifiHardwareEnabled !== false : false)
-    if (key === "bluetooth") return bluetoothPreview || !!btAdapter
+    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : false
+    if (key === "bluetooth") return !!btAdapter
     if (key === "focus") return !!notifications
     return true
   }
   function toggleControl(key) {
-    if (key === "wifi" && hardwarePreview) host.previewWifiEnabled = !host.previewWifiEnabled
-    else if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
-    else if (key === "bluetooth" && bluetoothPreview) host.previewBluetoothEnabled = !host.previewBluetoothEnabled
+    if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
     else if (key === "bluetooth" && btAdapter) btAdapter.enabled = !btAdapter.enabled
     else if (key === "focus" && notifications) notifications.setDoNotDisturb(!dnd)
     else if (key === "game") setGameMode(!gameMode)
@@ -796,7 +776,7 @@ ColumnLayout {
       subtitle: cc.controlSubtitle(parent.controlKey)
       checked: cc.controlChecked(parent.controlKey)
       available: cc.controlAvailable(parent.controlKey)
-      opens: (parent.controlKey === "bluetooth" && (cc.bluetoothPreview || !!cc.btAdapter)) || (parent.controlKey === "wifi" && (cc.hardwarePreview || !!cc.wifiDevice))
+      opens: (parent.controlKey === "bluetooth" && !!cc.btAdapter) || (parent.controlKey === "wifi" && !!cc.wifiDevice)
       onClicked: cc.toggleControl(parent.controlKey)
       onOpened: cc.host.view = parent.controlKey
     }
