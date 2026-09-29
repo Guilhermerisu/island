@@ -216,7 +216,10 @@ ColumnLayout {
     property string subtitle: ""
     property bool checked: false
     property bool available: true
+    // When set, the badge toggles and the rest of the tile opens details.
+    property bool opens: false
     signal clicked()
+    signal opened()
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -278,6 +281,13 @@ ColumnLayout {
       anchors.fill: parent
       enabled: t.available
       hoverEnabled: true
+      cursorShape: Qt.PointingHandCursor
+      onClicked: t.opens ? t.opened() : t.clicked()
+    }
+    MouseArea {
+      visible: t.opens
+      anchors.fill: badge
+      enabled: t.available
       cursorShape: Qt.PointingHandCursor
       onClicked: t.clicked()
     }
@@ -676,7 +686,9 @@ ColumnLayout {
       subtitle: cc.controlSubtitle(parent.controlKey)
       checked: cc.controlChecked(parent.controlKey)
       available: cc.controlAvailable(parent.controlKey)
+      opens: parent.controlKey === "bluetooth"
       onClicked: cc.toggleControl(parent.controlKey)
+      onOpened: cc.host.view = parent.controlKey
     }
   }
 
