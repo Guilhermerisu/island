@@ -5,6 +5,7 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import Quickshell.Networking
 import Quickshell.Services.Pipewire
+import Quickshell.Services.UPower
 import Quickshell.Widgets
 
 // A compact Control Center with grouped switches, sliders, and notifications.
@@ -67,6 +68,21 @@ ColumnLayout {
     var devs = Bluetooth.devices ? Bluetooth.devices.values : []
     for (var i = 0; i < devs.length; i++) if (devs[i] && devs[i].connected) return devs[i]
     return null
+  }
+
+  // --- Battery / power profile ---
+  readonly property var battery: UPower.displayDevice
+  readonly property bool hasBattery: !!(battery && battery.isLaptopBattery)
+  readonly property int batteryPercent: hasBattery ? Math.round(battery.percentage * 100) : 0
+  readonly property bool charging: hasBattery && battery.state === UPowerDeviceState.Charging
+  readonly property var profileNames: ["power-saver", "balanced", "performance"]
+  readonly property string profileName: profileNames[PowerProfiles.profile] || "balanced"
+  readonly property string batteryIcon: charging ? "󰂄" : ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"][Math.round(batteryPercent / 10)]
+  // Through Omarchy so the choice is remembered per AC/battery, as in its menu.
+  function cycleProfile() {
+    var usable = PowerProfiles.hasPerformanceProfile ? profileNames : profileNames.slice(0, 2)
+    var next = usable[(usable.indexOf(profileName) + 1) % usable.length]
+    Quickshell.execDetached(["omarchy-powerprofiles-set", "autodetect", next])
   }
 
   // --- Shell services ---
@@ -437,6 +453,41 @@ ColumnLayout {
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
+    // Battery and power profile; clicking cycles the profile.
+    Rectangle {
+      visible: cc.hasBattery
+      Layout.preferredWidth: batteryRow.implicitWidth + 24
+      Layout.preferredHeight: 32
+      radius: 16
+      color: batteryMouse.containsMouse ? cc.well : cc.card
+      Row {
+        id: batteryRow
+        anchors.centerIn: parent
+        spacing: 6
+        Text {
+          anchors.verticalCenter: parent.verticalCenter
+          text: cc.batteryIcon
+          color: cc.charging ? cc.accent : cc.text
+          font.family: cc.iconFont
+          font.pixelSize: 16
+        }
+        Text {
+          anchors.verticalCenter: parent.verticalCenter
+          text: cc.batteryPercent + "% · " + ({ "power-saver": "Saver", balanced: "Balanced", performance: "Performance" })[cc.profileName]
+          color: cc.text
+          font.family: "Adwaita Sans"
+          font.pixelSize: 12
+          font.weight: Font.DemiBold
+        }
+      }
+      MouseArea {
+        id: batteryMouse
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: cc.cycleProfile()
+      }
+    }
     Rectangle {
       Layout.preferredWidth: cc.editMode ? 64 : 32
       Layout.preferredHeight: 32
