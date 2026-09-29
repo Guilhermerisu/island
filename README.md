@@ -16,7 +16,8 @@ All Omarchy's menus rewritten as one fluid island.
 
 - **At rest:** a clock, or album art and an animated sound wave while music plays.
 - **Live activities:** browser downloads, system updates (pacman, yay, paru, and
-  Omarchy updates), and anything you copy show up on the pill.
+  Omarchy updates), charging and low battery, Bluetooth connections, and anything
+  you copy show up on the pill.
 - **Live feedback:** notification previews and animated volume and mute feedback,
   with Claude Code and Codex notifications getting their own icons.
 - **Ask AI:** type a question in the launcher and Claude or Codex answers right in
@@ -41,25 +42,12 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
   </tr>
 </table>
 
-### Notifications
+### Control Center
 
 <table>
   <tr>
-    <td width="33%" align="center"><strong>Notification</strong><br><img src="assets/notification.png" alt="Notification preview" width="100%"></td>
-    <td width="33%" align="center"><strong>Claude Code</strong><br><img src="assets/notification-claude.png" alt="Claude Code notification" width="100%"></td>
-    <td width="33%" align="center"><strong>Codex</strong><br><img src="assets/notification-codex.png" alt="Codex notification" width="100%"></td>
-  </tr>
-</table>
-
-### Personalization
-
-<table>
-  <tr>
-    <td width="50%" align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme switcher" width="100%"></td>
-    <td width="50%" align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper switcher" width="100%"></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="50%"></td>
+    <td width="50%" align="center"><strong>Control Center</strong><br><img src="assets/control-center.png" alt="Control Center with system controls and notifications" width="100%"></td>
+    <td width="50%" align="center"><strong>Settings</strong><br><img src="assets/settings.png" alt="Island settings pane with appearance and motion options" width="100%"></td>
   </tr>
 </table>
 
@@ -76,6 +64,38 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
   </tr>
 </table>
 
+### Activities
+
+<table>
+  <tr>
+    <td width="33%" align="center"><strong>Charging</strong><br><img src="assets/battery-charging.png" alt="Charging battery live activity" width="100%"></td>
+    <td width="33%" align="center"><strong>Low battery</strong><br><img src="assets/battery-low.png" alt="Low battery live activity" width="100%"></td>
+    <td width="33%" align="center"><strong>Bluetooth</strong><br><img src="assets/bluetooth-connected.png" alt="Bluetooth connection live activity with device battery" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><strong>Notification</strong><br><img src="assets/notification.png" alt="Notification preview" width="100%"></td>
+    <td width="33%" align="center"><strong>Claude Code</strong><br><img src="assets/notification-claude.png" alt="Claude Code notification" width="100%"></td>
+    <td width="33%" align="center"><strong>Codex</strong><br><img src="assets/notification-codex.png" alt="Codex notification" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><strong>Downloading</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
+    <td width="33%" align="center"><strong>Downloaded</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
+    <td width="33%" align="center"><strong>Updated</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
+  </tr>
+</table>
+
+### Personalization
+
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Themes</strong><br><img src="assets/themes.png" alt="Theme switcher" width="100%"></td>
+    <td width="50%" align="center"><strong>Wallpapers</strong><br><img src="assets/wallpapers.png" alt="Wallpaper switcher" width="100%"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><strong>Power menu</strong><br><img src="assets/power.png" alt="Power menu" width="50%"></td>
+  </tr>
+</table>
+
 ### Search
 
 <table>
@@ -85,17 +105,6 @@ Island runs inside Omarchy's Quickshell process and reserves no screen space.
   </tr>
   <tr>
     <td colspan="2" align="center"><strong>Clipboard history</strong><br><img src="assets/clipboard.png" alt="Clipboard history with an image preview" width="50%"></td>
-  </tr>
-</table>
-
-
-### Live activities
-
-<table>
-  <tr>
-    <td width="33%" align="center"><strong>Downloading</strong><br><img src="assets/download.png" alt="Download progress" width="100%"></td>
-    <td width="33%" align="center"><strong>Downloaded</strong><br><img src="assets/download-done.png" alt="Download complete" width="100%"></td>
-    <td width="33%" align="center"><strong>Updated</strong><br><img src="assets/update-done.png" alt="System update complete" width="100%"></td>
   </tr>
 </table>
 

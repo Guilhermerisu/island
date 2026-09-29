@@ -39,6 +39,7 @@ ColumnLayout {
     color: gallery.cc.textMuted
     font.family: "Adwaita Sans"
     font.pixelSize: 12
+    horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
   }
   Flickable {
