@@ -127,13 +127,14 @@ Item {
       property bool bluetoothActivity: true
       property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
-      property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,display"
+      property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
+      property bool microphoneMuteControl: false
       property string askAi: "chatgpt"
     }
   }
   readonly property var controlCenterKeys: {
-    var known = ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "display"]
+    var known = ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
     var saved = String(settings.controlCenterOrder || "").split(",")
     var result = []
     for (var i = 0; i < saved.length; i++)
@@ -143,13 +144,15 @@ Item {
     return result
   }
   function controlCenterTitle(key) {
-    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", power: "Power Mode", keyboard: "Keyboard", sound: "Sound", display: "Display" }
+    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", power: "Power Mode", keyboard: "Keyboard", sound: "Sound", microphone: "Microphone", microphoneMute: "Microphone", display: "Display" }
     return names[key] || key
   }
   function controlCenterIsShown(key) {
+    if (key === "microphoneMute" && !settings.microphoneMuteControl) return false
     return String(settings.controlCenterHidden || "").split(",").indexOf(key) === -1
   }
   function setControlCenterShown(key, shown) {
+    if (key === "microphoneMute") settings.microphoneMuteControl = shown
     var hidden = String(settings.controlCenterHidden || "").split(",").filter(function(item) { return item !== "" && item !== key })
     if (!shown) hidden.push(key)
     settings.controlCenterHidden = hidden.join(",")

@@ -29,10 +29,21 @@ ColumnLayout {
   readonly property string iconFont: host.fontFamily
   readonly property int animDuration: 180 * host.motionScale
   property bool editMode: false
-  property bool addPickerOpen: false
   property string draggedKey: ""
+  property bool dragFromGallery: false
+  property bool dropActive: false
+  property bool removeDropActive: false
+  property point dragPoint: Qt.point(0, 0)
   property var previewOrder: []
-  readonly property var hiddenControlKeys: host.controlCenterKeys.filter(function(key) { return !host.controlCenterIsShown(key) })
+  onEditModeChanged: {
+    endDrag()
+    previewOrder = host.controlCenterKeys.slice()
+    outputsOpen = false
+    inputsOpen = false
+    controlLayoutScroll.contentY = 0
+    if (editMode) controlGallery.resetScroll()
+    cc.forceActiveFocus()
+  }
 
   // --- Network ---
   readonly property var netDevices: Networking.devices ? Networking.devices.values : []
@@ -63,6 +74,19 @@ ColumnLayout {
     return nodes.filter(function(n) { return n && n.isSink && !n.isStream && n.audio })
   }
   property bool outputsOpen: false
+  readonly property var microphoneSource: Pipewire.defaultAudioSource
+  readonly property bool microphoneReady: !!(microphoneSource && microphoneSource.ready && microphoneSource.audio)
+  readonly property bool microphoneMuted: !!(microphoneSource && microphoneSource.audio && microphoneSource.audio.muted)
+  readonly property real microphoneVolume: microphoneSource && microphoneSource.audio ? microphoneSource.audio.volume : 0
+  readonly property var inputs: {
+    var nodes = Pipewire.nodes ? Pipewire.nodes.values : []
+    return nodes.filter(function(n) { return n && !n.isSink && !n.isStream && n.audio })
+  }
+  property bool inputsOpen: false
+  PwObjectTracker { objects: [cc.microphoneSource] }
+  function toggleMicrophoneMute() {
+    if (microphoneReady) microphoneSource.audio.muted = !microphoneMuted
+  }
 
   // --- Bluetooth ---
   readonly property var btAdapter: Bluetooth.defaultAdapter
@@ -124,19 +148,106 @@ ColumnLayout {
   readonly property bool dnd: notifications ? !!notifications.doNotDisturb : false
   readonly property bool nightOn: nightlight ? !!nightlight.enabled : false
   readonly property var visibleControlKeys: {
-    var hidden = String(host.settings.controlCenterHidden || "").split(",")
     var order = cc.editMode && cc.previewOrder.length ? cc.previewOrder : host.controlCenterKeys
     return order.filter(function(key) {
-      return hidden.indexOf(key) === -1 && (cc.editMode || cc.controlPresent(key))
+      return (host.controlCenterIsShown(key) || (cc.dragFromGallery && cc.dropActive && key === cc.draggedKey))
+        && (!cc.isMicrophoneControl(key) || cc.controlPresent(key))
+        && (cc.editMode || cc.controlPresent(key))
     })
   }
   function controlPresent(key) {
     if (key === "night") return !!nightlight
+    if (isMicrophoneControl(key)) return !!(microphoneSource && microphoneSource.audio)
     if (key === "sound") return !!(sink && sink.audio)
     if (key === "display") return brightnessAvailable
     return true
   }
-  function endDrag() { draggedKey = "" }
+  function isMicrophoneControl(key) { return key === "microphone" || key === "microphoneMute" }
+  function controlWide(key) { return key === "sound" || key === "microphone" || key === "display" }
+  function controlComponent(key) {
+    if (key === "sound") return soundCard
+    if (key === "microphone") return microphoneCard
+    if (key === "display") return displayCard
+    return quickCard
+  }
+  function endDrag() {
+    draggedKey = ""
+    dragFromGallery = false
+    dropActive = false
+    removeDropActive = false
+    previewOrder = host.controlCenterKeys.slice()
+  }
+  function beginDrag(key, fromGallery, width, height) {
+    previewOrder = host.controlCenterKeys.slice()
+    dragFromGallery = fromGallery
+    draggedKey = key
+    dragProxy.width = width
+    dragProxy.height = height
+  }
+  function moveDrag(source, x, y) {
+    var point = source.mapToItem(dragLayer, x, y)
+    dragProxy.x = point.x - dragProxy.width / 2
+    dragProxy.y = point.y - dragProxy.height / 2
+    dragPoint = source.mapToItem(controlLayoutScroll, x, y)
+    var galleryPoint = source.mapToItem(controlGallery, x, y)
+    removeDropActive = !dragFromGallery && controlGallery.visible
+      && galleryPoint.x >= 0 && galleryPoint.x <= controlGallery.width
+      && galleryPoint.y >= 0 && galleryPoint.y <= controlGallery.height
+    updateDropPosition()
+  }
+  function updateDropPosition() {
+    dropActive = !removeDropActive && dragPoint.x >= 0 && dragPoint.x <= controlLayoutScroll.width
+      && dragPoint.y >= 0 && dragPoint.y <= controlLayoutScroll.height
+    if (!dropActive) return
+    var y = dragPoint.y + controlLayoutScroll.contentY
+    if (dragFromGallery) previewInsertAt(dragPoint.x, y)
+    else previewMoveAt(dragPoint.x, y)
+  }
+  function previewInsertAt(x, y) {
+    var slots = cardArea.positions
+    var own = slots[draggedKey]
+    // Keep the insertion stable while the pointer is over its placeholder.
+    if (own && x >= own.x && x <= own.x + own.width && y >= own.y && y <= own.y + own.height) return
+    var keys = visibleControlKeys.filter(function(key) { return key !== cc.draggedKey })
+    var target = ""
+    for (var i = 0; i < keys.length; i++) {
+      var slot = slots[keys[i]]
+      if (!slot) continue
+      var wide = controlWide(keys[i])
+      if (y < slot.y || (y < slot.y + slot.height && (wide
+          ? y < slot.y + slot.height / 2 : x < slot.x + slot.width / 2))) {
+        target = keys[i]
+        break
+      }
+    }
+    var order = previewOrder.filter(function(key) { return key !== cc.draggedKey })
+    var index = target ? order.indexOf(target) : keys.length ? order.indexOf(keys[keys.length - 1]) + 1 : order.length
+    order.splice(index, 0, draggedKey)
+    previewOrder = order
+  }
+  function finishDrag() {
+    if (draggedKey !== "" && removeDropActive) {
+      host.setControlCenterShown(draggedKey, false)
+    } else if (draggedKey !== "" && dropActive) {
+      host.settings.controlCenterOrder = previewOrder.join(",")
+      if (dragFromGallery) host.setControlCenterShown(draggedKey, true)
+    }
+    endDrag()
+  }
+  Timer {
+    interval: 25
+    repeat: true
+    running: cc.draggedKey !== "" && cc.dropActive
+    onTriggered: {
+      var step = cc.dragPoint.y < 32 ? -8 : cc.dragPoint.y > controlLayoutScroll.height - 32 ? 8 : 0
+      var limit = Math.max(0, controlLayoutScroll.contentHeight - controlLayoutScroll.height)
+      var next = Math.max(0, Math.min(limit, controlLayoutScroll.contentY + step))
+      if (next !== controlLayoutScroll.contentY) {
+        controlLayoutScroll.contentY = next
+        cc.updateDropPosition()
+      }
+    }
+  }
   function previewMoveAt(x, y) {
     if (x < 0 || y < 0 || x > cardArea.width || y > cardArea.height) return
     var slots = cardArea.positions
@@ -160,6 +271,7 @@ ColumnLayout {
     }
   }
   function controlIcon(key) {
+    if (key === "microphoneMute") return microphoneMuted ? "󰍭" : "󰍬"
     if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"
     if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
     if (key === "focus") return "󰍶"
@@ -170,6 +282,7 @@ ColumnLayout {
   }
   function controlTitle(key) { return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : host.controlCenterTitle(key) }
   function controlSubtitle(key) {
+    if (key === "microphoneMute") return microphoneMuted ? "Muted" : "Unmuted"
     if (key === "wifi") return wifiDevice
       ? (!Networking.wifiEnabled ? "Off" : wifiNetwork ? wifiNetwork.name : "Not connected")
       : (wiredDevice && wiredDevice.connected ? "Connected" : "Disconnected")
@@ -181,6 +294,7 @@ ColumnLayout {
     return nightOn ? "On" : "Off"
   }
   function controlChecked(key) {
+    if (key === "microphoneMute") return microphoneMuted
     if (key === "wifi") return wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
     if (key === "bluetooth") return !!(btAdapter && btAdapter.enabled)
     if (key === "focus") return dnd
@@ -190,12 +304,14 @@ ColumnLayout {
     return nightOn
   }
   function controlAvailable(key) {
+    if (key === "microphoneMute") return microphoneReady
     if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : false
     if (key === "bluetooth") return !!btAdapter
     if (key === "focus") return !!notifications
     return true
   }
   function toggleControl(key) {
+    if (key === "microphoneMute") { toggleMicrophoneMute(); return }
     if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
     else if (key === "bluetooth" && btAdapter) btAdapter.enabled = !btAdapter.enabled
     else if (key === "focus" && notifications) notifications.setDoNotDisturb(!dnd)
@@ -226,7 +342,7 @@ ColumnLayout {
   property bool brightnessAvailable: false
   property int brightness: 0
   onActiveChanged: {
-    if (!active) { outputsOpen = false; editMode = false; addPickerOpen = false; endDrag(); return }
+    if (!active) { outputsOpen = false; inputsOpen = false; editMode = false; endDrag(); return }
     Qt.callLater(function() { cc.forceActiveFocus() })
     if (!brightnessRead.running) brightnessRead.running = true
     if (!gameModeRead.running) gameModeRead.running = true
@@ -260,7 +376,7 @@ ColumnLayout {
 
   // Esc closes the control center.
   Keys.onEscapePressed: {
-    if (cc.editMode) { cc.editMode = false; cc.addPickerOpen = false; cc.endDrag() }
+    if (cc.editMode) { cc.editMode = false; cc.endDrag() }
     else cc.host.view = "rest"
   }
 
@@ -416,6 +532,8 @@ ColumnLayout {
     property string detail: ""
     property bool showChevron: false
     property bool chevronOpen: false
+    property string chevronLabel: "Sound Output"
+    property string chevronHideLabel: "Hide Outputs"
     signal chevronClicked()
     default property alias content: body.data
 
@@ -457,7 +575,7 @@ ColumnLayout {
       anchors.topMargin: 10
       width: 24; height: 24; radius: 12
       color: chevronMouse.containsMouse ? cc.wellHover : cc.well
-      Tooltip { text: sec.chevronOpen ? "Hide Outputs" : "Sound Output" }
+      Tooltip { text: sec.chevronOpen ? sec.chevronHideLabel : sec.chevronLabel }
       Text {
         anchors.centerIn: parent
         text: "󰅂"
@@ -515,7 +633,7 @@ ColumnLayout {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: { cc.editMode = !cc.editMode; cc.addPickerOpen = false; cc.endDrag(); cc.outputsOpen = false }
+        onClicked: cc.editMode = !cc.editMode
       }
     }
     Rectangle {
@@ -569,157 +687,123 @@ ColumnLayout {
     }
   }
 
-  ColumnLayout {
-    visible: cc.editMode && cc.hiddenControlKeys.length > 0
+  Flickable {
+    id: controlLayoutScroll
     Layout.fillWidth: true
-    spacing: 6
-    Rectangle {
-      Layout.fillWidth: true
-      Layout.preferredHeight: 28
-      radius: 7
-      color: addMouse.containsMouse ? cc.wellHover : cc.well
-      Text {
-        anchors.centerIn: parent
-        text: cc.addPickerOpen ? "Hide Add Controls" : "Add Controls…"
-        color: cc.text
-        font.family: "Adwaita Sans"
-        font.pixelSize: 12
-        font.weight: Font.DemiBold
-      }
-      MouseArea {
-        id: addMouse
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: cc.addPickerOpen = !cc.addPickerOpen
-      }
+    Layout.preferredHeight: cc.editMode ? 300 : cardArea.positions.height
+    contentWidth: width
+    contentHeight: cardArea.height
+    interactive: cc.editMode
+    clip: cc.editMode
+    boundsBehavior: Flickable.StopAtBounds
+    Text {
+      parent: controlLayoutScroll
+      anchors.centerIn: parent
+      visible: cc.editMode && cc.visibleControlKeys.length === 0
+      text: "Drag a control here"
+      color: cc.textMuted
+      font.family: "Adwaita Sans"
+      font.pixelSize: 13
     }
-    Repeater {
-      model: cc.addPickerOpen ? cc.hiddenControlKeys : []
-      delegate: Rectangle {
-        required property string modelData
-        Layout.fillWidth: true
-        Layout.preferredHeight: 32
-        radius: 10
-        color: addItemMouse.containsMouse ? cc.tile : cc.card
-        border.width: 1
-        border.color: cc.edge
-        Text {
-          anchors.left: parent.left
-          anchors.leftMargin: 12
-          anchors.verticalCenter: parent.verticalCenter
-          text: "+  " + cc.host.controlCenterTitle(modelData)
-          color: cc.text
-          font.family: "Adwaita Sans"
-          font.pixelSize: 12
-        }
-        MouseArea {
-          id: addItemMouse
-          anchors.fill: parent
-          hoverEnabled: true
-          cursorShape: Qt.PointingHandCursor
-          onClicked: cc.host.setControlCenterShown(modelData, true)
-        }
-      }
-    }
-  }
-
-  Item {
-    id: cardArea
-    Layout.fillWidth: true
-    Layout.preferredHeight: positions.height
-    readonly property var positions: {
-      var result = {}
-      var gap = 10
-      var halfWidth = (width - gap) / 2
-      var rowY = 0
-      var halfUsed = false
-      for (var i = 0; i < cc.visibleControlKeys.length; i++) {
-        var key = cc.visibleControlKeys[i]
-        var wide = key === "sound" || key === "display"
-        var cardHeight = key === "sound" ? 100 + (cc.outputsOpen && !cc.editMode ? cc.outputs.length * 40 : 0) : wide ? 100 : 74
-        if (wide) {
-          if (halfUsed) { rowY += 74 + gap; halfUsed = false }
-          result[key] = { x: 0, y: rowY, width: width, height: cardHeight }
-          rowY += cardHeight + gap
-        } else {
-          result[key] = { x: halfUsed ? halfWidth + gap : 0, y: rowY, width: halfWidth, height: 74 }
-          if (halfUsed) { rowY += 74 + gap; halfUsed = false }
-          else halfUsed = true
-        }
-      }
-      result.height = Math.max(0, rowY + (halfUsed ? 74 : -gap))
-      return result
-    }
-    Repeater {
-      model: ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "display"]
-      delegate: Item {
-        id: controlCard
-        required property string modelData
-        readonly property var slot: cardArea.positions[modelData] || null
-        visible: !!slot
-        x: slot ? slot.x : 0
-        y: slot ? slot.y : 0
-        width: slot ? slot.width : 0
-        height: slot ? slot.height : 0
-        opacity: cc.draggedKey === modelData ? 0.25 : 1
-        Behavior on x { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
-        Behavior on y { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
-        Behavior on opacity { NumberAnimation { duration: 120 * cc.host.motionScale } }
-
-        Loader {
-          anchors.fill: parent
-          property string controlKey: controlCard.modelData
-          sourceComponent: controlCard.modelData === "sound" ? soundCard
-            : controlCard.modelData === "display" ? displayCard : quickCard
-        }
-        MouseArea {
-          id: editDragMouse
-          anchors.fill: parent
-          visible: cc.editMode
-          enabled: cc.editMode
-          cursorShape: Qt.OpenHandCursor
-          property real pressX: 0
-          property real pressY: 0
-          onPressed: function(mouse) { pressX = mouse.x; pressY = mouse.y }
-          onPositionChanged: function(mouse) {
-            if (!pressed) return
-            if (cc.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
-            if (cc.draggedKey === "") {
-              cc.previewOrder = cc.host.controlCenterKeys.slice()
-              cc.draggedKey = controlCard.modelData
-              dragProxy.width = controlCard.width
-              dragProxy.height = controlCard.height
-            }
-            var point = editDragMouse.mapToItem(dragLayer, mouse.x, mouse.y)
-            dragProxy.x = point.x - dragProxy.width / 2
-            dragProxy.y = point.y - dragProxy.height / 2
-            point = editDragMouse.mapToItem(cardArea, mouse.x, mouse.y)
-            cc.previewMoveAt(point.x, point.y)
+    Item {
+      id: cardArea
+      width: controlLayoutScroll.width
+      height: positions.height
+      readonly property var positions: {
+        var result = {}
+        var gap = 10
+        var halfWidth = (width - gap) / 2
+        var rowY = 0
+        var halfUsed = false
+        for (var i = 0; i < cc.visibleControlKeys.length; i++) {
+          var key = cc.visibleControlKeys[i]
+          var wide = cc.controlWide(key)
+          var cardHeight = wide ? 100 : 74
+          if (key === "sound" && cc.outputsOpen && !cc.editMode) cardHeight += cc.outputs.length * 40
+          if (key === "microphone" && cc.inputsOpen && !cc.editMode) cardHeight += cc.inputs.length * 40
+          if (wide) {
+            if (halfUsed) { rowY += 74 + gap; halfUsed = false }
+            result[key] = { x: 0, y: rowY, width: width, height: cardHeight }
+            rowY += cardHeight + gap
+          } else if (halfUsed) {
+            result[key] = { x: halfWidth + gap, y: rowY, width: halfWidth, height: 74 }
+            rowY += 74 + gap
+            halfUsed = false
+          } else {
+            var nextKey = i + 1 < cc.visibleControlKeys.length ? cc.visibleControlKeys[i + 1] : ""
+            var nextIsSmall = nextKey !== "" && !cc.controlWide(nextKey)
+            result[key] = { x: 0, y: rowY, width: nextIsSmall ? halfWidth : width, height: 74 }
+            if (nextIsSmall) halfUsed = true
+            else rowY += 74 + gap
           }
-          onReleased: {
-            if (cc.draggedKey === controlCard.modelData) cc.host.settings.controlCenterOrder = cc.previewOrder.join(",")
-            cc.endDrag()
-          }
-          onCanceled: { cc.previewOrder = cc.host.controlCenterKeys.slice(); cc.endDrag() }
         }
-        Rectangle {
-          visible: cc.editMode
-          anchors.left: parent.left
-          anchors.top: parent.top
-          anchors.leftMargin: -4
-          anchors.topMargin: -4
-          z: 2
-          width: 24; height: 24; radius: 12
-          color: cc.wellHover
-          border.width: 1
-          border.color: cc.edge
-          Text { anchors.centerIn: parent; text: "−"; color: cc.text; font.pixelSize: 18 }
-          Tooltip { text: "Remove" }
-          MouseArea {
+        result.height = Math.max(0, rowY + (halfUsed ? 74 : -gap))
+        return result
+      }
+      Repeater {
+        model: ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
+        delegate: Item {
+          id: controlCard
+          required property string modelData
+          readonly property var slot: cardArea.positions[modelData] || null
+          visible: !!slot
+          x: slot ? slot.x : 0
+          y: slot ? slot.y : 0
+          width: slot ? slot.width : 0
+          height: slot ? slot.height : 0
+          opacity: cc.draggedKey === modelData ? 0.25 : 1
+          Behavior on x { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
+          Behavior on y { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
+          Behavior on opacity { NumberAnimation { duration: 120 * cc.host.motionScale } }
+
+          Loader {
             anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: { cc.host.setControlCenterShown(controlCard.modelData, false); cc.endDrag() }
+            property string controlKey: controlCard.modelData
+            property bool galleryPreview: false
+            sourceComponent: cc.controlComponent(controlCard.modelData)
+          }
+          MouseArea {
+            id: editDragMouse
+            anchors.fill: parent
+            visible: cc.editMode
+            enabled: cc.editMode
+            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+            preventStealing: true
+            property real pressX: 0
+            property real pressY: 0
+            onPressed: function(mouse) { pressX = mouse.x; pressY = mouse.y }
+            onPositionChanged: function(mouse) {
+              if (!pressed) return
+              if (cc.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
+              if (cc.draggedKey === "") cc.beginDrag(controlCard.modelData, false, controlCard.width, controlCard.height)
+              cc.moveDrag(editDragMouse, mouse.x, mouse.y)
+            }
+            onReleased: function(mouse) {
+              if (cc.draggedKey !== "") {
+                cc.moveDrag(editDragMouse, mouse.x, mouse.y)
+                cc.finishDrag()
+              }
+            }
+            onCanceled: cc.endDrag()
+          }
+          Rectangle {
+            visible: cc.editMode
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.leftMargin: 0
+            anchors.topMargin: 0
+            z: 2
+            width: 24; height: 24; radius: 12
+            color: cc.wellHover
+            border.width: 1
+            border.color: cc.edge
+            Text { anchors.centerIn: parent; text: "−"; color: cc.text; font.pixelSize: 18 }
+            Tooltip { text: "Remove" }
+            MouseArea {
+              anchors.fill: parent
+              cursorShape: Qt.PointingHandCursor
+              onClicked: { cc.host.setControlCenterShown(controlCard.modelData, false); cc.endDrag() }
+            }
           }
         }
       }
@@ -727,7 +811,7 @@ ColumnLayout {
   }
 
   Rectangle {
-    visible: cc.visibleControlKeys.length === 0
+    visible: !cc.editMode && cc.visibleControlKeys.length === 0
     Layout.fillWidth: true
     Layout.preferredHeight: 74
     radius: 16
@@ -736,11 +820,22 @@ ColumnLayout {
     border.color: cc.edge
     Text {
       anchors.centerIn: parent
-      text: cc.editMode ? "Use Add Controls to restore a card" : "Click the pencil to add controls"
+      text: "Click the pencil to add controls"
       color: cc.textMuted
       font.family: "Adwaita Sans"
       font.pixelSize: 12
     }
+  }
+
+  ControlGallery {
+    id: controlGallery
+    visible: cc.editMode
+    Layout.fillWidth: true
+    controlCenter: cc
+    quickControl: quickCard
+    soundControl: soundCard
+    microphoneControl: microphoneCard
+    displayControl: displayCard
   }
 
   Item {
@@ -761,8 +856,8 @@ ColumnLayout {
         anchors.fill: parent
         enabled: false
         property string controlKey: cc.draggedKey
-        sourceComponent: cc.draggedKey === "sound" ? soundCard
-          : cc.draggedKey === "display" ? displayCard : quickCard
+        property bool galleryPreview: cc.dragFromGallery
+        sourceComponent: cc.controlComponent(cc.draggedKey)
       }
     }
   }
@@ -775,7 +870,7 @@ ColumnLayout {
       title: cc.controlTitle(parent.controlKey)
       subtitle: cc.controlSubtitle(parent.controlKey)
       checked: cc.controlChecked(parent.controlKey)
-      available: cc.controlAvailable(parent.controlKey)
+      available: parent.galleryPreview || cc.controlAvailable(parent.controlKey)
       opens: (parent.controlKey === "bluetooth" && !!cc.btAdapter) || (parent.controlKey === "wifi" && !!cc.wifiDevice)
       onClicked: cc.toggleControl(parent.controlKey)
       onOpened: cc.host.view = parent.controlKey
@@ -787,15 +882,16 @@ ColumnLayout {
   Component {
     id: soundCard
     CcSection {
+    readonly property bool galleryPreview: parent.galleryPreview
     anchors.fill: parent
     title: "Sound"
     detail: !cc.controlPresent("sound") ? "Unavailable" : cc.muted ? "Muted" : Math.round(cc.volume * 100) + "%"
-    showChevron: !cc.editMode && cc.outputs.length > 1
+    showChevron: !galleryPreview && !cc.editMode && cc.outputs.length > 1
     chevronOpen: cc.outputsOpen
-    onChevronClicked: cc.outputsOpen = !cc.outputsOpen
+    onChevronClicked: { cc.outputsOpen = !cc.outputsOpen; cc.inputsOpen = false }
 
     CcSlider {
-      visible: cc.controlPresent("sound")
+      visible: galleryPreview || cc.controlPresent("sound")
       icon: cc.muted || cc.volume <= 0 ? "󰖁" : cc.volume < 0.34 ? "󰕿" : cc.volume < 0.67 ? "󰖀" : "󰕾"
       value: cc.muted ? 0 : cc.volume
       onMoved: function(v) {
@@ -805,7 +901,7 @@ ColumnLayout {
     }
     // Output picker, revealed by the › button.
     Repeater {
-      model: cc.outputsOpen && !cc.editMode ? cc.outputs : []
+      model: !galleryPreview && cc.outputsOpen && !cc.editMode ? cc.outputs : []
       delegate: Rectangle {
         id: outputRow
         required property var modelData
@@ -848,7 +944,7 @@ ColumnLayout {
       }
     }
     Text {
-      visible: !cc.controlPresent("sound")
+      visible: !galleryPreview && !cc.controlPresent("sound")
       text: "No audio output available"
       color: cc.textMuted
       font.family: "Adwaita Sans"
@@ -859,13 +955,82 @@ ColumnLayout {
   }
 
   Component {
+    id: microphoneCard
+    CcSection {
+      readonly property bool galleryPreview: parent.galleryPreview
+      anchors.fill: parent
+      title: "Microphone"
+      detail: !cc.controlPresent("microphone") ? "Unavailable" : cc.microphoneMuted ? "Muted" : Math.round(cc.microphoneVolume * 100) + "%"
+      showChevron: !galleryPreview && !cc.editMode && cc.inputs.length > 1
+      chevronOpen: cc.inputsOpen
+      chevronLabel: "Microphone Input"
+      chevronHideLabel: "Hide Inputs"
+      onChevronClicked: { cc.inputsOpen = !cc.inputsOpen; cc.outputsOpen = false }
+
+      CcSlider {
+        enabled: cc.microphoneReady
+        icon: "󰍬"
+        value: cc.microphoneVolume
+        onMoved: function(v) {
+          if (cc.microphoneReady) cc.microphoneSource.audio.volume = v
+        }
+        Tooltip { text: "Microphone Input Volume" }
+      }
+      Repeater {
+        model: !galleryPreview && cc.inputsOpen && !cc.editMode ? cc.inputs : []
+        delegate: Rectangle {
+          id: inputRow
+          required property var modelData
+          readonly property bool isDefault: modelData === cc.microphoneSource
+          Layout.fillWidth: true
+          Layout.preferredHeight: 32
+          radius: 7
+          color: inputMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.08) : "transparent"
+          Text {
+            anchors.left: parent.left
+            anchors.leftMargin: 10
+            anchors.right: inputCheck.left
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            text: String(inputRow.modelData.description || inputRow.modelData.nickname || inputRow.modelData.name || "")
+            textFormat: Text.PlainText
+            elide: Text.ElideRight
+            color: inputRow.isDefault ? cc.text : cc.textMuted
+            font.family: "Adwaita Sans"
+            font.pixelSize: 12
+          }
+          Text {
+            id: inputCheck
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            visible: inputRow.isDefault
+            text: "󰄬"
+            color: cc.accent
+            font.family: cc.iconFont
+            font.pixelSize: 14
+          }
+          MouseArea {
+            id: inputMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: Pipewire.preferredDefaultAudioSource = inputRow.modelData
+          }
+        }
+      }
+    }
+  }
+
+  Component {
     id: displayCard
     CcSection {
+    readonly property bool galleryPreview: parent.galleryPreview
     anchors.fill: parent
     title: "Display"
     detail: cc.brightnessAvailable ? cc.brightness + "%" : "Unavailable"
     CcSlider {
-      visible: cc.brightnessAvailable
+      visible: galleryPreview || cc.brightnessAvailable
       icon: "󰃠"
       value: cc.brightness / 100
       onMoved: function(v) {
@@ -874,7 +1039,7 @@ ColumnLayout {
       }
     }
     Text {
-      visible: !cc.brightnessAvailable
+      visible: !galleryPreview && !cc.brightnessAvailable
       text: "No brightness control available"
       color: cc.textMuted
       font.family: "Adwaita Sans"
@@ -888,6 +1053,7 @@ ColumnLayout {
   // ---------- Notifications ----------
 
   Rectangle {
+    visible: !cc.editMode
     Layout.fillWidth: true
     Layout.preferredHeight: notificationBody.implicitHeight + 20
     radius: 16
