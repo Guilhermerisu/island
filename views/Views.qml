@@ -2,6 +2,7 @@ import QtQuick
 import "../components"
 import "control-center"
 import "bluetooth"
+import "wifi"
 import "power"
 import "launcher"
 import "themes"
@@ -22,7 +23,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, answerSurface]
+  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, answerSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     return null
@@ -35,6 +36,14 @@ Item {
     fixedWidth: 540
     maxHeight: 780
     ControlCenter { host: views.host; active: controlsSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: wifiSurface
+    host: views.host
+    viewName: "wifi"
+    fixedWidth: 480
+    WifiView { host: views.host; active: wifiSurface.active; anchors.fill: parent }
   }
 
   Surface {

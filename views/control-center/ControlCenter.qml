@@ -686,7 +686,7 @@ ColumnLayout {
       subtitle: cc.controlSubtitle(parent.controlKey)
       checked: cc.controlChecked(parent.controlKey)
       available: cc.controlAvailable(parent.controlKey)
-      opens: parent.controlKey === "bluetooth"
+      opens: parent.controlKey === "bluetooth" || (parent.controlKey === "wifi" && !!cc.wifiDevice)
       onClicked: cc.toggleControl(parent.controlKey)
       onOpened: cc.host.view = parent.controlKey
     }
