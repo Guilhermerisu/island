@@ -209,6 +209,7 @@ Item {
           cursorShape: Qt.PointingHandCursor
           onClicked: control.activated()
         }
+        Tooltip { text: control.name; above: true }
       }
 
       Row {
@@ -217,6 +218,7 @@ Item {
         Control {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰑟"
+          name: "Previous"
           font.pixelSize: 34
           available: !!(player.mpris && player.mpris.canGoPrevious)
           onActivated: player.action("previous")
@@ -224,6 +226,7 @@ Item {
         Control {
           anchors.verticalCenter: parent.verticalCenter
           text: player.playing ? "󰏤" : "󰐊"
+          name: player.playing ? "Pause" : "Play"
           font.pixelSize: 42
           available: !!player.mpris
           onActivated: player.action("playPause")
@@ -231,6 +234,7 @@ Item {
         Control {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰈑"
+          name: "Next"
           font.pixelSize: 34
           available: !!(player.mpris && player.mpris.canGoNext)
           onActivated: player.action("next")

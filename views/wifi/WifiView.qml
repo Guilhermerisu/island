@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import "../../components"
 import Quickshell.Io
 import Quickshell.Networking
 
@@ -259,6 +260,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: backMouse.containsMouse ? wf.well : wf.card
+      Tooltip { text: "Control Center" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: 17 }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
     }
@@ -515,6 +517,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
+                Tooltip { text: "Forget This Network" }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"

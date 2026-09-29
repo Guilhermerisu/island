@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import "../../components"
 import Quickshell
 import Quickshell.Bluetooth
 
@@ -256,6 +257,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: backMouse.containsMouse ? bt.well : bt.card
+      Tooltip { text: "Control Center" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: 17 }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
@@ -505,6 +507,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? bt.wellHover : "transparent"
+                Tooltip { text: "Forget This Device" }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"

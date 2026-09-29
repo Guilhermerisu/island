@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import "../../components"
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Hyprland
@@ -476,6 +477,7 @@ ColumnLayout {
       anchors.topMargin: 10
       width: 24; height: 24; radius: 12
       color: chevronMouse.containsMouse ? cc.wellHover : cc.well
+      Tooltip { text: sec.chevronOpen ? "Hide Outputs" : "Sound Output" }
       Text {
         anchors.centerIn: parent
         text: "󰅂"
@@ -519,6 +521,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
+      Tooltip { text: cc.editMode ? "" : "Edit Controls" }
       Text {
         anchors.centerIn: parent
         text: cc.editMode ? "Done" : "󰏫"
@@ -540,6 +543,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: settingsMouse.containsMouse ? cc.well : cc.card
+      Tooltip { text: "Island Settings" }
       Text {
         anchors.centerIn: parent
         text: "󰒓"
@@ -763,6 +767,7 @@ ColumnLayout {
           border.width: 1
           border.color: cc.edge
           Text { anchors.centerIn: parent; text: "−"; color: cc.text; font.pixelSize: 18 }
+          Tooltip { text: "Remove" }
           MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
@@ -1126,6 +1131,7 @@ ColumnLayout {
             font.family: cc.iconFont
             font.pixelSize: 13
             MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: cc.host.dismissNotification(note.modelData) }
+            Tooltip { text: "Dismiss" }
           }
         }
       }
