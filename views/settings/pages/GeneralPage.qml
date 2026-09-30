@@ -25,6 +25,16 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      label: "Keyboard Layout Indicator"
+      detail: "Show the layout when you switch keyboard languages"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.keyboardHud
+        onToggled: function(on) { page.view.settings.keyboardHud = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
       label: "24-Hour Clock"
       SettingsSwitch {
         view: page.view

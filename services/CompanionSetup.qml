@@ -87,11 +87,11 @@ Item {
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
-    onLoaded: setup.statusChanged(text())
+    onLoaded: setup.readStatus(text())
   }
   // "running <started>", "done", or "failed". A run older than two minutes
   // was cut short.
-  function statusChanged(raw) {
+  function readStatus(raw) {
     var parts = String(raw || "").trim().split(/\s+/)
     var isRunning = parts[0] === "running" && Date.now() / 1000 - Number(parts[1] || 0) < 120
     running = isRunning

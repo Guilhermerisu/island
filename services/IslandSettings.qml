@@ -35,6 +35,7 @@ Item {
       property bool batteryActivity: true
       property bool bluetoothActivity: true
       property bool workspaceHud: false
+      property bool keyboardHud: true
       property bool colorfulSettingsIcons: true
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
