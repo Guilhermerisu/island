@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../components"
 import QtQuick.Layouts
 
 // A pane in the sidebar: its icon and name, highlighted when it's open and
@@ -14,6 +15,9 @@ Rectangle {
   radius: 8
   visible: side.view.pageMatches(title)
   color: selected ? side.view.accent : sideMouse.containsMouse ? side.view.host.theme.withAlpha(side.view.text, 0.06) : "transparent"
+  Behavior on color { MotionColorAnimation { theme: side.view.host.theme } }
+  scale: sideMouse.pressed ? 0.985 : 1
+  Behavior on scale { MotionAnimation { theme: side.view.host.theme; pace: sideMouse.pressed ? "press" : "standard" } }
   RowLayout {
     anchors.fill: parent
     anchors.leftMargin: 8

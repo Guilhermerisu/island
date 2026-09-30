@@ -266,7 +266,7 @@ Item {
 
   Timer {
     id: surfaceRevealTimer
-    interval: 60 * root.theme.motionScale
+    interval: root.theme.contentRevealDelay
     repeat: false
     onTriggered: root.surfaceContentReady = true
   }
@@ -424,7 +424,7 @@ Item {
           id: island
           x: (parent.width - width) / 2
           y: root.barHidden && root.view === "rest" ? -height - 12 : root.settings.notch ? 0 : 8
-          Behavior on y { NumberAnimation { duration: 180 * root.theme.motionScale; easing.type: Easing.OutCubic } }
+          Behavior on y { MotionAnimation { theme: root.theme; pace: "standard" } }
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
@@ -450,28 +450,28 @@ Item {
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
           property real radiusCap: root.volumePill ? 20 : root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
-            NumberAnimation { duration: 180 * root.theme.motionScale; easing.type: Easing.OutCubic }
+            MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
           }
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
-          scale: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch ? 1.04 : 1
-          Behavior on scale { NumberAnimation { duration: 140 * root.theme.motionScale; easing.type: Easing.OutCubic } }
+          scale: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch ? 1.018 : 1
+          Behavior on scale { MotionAnimation { theme: root.theme; pace: "quick" } }
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
           color: root.theme.background
           clip: true
-          // Resize directly toward the target, without spring overshoot.
+          // Width, height and corners travel together and settle softly.
           property real animatedWidth: targetWidth
           property real animatedHeight: targetHeight
           Behavior on animatedWidth {
-            NumberAnimation { duration: 180 * root.theme.motionScale; easing.type: Easing.OutCubic }
+            MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
           }
           Behavior on animatedHeight {
-            NumberAnimation { duration: 180 * root.theme.motionScale; easing.type: Easing.OutCubic }
+            MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
           }
           width: Math.max(40, animatedWidth)
           height: Math.max(28, animatedHeight)
-          Behavior on color { ColorAnimation { duration: 240 * root.theme.motionScale; easing.type: Easing.InOutQuad } }
+          Behavior on color { MotionColorAnimation { theme: root.theme } }
 
           MouseArea {
             anchors.fill: parent

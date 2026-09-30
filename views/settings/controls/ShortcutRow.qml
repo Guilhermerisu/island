@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../components"
 import QtQuick.Layouts
 
 // One shortcut, like a row of macOS's Keyboard Shortcuts: the name, and the
@@ -15,7 +16,7 @@ Item {
   readonly property bool asking: shortcutRow.keybinds.pendingId === entry.id && shortcutRow.keybinds.pendingConflict !== ""
   Layout.fillWidth: true
   implicitHeight: asking ? 64 : 42
-  Behavior on implicitHeight { NumberAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
+  Behavior on implicitHeight { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "standard" } }
 
   Text {
     anchors.left: parent.left
@@ -40,8 +41,8 @@ Item {
     visible: !shortcutRow.asking
     color: shortcutRow.recording ? shortcutRow.view.host.theme.withAlpha(shortcutRow.view.accent, 0.16)
       : keysMouse.containsMouse ? shortcutRow.view.well : shortcutRow.view.host.theme.withAlpha(shortcutRow.view.well, 0)
-    Behavior on width { NumberAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
-    Behavior on color { ColorAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
+    Behavior on width { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "standard" } }
+    Behavior on color { MotionColorAnimation { theme: shortcutRow.view.host.theme } }
     // Focus ring: settles in from slightly larger, like macOS's.
     Rectangle {
       anchors.centerIn: parent
@@ -53,8 +54,8 @@ Item {
       border.color: shortcutRow.view.host.theme.withAlpha(shortcutRow.view.accent, 0.55)
       opacity: shortcutRow.recording ? 1 : 0
       scale: shortcutRow.recording ? 1 : 1.12
-      Behavior on opacity { NumberAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
-      Behavior on scale { NumberAnimation { duration: shortcutRow.view.animDuration * 1.2; easing.type: Easing.OutCubic } }
+      Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "fade"; curve: "fade" } }
+      Behavior on scale { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "standard" } }
     }
     Text {
       id: keysText
@@ -64,7 +65,7 @@ Item {
         : shortcutRow.entry.keys === "" ? shortcutRow.view.textMuted : shortcutRow.view.text
       font.family: "Adwaita Sans"
       font.pixelSize: shortcutRow.view.detailFontSize
-      Behavior on color { ColorAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
+      Behavior on color { MotionColorAnimation { theme: shortcutRow.view.host.theme } }
     }
     MouseArea {
       id: keysMouse

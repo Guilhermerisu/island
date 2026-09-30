@@ -20,8 +20,23 @@ Item {
   readonly property color urgent: Color.urgent
   readonly property color surface: Qt.tint(background, withAlpha(text, 0.07))
   readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
-  // Shared timing keeps pill content fades consistent at every speed.
-  readonly property int feedbackFadeDuration: Math.round(100 * motionScale)
+  // Motion roles share one cadence at every user-selected speed. Curves end
+  // with a soft landing; geometry stays inside its bounds without bouncing.
+  readonly property var motionDurations: ({
+    press: 65, quick: 110, standard: 170, expressive: 220,
+    morph: 240, collapse: 190, fade: 110, exit: 90
+  })
+  readonly property int feedbackFadeDuration: motionDuration("fade")
+  readonly property int contentRevealDelay: Math.round(45 * motionScale)
+  function motionDuration(pace) {
+    return Math.round((motionDurations[pace] || motionDurations.standard) * motionScale)
+  }
+  function motionCurve(curve) {
+    if (curve === "morph") return [0.22, 0.8, 0.24, 1, 1, 1]
+    if (curve === "fade") return [0.2, 0, 0.2, 1, 1, 1]
+    if (curve === "exit") return [0.4, 0, 1, 1, 1, 1]
+    return [0.16, 1, 0.3, 1, 1, 1]
+  }
   // The current Omarchy theme's name, for the theme and wallpaper switchers.
   property string name: ""
 

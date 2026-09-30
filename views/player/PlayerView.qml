@@ -198,9 +198,10 @@ Item {
         signal activated()
         color: "#ffffff"
         opacity: available ? (controlMouse.pressed ? 0.6 : 1) : 0.35
+        Behavior on opacity { MotionAnimation { theme: player.host.theme; pace: "quick"; curve: "fade" } }
         font.family: player.host.theme.fontFamily
-        scale: controlMouse.pressed ? 0.9 : 1
-        Behavior on scale { NumberAnimation { duration: 120 * player.host.theme.motionScale; easing.type: Easing.OutCubic } }
+        scale: controlMouse.pressed ? 0.94 : 1
+        Behavior on scale { MotionAnimation { theme: player.host.theme; pace: controlMouse.pressed ? "press" : "standard" } }
         MouseArea {
           id: controlMouse
           anchors.fill: parent
@@ -209,7 +210,7 @@ Item {
           cursorShape: Qt.PointingHandCursor
           onClicked: control.activated()
         }
-        Tooltip { text: control.name; above: true }
+        Tooltip { theme: player.host.theme; text: control.name; above: true }
       }
 
       Row {

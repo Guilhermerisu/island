@@ -34,13 +34,10 @@ Item {
           y: spinner.height / 2 + Math.sin(angle) * dots.orbit - height / 2
         }
       }
-      // One turn every 2.4 s, stepped ~40 times a second rather than at the
-      // display's refresh rate (each frame also re-runs the glow).
-      Timer {
-        interval: 25
-        repeat: true
+      AmbientRotation {
+        target: spinner
+        period: 2400
         running: dots.running && dots.visible
-        onTriggered: spinner.rotation = (spinner.rotation + 360 * 25 / 2400) % 360
       }
     }
   }

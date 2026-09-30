@@ -1,4 +1,5 @@
 import QtQuick
+import "../../components"
 import QtQuick.Layouts
 import "controls"
 import "pages"
@@ -52,7 +53,6 @@ Item {
   readonly property color divider: host.theme.withAlpha(text, 0.09)
   readonly property color accent: host.theme.accent
   readonly property color accentInk: host.theme.accentText
-  readonly property int animDuration: 180 * host.theme.motionScale
 
   readonly property int detailFontSize: 15
   readonly property int detailCaptionFontSize: 13
@@ -228,11 +228,12 @@ Item {
     id: popMenu
     z: 50
     visible: opacity > 0.01
+    enabled: !!settingsView.menuButton
     opacity: settingsView.menuButton ? 1 : 0
     scale: settingsView.menuButton ? 1 : 0.96
     transformOrigin: Item.Top
-    Behavior on opacity { NumberAnimation { duration: 110 * settingsView.host.theme.motionScale } }
-    Behavior on scale { NumberAnimation { duration: 110 * settingsView.host.theme.motionScale; easing.type: Easing.OutCubic } }
+    Behavior on opacity { MotionAnimation { theme: settingsView.host.theme; pace: settingsView.menuButton ? "fade" : "exit"; curve: "fade" } }
+    Behavior on scale { MotionAnimation { theme: settingsView.host.theme; pace: settingsView.menuButton ? "standard" : "exit" } }
     radius: 9
     color: Qt.tint(settingsView.panel, settingsView.host.theme.withAlpha(settingsView.text, 0.13))
     border.width: 1

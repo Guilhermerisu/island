@@ -86,7 +86,7 @@ ColumnLayout {
                 Layout.columnSpan: wide ? 2 : 1
                 Layout.preferredHeight: wide ? 108 : 82
                 scale: addMouse.pressed ? 0.98 : 1
-                Behavior on scale { NumberAnimation { duration: 120 * gallery.cc.host.theme.motionScale; easing.type: Easing.OutCubic } }
+                Behavior on scale { MotionAnimation { theme: gallery.cc.host.theme; pace: addMouse.pressed ? "press" : "standard" } }
                 Loader {
                   anchors.fill: parent
                   anchors.margins: 4
@@ -102,7 +102,7 @@ ColumnLayout {
                   color: "transparent"
                   border.width: 1
                   border.color: addMouse.containsMouse ? gallery.cc.accent : "transparent"
-                  Behavior on border.color { ColorAnimation { duration: gallery.cc.animDuration } }
+                  Behavior on border.color { MotionColorAnimation { theme: gallery.cc.host.theme } }
                 }
                 Rectangle {
                   anchors.right: parent.right
@@ -144,7 +144,7 @@ ColumnLayout {
                   }
                   onCanceled: gallery.layout.endDrag()
                 }
-                Tooltip {
+                Tooltip { theme: gallery.cc.host.theme;
                   text: "Drag to Add " + gallery.controls.controlTitle(choice.modelData)
                 }
               }

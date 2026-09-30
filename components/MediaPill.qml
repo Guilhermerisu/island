@@ -12,7 +12,7 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: media.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: media.host.theme; pace: "fade"; curve: "fade" } }
 
   ClippingRectangle {
     id: art

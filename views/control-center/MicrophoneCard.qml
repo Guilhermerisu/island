@@ -26,7 +26,7 @@ CcSection {
     onMoved: function(v) {
       if (card.controls.microphoneReady) card.controls.microphoneSource.audio.volume = v
     }
-    Tooltip { text: "Microphone Input Volume" }
+    Tooltip { theme: center.host.theme; text: "Microphone Input Volume" }
   }
   Repeater {
     model: !galleryPreview && card.center.inputsOpen && !card.center.editMode ? card.controls.inputs : []

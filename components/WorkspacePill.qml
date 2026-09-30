@@ -15,7 +15,7 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
   function workspaceById(id) {
     var values = Hyprland.workspaces.values
@@ -60,7 +60,7 @@ Item {
       height: pill.slot
       radius: height / 2
       color: "#ffffff"
-      Behavior on x { NumberAnimation { duration: 260 * pill.host.theme.motionScale; easing.type: Easing.OutCubic } }
+      Behavior on x { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
       Text {
         anchors.centerIn: parent
         text: pill.host.focusedWorkspaceId

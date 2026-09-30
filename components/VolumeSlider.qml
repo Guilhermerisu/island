@@ -13,12 +13,12 @@ ClippingRectangle {
   // Animate the level, not the pixel width, so the fill doesn't
   // restart its motion every frame while the island morphs.
   property real shownLevel: level
-  Behavior on shownLevel { NumberAnimation { duration: 220 * host.theme.motionScale; easing.type: Easing.OutCubic } }
+  Behavior on shownLevel { MotionAnimation { theme: host.theme; pace: "standard" } }
   radius: shape.radius
   color: "transparent"
   opacity: host.volumePill ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
 
   // Grey track behind the fill: solid, since the clipping shape
   // drops translucent colors (it's white at 16% over the black island).
@@ -45,6 +45,6 @@ ClippingRectangle {
     color: onFill ? host.theme.accentText : host.theme.text
     font.family: host.theme.fontFamily
     font.pixelSize: 26
-    Behavior on color { ColorAnimation { duration: 120 * host.theme.motionScale } }
+    Behavior on color { MotionColorAnimation { theme: host.theme } }
   }
 }

@@ -32,17 +32,17 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
-  // Leading: the thumbnail, or the symbol, springing in.
+  // Leading: the thumbnail, or the symbol, settling gently into place.
   Item {
     id: leading
     anchors.left: parent.left
     anchors.leftMargin: 10
     anchors.verticalCenter: parent.verticalCenter
     width: 26; height: 26
-    scale: pill.shown ? 1 : 0.4
-    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutCubic } }
+    scale: pill.shown ? 1 : 0.86
+    Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
     ClippingRectangle {
       anchors.fill: parent
       visible: pill.thumbnailReady
@@ -113,8 +113,8 @@ Item {
     opacity: pill.shown ? 1 : 0
     Behavior on opacity {
       SequentialAnimation {
-        PauseAnimation { duration: pill.shown ? 120 * pill.host.theme.motionScale : 0 }
-        NumberAnimation { duration: 180 * pill.host.theme.motionScale; easing.type: Easing.OutQuad }
+        PauseAnimation { duration: pill.shown ? pill.host.theme.contentRevealDelay : 0 }
+        MotionAnimation { theme: pill.host.theme; pace: "standard" }
       }
     }
   }

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../components"
 import QtQuick.Layouts
 
 // macOS Control Center slider: a capsule with a white fill that ends in a
@@ -16,7 +17,7 @@ Item {
   property real shownLevel: clamped
   Behavior on shownLevel {
     enabled: !sliderMouse.pressed
-    NumberAnimation { duration: 140 * center.host.theme.motionScale; easing.type: Easing.OutCubic }
+    MotionAnimation { theme: center.host.theme; pace: "quick" }
   }
 
   Layout.fillWidth: true

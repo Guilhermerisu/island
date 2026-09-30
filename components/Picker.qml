@@ -107,7 +107,6 @@ Item {
 
   // One duration and easing for everything a selection change moves (strip
   // scroll, outline, card fade and scale), so it reads as one motion.
-  readonly property int moveDuration: 240 * host.theme.motionScale
 
   // Jump without the carousel scrolling through everything in between (a
   // model reset otherwise animates back from card 0).
@@ -133,12 +132,12 @@ Item {
       scrollAnimation.start()
     }
   }
-  NumberAnimation {
+  MotionAnimation {
     id: scrollAnimation
+    theme: picker.host.theme
+    pace: "expressive"
     target: carousel
     property: "contentX"
-    duration: picker.moveDuration
-    easing.type: Easing.OutCubic
   }
 
   // ---------- Search ----------
@@ -203,9 +202,9 @@ Item {
       height: carousel.height
       opacity: isSelected ? 1 : 0.6
       scale: isSelected ? picker.selectedScale : picker.restScale
-      Behavior on opacity { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
-      // A gentle spring as the card settles into its size.
-      Behavior on scale { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutBack; easing.overshoot: 1.15 } }
+      Behavior on opacity { MotionAnimation { theme: picker.host.theme; pace: "expressive" } }
+      // Selection, scrolling and scale share the same soft landing.
+      Behavior on scale { MotionAnimation { theme: picker.host.theme; pace: "expressive" } }
 
       Item {
         anchors.centerIn: parent
@@ -234,7 +233,7 @@ Item {
           border.width: picker.ringWidth
           border.color: picker.host.theme.accent
           opacity: slot.isSelected ? 1 : 0
-          Behavior on opacity { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
+          Behavior on opacity { MotionAnimation { theme: picker.host.theme; pace: "expressive" } }
         }
         // Checkmark badge on the item that's active right now.
         Rectangle {
@@ -284,7 +283,7 @@ Item {
     anchors.bottom: carousel.bottom
     width: 56
     opacity: carousel.contentX - carousel.originX < -picker.pad + 1 ? 0 : 1
-    Behavior on opacity { NumberAnimation { duration: 150 * picker.host.theme.motionScale } }
+    Behavior on opacity { MotionAnimation { theme: picker.host.theme; pace: "fade"; curve: "fade" } }
     gradient: Gradient {
       orientation: Gradient.Horizontal
       GradientStop { position: 0; color: picker.host.theme.background }
@@ -297,7 +296,7 @@ Item {
     anchors.bottom: carousel.bottom
     width: 56
     opacity: carousel.contentX - carousel.originX > carousel.contentWidth - carousel.width + picker.pad - 1 ? 0 : 1
-    Behavior on opacity { NumberAnimation { duration: 150 * picker.host.theme.motionScale } }
+    Behavior on opacity { MotionAnimation { theme: picker.host.theme; pace: "fade"; curve: "fade" } }
     gradient: Gradient {
       orientation: Gradient.Horizontal
       GradientStop { position: 0; color: picker.host.theme.withAlpha(picker.host.theme.background, 0) }

@@ -25,6 +25,7 @@ Item {
   default property alias content: holder.data
   readonly property Item view: holder.children.length ? holder.children[0] : null
   readonly property bool active: host.view === viewName
+  readonly property bool revealed: active && host.surfaceContentReady
 
   readonly property real islandWidth: fixedWidth > 0 ? fixedWidth : implicitWidth + 2 * padding
   readonly property real islandHeight: Math.min(implicitHeight + 2 * padding, maxHeight)
@@ -39,8 +40,8 @@ Item {
   // Content fades in once the island has started morphing open.
   visible: active || opacity > 0.01
   enabled: active
-  opacity: active && host.surfaceContentReady ? 1 : 0
-  Behavior on opacity { NumberAnimation { duration: (surface.active ? 140 : 90) * surface.host.theme.motionScale; easing.type: Easing.OutCubic } }
+  opacity: revealed ? 1 : 0
+  Behavior on opacity { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? "standard" : "exit"; curve: "fade" } }
 
   // Lets the island know this view exists (for its open/closed logic).
   Component.onCompleted: host.registerSurface(viewName)
@@ -48,5 +49,13 @@ Item {
   Item {
     id: holder
     anchors.fill: parent
+    // Transform the content without disturbing the panel's measured size.
+    transformOrigin: Item.Top
+    scale: surface.revealed ? 1 : 0.985
+    Behavior on scale { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? "expressive" : "exit" } }
+    transform: Translate {
+      y: surface.revealed ? 0 : -6
+      Behavior on y { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? "expressive" : "exit" } }
+    }
   }
 }

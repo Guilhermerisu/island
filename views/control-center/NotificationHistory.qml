@@ -45,7 +45,7 @@ Rectangle {
         implicitHeight: 22
         radius: 6
         color: clearMouse.containsMouse ? history.center.wellHover : history.center.well
-        Behavior on color { ColorAnimation { duration: history.center.animDuration } }
+        Behavior on color { MotionColorAnimation { theme: history.center.host.theme } }
         Text {
           id: clearLabel
           anchors.centerIn: parent
@@ -200,7 +200,7 @@ Rectangle {
           font.family: history.center.iconFont
           font.pixelSize: 13
           MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: history.center.host.notifications.dismiss(note.modelData) }
-          Tooltip { text: "Dismiss" }
+          Tooltip { theme: history.center.host.theme; text: "Dismiss" }
         }
       }
     }

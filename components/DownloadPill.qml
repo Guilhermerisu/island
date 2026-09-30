@@ -17,7 +17,7 @@ Item {
 
   opacity: downloading || done ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
   function formatBytes(n) {
     if (n >= 1073741824) return (n / 1073741824).toFixed(1) + " GB"
@@ -31,7 +31,7 @@ Item {
   Item {
     anchors.fill: parent
     opacity: pill.downloading ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+    Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
     // A still arrow inside a ring that spins (there's no total size to show
     // progress against).
@@ -49,6 +49,7 @@ Item {
         border.color: pill.host.theme.withAlpha(pill.host.theme.accent, 0.22)
       }
       Canvas {
+        id: progressArc
         anchors.fill: parent
         onPaint: {
           var ctx = getContext("2d")
@@ -60,14 +61,9 @@ Item {
           ctx.arc(width / 2, height / 2, width / 2 - 1.25, -Math.PI / 2, Math.PI * 0.9)
           ctx.stroke()
         }
-        // One turn every 1.4 s, stepped ~40 times a second: a vsync-driven
-        // animation would repaint the island at the display's full refresh
-        // rate for as long as a download or update runs.
-        Timer {
-          interval: 25
-          repeat: true
+        AmbientRotation {
+          target: progressArc
           running: pill.downloading && pill.visible
-          onTriggered: parent.rotation = (parent.rotation + 360 * 25 / 1400) % 360
         }
       }
       Text {
@@ -113,7 +109,7 @@ Item {
   Item {
     anchors.fill: parent
     opacity: pill.done ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+    Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
     Rectangle {
       id: check
@@ -122,8 +118,8 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       width: 40; height: 40; radius: 20
       color: pill.host.theme.accent
-      scale: pill.done ? 1 : 0.4
-      Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+      scale: pill.done ? 1 : 0.86
+      Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
       Text {
         anchors.centerIn: parent
         text: "󰄬"

@@ -10,6 +10,7 @@ Item {
   property string text: ""
   property bool above: false
   property bool shown: false
+  property var theme: null
   readonly property Item overlay: tip.Window.contentItem
   anchors.fill: parent
   // Above the button's own MouseArea, which would otherwise take the hover;
@@ -31,8 +32,12 @@ Item {
     parent: tip.overlay
     z: 1000
     visible: opacity > 0.01
+    enabled: false
     opacity: tip.shown ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: 120 } }
+    Behavior on opacity { MotionAnimation { theme: tip.theme; pace: tip.shown ? "fade" : "exit"; curve: "fade" } }
+    scale: tip.shown ? 1 : 0.97
+    transformOrigin: tip.above ? Item.Bottom : Item.Top
+    Behavior on scale { MotionAnimation { theme: tip.theme; pace: "quick" } }
     width: label.implicitWidth + 16
     height: label.implicitHeight + 8
     radius: 6

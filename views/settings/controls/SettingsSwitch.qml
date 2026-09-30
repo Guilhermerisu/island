@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../components"
 import QtQuick.Layouts
 
 // The small switch System Settings uses in its lists.
@@ -12,7 +13,7 @@ Rectangle {
   implicitHeight: 20
   radius: 10
   color: checked ? sw.view.accent : sw.view.well
-  Behavior on color { ColorAnimation { duration: sw.view.animDuration; easing.type: Easing.OutCubic } }
+  Behavior on color { MotionColorAnimation { theme: sw.view.host.theme } }
   Rectangle {
     width: 16; height: 16; radius: 8
     y: 2
@@ -20,7 +21,7 @@ Rectangle {
     color: "#ffffff"
     border.width: 1
     border.color: Qt.rgba(0, 0, 0, 0.12)
-    Behavior on x { NumberAnimation { duration: sw.view.animDuration; easing.type: Easing.OutCubic } }
+    Behavior on x { MotionAnimation { theme: sw.view.host.theme; pace: "standard" } }
   }
   MouseArea {
     anchors.fill: parent

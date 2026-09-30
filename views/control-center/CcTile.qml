@@ -1,4 +1,5 @@
 import QtQuick
+import "../../components"
 import QtQuick.Layouts
 
 // A control tile: a round badge with the icon, and the title over a status.
@@ -23,9 +24,11 @@ Rectangle {
   color: tileMouse.containsMouse ? center.tile : center.card
   border.width: 1
   border.color: center.edge
+  Behavior on color { MotionColorAnimation { theme: center.host.theme } }
   opacity: available ? 1 : 0.5
-  scale: tileMouse.pressed ? 0.97 : 1
-  Behavior on scale { NumberAnimation { duration: 120 * center.host.theme.motionScale; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: center.host.theme; pace: "fade"; curve: "fade" } }
+  scale: tileMouse.pressed || badgeMouse.pressed ? 0.97 : 1
+  Behavior on scale { MotionAnimation { theme: center.host.theme; pace: tileMouse.pressed || badgeMouse.pressed ? "press" : "standard" } }
 
   Rectangle {
     id: badge
@@ -34,7 +37,7 @@ Rectangle {
     anchors.verticalCenter: parent.verticalCenter
     width: 42; height: 42; radius: 21
     color: t.checked ? center.accent : center.well
-    Behavior on color { ColorAnimation { duration: center.animDuration; easing.type: Easing.OutCubic } }
+    Behavior on color { MotionColorAnimation { theme: center.host.theme } }
     Text {
       anchors.centerIn: parent
       text: t.icon
@@ -80,6 +83,7 @@ Rectangle {
     onClicked: t.opens ? t.opened() : t.clicked()
   }
   MouseArea {
+    id: badgeMouse
     visible: t.opens
     anchors.fill: badge
     enabled: t.available

@@ -212,7 +212,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: backMouse.containsMouse ? bt.well : bt.card
-      Tooltip { text: "Control Center" }
+      Tooltip { theme: bt.host.theme; text: "Control Center" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: 17 }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
@@ -315,13 +315,10 @@ ColumnLayout {
                 color: bt.textMuted
                 font.family: bt.iconFont
                 font.pixelSize: 14
-                // Stepped, so scanning doesn't repaint the island at the
-                // display's full refresh rate.
-                Timer {
-                  interval: 40
-                  repeat: true
+                AmbientRotation {
+                  target: spinner
+                  period: 1200
                   running: spinner.visible && bt.active
-                  onTriggered: spinner.rotation = (spinner.rotation + 360 * 40 / 1200) % 360
                 }
               }
               Text {
@@ -331,7 +328,7 @@ ColumnLayout {
                 color: bt.textMuted
                 font.family: bt.iconFont
                 font.pixelSize: 17
-                Behavior on rotation { NumberAnimation { duration: 160 * bt.host.theme.motionScale; easing.type: Easing.OutCubic } }
+                Behavior on rotation { MotionAnimation { theme: bt.host.theme; pace: "standard" } }
               }
             }
             MouseArea {
@@ -436,7 +433,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? bt.wellHover : "transparent"
-                Tooltip { text: "Forget This Device" }
+                Tooltip { theme: bt.host.theme; text: "Forget This Device" }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"

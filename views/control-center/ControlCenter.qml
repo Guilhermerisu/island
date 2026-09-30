@@ -22,7 +22,6 @@ ColumnLayout {
   readonly property color well: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.16))
   readonly property color wellHover: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.22))
   readonly property string iconFont: host.theme.fontFamily
-  readonly property int animDuration: 180 * host.theme.motionScale
   property bool editMode: false
   property bool outputsOpen: false
   property bool inputsOpen: false
@@ -71,7 +70,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
-      Tooltip { text: cc.editMode ? "" : "Edit Controls" }
+      Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit Controls" }
       Text {
         anchors.centerIn: parent
         text: cc.editMode ? "Done" : "󰏫"
@@ -93,7 +92,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: settingsMouse.containsMouse ? cc.well : cc.card
-      Tooltip { text: "Island Settings" }
+      Tooltip { theme: cc.host.theme; text: "Island Settings" }
       Text {
         anchors.centerIn: parent
         text: "󰒓"

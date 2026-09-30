@@ -1,4 +1,5 @@
 import QtQuick
+import "../../components"
 import Quickshell.Io
 
 // Power menu hosted by the island, styled after Apple's Control Center: a
@@ -19,7 +20,6 @@ Item {
   // neighbours.
   readonly property int slotWidth: tileWidth + 6
   readonly property int tileSpacing: 6
-  readonly property int moveDuration: 200 * host.theme.motionScale
 
   property bool suspendAvailable: true
   property bool hibernateAvailable: false
@@ -122,9 +122,9 @@ Item {
           height: power.tileHeight
           radius: 23
           color: slot.isSelected ? power.host.theme.accent : power.host.theme.withAlpha(power.host.theme.text, 0.1)
-          scale: tileMouse.pressed ? 0.94 : slot.isSelected ? 1.06 : 1
-          Behavior on color { ColorAnimation { duration: power.moveDuration; easing.type: Easing.OutCubic } }
-          Behavior on scale { NumberAnimation { duration: power.moveDuration; easing.type: Easing.OutBack; easing.overshoot: 1.3 } }
+          scale: tileMouse.pressed ? 0.97 : slot.isSelected ? 1.025 : 1
+          Behavior on color { MotionColorAnimation { theme: power.host.theme } }
+          Behavior on scale { MotionAnimation { theme: power.host.theme; pace: tileMouse.pressed ? "press" : "standard" } }
 
           Column {
             anchors.centerIn: parent
@@ -135,7 +135,7 @@ Item {
               color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
               font.family: power.host.theme.fontFamily
               font.pixelSize: 26
-              Behavior on color { ColorAnimation { duration: power.moveDuration } }
+              Behavior on color { MotionColorAnimation { theme: power.host.theme } }
             }
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
@@ -145,7 +145,7 @@ Item {
               font.family: "Adwaita Sans"
               font.pixelSize: 13
               font.weight: Font.DemiBold
-              Behavior on color { ColorAnimation { duration: power.moveDuration } }
+              Behavior on color { MotionColorAnimation { theme: power.host.theme } }
             }
           }
         }

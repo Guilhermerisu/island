@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../components"
 import QtQuick.Layouts
 
 // Pop-up button: the current choice with up/down chevrons; the choices open
@@ -19,6 +20,9 @@ Rectangle {
   implicitHeight: 28
   radius: 6
   color: open || popMouse.containsMouse ? pop.view.wellHover : pop.view.well
+  Behavior on color { MotionColorAnimation { theme: pop.view.host.theme } }
+  scale: popMouse.pressed ? 0.98 : 1
+  Behavior on scale { MotionAnimation { theme: pop.view.host.theme; pace: popMouse.pressed ? "press" : "standard" } }
   Text {
     id: popLabel
     anchors.left: parent.left

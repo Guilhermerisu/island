@@ -31,5 +31,5 @@ Text {
   font.features: { "tnum": 1, "case": 1 }
   font.letterSpacing: -0.4
   // Get out of the way fast, fade back in gently.
-  Behavior on opacity { NumberAnimation { duration: host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
 }

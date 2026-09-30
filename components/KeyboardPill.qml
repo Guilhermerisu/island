@@ -12,9 +12,9 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
+  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
-  // Leading: the keyboard, springing in.
+  // Leading: the keyboard, settling gently into place.
   Text {
     id: leading
     anchors.left: parent.left
@@ -24,8 +24,8 @@ Item {
     color: pill.host.theme.accent
     font.family: pill.host.theme.fontFamily
     font.pixelSize: 20
-    scale: pill.shown ? 1 : 0.4
-    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+    scale: pill.shown ? 1 : 0.86
+    Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
   }
 
   // Middle: the layout's name.
@@ -61,7 +61,7 @@ Item {
       height: parent.height
       radius: height / 2
       color: "#ffffff"
-      Behavior on x { NumberAnimation { duration: 260 * pill.host.theme.motionScale; easing.type: Easing.OutCubic } }
+      Behavior on x { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
     }
 
     Row {
@@ -77,7 +77,7 @@ Item {
           verticalAlignment: Text.AlignVCenter
           text: modelData.toUpperCase()
           color: index === pill.host.keyboardLayoutIndex ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
-          Behavior on color { ColorAnimation { duration: 200 * pill.host.theme.motionScale } }
+          Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: "Adwaita Sans"
           font.pixelSize: 11
           font.weight: Font.Bold

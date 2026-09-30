@@ -189,7 +189,7 @@ Item {
     radius: height / 2
     color: answer.host.theme.background
     opacity: hover.hovered && !answer.busy ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: 180 * answer.host.theme.motionScale } }
+    Behavior on opacity { MotionAnimation { theme: answer.host.theme; pace: "fade"; curve: "fade" } }
     RowLayout {
       id: actions
       anchors.centerIn: parent

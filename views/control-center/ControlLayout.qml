@@ -199,9 +199,9 @@ ColumnLayout {
           width: slot ? slot.width : 0
           height: slot ? slot.height : 0
           opacity: layout.draggedKey === modelData ? 0.25 : 1
-          Behavior on x { enabled: layout.center.editMode; NumberAnimation { duration: 190 * layout.center.host.theme.motionScale; easing.type: Easing.OutCubic } }
-          Behavior on y { enabled: layout.center.editMode; NumberAnimation { duration: 190 * layout.center.host.theme.motionScale; easing.type: Easing.OutCubic } }
-          Behavior on opacity { NumberAnimation { duration: 120 * layout.center.host.theme.motionScale } }
+          Behavior on x { enabled: layout.center.editMode; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on y { enabled: layout.center.editMode; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on opacity { MotionAnimation { theme: layout.center.host.theme; pace: "fade"; curve: "fade" } }
 
           Loader {
             anchors.fill: parent
@@ -245,7 +245,7 @@ ColumnLayout {
             border.width: 1
             border.color: layout.center.edge
             Text { anchors.centerIn: parent; text: "−"; color: layout.center.text; font.pixelSize: 18 }
-            Tooltip { text: "Remove" }
+            Tooltip { theme: layout.center.host.theme; text: "Remove" }
             MouseArea {
               anchors.fill: parent
               cursorShape: Qt.PointingHandCursor
