@@ -15,41 +15,11 @@ ColumnLayout {
     title: "Pill"
     SettingsRow {
       view: page.view
-      label: "Workspace Indicator"
-      detail: "Show which workspace you're on when you switch"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.workspaceHud
-        onToggled: function(on) { page.view.settings.workspaceHud = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      label: "Keyboard Layout Indicator"
-      detail: "Show the layout when you switch keyboard languages"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.keyboardHud
-        onToggled: function(on) { page.view.settings.keyboardHud = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
       label: "24-Hour Clock"
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.clock24h
         onToggled: function(on) { page.view.settings.clock24h = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      label: "Volume HUD"
-      detail: "Show the level when the volume changes"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.volumeHud
-        onToggled: function(on) { page.view.settings.volumeHud = on }
       }
     }
     SettingsRow {
@@ -68,6 +38,16 @@ ColumnLayout {
   SettingsGroup {
     view: page.view
     title: "Appearance"
+    SettingsRow {
+      view: page.view
+      label: "Colorful Live Activities"
+      detail: "Use custom colors in live activies"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.colorfulLiveActivities
+        onToggled: function(on) { page.view.settings.colorfulLiveActivities = on }
+      }
+    }
     SettingsRow {
       view: page.view
       label: "Colorful Sidebar Icons"

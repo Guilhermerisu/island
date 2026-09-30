@@ -28,9 +28,9 @@ Item {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance colorful sidebar icons neutral motion animation speed hover lift pill notch style 24-hour clock volume hud workspace workspaces",
+      "General": "general appearance colorful sidebar icons colorful live activities neutral motion animation speed hover lift pill notch style 24-hour clock",
       "Search": "search ask with claude codex launcher answers",
-      "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices",
+      "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices volume hud workspace workspaces keyboard layout indicator languages",
       "Notifications": "notifications banner duration",
       "Keybinds": "keybinds keybindings keyboard shortcuts keys"
     }
@@ -57,6 +57,15 @@ Item {
   readonly property int detailFontSize: 15
   readonly property int detailCaptionFontSize: 13
   readonly property int detailTitleFontSize: 19
+
+  // Keep keyboard-focused gallery cards inside the detail pane's viewport.
+  function revealSettingsItem(item) {
+    var top = item.mapToItem(groups, 0, 0).y
+    var bottom = top + item.height
+    if (top < scroller.contentY) scroller.contentY = top
+    else if (bottom > scroller.contentY + scroller.height)
+      scroller.contentY = Math.min(bottom - scroller.height, Math.max(0, scroller.contentHeight - scroller.height))
+  }
 
   implicitHeight: 640
   onActiveChanged: {
@@ -186,7 +195,7 @@ Item {
           width: scroller.width - 8
           spacing: 20
 
-          PaneHeader { view: settingsView; page: settingsView.currentPage; Layout.topMargin: 4 }
+          PaneHeader { view: settingsView; page: settingsView.currentPage; compact: page === "Live Activities"; Layout.topMargin: 4 }
           GeneralPage { view: settingsView }
           SearchPage { view: settingsView }
           ActivitiesPage { view: settingsView }

@@ -8,19 +8,21 @@ Rectangle {
   id: header
   required property var view
   property string page: ""
+  property bool compact: false
   readonly property var info: header.view.pageInfo[page] || ({})
   Layout.fillWidth: true
-  implicitHeight: headerColumn.implicitHeight + 36
+  implicitHeight: headerColumn.implicitHeight + (compact ? 12 : 36)
   radius: 12
-  color: header.view.card
-  border.width: 1
+  color: compact ? "transparent" : header.view.card
+  border.width: compact ? 0 : 1
   border.color: header.view.host.theme.withAlpha(header.view.text, 0.04)
   Column {
     id: headerColumn
     anchors.centerIn: parent
-    width: Math.min(parent.width - 48, 380)
-    spacing: 8
+    width: header.compact ? parent.width - 4 : Math.min(parent.width - 48, 380)
+    spacing: header.compact ? 6 : 8
     PaneIcon {
+      visible: !header.compact
       view: header.view
       anchors.horizontalCenter: parent.horizontalCenter
       width: 48
@@ -30,17 +32,17 @@ Rectangle {
     }
     Text {
       width: parent.width
-      horizontalAlignment: Text.AlignHCenter
+      horizontalAlignment: header.compact ? Text.AlignLeft : Text.AlignHCenter
       text: header.page
       color: header.view.text
       font.family: "Adwaita Sans"
-      font.pixelSize: header.view.detailTitleFontSize
+      font.pixelSize: header.compact ? 22 : header.view.detailTitleFontSize
       font.weight: Font.Bold
     }
     Text {
       width: parent.width
       visible: text !== ""
-      horizontalAlignment: Text.AlignHCenter
+      horizontalAlignment: header.compact ? Text.AlignLeft : Text.AlignHCenter
       text: header.info.about || ""
       wrapMode: Text.WordWrap
       lineHeight: 1.1
