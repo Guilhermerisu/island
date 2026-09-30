@@ -11,6 +11,13 @@ Item {
   property real value: 0
   signal moved(real value)
   readonly property real clamped: Math.max(0, Math.min(1, value))
+  // Animate the level only: the island's changing width must not restart
+  // the fill animation or make a fixed volume appear to change.
+  property real shownLevel: clamped
+  Behavior on shownLevel {
+    enabled: !sliderMouse.pressed
+    NumberAnimation { duration: 140 * center.host.theme.motionScale; easing.type: Easing.OutCubic }
+  }
 
   Layout.fillWidth: true
   Layout.preferredHeight: 38
@@ -24,12 +31,8 @@ Item {
     id: sliderFill
     height: parent.height
     radius: height / 2
-    width: height + (parent.width - height) * s.clamped
+    width: height + (parent.width - height) * s.shownLevel
     color: center.text
-    Behavior on width {
-      enabled: !sliderMouse.pressed
-      NumberAnimation { duration: 140 * center.host.theme.motionScale; easing.type: Easing.OutCubic }
-    }
   }
   Rectangle {
     x: sliderFill.width - width
