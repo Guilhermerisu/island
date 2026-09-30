@@ -134,12 +134,14 @@ Item {
       }
     }
   }
-  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches.
+  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches;
+  // Hyprland is only asked for the rest when the layout's name is new.
   Connections {
     target: Hyprland
     function onRawEvent(event) {
-      if (event.name === "activelayout" && root.activities.ready && root.settings.keyboardHud && !keyboardLayoutRead.running)
-        keyboardLayoutRead.running = true
+      if (event.name !== "activelayout" || !root.activities.ready || !root.settings.keyboardHud || keyboardLayoutRead.running) return
+      if (root.keyboardLayoutKnown && event.parse(2)[1] === root.keyboardLayoutName) return
+      keyboardLayoutRead.running = true
     }
   }
 

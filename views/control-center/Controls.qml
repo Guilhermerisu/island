@@ -135,10 +135,14 @@ Item {
       }
     }
   }
-  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches.
+  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches;
+  // Hyprland is only asked for the rest when the layout's name is new.
   Connections {
     target: Hyprland
-    function onRawEvent(event) { if (event.name === "activelayout" && !keyboardRead.running) keyboardRead.running = true }
+    function onRawEvent(event) {
+      if (event.name !== "activelayout" || keyboardRead.running) return
+      if (event.parse(2)[1] !== controls.keyboardLayout) keyboardRead.running = true
+    }
   }
   Process { id: keyboardSwitch; command: ["hyprctl", "switchxkblayout", "all", "next"] }
   function nextKeyboardLayout() {
