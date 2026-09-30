@@ -14,7 +14,7 @@ Item {
   required property var host
   property bool active: false
 
-  readonly property var mpris: host.player
+  readonly property var mpris: host.nowPlaying.player
   readonly property bool playing: !!(mpris && mpris.isPlaying)
   readonly property real length: mpris && mpris.lengthSupported ? mpris.length : 0
   readonly property bool canSeek: !!(mpris && mpris.canSeek && length > 0)
@@ -39,7 +39,7 @@ Item {
     function onPositionChanged() { if (!player.dragging) player.position = player.mpris.position }
   }
 
-  function action(name) { if (host.media) host.media.runAction(name, false, "") }
+  function action(name) { if (host.nowPlaying.service) host.nowPlaying.service.runAction(name, false, "") }
   function seekTo(seconds) {
     if (!canSeek) return
     var target = Math.max(0, Math.min(length, seconds))
@@ -80,7 +80,7 @@ Item {
         Image {
           id: cover
           anchors.fill: parent
-          source: player.host.mediaArt
+          source: player.host.nowPlaying.art
           sourceSize.width: 144
           sourceSize.height: 144
           fillMode: Image.PreserveAspectCrop
@@ -124,7 +124,7 @@ Item {
       SoundWave {
         Layout.alignment: Qt.AlignTop
         Layout.topMargin: 10
-        color: player.host.mediaTint
+        color: player.host.nowPlaying.tint
         playing: player.active && player.playing
         barWidth: 3.5
         maxHeight: 24

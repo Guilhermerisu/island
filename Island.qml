@@ -10,7 +10,6 @@ import Quickshell.Wayland
 import "components"
 import "services"
 import "views"
-import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" as ClipboardHistory
 
 Item {
   id: root
@@ -21,17 +20,9 @@ Item {
   property var barConfig: ({})
   property string omarchyPath: ""
 
-  readonly property var media: shell ? shell.firstPartyServiceFor("omarchy.media") : null
-  readonly property var player: media ? media.activePlayer : null
-  readonly property bool mediaPlaying: !!(player && player.isPlaying)
-  readonly property string reportedArt: player && player.trackArtUrl ? String(player.trackArtUrl) : ""
-  readonly property string mediaTitle: player ? String(player.trackTitle || "") : ""
-  property string keptArt: ""
-  property string keptArtTitle: ""
-  onReportedArtChanged: if (reportedArt) { keptArt = reportedArt; keptArtTitle = mediaTitle }
-  onMediaTitleChanged: if (mediaTitle !== keptArtTitle) { keptArt = reportedArt; keptArtTitle = mediaTitle }
-  readonly property string mediaArt: reportedArt || (mediaTitle === keptArtTitle ? keptArt : "")
-  readonly property bool mediaPill: view === "rest" && mediaPlaying && !companionNeedsSetup && settings.mediaPill && !downloadPill
+  readonly property var nowPlaying: nowPlayingData
+  NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
+  readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !companionNeedsSetup && settings.mediaPill && !downloadPill
 
   property string askQuestion: ""
   readonly property var askProviders: ({
@@ -46,44 +37,27 @@ Item {
     view = "answer"
   }
 
-  readonly property Item downloadTracker: downloadWatcher
-  Downloads { id: downloadWatcher; enabled: root.settings.downloads }
-  readonly property Item packageTracker: packageWatcher
-  PackageUpdates { id: packageWatcher; enabled: root.settings.systemUpdates }
+  readonly property var downloads: downloadTracker
+  DownloadTracker { id: downloadTracker; enabled: root.settings.downloads }
+  readonly property var packages: packageTracker
+  PackageUpdateTracker { id: packageTracker; enabled: root.settings.systemUpdates }
   readonly property bool downloadDone: view === "rest" && !companionNeedsSetup
-    && (downloadTracker.finishedName !== "" || packageTracker.finishedTitle !== "")
+    && (downloads.finishedName !== "" || packages.finishedTitle !== "")
   readonly property bool downloadActive: view === "rest" && !companionNeedsSetup
-    && (downloadTracker.active || packageTracker.active) && !downloadDone
+    && (downloads.active || packages.active) && !downloadDone
   readonly property bool downloadPill: downloadDone || downloadActive
   Process { id: downloadOpener }
   function openDownloads() {
-    if (!downloadTracker.active && downloadTracker.finishedName === "") {
-      packageTracker.dismissFinished()
+    if (!downloads.active && downloads.finishedName === "") {
+      packages.dismissFinished()
       return
     }
-    var path = downloadDone ? downloadTracker.finishedPath : downloadTracker.folder
-    downloadTracker.dismissFinished()
+    var path = downloadDone ? downloads.finishedPath : downloads.folder
+    downloads.dismissFinished()
     downloadOpener.command = ["sh", "-c", '[ -e "$1" ] && exec xdg-open "$1"; exec xdg-open "$(dirname "$1")"', "sh", path]
     downloadOpener.startDetached()
   }
 
-  ColorQuantizer {
-    id: coverColors
-    source: root.mediaArt
-    depth: 2
-    rescaleSize: 64
-  }
-  readonly property color mediaTint: {
-    var best = null, bestScore = -1
-    var colors = coverColors.colors || []
-    for (var i = 0; i < colors.length; i++) {
-      var c = colors[i]
-      var score = c.hsvSaturation * 0.7 + c.hsvValue * 0.3
-      if (score > bestScore) { bestScore = score; best = c }
-    }
-    if (!best || best.hsvSaturation < 0.12) return theme.accent
-    return Qt.hsva(best.hsvHue, Math.min(1, best.hsvSaturation), Math.max(0.75, best.hsvValue), 1)
-  }
   readonly property real volume: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
     ? Pipewire.defaultAudioSink.audio.volume : -1
   readonly property bool muted: !!(Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
@@ -224,32 +198,12 @@ Item {
   }
 
 
-  property var lastClip: null
-  property string lastClipKey: ""
-  property bool clipSeeded: false
-  property double clipboardQuietUntil: 0
-  FileView {
-    path: root.home + "/.local/state/omarchy/clipboard-history.json"
-    watchChanges: true
-    printErrors: false
-    onFileChanged: reload()
-    onLoaded: root.clipboardChanged(text())
-  }
-  function isHtml(text) {
-    return /^\s*<(img|meta|html|!doctype|body|div|span|p|a|picture|figure|table)\b/i.test(String(text || ""))
-  }
-  function clipboardChanged(raw) {
-    var history = ClipboardHistory.parseHistory(raw)
-    var top = history.length ? history[0] : null
-    if (top && top.type === "text" && isHtml(top.text) && history.length > 1 && history[1].type === "image")
-      top = history[1]
-    var key = top ? ClipboardHistory.entryKey(top) : ""
-    var fresh = clipSeeded && key !== "" && key !== lastClipKey
-    lastClipKey = key
-    clipSeeded = true
-    if (!fresh || !settings.clipboard || Date.now() < clipboardQuietUntil) return
-    lastClip = top
-    showFeedback("", 2200, "clipboard")
+  readonly property var clipboard: clipboardWatcher
+  ClipboardWatcher {
+    id: clipboardWatcher
+    home: root.home
+    settings: root.settings
+    onCopied: root.showFeedback("", 2200, "clipboard")
   }
 
   property bool surfaceContentReady: false
@@ -762,7 +716,7 @@ Item {
             : root.view === "feedback" ? 280
             : root.companionNeedsSetup ? (root.companionWarning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
-            : root.downloadActive ? (root.downloadTracker.active ? 240 : 280)
+            : root.downloadActive ? (root.downloads.active ? 240 : 280)
             : root.mediaPill ? 240
             : 100
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight

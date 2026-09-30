@@ -1,16 +1,16 @@
 import QtQuick
 
-// Download live activity, in iOS's style, fed by Downloads.qml (browser
-// downloads) and PackageUpdates.qml (system updates). While running: an icon
-// inside a spinning ring left of the clock, and the speed or phase on the
-// right. When done: a check, the name and details, and for a downloaded file,
-// an App Store–style Open button.
+// Download live activity, in iOS's style, fed by DownloadTracker.qml
+// (browser downloads) and PackageUpdateTracker.qml (system updates). While
+// running: an icon inside a spinning ring left of the clock, and the speed
+// or phase on the right. When done: a check, the name and details, and for a
+// downloaded file, an App Store–style Open button.
 Item {
   id: pill
   required property var host
-  readonly property var tracker: host.downloadTracker
+  readonly property var tracker: host.downloads
   // Package updates share this pill; file downloads take precedence.
-  readonly property var packages: host.packageTracker
+  readonly property var packages: host.packages
   readonly property bool packageMode: !tracker.active && tracker.finishedName === ""
   readonly property bool downloading: host.downloadActive
   readonly property bool done: host.downloadDone

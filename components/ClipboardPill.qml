@@ -11,7 +11,7 @@ import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" a
 Item {
   id: pill
   required property var host
-  readonly property var entry: host.lastClip
+  readonly property var entry: host.clipboard.last
   readonly property bool shown: host.clipboardPill
   // Copied files: file:// URIs (most apps), or plain absolute paths, one per
   // line (Nautilus).
@@ -82,7 +82,7 @@ Item {
       if (pill.entry.type === "image") return "Image"
       if (pill.isFiles) return pill.files.length === 1 ? ClipboardHistory.fileName(pill.files[0]) : pill.files.length + " files"
       var preview = ClipboardHistory.previewText(pill.entry)
-      if (pill.entry.type !== "text" || !pill.host.isHtml(pill.entry.text)) return preview
+      if (pill.entry.type !== "text" || !pill.host.clipboard.isHtml(pill.entry.text)) return preview
       // Rich text from a browser arrives as HTML; show its words, not tags.
       var plain = String(pill.entry.text).replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
         .replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")

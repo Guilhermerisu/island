@@ -50,7 +50,7 @@ ListPicker {
   function run(argv) {
     host.view = "rest"
     // Pasting copies the entry again; that's not news for the Copied pill.
-    host.clipboardQuietUntil = Date.now() + 2500
+    host.clipboard.quietUntil = Date.now() + 2500
     runner.command = ["bash", "-c", 'sleep 0.15; exec "$@"', "--"].concat(argv)
     runner.startDetached()
   }

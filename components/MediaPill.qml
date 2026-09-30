@@ -24,7 +24,7 @@ Item {
     Image {
       id: artImage
       anchors.fill: parent
-      source: media.host.mediaArt
+      source: media.host.nowPlaying.art
       sourceSize.width: 60
       sourceSize.height: 60
       fillMode: Image.PreserveAspectCrop
@@ -48,7 +48,7 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    color: media.host.mediaTint
+    color: media.host.nowPlaying.tint
     playing: media.shown
   }
 }
