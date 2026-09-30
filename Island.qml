@@ -274,46 +274,23 @@ Item {
     onFailureBanner: function(row) { root.showBanner(row, 10000) }
   }
 
-  property string updateState: ""
-  property bool updateAnnouncePending: false
-  function updateRow(body) {
-    return { summary: "Island Update", body: body, glyph: "󰚰", timestamp: Date.now(), islandUpdate: true }
+  readonly property var updater: islandUpdater
+  IslandUpdater {
+    id: islandUpdater
+    pluginDir: root.setup.pluginDir
+    onAvailable: root.announceUpdate()
   }
+  // The banner waits until nothing else is on the island.
+  property bool updateAnnouncePending: false
   function announceUpdate() {
     if (surfaceOpen || view === "feedback") { updateAnnouncePending = true; return }
     updateAnnouncePending = false
-    showBanner(updateRow("A new version is ready. Click to update."), 10000)
+    showBanner(updater.bannerRow("A new version is ready. Click to update."), 10000)
   }
   function updateIsland() {
-    if (updateState === "updating") return
-    updateState = "updating"
-    showBanner(updateRow("Updating Island…"), 120000)
-    islandUpdate.running = true
-  }
-  Timer {
-    interval: 20000
-    running: true
-    repeat: true
-    onTriggered: {
-      interval = 6 * 3600 * 1000
-      if (!updateCheck.running && root.updateState !== "updating") updateCheck.running = true
-    }
-  }
-  Process {
-    id: updateCheck
-    command: ["bash", "-c", "cd \"$1\" && [ -d .git ] || exit 0; export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -oBatchMode=yes'; remote=$(timeout 30 git ls-remote origin HEAD 2>/dev/null | cut -f1); [ -n \"$remote\" ] || exit 0; git merge-base --is-ancestor \"$remote\" HEAD 2>/dev/null || echo available", "update-check", root.setup.pluginDir]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        if (String(text || "").trim() !== "available" || root.updateState === "updating") return
-        root.updateState = "available"
-        root.announceUpdate()
-      }
-    }
-  }
-  Process {
-    id: islandUpdate
-    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", root.setup.pluginDir.replace(/.*\//, "")]
+    if (updater.status === "updating") return
+    showBanner(updater.bannerRow("Updating Island…"), 120000)
+    updater.update()
   }
 
   Timer {
