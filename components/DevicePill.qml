@@ -10,7 +10,7 @@ import QtQuick
 Item {
   id: pill
   required property var host
-  readonly property var activity: host.activity || ({})
+  readonly property var activity: host.activities.current || ({})
   readonly property bool shown: host.activityPill
   readonly property bool isBattery: activity.kind === "charging" || activity.kind === "lowBattery"
   readonly property bool isDevice: activity.kind === "bluetooth"
