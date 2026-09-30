@@ -16,7 +16,7 @@ Rectangle {
   }
   readonly property bool open: pop.view.menuButton === pop
   implicitWidth: Math.max(96, popLabel.implicitWidth + 40)
-  implicitHeight: 24
+  implicitHeight: 28
   radius: 6
   color: open || popMouse.containsMouse ? pop.view.wellHover : pop.view.well
   Text {
@@ -27,7 +27,7 @@ Rectangle {
     text: pop.currentLabel
     color: pop.view.text
     font.family: "Adwaita Sans"
-    font.pixelSize: 13
+    font.pixelSize: pop.view.detailFontSize
   }
   Column {
     anchors.right: parent.right

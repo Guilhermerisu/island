@@ -17,7 +17,7 @@ ColumnLayout {
     text: group.title
     color: group.view.text
     font.family: "Adwaita Sans"
-    font.pixelSize: 13
+    font.pixelSize: group.view.detailFontSize
     font.weight: Font.DemiBold
   }
   Rectangle {
@@ -42,6 +42,6 @@ ColumnLayout {
     wrapMode: Text.WordWrap
     color: group.view.textMuted
     font.family: "Adwaita Sans"
-    font.pixelSize: 11
+    font.pixelSize: group.view.detailCaptionFontSize
   }
 }

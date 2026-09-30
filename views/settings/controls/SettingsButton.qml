@@ -10,7 +10,7 @@ Rectangle {
   property bool primary: false
   signal clicked()
   implicitWidth: buttonText.implicitWidth + 24
-  implicitHeight: 24
+  implicitHeight: 28
   radius: 6
   color: primary ? button.view.accent : buttonMouse.containsMouse ? button.view.wellHover : button.view.well
   Text {
@@ -19,7 +19,7 @@ Rectangle {
     text: button.label
     color: button.primary ? button.view.accentInk : button.view.text
     font.family: "Adwaita Sans"
-    font.pixelSize: 13
+    font.pixelSize: button.view.detailFontSize
     font.weight: button.primary ? Font.DemiBold : Font.Normal
   }
   MouseArea {

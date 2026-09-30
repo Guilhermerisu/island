@@ -12,7 +12,7 @@ Item {
   property bool last: false
   default property alias control: slot.data
   Layout.fillWidth: true
-  implicitHeight: detail !== "" ? 50 : 38
+  implicitHeight: detail !== "" ? 54 : 42
   Column {
     anchors.left: parent.left
     anchors.leftMargin: 14
@@ -26,7 +26,7 @@ Item {
       elide: Text.ElideRight
       color: row.view.text
       font.family: "Adwaita Sans"
-      font.pixelSize: 13
+      font.pixelSize: row.view.detailFontSize
     }
     Text {
       width: parent.width
@@ -35,7 +35,7 @@ Item {
       elide: Text.ElideRight
       color: row.view.textMuted
       font.family: "Adwaita Sans"
-      font.pixelSize: 11
+      font.pixelSize: row.view.detailCaptionFontSize
     }
   }
   Item {

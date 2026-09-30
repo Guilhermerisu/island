@@ -14,7 +14,7 @@ Item {
   readonly property bool recording: shortcutRow.keybinds.recordingId === entry.id
   readonly property bool asking: shortcutRow.keybinds.pendingId === entry.id && shortcutRow.keybinds.pendingConflict !== ""
   Layout.fillWidth: true
-  implicitHeight: asking ? 60 : 38
+  implicitHeight: asking ? 64 : 42
   Behavior on implicitHeight { NumberAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
 
   Text {
@@ -27,7 +27,7 @@ Item {
     elide: Text.ElideRight
     color: shortcutRow.view.text
     font.family: "Adwaita Sans"
-    font.pixelSize: 13
+    font.pixelSize: shortcutRow.view.detailFontSize
   }
   Rectangle {
     id: keysField
@@ -35,7 +35,7 @@ Item {
     anchors.rightMargin: 10
     y: 7
     width: Math.max(shortcutRow.recording ? 150 : 0, keysText.implicitWidth + 16)
-    height: 24
+    height: 28
     radius: 6
     visible: !shortcutRow.asking
     color: shortcutRow.recording ? shortcutRow.view.host.theme.withAlpha(shortcutRow.view.accent, 0.16)
@@ -63,7 +63,7 @@ Item {
       color: shortcutRow.recording ? shortcutRow.view.accent
         : shortcutRow.entry.keys === "" ? shortcutRow.view.textMuted : shortcutRow.view.text
       font.family: "Adwaita Sans"
-      font.pixelSize: 13
+      font.pixelSize: shortcutRow.view.detailFontSize
       Behavior on color { ColorAnimation { duration: shortcutRow.view.animDuration; easing.type: Easing.OutCubic } }
     }
     MouseArea {
@@ -85,7 +85,7 @@ Item {
   }
   Row {
     x: 14
-    y: 36
+    y: 40
     spacing: 5
     visible: shortcutRow.asking
     Text {
@@ -98,7 +98,7 @@ Item {
       text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict
       color: shortcutRow.view.textMuted
       font.family: "Adwaita Sans"
-      font.pixelSize: 11
+      font.pixelSize: shortcutRow.view.detailCaptionFontSize
     }
   }
   Rectangle {

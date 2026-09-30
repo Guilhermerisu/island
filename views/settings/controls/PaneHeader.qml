@@ -34,7 +34,7 @@ Rectangle {
       text: header.page
       color: header.view.text
       font.family: "Adwaita Sans"
-      font.pixelSize: 17
+      font.pixelSize: header.view.detailTitleFontSize
       font.weight: Font.Bold
     }
     Text {
@@ -46,7 +46,7 @@ Rectangle {
       lineHeight: 1.1
       color: header.view.textMuted
       font.family: "Adwaita Sans"
-      font.pixelSize: 12
+      font.pixelSize: header.view.detailFontSize - 1
     }
   }
 }

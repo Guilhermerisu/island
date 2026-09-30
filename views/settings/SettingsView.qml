@@ -54,6 +54,10 @@ Item {
   readonly property color accentInk: host.theme.accentText
   readonly property int animDuration: 180 * host.theme.motionScale
 
+  readonly property int detailFontSize: 15
+  readonly property int detailCaptionFontSize: 13
+  readonly property int detailTitleFontSize: 19
+
   implicitHeight: 640
   onActiveChanged: {
     if (active) Qt.callLater(function() { settingsView.forceActiveFocus() })
@@ -199,14 +203,14 @@ Item {
   property Item menuButton: null
   property var menuOptions: []
   property var menuValue
-  FontMetrics { id: menuFont; font.family: "Adwaita Sans"; font.pixelSize: 13 }
+  FontMetrics { id: menuFont; font.family: "Adwaita Sans"; font.pixelSize: settingsView.detailFontSize }
   function openMenu(button) {
     var widest = 0
     for (var i = 0; i < button.options.length; i++) widest = Math.max(widest, menuFont.advanceWidth(button.options[i].label))
     menuOptions = button.options
     menuValue = button.value
     popMenu.width = Math.max(button.width, Math.ceil(widest) + 52)
-    popMenu.height = button.options.length * 24 + 10
+    popMenu.height = button.options.length * 28 + 10
     var p = button.mapToItem(settingsView, 0, 0)
     popMenu.x = Math.max(4, p.x + button.width - popMenu.width)
     var below = p.y + button.height + 4
@@ -245,7 +249,7 @@ Item {
           required property var modelData
           readonly property bool chosen: settingsView.menuValue === modelData.value
           width: menuColumn.width
-          height: 24
+          height: 28
           radius: 5
           color: itemMouse.containsMouse ? settingsView.accent : "transparent"
           Text {
@@ -264,7 +268,7 @@ Item {
             text: menuItem.modelData.label
             color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
             font.family: "Adwaita Sans"
-            font.pixelSize: 13
+            font.pixelSize: settingsView.detailFontSize
           }
           MouseArea {
             id: itemMouse
