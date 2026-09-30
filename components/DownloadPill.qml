@@ -14,6 +14,8 @@ Item {
   readonly property bool packageMode: !tracker.active && tracker.finishedName === ""
   readonly property bool downloading: host.downloadActive
   readonly property bool done: host.downloadDone
+  readonly property color activityAccent: host.settings.colorfulLiveActivities ? "#30d158" : host.theme.accent
+  readonly property color activityInk: host.theme.contrastOn(activityAccent)
 
   opacity: downloading || done ? 1 : 0
   visible: opacity > 0.01
@@ -46,7 +48,7 @@ Item {
         radius: width / 2
         color: "transparent"
         border.width: 2.5
-        border.color: pill.host.theme.withAlpha(pill.host.theme.accent, 0.22)
+        border.color: pill.host.theme.withAlpha(pill.activityAccent, 0.22)
       }
       Canvas {
         id: progressArc
@@ -54,12 +56,16 @@ Item {
         onPaint: {
           var ctx = getContext("2d")
           ctx.reset()
-          ctx.strokeStyle = pill.host.theme.accent
+          ctx.strokeStyle = pill.activityAccent
           ctx.lineWidth = 2.5
           ctx.lineCap = "round"
           ctx.beginPath()
           ctx.arc(width / 2, height / 2, width / 2 - 1.25, -Math.PI / 2, Math.PI * 0.9)
           ctx.stroke()
+        }
+        Connections {
+          target: pill
+          function onActivityAccentChanged() { progressArc.requestPaint() }
         }
         AmbientRotation {
           target: progressArc
@@ -69,7 +75,7 @@ Item {
       Text {
         anchors.centerIn: parent
         text: pill.packageMode ? "󰏗" : "󰁅"
-        color: pill.host.theme.accent
+        color: pill.activityAccent
         font.family: pill.host.theme.fontFamily
         font.pixelSize: 15
         font.weight: Font.Bold
@@ -94,7 +100,7 @@ Item {
         text: pill.packageMode ? pill.packages.status
           : pill.tracker.speed > 0 ? pill.formatBytes(pill.tracker.speed) + "/s" : pill.formatBytes(pill.tracker.bytes)
         textFormat: Text.PlainText
-        color: "#ffffff"
+        color: pill.activityAccent
         font.family: "Adwaita Sans"
         font.pixelSize: 12
         font.weight: Font.DemiBold
@@ -117,13 +123,13 @@ Item {
       anchors.leftMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       width: 40; height: 40; radius: 20
-      color: pill.host.theme.accent
+      color: pill.activityAccent
       scale: pill.done ? 1 : 0.86
       Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
       Text {
         anchors.centerIn: parent
         text: "󰄬"
-        color: pill.host.theme.accentText
+        color: pill.activityInk
         font.family: pill.host.theme.fontFamily
         font.pixelSize: 22
         font.weight: Font.Bold
@@ -168,12 +174,12 @@ Item {
       width: openLabel.implicitWidth + 28
       height: 30
       radius: 15
-      color: pill.host.theme.withAlpha(pill.host.theme.accent, 0.22)
+      color: pill.host.theme.withAlpha(pill.activityAccent, 0.22)
       Text {
         id: openLabel
         anchors.centerIn: parent
         text: "Open"
-        color: pill.host.theme.accent
+        color: pill.activityAccent
         font.family: "Adwaita Sans"
         font.pixelSize: 14
         font.weight: Font.Bold

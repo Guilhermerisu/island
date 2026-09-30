@@ -446,9 +446,9 @@ Item {
             : root.workspacesPill ? (root.settings.notch ? 36 : 40)
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
-            : root.volumePill ? 56
+            : root.volumePill ? (root.settings.notch ? 40 : 44)
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
-          property real radiusCap: root.volumePill ? 20 : root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
+          property real radiusCap: root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
           }
@@ -492,7 +492,7 @@ Item {
 
           NotificationPill { host: root; shape: island; anchors.fill: parent }
 
-          VolumeSlider { host: root; shape: island; anchors.fill: parent }
+          VolumeSlider { host: root; anchors.fill: parent }
 
           ClipboardPill { host: root; anchors.fill: parent }
 

@@ -9,6 +9,8 @@ Item {
   property bool charging: false
   property bool low: false
   property color color: "#ffffff"
+  property color chargingColor: "#30d158"
+  property color lowColor: "#ff453a"
   implicitWidth: 27
   implicitHeight: 13
 
@@ -26,7 +28,7 @@ Item {
       height: parent.height - 4
       width: Math.max(2, (parent.width - 4) * Math.max(0, Math.min(100, battery.level)) / 100)
       radius: height * 0.22
-      color: battery.charging ? "#30d158" : battery.low ? "#ff453a" : battery.color
+      color: battery.charging ? battery.chargingColor : battery.low ? battery.lowColor : battery.color
     }
     Text {
       anchors.centerIn: parent

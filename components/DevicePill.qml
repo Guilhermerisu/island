@@ -14,9 +14,12 @@ Item {
   readonly property bool shown: host.activityPill
   readonly property bool isBattery: activity.kind === "charging" || activity.kind === "lowBattery"
   readonly property bool isDevice: activity.kind === "bluetooth"
-  readonly property color statusColor: activity.kind === "charging" ? "#30d158"
-    : activity.kind === "lowBattery" ? "#ff453a"
+  readonly property bool colorfulActivities: !!host.settings.colorfulLiveActivities
+  readonly property color statusColor: activity.kind === "charging" && colorfulActivities ? "#30d158"
+    : activity.kind === "lowBattery" && colorfulActivities ? "#ff453a"
     : activity.connected ? host.theme.accent : Qt.rgba(1, 1, 1, 0.55)
+  readonly property color connectedColor: colorfulActivities ? "#30d158" : host.theme.accent
+  readonly property color lowBatteryColor: colorfulActivities ? "#ff453a" : host.theme.accent
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
@@ -40,13 +43,15 @@ Item {
       height: 14
       level: pill.activity.battery || 0
       charging: pill.activity.kind === "charging"
+      chargingColor: pill.colorfulActivities ? "#30d158" : pill.host.theme.accent
+      lowColor: pill.lowBatteryColor
       low: pill.activity.kind === "lowBattery"
     }
     Text {
       anchors.centerIn: parent
       visible: !pill.isBattery
       text: "󰂯"
-      color: pill.activity.connected ? pill.host.theme.accent : Qt.rgba(1, 1, 1, 0.55)
+      color: pill.activity.connected ? pill.connectedColor : Qt.rgba(1, 1, 1, 0.55)
       font.family: pill.host.theme.fontFamily
       font.pixelSize: 19
     }
@@ -99,6 +104,8 @@ Item {
       visible: !pill.isBattery && !!pill.activity.connected && (pill.activity.battery ?? -1) >= 0
       anchors.verticalCenter: parent.verticalCenter
       level: pill.activity.battery || 0
+      chargingColor: pill.connectedColor
+      lowColor: pill.lowBatteryColor
       low: (pill.activity.battery ?? 100) <= 20
     }
   }
@@ -118,7 +125,7 @@ Item {
     return "󰂯"
   }
   readonly property int deviceBattery: activity.connected && (activity.battery ?? -1) >= 0 ? activity.battery : -1
-  readonly property color ringColor: deviceBattery >= 0 && deviceBattery <= 20 ? "#ff453a" : "#30d158"
+  readonly property color ringColor: deviceBattery >= 0 && deviceBattery <= 20 && pill.colorfulActivities ? "#ff453a" : pill.connectedColor
 
   Text {
     id: devicePicture
@@ -144,7 +151,7 @@ Item {
     Text {
       width: parent.width
       text: pill.activity.status || ""
-      color: Qt.rgba(1, 1, 1, 0.5)
+      color: "#888888"
       font.family: "Adwaita Sans"
       font.pixelSize: 13
       font.weight: Font.Medium

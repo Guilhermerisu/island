@@ -1,50 +1,17 @@
 import QtQuick
-import Quickshell.Widgets
 
-// iOS Control Center–style volume, laid on its side: the island becomes a wide
-// slider that fills with the theme accent from the left, speaker glyph near
-// the left end.
-ClippingRectangle {
+// Compact macOS-style volume HUD: speaker, thin green bar, and percentage.
+Item {
   id: slider
   required property var host
-  // The island rectangle; the slider shares its corner radius.
-  required property Item shape
-  readonly property real level: host.muted ? 0 : Math.max(0, Math.min(1, host.volume))
-  // Animate the level, not the pixel width, so the fill doesn't
-  // restart its motion every frame while the island morphs.
-  property real shownLevel: level
-  Behavior on shownLevel { MotionAnimation { theme: host.theme; pace: "standard" } }
-  radius: shape.radius
-  color: "transparent"
   opacity: host.volumePill ? 1 : 0
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
 
-  // Grey track behind the fill: solid, since the clipping shape
-  // drops translucent colors (it's white at 16% over the black island).
-  Rectangle {
+  VolumeLevel {
     anchors.fill: parent
-    color: "#2a2a2a"
-  }
-  Rectangle {
-    id: volumeFill
-    anchors.left: parent.left
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    width: parent.width * slider.shownLevel
-    color: host.theme.accent
-  }
-  Text {
-    id: volumeIcon
-    anchors.left: parent.left
-    anchors.leftMargin: 18
-    anchors.verticalCenter: parent.verticalCenter
-    // Accent ink on the fill, light text when the fill doesn't reach it.
-    readonly property bool onFill: volumeFill.width > x + width / 2
-    text: slider.level <= 0 ? "󰖁" : slider.level < 0.34 ? "󰕿" : slider.level < 0.67 ? "󰖀" : "󰕾"
-    color: onFill ? host.theme.accentText : host.theme.text
-    font.family: host.theme.fontFamily
-    font.pixelSize: 26
-    Behavior on color { MotionColorAnimation { theme: host.theme } }
+    theme: slider.host.theme
+    level: slider.host.volume
+    muted: slider.host.muted
   }
 }

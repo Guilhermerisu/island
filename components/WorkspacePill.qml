@@ -3,7 +3,8 @@ import Quickshell.Hyprland
 
 // Shown for a moment when the workspace changes: a dot for each workspace
 // (solid with windows, faint when empty), and a white capsule with the current
-// workspace's number that slides from the one you left. The workspaces are
+// workspace's number that slides from the one you left. Its neutral accent
+// follows the appearance preference. The workspaces are
 // Omarchy's bar's: 1–5 always, and any other up to 10 that exists.
 Item {
   id: pill
@@ -59,12 +60,12 @@ Item {
       width: pill.slot + 10
       height: pill.slot
       radius: height / 2
-      color: "#ffffff"
+      color: pill.host.settings.colorfulLiveActivities ? "#ffffff" : pill.host.theme.accent
       Behavior on x { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
       Text {
         anchors.centerIn: parent
         text: pill.host.focusedWorkspaceId
-        color: "#000000"
+        color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
         font.family: "Adwaita Sans"
         font.pixelSize: 12
         font.weight: Font.Bold
