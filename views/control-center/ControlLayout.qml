@@ -282,10 +282,16 @@ ColumnLayout {
     controlLayout: layout
   }
 
+  // Over the whole control center, beside it rather than inside the layout.
+  // Sized by bindings, not anchors: anchors could resolve before the new
+  // parent is set, and an anchor to a non-sibling is dropped.
   Item {
     id: dragLayer
     parent: layout.center.parent
-    anchors.fill: layout.center
+    x: layout.center.x
+    y: layout.center.y
+    width: layout.center.width
+    height: layout.center.height
     z: 100
     Rectangle {
       id: dragProxy
