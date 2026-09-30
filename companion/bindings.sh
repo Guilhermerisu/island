@@ -29,6 +29,8 @@ catalog=(
   'controls|Control center|toggle||'
   'player|Now playing|show player||'
   'settings|Island settings|show settings||'
+  'plugins|Plugins|show plugins||'
+  'tray|System tray|show tray||'
 )
 
 field() { local IFS='|'; local parts=($1); printf '%s' "${parts[$2]:-}"; }
