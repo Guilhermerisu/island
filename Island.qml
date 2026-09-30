@@ -107,6 +107,9 @@ Item {
 
   // The main keyboard's layouts ("us", "mn") and which is active, read from
   // Hyprland on each switch and shown for a moment (see KeyboardPill).
+  // Hyprland also sends activelayout on focus and workspace changes, so the
+  // pill only shows when the active layout differs from the last reading.
+  property bool keyboardLayoutKnown: false
   property string keyboardLayoutName: ""
   property var keyboardLayoutCodes: []
   property int keyboardLayoutIndex: 0
@@ -120,10 +123,13 @@ Item {
           var boards = JSON.parse(text).keyboards || []
           var main = boards.filter(function(k) { return k.main })[0] || boards[0]
           if (!main) return
-          root.keyboardLayoutName = String(main.active_keymap || "")
+          var name = String(main.active_keymap || "")
+          var changed = root.keyboardLayoutKnown && name !== root.keyboardLayoutName
+          root.keyboardLayoutKnown = true
+          root.keyboardLayoutName = name
           root.keyboardLayoutCodes = String(main.layout || "").split(",").filter(function(l) { return l !== "" })
           root.keyboardLayoutIndex = main.active_layout_index || 0
-          root.showFeedback("", 1400, "keyboard")
+          if (changed) root.showFeedback("", 1400, "keyboard")
         } catch (e) {}
       }
     }
@@ -216,7 +222,10 @@ Item {
   onVolumeChanged: volumeFeedback()
   onMutedChanged: volumeFeedback()
   onSinkReadyChanged: volumeFeedback()
-  Component.onCompleted: initialized = true
+  Component.onCompleted: {
+    initialized = true
+    keyboardLayoutRead.running = true
+  }
 
   readonly property var setup: companionSetup
   CompanionSetup {

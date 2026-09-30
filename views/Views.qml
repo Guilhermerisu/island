@@ -14,6 +14,8 @@ import "menu"
 import "player"
 import "settings"
 import "answer"
+import "plugins"
+import "tray"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -23,7 +25,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, answerSurface]
+  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, answerSurface, pluginsSurface, traySurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     return null
@@ -119,6 +121,22 @@ Item {
     fixedWidth: 440
     padding: 24
     PlayerView { host: views.host; active: playerSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: pluginsSurface
+    host: views.host
+    viewName: "plugins"
+    fixedWidth: 520
+    PluginList { host: views.host; active: pluginsSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: traySurface
+    host: views.host
+    viewName: "tray"
+    fixedWidth: 440
+    TrayList { host: views.host; active: traySurface.active; anchors.fill: parent }
   }
 
   Surface {
