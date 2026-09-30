@@ -87,7 +87,7 @@ ColumnLayout {
                 Layout.columnSpan: wide ? 2 : 1
                 Layout.preferredHeight: wide ? 108 : 82
                 scale: addMouse.pressed ? 0.98 : 1
-                Behavior on scale { NumberAnimation { duration: 120 * gallery.cc.host.motionScale; easing.type: Easing.OutCubic } }
+                Behavior on scale { NumberAnimation { duration: 120 * gallery.cc.host.theme.motionScale; easing.type: Easing.OutCubic } }
                 Loader {
                   anchors.fill: parent
                   anchors.margins: 4

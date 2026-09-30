@@ -18,7 +18,7 @@ Item {
 
     opacity: host.notificationPill ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   ClippingRectangle {
     id: appTile
@@ -34,8 +34,8 @@ Item {
       anchors.fill: parent
       visible: appTileImage.status !== Image.Ready
       gradient: Gradient {
-        GradientStop { position: 0; color: pill.brand ? Qt.lighter(pill.brand.tile, 1.12) : Qt.lighter(host.colorAccent, 1.25) }
-        GradientStop { position: 1; color: pill.brand ? pill.brand.tile : host.colorAccent }
+        GradientStop { position: 0; color: pill.brand ? Qt.lighter(pill.brand.tile, 1.12) : Qt.lighter(host.theme.accent, 1.25) }
+        GradientStop { position: 1; color: pill.brand ? pill.brand.tile : host.theme.accent }
       }
     }
     Image {
@@ -53,8 +53,8 @@ Item {
       anchors.centerIn: parent
       visible: appTileImage.status !== Image.Ready
       text: pill.brand ? pill.brand.glyph : String(pill.row.glyph || "") || "󰂚"
-      color: pill.brand ? pill.brand.ink : host.colorAccentText
-      font.family: pill.brand ? "JetBrainsMono Nerd Font" : host.fontFamily
+      color: pill.brand ? pill.brand.ink : host.theme.accentText
+      font.family: pill.brand ? "JetBrainsMono Nerd Font" : host.theme.fontFamily
       font.pixelSize: pill.brand ? Math.round(parent.height * 0.6) : 24
     }
   }

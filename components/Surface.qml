@@ -40,7 +40,7 @@ Item {
   visible: active || opacity > 0.01
   enabled: active
   opacity: active && host.surfaceContentReady ? 1 : 0
-  Behavior on opacity { NumberAnimation { duration: (surface.host.surfaceContentReady ? 190 : 110) * surface.host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: (surface.host.surfaceContentReady ? 190 : 110) * surface.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   // Lets the island know this view exists (for its open/closed logic).
   Component.onCompleted: host.registerSurface(viewName)

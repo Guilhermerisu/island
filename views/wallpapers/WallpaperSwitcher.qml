@@ -31,7 +31,7 @@ Picker {
       id: wallpaperCard
       property var entry: ({})
       radius: ws.cardRadius
-      color: ws.host.colorSurface
+      color: ws.host.theme.surface
 
       Image {
         anchors.fill: parent
@@ -74,7 +74,7 @@ Picker {
   }
   FolderListModel {
     id: userBackgrounds
-    folder: ws.host.themeName ? "file://" + ws.host.home + "/.config/omarchy/backgrounds/" + ws.host.themeName + (ws.refreshTick % 2 ? "/" : "") : ""
+    folder: ws.host.theme.name ? "file://" + ws.host.home + "/.config/omarchy/backgrounds/" + ws.host.theme.name + (ws.refreshTick % 2 ? "/" : "") : ""
     nameFilters: ws.imageFilters
     caseSensitive: false
     showDirs: false

@@ -232,8 +232,8 @@ ListPicker {
         width: 24
         horizontalAlignment: Text.AlignHCenter
         text: String(menuRow.entry.icon || "")
-        color: menu.host.colorMuted
-        font.family: menuRow.entry.iconFont || menu.host.fontFamily
+        color: menu.host.theme.muted
+        font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
         font.pixelSize: 17
       }
       Column {
@@ -248,7 +248,7 @@ ListPicker {
           text: String(menuRow.entry.label || "")
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: menu.host.colorText
+          color: menu.host.theme.text
           font.family: "Adwaita Sans"
           font.pixelSize: 14
           font.weight: Font.Medium
@@ -259,7 +259,7 @@ ListPicker {
           text: String(menuRow.entry.detail || "")
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: menu.host.colorMuted
+          color: menu.host.theme.muted
           font.family: "Adwaita Sans"
           font.pixelSize: 11
         }
@@ -270,8 +270,8 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         visible: menuRow.isMenu
         text: "󰅂"
-        color: menu.host.colorMuted
-        font.family: menu.host.fontFamily
+        color: menu.host.theme.muted
+        font.family: menu.host.theme.fontFamily
         font.pixelSize: 16
       }
     }

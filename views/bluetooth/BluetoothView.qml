@@ -17,16 +17,16 @@ ColumnLayout {
   required property var host
   property bool active: false
 
-  readonly property color accent: host.colorAccent
-  readonly property color accentInk: host.colorAccentText
-  readonly property color text: host.colorText
-  readonly property color textMuted: Qt.tint(host.colorBackground, host.withAlpha(text, 0.6))
-  readonly property color tile: Qt.tint(host.colorBackground, host.withAlpha(text, 0.11))
-  readonly property color card: Qt.tint(host.colorBackground, host.withAlpha(text, 0.075))
-  readonly property color edge: host.withAlpha(text, 0.05)
-  readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
-  readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
-  readonly property string iconFont: host.fontFamily
+  readonly property color accent: host.theme.accent
+  readonly property color accentInk: host.theme.accentText
+  readonly property color text: host.theme.text
+  readonly property color textMuted: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.6))
+  readonly property color tile: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.11))
+  readonly property color card: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.075))
+  readonly property color edge: host.theme.withAlpha(text, 0.05)
+  readonly property color well: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.16))
+  readonly property color wellHover: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.22))
+  readonly property string iconFont: host.theme.fontFamily
 
   readonly property var adapter: Bluetooth.defaultAdapter
   readonly property bool powered: !!(adapter && adapter.enabled)
@@ -289,7 +289,7 @@ ColumnLayout {
               anchors.bottom: parent.top
               anchors.bottomMargin: 2
               height: 1
-              color: bt.host.withAlpha(bt.text, 0.09)
+              color: bt.host.theme.withAlpha(bt.text, 0.09)
             }
             Text {
               anchors.left: parent.left
@@ -331,7 +331,7 @@ ColumnLayout {
                 color: bt.textMuted
                 font.family: bt.iconFont
                 font.pixelSize: 17
-                Behavior on rotation { NumberAnimation { duration: 160 * bt.host.motionScale; easing.type: Easing.OutCubic } }
+                Behavior on rotation { NumberAnimation { duration: 160 * bt.host.theme.motionScale; easing.type: Easing.OutCubic } }
               }
             }
             MouseArea {

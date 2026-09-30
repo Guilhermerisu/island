@@ -168,7 +168,7 @@ Item {
           .replace(/[ \t]+$/gm, "").trim()
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
-        color: answer.error ? answer.host.colorUrgent : "#ffffff"
+        color: answer.error ? answer.host.theme.urgent : "#ffffff"
         font.family: "Adwaita Sans"
         font.pixelSize: 21
         font.letterSpacing: -0.3
@@ -187,9 +187,9 @@ Item {
     width: actions.implicitWidth + 24
     height: actions.implicitHeight + 12
     radius: height / 2
-    color: answer.host.colorBackground
+    color: answer.host.theme.background
     opacity: hover.hovered && !answer.busy ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: 180 * answer.host.motionScale } }
+    Behavior on opacity { NumberAnimation { duration: 180 * answer.host.theme.motionScale } }
     RowLayout {
       id: actions
       anchors.centerIn: parent

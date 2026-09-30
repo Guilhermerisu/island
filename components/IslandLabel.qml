@@ -20,7 +20,7 @@ Text {
     : Qt.formatDateTime(host.clockDate, "h:mm AP").replace(/\s*[AP]M$/i, "")
   // A fixed soft off-white on the always-black island; the setup
   // warning keeps the theme's urgent color.
-  color: host.view === "rest" && host.companionNeedsSetup ? host.colorUrgent : "#e2e6de"
+  color: host.view === "rest" && host.companionNeedsSetup ? host.theme.urgent : "#e2e6de"
   // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
   // digits from shifting as the time changes.
   font.family: "Adwaita Sans"
@@ -31,5 +31,5 @@ Text {
   font.features: { "tnum": 1, "case": 1 }
   font.letterSpacing: -0.4
   // Get out of the way fast, fade back in gently.
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.theme.motionScale; easing.type: Easing.InOutQuad } }
 }

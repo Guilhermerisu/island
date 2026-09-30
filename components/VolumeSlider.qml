@@ -13,12 +13,12 @@ ClippingRectangle {
   // Animate the level, not the pixel width, so the fill doesn't
   // restart its motion every frame while the island morphs.
   property real shownLevel: level
-  Behavior on shownLevel { NumberAnimation { duration: 220 * host.motionScale; easing.type: Easing.OutCubic } }
+  Behavior on shownLevel { NumberAnimation { duration: 220 * host.theme.motionScale; easing.type: Easing.OutCubic } }
   radius: shape.radius
   color: "transparent"
   opacity: host.volumePill ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   // Grey track behind the fill: solid, since the clipping shape
   // drops translucent colors (it's white at 16% over the black island).
@@ -32,7 +32,7 @@ ClippingRectangle {
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     width: parent.width * slider.shownLevel
-    color: host.colorAccent
+    color: host.theme.accent
   }
   Text {
     id: volumeIcon
@@ -42,9 +42,9 @@ ClippingRectangle {
     // Accent ink on the fill, light text when the fill doesn't reach it.
     readonly property bool onFill: volumeFill.width > x + width / 2
     text: slider.level <= 0 ? "󰖁" : slider.level < 0.34 ? "󰕿" : slider.level < 0.67 ? "󰖀" : "󰕾"
-    color: onFill ? host.colorAccentText : host.colorText
-    font.family: host.fontFamily
+    color: onFill ? host.theme.accentText : host.theme.text
+    font.family: host.theme.fontFamily
     font.pixelSize: 26
-    Behavior on color { ColorAnimation { duration: 120 * host.motionScale } }
+    Behavior on color { ColorAnimation { duration: 120 * host.theme.motionScale } }
   }
 }

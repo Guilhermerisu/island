@@ -107,7 +107,7 @@ Item {
 
   // One duration and easing for everything a selection change moves (strip
   // scroll, outline, card fade and scale), so it reads as one motion.
-  readonly property int moveDuration: 240 * host.motionScale
+  readonly property int moveDuration: 240 * host.theme.motionScale
 
   // Jump without the carousel scrolling through everything in between (a
   // model reset otherwise animates back from card 0).
@@ -223,7 +223,7 @@ Item {
           radius: picker.cardRadius
           color: "transparent"
           border.width: 1
-          border.color: picker.host.withAlpha(picker.host.colorText, 0.06)
+          border.color: picker.host.theme.withAlpha(picker.host.theme.text, 0.06)
         }
         // Selection ring, set a few pixels outside the card; fades in.
         Rectangle {
@@ -232,7 +232,7 @@ Item {
           radius: picker.cardRadius + picker.ringGap + picker.ringWidth
           color: "transparent"
           border.width: picker.ringWidth
-          border.color: picker.host.colorAccent
+          border.color: picker.host.theme.accent
           opacity: slot.isSelected ? 1 : 0
           Behavior on opacity { NumberAnimation { duration: picker.moveDuration; easing.type: Easing.OutCubic } }
         }
@@ -243,14 +243,14 @@ Item {
           anchors.top: parent.top
           anchors.margins: 7
           width: 18; height: 18; radius: 9
-          color: picker.host.colorAccent
+          color: picker.host.theme.accent
           border.width: 1
           border.color: Qt.rgba(0, 0, 0, 0.25)
           Text {
             anchors.centerIn: parent
             text: "󰄬"
-            color: picker.host.colorAccentText
-            font.family: picker.host.fontFamily
+            color: picker.host.theme.accentText
+            font.family: picker.host.theme.fontFamily
             font.pixelSize: 12
           }
         }
@@ -270,7 +270,7 @@ Item {
       anchors.centerIn: parent
       visible: picker.filtered.length === 0 && picker.items.length > 0
       text: picker.emptyText
-      color: picker.host.colorMuted
+      color: picker.host.theme.muted
       font.family: "Adwaita Sans"
       font.pixelSize: 13
     }
@@ -284,11 +284,11 @@ Item {
     anchors.bottom: carousel.bottom
     width: 56
     opacity: carousel.contentX - carousel.originX < -picker.pad + 1 ? 0 : 1
-    Behavior on opacity { NumberAnimation { duration: 150 * picker.host.motionScale } }
+    Behavior on opacity { NumberAnimation { duration: 150 * picker.host.theme.motionScale } }
     gradient: Gradient {
       orientation: Gradient.Horizontal
-      GradientStop { position: 0; color: picker.host.colorBackground }
-      GradientStop { position: 1; color: picker.host.withAlpha(picker.host.colorBackground, 0) }
+      GradientStop { position: 0; color: picker.host.theme.background }
+      GradientStop { position: 1; color: picker.host.theme.withAlpha(picker.host.theme.background, 0) }
     }
   }
   Rectangle {
@@ -297,11 +297,11 @@ Item {
     anchors.bottom: carousel.bottom
     width: 56
     opacity: carousel.contentX - carousel.originX > carousel.contentWidth - carousel.width + picker.pad - 1 ? 0 : 1
-    Behavior on opacity { NumberAnimation { duration: 150 * picker.host.motionScale } }
+    Behavior on opacity { NumberAnimation { duration: 150 * picker.host.theme.motionScale } }
     gradient: Gradient {
       orientation: Gradient.Horizontal
-      GradientStop { position: 0; color: picker.host.withAlpha(picker.host.colorBackground, 0) }
-      GradientStop { position: 1; color: picker.host.colorBackground }
+      GradientStop { position: 0; color: picker.host.theme.withAlpha(picker.host.theme.background, 0) }
+      GradientStop { position: 1; color: picker.host.theme.background }
     }
   }
 }

@@ -76,7 +76,7 @@ Item {
         Layout.preferredWidth: 72
         Layout.preferredHeight: 72
         radius: 16
-        color: player.host.withAlpha(player.host.colorAccent, 0.3)
+        color: player.host.theme.withAlpha(player.host.theme.accent, 0.3)
         Image {
           id: cover
           anchors.fill: parent
@@ -92,8 +92,8 @@ Item {
           anchors.centerIn: parent
           visible: cover.status !== Image.Ready
           text: "󰝚"
-          color: player.host.colorAccentText
-          font.family: player.host.fontFamily
+          color: player.host.theme.accentText
+          font.family: player.host.theme.fontFamily
           font.pixelSize: 30
         }
       }
@@ -198,9 +198,9 @@ Item {
         signal activated()
         color: "#ffffff"
         opacity: available ? (controlMouse.pressed ? 0.6 : 1) : 0.35
-        font.family: player.host.fontFamily
+        font.family: player.host.theme.fontFamily
         scale: controlMouse.pressed ? 0.9 : 1
-        Behavior on scale { NumberAnimation { duration: 120 * player.host.motionScale; easing.type: Easing.OutCubic } }
+        Behavior on scale { NumberAnimation { duration: 120 * player.host.theme.motionScale; easing.type: Easing.OutCubic } }
         MouseArea {
           id: controlMouse
           anchors.fill: parent

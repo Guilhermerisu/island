@@ -19,7 +19,7 @@ Item {
   // neighbours.
   readonly property int slotWidth: tileWidth + 6
   readonly property int tileSpacing: 6
-  readonly property int moveDuration: 200 * host.motionScale
+  readonly property int moveDuration: 200 * host.theme.motionScale
 
   property bool suspendAvailable: true
   property bool hibernateAvailable: false
@@ -121,7 +121,7 @@ Item {
           width: power.tileWidth
           height: power.tileHeight
           radius: 23
-          color: slot.isSelected ? power.host.colorAccent : power.host.withAlpha(power.host.colorText, 0.1)
+          color: slot.isSelected ? power.host.theme.accent : power.host.theme.withAlpha(power.host.theme.text, 0.1)
           scale: tileMouse.pressed ? 0.94 : slot.isSelected ? 1.06 : 1
           Behavior on color { ColorAnimation { duration: power.moveDuration; easing.type: Easing.OutCubic } }
           Behavior on scale { NumberAnimation { duration: power.moveDuration; easing.type: Easing.OutBack; easing.overshoot: 1.3 } }
@@ -132,15 +132,15 @@ Item {
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
               text: slot.modelData.icon
-              color: slot.isSelected ? power.host.colorAccentText : power.host.colorText
-              font.family: power.host.fontFamily
+              color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
+              font.family: power.host.theme.fontFamily
               font.pixelSize: 26
               Behavior on color { ColorAnimation { duration: power.moveDuration } }
             }
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
               text: slot.modelData.label
-              color: slot.isSelected ? power.host.colorAccentText : power.host.colorText
+              color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
               font.family: "Adwaita Sans"
               font.pixelSize: 13

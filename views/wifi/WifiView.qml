@@ -17,16 +17,16 @@ ColumnLayout {
   required property var host
   property bool active: false
 
-  readonly property color accent: host.colorAccent
-  readonly property color accentInk: host.colorAccentText
-  readonly property color text: host.colorText
-  readonly property color textMuted: Qt.tint(host.colorBackground, host.withAlpha(text, 0.6))
-  readonly property color tile: Qt.tint(host.colorBackground, host.withAlpha(text, 0.11))
-  readonly property color card: Qt.tint(host.colorBackground, host.withAlpha(text, 0.075))
-  readonly property color edge: host.withAlpha(text, 0.05)
-  readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
-  readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
-  readonly property string iconFont: host.fontFamily
+  readonly property color accent: host.theme.accent
+  readonly property color accentInk: host.theme.accentText
+  readonly property color text: host.theme.text
+  readonly property color textMuted: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.6))
+  readonly property color tile: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.11))
+  readonly property color card: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.075))
+  readonly property color edge: host.theme.withAlpha(text, 0.05)
+  readonly property color well: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.16))
+  readonly property color wellHover: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.22))
+  readonly property string iconFont: host.theme.fontFamily
 
   readonly property var device: {
     var devs = Networking.devices ? Networking.devices.values : []
@@ -299,7 +299,7 @@ ColumnLayout {
               anchors.bottom: parent.top
               anchors.bottomMargin: 2
               height: 1
-              color: wf.host.withAlpha(wf.text, 0.09)
+              color: wf.host.theme.withAlpha(wf.text, 0.09)
             }
             Text {
               anchors.left: parent.left
@@ -341,7 +341,7 @@ ColumnLayout {
                 color: wf.textMuted
                 font.family: wf.iconFont
                 font.pixelSize: 17
-                Behavior on rotation { NumberAnimation { duration: 160 * wf.host.motionScale; easing.type: Easing.OutCubic } }
+                Behavior on rotation { NumberAnimation { duration: 160 * wf.host.theme.motionScale; easing.type: Easing.OutCubic } }
               }
             }
             MouseArea {
@@ -428,7 +428,7 @@ ColumnLayout {
               radius: 7
               color: wf.well
               border.width: 2
-              border.color: wf.host.withAlpha(wf.accent, 0.55)
+              border.color: wf.host.theme.withAlpha(wf.accent, 0.55)
               TextInput {
                 id: password
                 anchors.left: parent.left
@@ -438,7 +438,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 echoMode: TextInput.Password
                 color: wf.text
-                selectionColor: wf.host.withAlpha(wf.accent, 0.4)
+                selectionColor: wf.host.theme.withAlpha(wf.accent, 0.4)
                 selectedTextColor: wf.text
                 font.family: "Adwaita Sans"
                 font.pixelSize: 15
@@ -515,7 +515,7 @@ ColumnLayout {
         Layout.topMargin: 4
         Layout.bottomMargin: 4
         Layout.preferredHeight: 1
-        color: wf.host.withAlpha(wf.text, 0.09)
+        color: wf.host.theme.withAlpha(wf.text, 0.09)
       }
       Rectangle {
         Layout.fillWidth: true

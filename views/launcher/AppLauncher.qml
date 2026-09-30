@@ -49,7 +49,7 @@ ListPicker {
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         width: 36; height: 36; radius: 10
-        color: appRow.isAsk && launcher.provider ? launcher.provider.tile : launcher.host.withAlpha(launcher.host.colorText, 0.08)
+        color: appRow.isAsk && launcher.provider ? launcher.provider.tile : launcher.host.theme.withAlpha(launcher.host.theme.text, 0.08)
         Text {
           anchors.centerIn: parent
           visible: appRow.isAsk
@@ -73,8 +73,8 @@ ListPicker {
           anchors.centerIn: parent
           visible: !appRow.isAsk && appIcon.status !== Image.Ready
           text: "󰀻"
-          color: launcher.host.colorMuted
-          font.family: launcher.host.fontFamily
+          color: launcher.host.theme.muted
+          font.family: launcher.host.theme.fontFamily
           font.pixelSize: 18
         }
       }
@@ -87,7 +87,7 @@ ListPicker {
         text: appRow.isAsk ? "" : AppSearch.entryName(appRow.entry)
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: launcher.host.colorText
+        color: launcher.host.theme.text
         font.family: "Adwaita Sans"
         font.pixelSize: 14
         font.weight: Font.DemiBold
@@ -103,7 +103,7 @@ ListPicker {
         Text {
           id: askLabel
           text: launcher.provider ? "Ask " + launcher.provider.name : ""
-          color: launcher.host.colorText
+          color: launcher.host.theme.text
           font.family: "Adwaita Sans"
           font.pixelSize: 14
           font.weight: Font.DemiBold
@@ -113,7 +113,7 @@ ListPicker {
           text: appRow.isAsk ? "\u201c" + appRow.entry.question + "\u201d" : ""
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: launcher.host.colorMuted
+          color: launcher.host.theme.muted
           font.family: "Adwaita Sans"
           font.pixelSize: 14
         }

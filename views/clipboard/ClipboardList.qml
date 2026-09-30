@@ -115,7 +115,7 @@ ListPicker {
           anchors.centerIn: parent
           visible: preview.isImage && previewImage.status === Image.Error
           text: "Image unavailable"
-          color: clipboard.host.colorMuted
+          color: clipboard.host.theme.muted
           font.family: "Adwaita Sans"
           font.pixelSize: 12
         }
@@ -127,7 +127,7 @@ ListPicker {
           wrapMode: Text.Wrap
           elide: Text.ElideRight
           clip: true
-          color: clipboard.host.colorText
+          color: clipboard.host.theme.text
           font.family: "Adwaita Sans"
           font.pixelSize: 15
           lineHeight: 1.3
@@ -142,7 +142,7 @@ ListPicker {
       property var entry: ({})
       property bool selected: false
       readonly property bool hasPreview: !!entry.previewImage
-      readonly property color ink: selected ? clipboard.host.colorAccentText : clipboard.host.colorText
+      readonly property color ink: selected ? clipboard.host.theme.accentText : clipboard.host.theme.text
 
       // Image thumbnail, or a plain glyph for text / file entries.
       Item {
@@ -169,8 +169,8 @@ ListPicker {
           anchors.centerIn: parent
           visible: !(clipRow.hasPreview && thumb.status === Image.Ready)
           text: clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : "󰆒"
-          color: clipRow.selected ? clipRow.ink : clipboard.host.colorMuted
-          font.family: clipboard.host.fontFamily
+          color: clipRow.selected ? clipRow.ink : clipboard.host.theme.muted
+          font.family: clipboard.host.theme.fontFamily
           font.pixelSize: 18
         }
       }

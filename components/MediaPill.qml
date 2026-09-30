@@ -12,7 +12,7 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * media.host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * media.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   ClippingRectangle {
     id: art
@@ -20,7 +20,7 @@ Item {
     anchors.leftMargin: 8
     anchors.verticalCenter: parent.verticalCenter
     width: 30; height: 30; radius: 8
-    color: media.host.withAlpha(media.host.colorAccent, 0.3)
+    color: media.host.theme.withAlpha(media.host.theme.accent, 0.3)
     Image {
       id: artImage
       anchors.fill: parent
@@ -38,8 +38,8 @@ Item {
       anchors.centerIn: parent
       visible: artImage.status !== Image.Ready
       text: "󰝚"
-      color: media.host.colorAccentText
-      font.family: media.host.fontFamily
+      color: media.host.theme.accentText
+      font.family: media.host.theme.fontFamily
       font.pixelSize: 14
     }
   }

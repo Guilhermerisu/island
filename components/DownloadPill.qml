@@ -17,7 +17,7 @@ Item {
 
   opacity: downloading || done ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   function formatBytes(n) {
     if (n >= 1073741824) return (n / 1073741824).toFixed(1) + " GB"
@@ -31,7 +31,7 @@ Item {
   Item {
     anchors.fill: parent
     opacity: pill.downloading ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.motionScale; easing.type: Easing.InOutQuad } }
+    Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
     // A still arrow inside a ring that spins (there's no total size to show
     // progress against).
@@ -46,14 +46,14 @@ Item {
         radius: width / 2
         color: "transparent"
         border.width: 2.5
-        border.color: pill.host.withAlpha(pill.host.colorAccent, 0.22)
+        border.color: pill.host.theme.withAlpha(pill.host.theme.accent, 0.22)
       }
       Canvas {
         anchors.fill: parent
         onPaint: {
           var ctx = getContext("2d")
           ctx.reset()
-          ctx.strokeStyle = pill.host.colorAccent
+          ctx.strokeStyle = pill.host.theme.accent
           ctx.lineWidth = 2.5
           ctx.lineCap = "round"
           ctx.beginPath()
@@ -73,8 +73,8 @@ Item {
       Text {
         anchors.centerIn: parent
         text: pill.packageMode ? "󰏗" : "󰁅"
-        color: pill.host.colorAccent
-        font.family: pill.host.fontFamily
+        color: pill.host.theme.accent
+        font.family: pill.host.theme.fontFamily
         font.pixelSize: 15
         font.weight: Font.Bold
       }
@@ -113,7 +113,7 @@ Item {
   Item {
     anchors.fill: parent
     opacity: pill.done ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.motionScale; easing.type: Easing.InOutQuad } }
+    Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
     Rectangle {
       id: check
@@ -121,14 +121,14 @@ Item {
       anchors.leftMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       width: 40; height: 40; radius: 20
-      color: pill.host.colorAccent
+      color: pill.host.theme.accent
       scale: pill.done ? 1 : 0.4
-      Behavior on scale { NumberAnimation { duration: 360 * pill.host.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+      Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
       Text {
         anchors.centerIn: parent
         text: "󰄬"
-        color: pill.host.colorAccentText
-        font.family: pill.host.fontFamily
+        color: pill.host.theme.accentText
+        font.family: pill.host.theme.fontFamily
         font.pixelSize: 22
         font.weight: Font.Bold
       }
@@ -172,12 +172,12 @@ Item {
       width: openLabel.implicitWidth + 28
       height: 30
       radius: 15
-      color: pill.host.withAlpha(pill.host.colorAccent, 0.22)
+      color: pill.host.theme.withAlpha(pill.host.theme.accent, 0.22)
       Text {
         id: openLabel
         anchors.centerIn: parent
         text: "Open"
-        color: pill.host.colorAccent
+        color: pill.host.theme.accent
         font.family: "Adwaita Sans"
         font.pixelSize: 14
         font.weight: Font.Bold

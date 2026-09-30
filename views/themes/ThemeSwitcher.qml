@@ -10,7 +10,7 @@ Picker {
   id: ts
   placeholder: "Search themes…"
   emptyText: "No themes match"
-  currentKey: host.themeName
+  currentKey: host.theme.name
   applyCommand: function(entry) { return ["omarchy-theme-set", entry.name] }
 
   card: Component {
@@ -18,7 +18,7 @@ Picker {
       id: themeCard
       property var entry: ({})
       radius: ts.cardRadius
-      color: entry.background || ts.host.colorSurface
+      color: entry.background || ts.host.theme.surface
 
       Row {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -42,7 +42,7 @@ Picker {
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         text: themeCard.entry.name || ""
-        color: themeCard.entry.foreground || ts.host.colorText
+        color: themeCard.entry.foreground || ts.host.theme.text
         font.family: "Adwaita Sans"
         font.pixelSize: 13
         font.weight: Font.DemiBold

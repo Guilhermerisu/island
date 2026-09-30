@@ -32,7 +32,7 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   // Leading: the thumbnail, or the symbol, springing in.
   Item {
@@ -42,7 +42,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 26; height: 26
     scale: pill.shown ? 1 : 0.4
-    Behavior on scale { NumberAnimation { duration: 360 * pill.host.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
     ClippingRectangle {
       anchors.fill: parent
       visible: pill.thumbnailReady
@@ -63,8 +63,8 @@ Item {
       anchors.centerIn: parent
       visible: !pill.thumbnailReady
       text: pill.isFiles ? "󰈔" : "󰆏"
-      color: pill.host.colorAccent
-      font.family: pill.host.fontFamily
+      color: pill.host.theme.accent
+      font.family: pill.host.theme.fontFamily
       font.pixelSize: 19
     }
   }
@@ -105,7 +105,7 @@ Item {
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
     text: "Copied"
-    color: pill.host.colorAccent
+    color: pill.host.theme.accent
     font.family: "Adwaita Sans"
     font.pixelSize: 13
     font.weight: Font.DemiBold
@@ -113,8 +113,8 @@ Item {
     opacity: pill.shown ? 1 : 0
     Behavior on opacity {
       SequentialAnimation {
-        PauseAnimation { duration: pill.shown ? 120 * pill.host.motionScale : 0 }
-        NumberAnimation { duration: 180 * pill.host.motionScale; easing.type: Easing.OutQuad }
+        PauseAnimation { duration: pill.shown ? 120 * pill.host.theme.motionScale : 0 }
+        NumberAnimation { duration: 180 * pill.host.theme.motionScale; easing.type: Easing.OutQuad }
       }
     }
   }

@@ -15,7 +15,7 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   function workspaceById(id) {
     var values = Hyprland.workspaces.values
@@ -60,7 +60,7 @@ Item {
       height: pill.slot
       radius: height / 2
       color: "#ffffff"
-      Behavior on x { NumberAnimation { duration: 260 * pill.host.motionScale; easing.type: Easing.OutCubic } }
+      Behavior on x { NumberAnimation { duration: 260 * pill.host.theme.motionScale; easing.type: Easing.OutCubic } }
       Text {
         anchors.centerIn: parent
         text: pill.host.focusedWorkspaceId

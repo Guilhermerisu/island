@@ -35,7 +35,7 @@ Item {
   property int columns: 1
   readonly property bool grid: columns > 1
   // Spotlight-style selection: the selected row fills with the theme accent
-  // (rows should switch their text to host.colorAccentText when selected).
+  // (rows should switch their text to host.theme.accentText when selected).
   property bool fillSelection: false
   readonly property string query: search.text
   readonly property var selected: items[list.currentIndex] || null
@@ -110,7 +110,7 @@ Item {
     anchors.top: search.bottom
     anchors.topMargin: 10
     height: 1
-    color: picker.host.withAlpha(picker.host.colorText, 0.1)
+    color: picker.host.theme.withAlpha(picker.host.theme.text, 0.1)
   }
 
   // A GridView with one full-width column doubles as the list.
@@ -147,9 +147,9 @@ Item {
         anchors.bottomMargin: picker.grid ? 3 : 0
         radius: 12
         color: !slot.isSelected ? "transparent"
-          : picker.fillSelection ? picker.host.colorAccent
-          : picker.grid ? picker.host.withAlpha(picker.host.colorAccent, 0.28)
-          : picker.host.withAlpha(picker.host.colorText, 0.07)
+          : picker.fillSelection ? picker.host.theme.accent
+          : picker.grid ? picker.host.theme.withAlpha(picker.host.theme.accent, 0.28)
+          : picker.host.theme.withAlpha(picker.host.theme.text, 0.07)
       }
       // Accent bar marking the selected row (list mode).
       Rectangle {
@@ -158,7 +158,7 @@ Item {
         width: 3
         height: 22
         radius: 1.5
-        color: picker.host.colorAccent
+        color: picker.host.theme.accent
         visible: slot.isSelected && !picker.grid && !picker.fillSelection
       }
       Loader {
@@ -182,7 +182,7 @@ Item {
       anchors.centerIn: parent
       visible: picker.items.length === 0
       text: picker.emptyText
-      color: picker.host.colorMuted
+      color: picker.host.theme.muted
       font.family: "Adwaita Sans"
       font.pixelSize: 13
     }

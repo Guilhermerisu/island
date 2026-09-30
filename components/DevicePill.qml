@@ -16,11 +16,11 @@ Item {
   readonly property bool isDevice: activity.kind === "bluetooth"
   readonly property color statusColor: activity.kind === "charging" ? "#30d158"
     : activity.kind === "lowBattery" ? "#ff453a"
-    : activity.connected ? host.colorAccent : Qt.rgba(1, 1, 1, 0.55)
+    : activity.connected ? host.theme.accent : Qt.rgba(1, 1, 1, 0.55)
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
 
   // Leading: the battery, or the device's symbol, springing in.
   Item {
@@ -32,7 +32,7 @@ Item {
     width: pill.isBattery ? 30 : 26
     height: 26
     scale: pill.shown ? 1 : 0.4
-    Behavior on scale { NumberAnimation { duration: 360 * pill.host.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
     BatteryIcon {
       visible: pill.isBattery
       anchors.centerIn: parent
@@ -46,8 +46,8 @@ Item {
       anchors.centerIn: parent
       visible: !pill.isBattery
       text: "󰂯"
-      color: pill.activity.connected ? pill.host.colorAccent : Qt.rgba(1, 1, 1, 0.55)
-      font.family: pill.host.fontFamily
+      color: pill.activity.connected ? pill.host.theme.accent : Qt.rgba(1, 1, 1, 0.55)
+      font.family: pill.host.theme.fontFamily
       font.pixelSize: 19
     }
   }
@@ -81,8 +81,8 @@ Item {
     opacity: pill.shown ? 1 : 0
     Behavior on opacity {
       SequentialAnimation {
-        PauseAnimation { duration: pill.shown ? 120 * pill.host.motionScale : 0 }
-        NumberAnimation { duration: 180 * pill.host.motionScale; easing.type: Easing.OutQuad }
+        PauseAnimation { duration: pill.shown ? 120 * pill.host.theme.motionScale : 0 }
+        NumberAnimation { duration: 180 * pill.host.theme.motionScale; easing.type: Easing.OutQuad }
       }
     }
     Text {
@@ -128,10 +128,10 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     text: pill.deviceGlyph
     color: pill.activity.connected ? "#ffffff" : Qt.rgba(1, 1, 1, 0.55)
-    font.family: pill.host.fontFamily
+    font.family: pill.host.theme.fontFamily
     font.pixelSize: 32
     scale: pill.shown ? 1 : 0.4
-    Behavior on scale { NumberAnimation { duration: 360 * pill.host.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
   }
   Column {
     visible: pill.isDevice
@@ -173,8 +173,8 @@ Item {
     opacity: pill.shown && pill.deviceBattery >= 0 ? 1 : 0
     Behavior on opacity {
       SequentialAnimation {
-        PauseAnimation { duration: pill.shown ? 120 * pill.host.motionScale : 0 }
-        NumberAnimation { duration: 180 * pill.host.motionScale; easing.type: Easing.OutQuad }
+        PauseAnimation { duration: pill.shown ? 120 * pill.host.theme.motionScale : 0 }
+        NumberAnimation { duration: 180 * pill.host.theme.motionScale; easing.type: Easing.OutQuad }
       }
     }
     Canvas {

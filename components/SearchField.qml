@@ -24,8 +24,8 @@ Item {
     anchors.leftMargin: field.inset
     anchors.verticalCenter: parent.verticalCenter
     text: "󰍉"
-    color: field.host.colorMuted
-    font.family: field.host.fontFamily
+    color: field.host.theme.muted
+    font.family: field.host.theme.fontFamily
     font.pixelSize: field.iconSize
   }
   TextInput {
@@ -35,9 +35,9 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: field.inset
     anchors.verticalCenter: parent.verticalCenter
-    color: field.host.colorText
-    selectionColor: field.host.withAlpha(field.host.colorAccent, 0.4)
-    selectedTextColor: field.host.colorText
+    color: field.host.theme.text
+    selectionColor: field.host.theme.withAlpha(field.host.theme.accent, 0.4)
+    selectedTextColor: field.host.theme.text
     font.family: "Adwaita Sans"
     font.pixelSize: field.fontSize
     clip: true
@@ -47,7 +47,7 @@ Item {
       verticalAlignment: Text.AlignVCenter
       visible: input.text === ""
       text: field.placeholder
-      color: field.host.colorMuted
+      color: field.host.theme.muted
       font: input.font
     }
   }

@@ -40,17 +40,17 @@ Item {
     return false
   }
 
-  readonly property color panel: host.colorBackground
-  readonly property color text: host.colorText
-  readonly property color textMuted: Qt.tint(panel, host.withAlpha(text, 0.6))
-  readonly property color sidebar: Qt.tint(panel, host.withAlpha(text, 0.07))
-  readonly property color card: Qt.tint(panel, host.withAlpha(text, 0.075))
-  readonly property color well: Qt.tint(panel, host.withAlpha(text, 0.16))
-  readonly property color wellHover: Qt.tint(panel, host.withAlpha(text, 0.22))
-  readonly property color divider: host.withAlpha(text, 0.09)
-  readonly property color accent: host.colorAccent
-  readonly property color accentInk: host.colorAccentText
-  readonly property int animDuration: 180 * host.motionScale
+  readonly property color panel: host.theme.background
+  readonly property color text: host.theme.text
+  readonly property color textMuted: Qt.tint(panel, host.theme.withAlpha(text, 0.6))
+  readonly property color sidebar: Qt.tint(panel, host.theme.withAlpha(text, 0.07))
+  readonly property color card: Qt.tint(panel, host.theme.withAlpha(text, 0.075))
+  readonly property color well: Qt.tint(panel, host.theme.withAlpha(text, 0.16))
+  readonly property color wellHover: Qt.tint(panel, host.theme.withAlpha(text, 0.22))
+  readonly property color divider: host.theme.withAlpha(text, 0.09)
+  readonly property color accent: host.theme.accent
+  readonly property color accentInk: host.theme.accentText
+  readonly property int animDuration: 180 * host.theme.motionScale
 
   implicitHeight: 640
   onActiveChanged: {
@@ -139,7 +139,7 @@ Item {
           required property string modelData
           text: modelData
           color: settingsView.textMuted
-          font.family: settingsView.host.fontFamily
+          font.family: settingsView.host.theme.fontFamily
           font.pixelSize: 10
         }
       }
@@ -202,7 +202,7 @@ Item {
       anchors.centerIn: parent
       text: paneIcon.glyph
       color: paneIcon.neutral ? (paneIcon.onAccent ? settingsView.accent : settingsView.textMuted) : "#ffffff"
-      font.family: settingsView.host.fontFamily
+      font.family: settingsView.host.theme.fontFamily
       font.pixelSize: Math.round(paneIcon.width * 0.62)
     }
   }
@@ -287,7 +287,7 @@ Item {
       radius: 10
       color: settingsView.card
       border.width: 1
-      border.color: settingsView.host.withAlpha(settingsView.text, 0.04)
+      border.color: settingsView.host.theme.withAlpha(settingsView.text, 0.04)
       ColumnLayout {
         id: groupBody
         anchors.left: parent.left
@@ -318,7 +318,7 @@ Item {
     radius: 12
     color: settingsView.card
     border.width: 1
-    border.color: settingsView.host.withAlpha(settingsView.text, 0.04)
+    border.color: settingsView.host.theme.withAlpha(settingsView.text, 0.04)
     Column {
       id: headerColumn
       anchors.centerIn: parent
@@ -363,7 +363,7 @@ Item {
     Layout.preferredHeight: 36
     radius: 8
     visible: settingsView.pageMatches(title)
-    color: selected ? settingsView.accent : sideMouse.containsMouse ? settingsView.host.withAlpha(settingsView.text, 0.06) : "transparent"
+    color: selected ? settingsView.accent : sideMouse.containsMouse ? settingsView.host.theme.withAlpha(settingsView.text, 0.06) : "transparent"
     RowLayout {
       anchors.fill: parent
       anchors.leftMargin: 8
@@ -579,8 +579,8 @@ Item {
       height: 24
       radius: 6
       visible: !shortcutRow.asking
-      color: shortcutRow.recording ? settingsView.host.withAlpha(settingsView.accent, 0.16)
-        : keysMouse.containsMouse ? settingsView.well : settingsView.host.withAlpha(settingsView.well, 0)
+      color: shortcutRow.recording ? settingsView.host.theme.withAlpha(settingsView.accent, 0.16)
+        : keysMouse.containsMouse ? settingsView.well : settingsView.host.theme.withAlpha(settingsView.well, 0)
       Behavior on width { NumberAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
       Behavior on color { ColorAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
       // Focus ring: settles in from slightly larger, like macOS's.
@@ -591,7 +591,7 @@ Item {
         radius: parent.radius + 3
         color: "transparent"
         border.width: 3
-        border.color: settingsView.host.withAlpha(settingsView.accent, 0.55)
+        border.color: settingsView.host.theme.withAlpha(settingsView.accent, 0.55)
         opacity: shortcutRow.recording ? 1 : 0
         scale: shortcutRow.recording ? 1 : 1.12
         Behavior on opacity { NumberAnimation { duration: settingsView.animDuration; easing.type: Easing.OutCubic } }
@@ -632,7 +632,7 @@ Item {
       Text {
         text: "󰀪"
         color: "#febc2e"
-        font.family: settingsView.host.fontFamily
+        font.family: settingsView.host.theme.fontFamily
         font.pixelSize: 12
       }
       Text {
@@ -674,7 +674,7 @@ Item {
       radius: 14
       color: settingsView.sidebar
       border.width: 1
-      border.color: settingsView.host.withAlpha(settingsView.text, 0.05)
+      border.color: settingsView.host.theme.withAlpha(settingsView.text, 0.05)
       ColumnLayout {
         anchors.fill: parent
         anchors.leftMargin: 10
@@ -687,16 +687,16 @@ Item {
           Layout.preferredHeight: 28
           Layout.bottomMargin: 10
           radius: 7
-          color: settingsView.host.withAlpha(settingsView.text, 0.08)
+          color: settingsView.host.theme.withAlpha(settingsView.text, 0.08)
           border.width: searchInput.activeFocus ? 2 : 0
-          border.color: settingsView.host.withAlpha(settingsView.accent, 0.6)
+          border.color: settingsView.host.theme.withAlpha(settingsView.accent, 0.6)
           Text {
             anchors.left: parent.left
             anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             text: "󰍉"
             color: settingsView.textMuted
-            font.family: settingsView.host.fontFamily
+            font.family: settingsView.host.theme.fontFamily
             font.pixelSize: 14
           }
           Text {
@@ -998,12 +998,12 @@ Item {
     opacity: settingsView.menuButton ? 1 : 0
     scale: settingsView.menuButton ? 1 : 0.96
     transformOrigin: Item.Top
-    Behavior on opacity { NumberAnimation { duration: 110 * settingsView.host.motionScale } }
-    Behavior on scale { NumberAnimation { duration: 110 * settingsView.host.motionScale; easing.type: Easing.OutCubic } }
+    Behavior on opacity { NumberAnimation { duration: 110 * settingsView.host.theme.motionScale } }
+    Behavior on scale { NumberAnimation { duration: 110 * settingsView.host.theme.motionScale; easing.type: Easing.OutCubic } }
     radius: 9
-    color: Qt.tint(settingsView.panel, settingsView.host.withAlpha(settingsView.text, 0.13))
+    color: Qt.tint(settingsView.panel, settingsView.host.theme.withAlpha(settingsView.text, 0.13))
     border.width: 1
-    border.color: settingsView.host.withAlpha(settingsView.text, 0.1)
+    border.color: settingsView.host.theme.withAlpha(settingsView.text, 0.1)
     Column {
       id: menuColumn
       x: 5
@@ -1025,7 +1025,7 @@ Item {
             visible: menuItem.chosen
             text: "󰄬"
             color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
-            font.family: settingsView.host.fontFamily
+            font.family: settingsView.host.theme.fontFamily
             font.pixelSize: 12
           }
           Text {

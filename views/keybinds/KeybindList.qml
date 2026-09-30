@@ -89,7 +89,7 @@ ListPicker {
         text: String(bindRow.entry.name || "")
         textFormat: Text.PlainText
         elide: Text.ElideRight
-        color: keybinds.host.colorText
+        color: keybinds.host.theme.text
         font.family: "Adwaita Sans"
         font.pixelSize: 16
         font.weight: Font.Medium
@@ -108,15 +108,15 @@ ListPicker {
             width: Math.max(26, capLabel.implicitWidth + 14)
             height: 24
             radius: 6
-            color: keybinds.host.withAlpha(keybinds.host.colorText, 0.08)
+            color: keybinds.host.theme.withAlpha(keybinds.host.theme.text, 0.08)
             border.width: 1
-            border.color: keybinds.host.withAlpha(keybinds.host.colorText, 0.1)
+            border.color: keybinds.host.theme.withAlpha(keybinds.host.theme.text, 0.1)
             Text {
               id: capLabel
               anchors.centerIn: parent
               text: String(cap.modelData)
               textFormat: Text.PlainText
-              color: keybinds.host.colorMuted
+              color: keybinds.host.theme.muted
               font.family: "Adwaita Sans"
               font.pixelSize: 11
               font.weight: Font.DemiBold

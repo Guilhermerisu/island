@@ -17,17 +17,17 @@ ColumnLayout {
   property bool active: false
 
   // Keep the black island while deriving its controls from the active theme.
-  readonly property color accent: host.colorAccent
-  readonly property color accentInk: host.colorAccentText
-  readonly property color text: host.colorText
-  readonly property color textMuted: Qt.tint(host.colorBackground, host.withAlpha(text, 0.6))
-  readonly property color tile: Qt.tint(host.colorBackground, host.withAlpha(text, 0.11))
-  readonly property color card: Qt.tint(host.colorBackground, host.withAlpha(text, 0.075))
-  readonly property color edge: host.withAlpha(text, 0.05)
-  readonly property color well: Qt.tint(host.colorBackground, host.withAlpha(text, 0.16))
-  readonly property color wellHover: Qt.tint(host.colorBackground, host.withAlpha(text, 0.22))
-  readonly property string iconFont: host.fontFamily
-  readonly property int animDuration: 180 * host.motionScale
+  readonly property color accent: host.theme.accent
+  readonly property color accentInk: host.theme.accentText
+  readonly property color text: host.theme.text
+  readonly property color textMuted: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.6))
+  readonly property color tile: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.11))
+  readonly property color card: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.075))
+  readonly property color edge: host.theme.withAlpha(text, 0.05)
+  readonly property color well: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.16))
+  readonly property color wellHover: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.22))
+  readonly property string iconFont: host.theme.fontFamily
+  readonly property int animDuration: 180 * host.theme.motionScale
   property bool editMode: false
   property string draggedKey: ""
   property bool dragFromGallery: false
@@ -404,7 +404,7 @@ ColumnLayout {
     border.color: cc.edge
     opacity: available ? 1 : 0.5
     scale: tileMouse.pressed ? 0.97 : 1
-    Behavior on scale { NumberAnimation { duration: 120 * cc.host.motionScale; easing.type: Easing.OutCubic } }
+    Behavior on scale { NumberAnimation { duration: 120 * cc.host.theme.motionScale; easing.type: Easing.OutCubic } }
 
     Rectangle {
       id: badge
@@ -492,7 +492,7 @@ ColumnLayout {
       color: cc.text
       Behavior on width {
         enabled: !sliderMouse.pressed
-        NumberAnimation { duration: 140 * cc.host.motionScale; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 140 * cc.host.theme.motionScale; easing.type: Easing.OutCubic }
       }
     }
     Rectangle {
@@ -509,7 +509,7 @@ ColumnLayout {
       anchors.leftMargin: 14
       anchors.verticalCenter: parent.verticalCenter
       text: s.icon
-      color: sliderFill.width - parent.height > x + width ? cc.host.colorBackground : cc.textMuted
+      color: sliderFill.width - parent.height > x + width ? cc.host.theme.background : cc.textMuted
       font.family: cc.iconFont
       font.pixelSize: 18
     }
@@ -752,9 +752,9 @@ ColumnLayout {
           width: slot ? slot.width : 0
           height: slot ? slot.height : 0
           opacity: cc.draggedKey === modelData ? 0.25 : 1
-          Behavior on x { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
-          Behavior on y { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.motionScale; easing.type: Easing.OutCubic } }
-          Behavior on opacity { NumberAnimation { duration: 120 * cc.host.motionScale } }
+          Behavior on x { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.theme.motionScale; easing.type: Easing.OutCubic } }
+          Behavior on y { enabled: cc.editMode; NumberAnimation { duration: 190 * cc.host.theme.motionScale; easing.type: Easing.OutCubic } }
+          Behavior on opacity { NumberAnimation { duration: 120 * cc.host.theme.motionScale } }
 
           Loader {
             anchors.fill: parent
@@ -909,7 +909,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 32
         radius: 7
-        color: outputMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.08) : "transparent"
+        color: outputMouse.containsMouse ? cc.host.theme.withAlpha(cc.text, 0.08) : "transparent"
         Text {
           anchors.left: parent.left
           anchors.leftMargin: 10
@@ -985,7 +985,7 @@ ColumnLayout {
           Layout.fillWidth: true
           Layout.preferredHeight: 32
           radius: 7
-          color: inputMouse.containsMouse ? cc.host.withAlpha(cc.text, 0.08) : "transparent"
+          color: inputMouse.containsMouse ? cc.host.theme.withAlpha(cc.text, 0.08) : "transparent"
           Text {
             anchors.left: parent.left
             anchors.leftMargin: 10
@@ -1161,7 +1161,7 @@ ColumnLayout {
             anchors.topMargin: 12
             width: 32; height: 32; radius: 8
             color: brand ? brand.tile
-              : noteIcon.status === Image.Ready ? "transparent" : cc.host.withAlpha(cc.accent, 0.18)
+              : noteIcon.status === Image.Ready ? "transparent" : cc.host.theme.withAlpha(cc.accent, 0.18)
             Image {
               id: noteIcon
               anchors.fill: parent
@@ -1230,7 +1230,7 @@ ColumnLayout {
               wrapMode: Text.Wrap
               maximumLineCount: 3
               elide: Text.ElideRight
-              color: cc.host.withAlpha(cc.text, 0.72)
+              color: cc.host.theme.withAlpha(cc.text, 0.72)
               font.family: "Adwaita Sans"
               font.pixelSize: 13
             }

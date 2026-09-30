@@ -7,8 +7,8 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import Quickshell.Wayland
-import qs.Commons
 import "components"
+import "services"
 import "views"
 import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" as ClipboardHistory
 
@@ -81,7 +81,7 @@ Item {
       var score = c.hsvSaturation * 0.7 + c.hsvValue * 0.3
       if (score > bestScore) { bestScore = score; best = c }
     }
-    if (!best || best.hsvSaturation < 0.12) return colorAccent
+    if (!best || best.hsvSaturation < 0.12) return theme.accent
     return Qt.hsva(best.hsvHue, Math.min(1, best.hsvSaturation), Math.max(0.75, best.hsvValue), 1)
   }
   readonly property real volume: Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
@@ -99,40 +99,10 @@ Item {
   }
   readonly property string home: Quickshell.env("HOME")
 
-  readonly property QtObject settings: settingsData
-  FileView {
-    path: root.home + "/.config/omarchy/island.json"
-    watchChanges: true
-    printErrors: false
-    onFileChanged: reload()
-    onAdapterUpdated: writeAdapter()
-    onLoadFailed: function(error) {
-      if (error !== FileViewError.FileNotFound) return
-      writeAdapter()
-      Qt.callLater(reload)
-    }
-    JsonAdapter {
-      id: settingsData
-      property real motionScale: 1.5
-      property bool hoverLift: true
-      property bool clock24h: true
-      property bool mediaPill: true
-      property bool volumeHud: true
-      property int bannerSeconds: 5
-      property bool notch: false
-      property bool downloads: true
-      property bool clipboard: true
-      property bool systemUpdates: true
-      property bool batteryActivity: true
-      property bool bluetoothActivity: true
-      property bool workspaceHud: false
-      property bool colorfulSettingsIcons: true
-      property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
-      property string controlCenterHidden: "game,power,keyboard"
-      property bool microphoneMuteControl: false
-      property string askAi: "chatgpt"
-    }
-  }
+  readonly property var theme: themeData
+  Theme { id: themeData; settings: root.settings; home: root.home }
+  readonly property QtObject settings: islandSettings.values
+  IslandSettings { id: islandSettings; home: root.home }
   readonly property var controlCenterKeys: {
     var known = ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
     var saved = String(settings.controlCenterOrder || "").split(",")
@@ -159,7 +129,6 @@ Item {
   }
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
   readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
-  property string themeName: ""
 
   readonly property var clockDate: clock.date
   property string view: "rest"
@@ -306,24 +275,6 @@ Item {
   }
   readonly property int barSize: 0
   readonly property string position: "top"
-  readonly property string fontFamily: "monospace"
-  readonly property color colorBackground: "#000000"
-  readonly property bool themeTextIsLight: luminance(Color.foreground) > 0.5
-  readonly property color colorText: themeTextIsLight ? Color.foreground : Color.background
-  readonly property color colorMuted: themeTextIsLight ? Color.muted : withAlpha(colorText, 0.6)
-  readonly property color colorAccent: Color.accent
-  readonly property color colorAccentText: contrastOn(Color.accent)
-  readonly property color colorUrgent: Color.urgent
-  readonly property color colorSurface: Qt.tint(colorBackground, withAlpha(colorText, 0.07))
-
-  function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
-  function luminance(x) { return 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b }
-  function contrastOn(c) {
-    var l = luminance(c)
-    return Math.abs(l - luminance(colorBackground)) > Math.abs(l - luminance(colorText)) ? colorBackground : colorText
-  }
-
-  readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
 
   function notificationIconSource(row, appIconOnly) {
     if (!row) return ""
@@ -364,14 +315,6 @@ Item {
   }
 
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
-
-  FileView {
-    path: root.home + "/.local/state/omarchy/current/theme.name"
-    watchChanges: true
-    printErrors: false
-    onLoaded: root.themeName = text().trim()
-    onFileChanged: reload()
-  }
 
   onViewChanged: {
     if (view === "rest" && updateAnnouncePending) Qt.callLater(announceUpdate)
@@ -579,7 +522,7 @@ Item {
 
   Timer {
     id: surfaceRevealTimer
-    interval: 90 * root.motionScale
+    interval: 90 * root.theme.motionScale
     repeat: false
     onTriggered: root.surfaceContentReady = true
   }
@@ -774,7 +717,7 @@ Item {
           onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
-            ctx.fillStyle = root.colorBackground
+            ctx.fillStyle = root.theme.background
             ctx.beginPath()
             ctx.moveTo(r, 0)
             ctx.lineTo(r, r)
@@ -794,7 +737,7 @@ Item {
           onPaint: {
             var ctx = getContext("2d")
             ctx.reset()
-            ctx.fillStyle = root.colorBackground
+            ctx.fillStyle = root.theme.background
             ctx.beginPath()
             ctx.moveTo(0, 0)
             ctx.lineTo(0, r)
@@ -808,7 +751,7 @@ Item {
           id: island
           x: (parent.width - width) / 2
           y: root.barHidden && root.view === "rest" ? -height - 12 : root.settings.notch ? 0 : 8
-          Behavior on y { NumberAnimation { duration: 300 * root.motionScale; easing.type: Easing.OutCubic } }
+          Behavior on y { NumberAnimation { duration: 300 * root.theme.motionScale; easing.type: Easing.OutCubic } }
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
@@ -833,17 +776,17 @@ Item {
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
           property real radiusCap: root.volumePill ? 20 : root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
-            NumberAnimation { duration: 390 * root.motionScale; easing.type: Easing.OutQuint }
+            NumberAnimation { duration: 390 * root.theme.motionScale; easing.type: Easing.OutQuint }
           }
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
           scale: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch ? 1.07 : 1
-          Behavior on scale { NumberAnimation { duration: 240 * root.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.8 } }
+          Behavior on scale { NumberAnimation { duration: 240 * root.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 1.8 } }
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
-          color: root.colorBackground
+          color: root.theme.background
           clip: true
-          readonly property real springStiffness: 6.5 / root.motionScale
+          readonly property real springStiffness: 6.5 / root.theme.motionScale
           property real springWidth: targetWidth
           property real springHeight: targetHeight
           Behavior on springWidth {
@@ -854,7 +797,7 @@ Item {
           }
           width: Math.max(40, springWidth)
           height: Math.max(28, springHeight)
-          Behavior on color { ColorAnimation { duration: 240 * root.motionScale; easing.type: Easing.InOutQuad } }
+          Behavior on color { ColorAnimation { duration: 240 * root.theme.motionScale; easing.type: Easing.InOutQuad } }
 
           MouseArea {
             anchors.fill: parent
