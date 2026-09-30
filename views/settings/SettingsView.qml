@@ -28,7 +28,7 @@ Item {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance colorful sidebar icons colorful live activities neutral motion animation speed hover lift pill notch style 24-hour clock",
+      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock",
       "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices volume hud workspace workspaces keyboard layout indicator languages",
       "Notifications": "notifications banner duration",
@@ -195,7 +195,7 @@ Item {
           width: scroller.width - 8
           spacing: 20
 
-          PaneHeader { view: settingsView; page: settingsView.currentPage; compact: page === "Live Activities"; Layout.topMargin: 4 }
+          PaneHeader { view: settingsView; page: settingsView.currentPage; Layout.topMargin: 4 }
           GeneralPage { view: settingsView }
           SearchPage { view: settingsView }
           ActivitiesPage { view: settingsView }
