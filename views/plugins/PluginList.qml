@@ -4,9 +4,12 @@ import Quickshell.Io
 import "../../components"
 
 // Plugins added with `omarchy plugin add` (every third-party plugin but the
-// bar in use). Enter opens an enabled panel, overlay, or menu plugin through
-// the shell; on any other plugin it flips enabled. Shift+Enter always flips
-// enabled, the same as `omarchy plugin enable|disable`.
+// bar in use, and the island's own notifications companion, which setup
+// manages: switching it off here would quietly bring back Omarchy's
+// notifications and send the island back to "Click to Setup"). Enter opens
+// an enabled panel, overlay, or menu plugin through the shell; on any other
+// plugin it flips enabled. Shift+Enter always flips enabled, the same as
+// `omarchy plugin enable|disable`.
 ListPicker {
   id: plugins
   placeholder: "Search plugins"
@@ -44,7 +47,7 @@ ListPicker {
         plugins.loading = false
         try {
           plugins.all = JSON.parse(text).filter(function(p) {
-            return !p.firstParty && (p.kinds || []).indexOf("bar") === -1
+            return !p.firstParty && (p.kinds || []).indexOf("bar") === -1 && p.id !== "guilhermerisu.notifications"
           }).map(function(p) {
             var kinds = p.kinds || []
             return {
