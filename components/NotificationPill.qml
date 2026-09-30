@@ -10,11 +10,11 @@ Item {
   required property var host
   // The island rectangle; the app tile sizes itself from its height.
   required property Item shape
-  readonly property var row: host.lastNotification || ({})
+  readonly property var row: host.notifications.last || ({})
   property bool imageFailed: false
   onRowChanged: imageFailed = false
-  readonly property string iconSource: host.notificationIconSource(host.lastNotification, imageFailed)
-  readonly property var brand: host.notificationBrand(row)
+  readonly property string iconSource: host.notifications.iconSource(host.notifications.last, imageFailed)
+  readonly property var brand: host.notifications.brand(row)
 
     opacity: host.notificationPill ? 1 : 0
   visible: opacity > 0.01
@@ -74,7 +74,7 @@ Item {
         anchors.left: parent.left
         anchors.right: age.left
         anchors.rightMargin: 8
-        text: host.notificationTitle(pill.row)
+        text: host.notifications.title(pill.row)
         textFormat: Text.PlainText
         elide: Text.ElideRight
         // iOS's type: a semibold title and a regular body of nearly the same
@@ -89,7 +89,7 @@ Item {
         id: age
         anchors.right: parent.right
         anchors.baseline: title.baseline
-        text: host.notificationAge(pill.row.timestamp)
+        text: host.notifications.age(pill.row.timestamp)
         textFormat: Text.PlainText
         color: Qt.rgba(1, 1, 1, 0.45)
         font.family: "Adwaita Sans"

@@ -1085,7 +1085,7 @@ ColumnLayout {
         Item { Layout.fillWidth: true }
         // macOS push button.
         Rectangle {
-          visible: cc.host.history.length > 0
+          visible: cc.host.notifications.history.length > 0
           implicitWidth: clearLabel.implicitWidth + 20
           implicitHeight: 22
           radius: 6
@@ -1105,13 +1105,13 @@ ColumnLayout {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: cc.host.clearAllNotifications()
+            onClicked: cc.host.notifications.clearAll()
           }
         }
       }
 
       Text {
-        visible: cc.host.history.length === 0
+        visible: cc.host.notifications.history.length === 0
         Layout.fillWidth: true
         Layout.topMargin: 4
         Layout.bottomMargin: 8
@@ -1123,13 +1123,13 @@ ColumnLayout {
       }
 
       ListView {
-        visible: cc.host.history.length > 0
+        visible: cc.host.notifications.history.length > 0
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(contentHeight, 240)
         clip: true
         spacing: 8
         boundsBehavior: Flickable.StopAtBounds
-        model: cc.host.history
+        model: cc.host.notifications.history
         delegate: Rectangle {
           id: note
           required property var modelData
@@ -1144,7 +1144,7 @@ ColumnLayout {
             anchors.fill: parent
             hoverEnabled: true
             enabled: !!note.modelData.isActive
-            onClicked: cc.host.notificationCommand("invokeKey", note.modelData)
+            onClicked: cc.host.notifications.command("invokeKey", note.modelData)
           }
           // The notification's image or app icon; a letter avatar when
           // there's none (or it fails to load).
@@ -1153,8 +1153,8 @@ ColumnLayout {
             // A live image handle dies with the shell; fall back to the app
             // icon (then the letter) when it no longer loads.
             property bool imageFailed: false
-            readonly property string source: cc.host.notificationIconSource(note.modelData, imageFailed)
-            readonly property var brand: cc.host.notificationBrand(note.modelData)
+            readonly property string source: cc.host.notifications.iconSource(note.modelData, imageFailed)
+            readonly property var brand: cc.host.notifications.brand(note.modelData)
             anchors.left: parent.left
             anchors.leftMargin: 12
             anchors.top: parent.top
@@ -1202,7 +1202,7 @@ ColumnLayout {
                 anchors.left: parent.left
                 anchors.right: noteAge.left
                 anchors.rightMargin: 8
-                text: cc.host.notificationTitle(note.modelData)
+                text: cc.host.notifications.title(note.modelData)
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: cc.text
@@ -1215,7 +1215,7 @@ ColumnLayout {
                 id: noteAge
                 anchors.right: parent.right
                 anchors.baseline: noteTitle.baseline
-                text: cc.host.notificationAge(note.modelData.timestamp)
+                text: cc.host.notifications.age(note.modelData.timestamp)
                 textFormat: Text.PlainText
                 color: cc.textMuted
                 font.family: "Adwaita Sans"
@@ -1244,7 +1244,7 @@ ColumnLayout {
             color: closeMouse.containsMouse ? cc.text : cc.textMuted
             font.family: cc.iconFont
             font.pixelSize: 13
-            MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: cc.host.dismissNotification(note.modelData) }
+            MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: cc.host.notifications.dismiss(note.modelData) }
             Tooltip { text: "Dismiss" }
           }
         }

@@ -101,8 +101,6 @@ Item {
     if (!shown) hidden.push(key)
     settings.controlCenterHidden = hidden.join(",")
   }
-  readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
-  readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
 
   readonly property var clockDate: clock.date
   property string view: "rest"
@@ -209,15 +207,11 @@ Item {
   property bool surfaceContentReady: false
   property string feedback: ""
   property string feedbackKind: ""
-  property var activeNotifications: []
-  property var lastNotification: null
   property var surfaceNames: []
   function registerSurface(name) {
     if (surfaceNames.indexOf(name) === -1) surfaceNames = surfaceNames.concat([name])
   }
   readonly property bool surfaceOpen: surfaceNames.indexOf(view) !== -1
-  property var history: []
-  property string lastNotificationKey: ""
   property bool initialized: false
   readonly property bool barHidden: barOffFlag.count > 0
   FolderListModel {
@@ -230,44 +224,6 @@ Item {
   readonly property int barSize: 0
   readonly property string position: "top"
 
-  function notificationIconSource(row, appIconOnly) {
-    if (!row) return ""
-    if (notificationAgent(row)) return ""
-    var value = String((appIconOnly ? "" : row.image) || row.appIcon || "")
-    if (value === "") return ""
-    if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
-    if (value.charAt(0) === "/") return "file://" + value
-    return Quickshell.iconPath(value, true)
-  }
-
-  function notificationAgent(row) {
-    var summary = String(row.summary || "")
-    if (summary === "Claude Code") return "claude"
-    var fromTerminal = /ghostty|kitty|alacritty|foot|wezterm/i.test(String(row.appIcon || "") + " " + String(row.app || ""))
-    if (summary === "Codex" || (fromTerminal && /^(Ghostty|kitty|Alacritty|foot|WezTerm)$/.test(summary))) return "codex"
-    return ""
-  }
-  readonly property var notificationBrands: ({
-    claude: { glyph: "\uec82", tile: "#d97757", ink: "#ffffff" },
-    codex: { glyph: "\uec81", tile: "#f2f2f2", ink: "#000000" }
-  })
-  function notificationBrand(row) {
-    var agent = row ? notificationAgent(row) : ""
-    return agent ? notificationBrands[agent] : null
-  }
-  function notificationTitle(row) {
-    if (!row) return "Notification"
-    if (notificationAgent(row) === "codex") return "Codex"
-    return String(row.summary || row.app || "Notification")
-  }
-  function notificationAge(timestamp) {
-    var ms = Date.now() - Number(timestamp || 0)
-    if (!timestamp || ms < 60000) return "now"
-    if (ms < 3600000) return Math.floor(ms / 60000) + "m ago"
-    if (ms < 86400000) return Math.floor(ms / 3600000) + "h ago"
-    return Qt.formatDateTime(new Date(Number(timestamp)), "d MMM")
-  }
-
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   onViewChanged: {
@@ -275,7 +231,6 @@ Item {
     surfaceContentReady = false
     if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
     else surfaceRevealTimer.stop()
-    if (view === "controls") refreshHistory()
   }
 
   SystemClock { id: clock; precision: SystemClock.Minutes }
@@ -351,14 +306,12 @@ Item {
   function announceUpdate() {
     if (surfaceOpen || view === "feedback") { updateAnnouncePending = true; return }
     updateAnnouncePending = false
-    lastNotification = updateRow("A new version is ready. Click to update.")
-    showFeedback("", 10000, "notification")
+    showBanner(updateRow("A new version is ready. Click to update."), 10000)
   }
   function updateIsland() {
     if (updateState === "updating") return
     updateState = "updating"
-    lastNotification = updateRow("Updating Island…")
-    showFeedback("", 120000, "notification")
+    showBanner(updateRow("Updating Island…"), 120000)
     islandUpdate.running = true
   }
   Timer {
@@ -408,9 +361,8 @@ Item {
   function companionPillClicked() {
     if (companionStatus === "menu-invalid") menuEditor.running = true
     else if (companionFailure !== "") {
-      lastNotification = { summary: "Island Setup Failed · Click to Retry", body: companionFailure.charAt(0).toUpperCase() + companionFailure.slice(1),
-        glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true }
-      showFeedback("", 10000, "notification")
+      showBanner({ summary: "Island Setup Failed · Click to Retry", body: companionFailure.charAt(0).toUpperCase() + companionFailure.slice(1),
+        glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true }, 10000)
     }
     else installCompanion()
   }
@@ -481,97 +433,26 @@ Item {
     onTriggered: root.surfaceContentReady = true
   }
 
-  FileView {
-    id: feedFile
-    path: root.feedPath
-    watchChanges: true
-    printErrors: false
-    onLoaded: root.loadFeed(text())
-    onFileChanged: reload()
-  }
-
-  function loadFeed(raw) {
-    try {
-      var parsed = JSON.parse(raw || "{}")
-      var rows = Array.isArray(parsed.active) ? parsed.active : []
-      activeNotifications = rows
-      if (view === "controls") refreshHistory()
-      if (!rows.length) return
-      var current = rows[0]
-      var key = String(current.timestamp) + ":" + String(current.originalId)
-      if (key === lastNotificationKey) return
-      lastNotificationKey = key
-      lastNotification = current
-      if (!surfaceOpen) showFeedback(String(current.summary || current.app || "Notification"), settings.bannerSeconds * 1000, "notification")
-    } catch (e) {
-      console.warn("island: notification feed parse failed", e)
+  readonly property var notifications: notificationClient
+  NotificationClient {
+    id: notificationClient
+    home: root.home
+    historyVisible: root.view === "controls"
+    onArrived: function(row) {
+      if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"), root.settings.bannerSeconds * 1000, "notification")
     }
   }
-
-  Process {
-    id: historyProc
-    running: false
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.loadHistory(text)
-    }
+  // The island's own banners (setup, updates) in the notification pill.
+  function showBanner(row, duration) {
+    notifications.last = row
+    showFeedback("", duration, "notification")
   }
-
-  function refreshHistory() {
-    if (historyProc.running) return
-    historyProc.command = ["bash", "-c", "awk 1 \"$1\"/*.json 2>/dev/null || true", "--", historyDir]
-    historyProc.running = true
-  }
-
-  function loadHistory(raw) {
-    var rows = []
-    for (var j = 0; j < activeNotifications.length; j++) {
-      var active = Object.assign({}, activeNotifications[j])
-      active.isActive = true
-      rows.push(active)
-    }
-    var lines = String(raw || "").split("\n")
-    for (var i = 0; i < lines.length; i++) {
-      if (!lines[i].trim()) continue
-      try { rows.push(JSON.parse(lines[i])) } catch (e) { }
-    }
-    rows.sort(function(a, b) { return Number(b.timestamp || 0) - Number(a.timestamp || 0) })
-    history = rows.slice(0, 10)
-  }
-
-  function notificationKey(row) {
-    return String(row.timestamp) + ":" + String(row.originalId)
-  }
-
-  function notificationCommand(method, row) {
-    notificationProc.command = ["omarchy-shell", "notifications", method, notificationKey(row)]
-    notificationProc.running = true
-  }
-  Process { id: notificationProc; running: false; onExited: root.refreshHistory() }
 
   function dismissPillNotification() {
-    var row = lastNotification
+    var row = notifications.last
     feedbackKind = ""
     view = "rest"
-    if (row) notificationCommand("dismissKey", row)
-  }
-
-  function clearAllNotifications() {
-    history = []
-    notificationProc.command = ["bash", "-c", "omarchy-shell notifications dismissAll; omarchy-shell notifications clear"]
-    notificationProc.running = true
-  }
-
-  function dismissNotification(row) {
-    var key = notificationKey(row)
-    history = history.filter(function(r) { return notificationKey(r) !== key })
-    if (row.isActive) {
-      notificationProc.command = ["omarchy-shell", "notifications", "dismissKey", key]
-    } else {
-      var stem = String(row.timestamp) + "-" + String(row.originalId)
-      notificationProc.command = ["bash", "-c", "rm -f \"$1/$2.json\" \"$1/../images/$2\"-*", "--", historyDir, stem]
-    }
-    notificationProc.running = true
+    if (row) notifications.command("dismissKey", row)
   }
 
   property string menuRoute: "root"
@@ -758,8 +639,8 @@ Item {
             enabled: root.view === "rest" || root.view === "feedback"
             onClicked: function(mouse) {
               feedbackTimer.stop()
-              if (root.notificationPill && root.lastNotification && root.lastNotification.islandUpdate) root.updateIsland()
-              else if (root.notificationPill && root.lastNotification && root.lastNotification.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.installCompanion() }
+              if (root.notificationPill && root.notifications.last && root.notifications.last.islandUpdate) root.updateIsland()
+              else if (root.notificationPill && root.notifications.last && root.notifications.last.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.installCompanion() }
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
               else if (root.activityPill) root.view = root.activity.kind === "bluetooth" ? "bluetooth" : "controls"
