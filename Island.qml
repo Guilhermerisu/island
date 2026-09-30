@@ -83,6 +83,7 @@ Item {
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
   readonly property bool activityPill: view === "feedback" && feedbackKind === "activity"
   readonly property bool workspacesPill: view === "feedback" && feedbackKind === "workspaces"
+  readonly property bool keyboardPill: view === "feedback" && feedbackKind === "keyboard"
 
   // ---------- Workspace switches ----------
 
@@ -100,6 +101,40 @@ Item {
   readonly property int focusedWorkspaceId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
   onFocusedWorkspaceIdChanged: {
     if (activities.ready && settings.workspaceHud && focusedWorkspaceId > 0) showFeedback("", 1200, "workspaces")
+  }
+
+  // ---------- Keyboard layout switches ----------
+
+  // The main keyboard's layouts ("us", "mn") and which is active, read from
+  // Hyprland on each switch and shown for a moment (see KeyboardPill).
+  property string keyboardLayoutName: ""
+  property var keyboardLayoutCodes: []
+  property int keyboardLayoutIndex: 0
+  Process {
+    id: keyboardLayoutRead
+    command: ["hyprctl", "devices", "-j"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        try {
+          var boards = JSON.parse(text).keyboards || []
+          var main = boards.filter(function(k) { return k.main })[0] || boards[0]
+          if (!main) return
+          root.keyboardLayoutName = String(main.active_keymap || "")
+          root.keyboardLayoutCodes = String(main.layout || "").split(",").filter(function(l) { return l !== "" })
+          root.keyboardLayoutIndex = main.active_layout_index || 0
+          root.showFeedback("", 1400, "keyboard")
+        } catch (e) {}
+      }
+    }
+  }
+  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (event.name === "activelayout" && root.activities.ready && root.settings.keyboardHud && !keyboardLayoutRead.running)
+        keyboardLayoutRead.running = true
+    }
   }
 
   // ---------- Device live activities: battery, Bluetooth ----------
@@ -386,6 +421,7 @@ Item {
             : root.activityPill && root.activities.current.kind === "bluetooth" ? 360
             : root.clipboardPill || root.activityPill ? 320
             : root.workspacesPill ? root.workspaceIds.length * 24 + 42
+            : root.keyboardPill ? 170 + root.keyboardLayoutCodes.length * 38
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
@@ -395,7 +431,7 @@ Item {
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : root.notificationPill ? 84
             : root.activityPill && root.activities.current.kind === "bluetooth" ? 64
-            : root.clipboardPill || root.activityPill ? (root.settings.notch ? 40 : 44)
+            : root.clipboardPill || root.activityPill || root.keyboardPill ? (root.settings.notch ? 40 : 44)
             : root.workspacesPill ? (root.settings.notch ? 36 : 40)
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
@@ -452,6 +488,8 @@ Item {
           DevicePill { host: root; anchors.fill: parent }
 
           WorkspacePill { host: root; anchors.fill: parent }
+
+          KeyboardPill { host: root; anchors.fill: parent }
 
           MediaPill { host: root; anchors.fill: parent }
 
