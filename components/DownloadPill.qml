@@ -17,7 +17,7 @@ Item {
 
   opacity: downloading || done ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
 
   function formatBytes(n) {
     if (n >= 1073741824) return (n / 1073741824).toFixed(1) + " GB"
@@ -31,7 +31,7 @@ Item {
   Item {
     anchors.fill: parent
     opacity: pill.downloading ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
+    Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
 
     // A still arrow inside a ring that spins (there's no total size to show
     // progress against).
@@ -113,7 +113,7 @@ Item {
   Item {
     anchors.fill: parent
     opacity: pill.done ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
+    Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
 
     Rectangle {
       id: check

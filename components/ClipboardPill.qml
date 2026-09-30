@@ -32,7 +32,7 @@ Item {
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * pill.host.theme.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: pill.host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
 
   // Leading: the thumbnail, or the symbol, springing in.
   Item {
@@ -42,7 +42,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 26; height: 26
     scale: pill.shown ? 1 : 0.4
-    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
+    Behavior on scale { NumberAnimation { duration: 360 * pill.host.theme.motionScale; easing.type: Easing.OutCubic } }
     ClippingRectangle {
       anchors.fill: parent
       visible: pill.thumbnailReady

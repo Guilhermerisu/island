@@ -18,7 +18,7 @@ ClippingRectangle {
   color: "transparent"
   opacity: host.volumePill ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { NumberAnimation { duration: opacity > 0.5 ? 70 : 150 * host.theme.motionScale; easing.type: Easing.InOutQuad } }
+  Behavior on opacity { NumberAnimation { duration: host.theme.feedbackFadeDuration; easing.type: Easing.OutCubic } }
 
   // Grey track behind the fill: solid, since the clipping shape
   // drops translucent colors (it's white at 16% over the black island).

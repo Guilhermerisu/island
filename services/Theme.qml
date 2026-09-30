@@ -20,6 +20,8 @@ Item {
   readonly property color urgent: Color.urgent
   readonly property color surface: Qt.tint(background, withAlpha(text, 0.07))
   readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
+  // Shared timing keeps pill content fades consistent at every speed.
+  readonly property int feedbackFadeDuration: Math.round(100 * motionScale)
   // The current Omarchy theme's name, for the theme and wallpaper switchers.
   property string name: ""
 
