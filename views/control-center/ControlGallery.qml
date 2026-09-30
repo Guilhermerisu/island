@@ -7,11 +7,10 @@ import "../../components"
 ColumnLayout {
   id: gallery
   required property var controlCenter
-  required property Component quickControl
-  required property Component soundControl
-  required property Component microphoneControl
-  required property Component displayControl
+  required property var controlLayout
   readonly property var cc: controlCenter
+  readonly property var controls: controlCenter.controls
+  readonly property var layout: controlLayout
   readonly property var sections: [
     { title: "Connectivity", keys: ["wifi", "bluetooth"] },
     { title: "Focus & System", keys: ["focus", "microphoneMute", "night", "game", "power", "keyboard"] },
@@ -24,8 +23,8 @@ ColumnLayout {
   }
   function keysFor(section) {
     return section.keys.filter(function(key) {
-      return !gallery.cc.host.controlCenterIsShown(key)
-        && (!gallery.cc.isMicrophoneControl(key) || gallery.cc.controlPresent(key))
+      return !gallery.controls.isShown(key)
+        && (!gallery.controls.isMicrophoneControl(key) || gallery.controls.controlPresent(key))
     })
   }
   function resetScroll() { galleryScroll.contentY = 0 }
@@ -33,7 +32,7 @@ ColumnLayout {
   spacing: 12
   Text {
     Layout.fillWidth: true
-    text: gallery.cc.removeDropActive
+    text: gallery.layout.removeDropActive
       ? "Release to remove this control."
       : "Drag a control into the layout above. Scroll to see more."
     color: gallery.cc.textMuted
@@ -81,7 +80,7 @@ ColumnLayout {
               delegate: Item {
                 id: choice
                 required property string modelData
-                readonly property bool wide: gallery.cc.controlWide(modelData)
+                readonly property bool wide: gallery.controls.controlWide(modelData)
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
                 Layout.columnSpan: wide ? 2 : 1
@@ -94,9 +93,7 @@ ColumnLayout {
                   enabled: false
                   property string controlKey: choice.modelData
                   property bool galleryPreview: true
-                  sourceComponent: choice.modelData === "sound" ? gallery.soundControl
-                    : choice.modelData === "microphone" ? gallery.microphoneControl
-                    : choice.modelData === "display" ? gallery.displayControl : gallery.quickControl
+                  sourceComponent: gallery.cc.controlComponent(choice.modelData)
                 }
                 Rectangle {
                   anchors.fill: parent
@@ -134,21 +131,21 @@ ColumnLayout {
                   onPressed: function(mouse) { pressX = mouse.x; pressY = mouse.y }
                   onPositionChanged: function(mouse) {
                     if (!pressed) return
-                    if (gallery.cc.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
-                    if (gallery.cc.draggedKey === "")
-                      gallery.cc.beginDrag(choice.modelData, true, choice.width - 8, choice.height - 8)
-                    gallery.cc.moveDrag(addMouse, mouse.x, mouse.y)
+                    if (gallery.layout.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
+                    if (gallery.layout.draggedKey === "")
+                      gallery.layout.beginDrag(choice.modelData, true, choice.width - 8, choice.height - 8)
+                    gallery.layout.moveDrag(addMouse, mouse.x, mouse.y)
                   }
                   onReleased: function(mouse) {
-                    if (gallery.cc.dragFromGallery && gallery.cc.draggedKey === choice.modelData) {
-                      gallery.cc.moveDrag(addMouse, mouse.x, mouse.y)
-                      gallery.cc.finishDrag()
+                    if (gallery.layout.dragFromGallery && gallery.layout.draggedKey === choice.modelData) {
+                      gallery.layout.moveDrag(addMouse, mouse.x, mouse.y)
+                      gallery.layout.finishDrag()
                     }
                   }
-                  onCanceled: gallery.cc.endDrag()
+                  onCanceled: gallery.layout.endDrag()
                 }
                 Tooltip {
-                  text: "Drag to Add " + gallery.cc.controlTitle(choice.modelData)
+                  text: "Drag to Add " + gallery.controls.controlTitle(choice.modelData)
                 }
               }
             }

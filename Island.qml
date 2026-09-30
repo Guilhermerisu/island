@@ -75,30 +75,6 @@ Item {
   Theme { id: themeData; settings: root.settings; home: root.home }
   readonly property QtObject settings: islandSettings.values
   IslandSettings { id: islandSettings; home: root.home }
-  readonly property var controlCenterKeys: {
-    var known = ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
-    var saved = String(settings.controlCenterOrder || "").split(",")
-    var result = []
-    for (var i = 0; i < saved.length; i++)
-      if (known.indexOf(saved[i]) !== -1 && result.indexOf(saved[i]) === -1) result.push(saved[i])
-    for (var j = 0; j < known.length; j++)
-      if (result.indexOf(known[j]) === -1) result.push(known[j])
-    return result
-  }
-  function controlCenterTitle(key) {
-    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", power: "Power Mode", keyboard: "Keyboard", sound: "Sound", microphone: "Microphone", microphoneMute: "Microphone", display: "Display" }
-    return names[key] || key
-  }
-  function controlCenterIsShown(key) {
-    if (key === "microphoneMute" && !settings.microphoneMuteControl) return false
-    return String(settings.controlCenterHidden || "").split(",").indexOf(key) === -1
-  }
-  function setControlCenterShown(key, shown) {
-    if (key === "microphoneMute") settings.microphoneMuteControl = shown
-    var hidden = String(settings.controlCenterHidden || "").split(",").filter(function(item) { return item !== "" && item !== key })
-    if (!shown) hidden.push(key)
-    settings.controlCenterHidden = hidden.join(",")
-  }
 
   readonly property var clockDate: clock.date
   property string view: "rest"
