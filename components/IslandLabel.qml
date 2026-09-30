@@ -14,13 +14,13 @@ Text {
   // Notifications have their own layout; don't flash their text in
   // this label while it fades out.
   text: host.view === "feedback" && !host.notificationPill && !host.volumePill ? host.feedback
-    : host.companionNeedsSetup ? "󰀦  " + host.companionWarning
+    : host.setup.needsSetup ? "󰀦  " + host.setup.warning
     : host.settings.clock24h ? Qt.formatDateTime(host.clockDate, "HH:mm")
     // Qt only counts hours to 12 when there's an AM/PM marker; iOS drops it.
     : Qt.formatDateTime(host.clockDate, "h:mm AP").replace(/\s*[AP]M$/i, "")
   // A fixed soft off-white on the always-black island; the setup
   // warning keeps the theme's urgent color.
-  color: host.view === "rest" && host.companionNeedsSetup ? host.theme.urgent : "#e2e6de"
+  color: host.view === "rest" && host.setup.needsSetup ? host.theme.urgent : "#e2e6de"
   // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
   // digits from shifting as the time changes.
   font.family: "Adwaita Sans"

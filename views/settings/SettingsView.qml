@@ -396,7 +396,7 @@ Item {
 
   // ---------- Keybinds ----------
 
-  readonly property string bindingsScript: host.companionDir + "/bindings.sh"
+  readonly property string bindingsScript: host.setup.companionDir + "/bindings.sh"
   property var shortcuts: []
   property string recordingId: ""
   property string recordHint: ""

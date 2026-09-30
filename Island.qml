@@ -22,7 +22,7 @@ Item {
 
   readonly property var nowPlaying: nowPlayingData
   NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
-  readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !companionNeedsSetup && settings.mediaPill && !downloadPill
+  readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !setup.needsSetup && settings.mediaPill && !downloadPill
 
   property string askQuestion: ""
   readonly property var askProviders: ({
@@ -41,9 +41,9 @@ Item {
   DownloadTracker { id: downloadTracker; enabled: root.settings.downloads }
   readonly property var packages: packageTracker
   PackageUpdateTracker { id: packageTracker; enabled: root.settings.systemUpdates }
-  readonly property bool downloadDone: view === "rest" && !companionNeedsSetup
+  readonly property bool downloadDone: view === "rest" && !setup.needsSetup
     && (downloads.finishedName !== "" || packages.finishedTitle !== "")
-  readonly property bool downloadActive: view === "rest" && !companionNeedsSetup
+  readonly property bool downloadActive: view === "rest" && !setup.needsSetup
     && (downloads.active || packages.active) && !downloadDone
   readonly property bool downloadPill: downloadDone || downloadActive
   Process { id: downloadOpener }
@@ -265,37 +265,13 @@ Item {
   onVolumeChanged: volumeFeedback()
   onMutedChanged: volumeFeedback()
   onSinkReadyChanged: volumeFeedback()
-  Component.onCompleted: {
-    initialized = true
-    companionCheck.running = true
-  }
+  Component.onCompleted: initialized = true
 
-  readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "").replace(/\/$/, "")
-  readonly property string companionDir: pluginDir + "/companion"
-  property string companionStatus: ""
-  property bool companionInstalling: false
-  property bool setupRunning: false
-  // Why the last setup failed, from the status file; empty when it didn't.
-  property string companionFailure: ""
-  property bool companionRecheck: false
-  readonly property bool companionNeedsSetup: companionStatus !== "" && companionStatus !== "ok"
-  readonly property string companionWarning: companionInstalling ? "Setting up…"
-    : companionStatus === "menu-invalid" ? "Fix omarchy-menu.jsonc"
-    : companionFailure !== "" ? "Setup failed · Click for details" : "Click to Setup"
-  readonly property string menuExtensionPath: home + "/.config/omarchy/extensions/omarchy-menu.jsonc"
-  readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy"
-
-  Process {
-    id: companionCheck
-    command: ["bash", root.companionDir + "/check.sh"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        root.companionStatus = String(text || "").trim()
-        if (root.companionRecheck) { root.companionRecheck = false; Qt.callLater(function() { companionCheck.running = true }); return }
-        if (!root.setupRunning) root.companionInstalling = false
-      }
-    }
+  readonly property var setup: companionSetup
+  CompanionSetup {
+    id: companionSetup
+    home: root.home
+    onFailureBanner: function(row) { root.showBanner(row, 10000) }
   }
 
   property string updateState: ""
@@ -325,7 +301,7 @@ Item {
   }
   Process {
     id: updateCheck
-    command: ["bash", "-c", "cd \"$1\" && [ -d .git ] || exit 0; export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -oBatchMode=yes'; remote=$(timeout 30 git ls-remote origin HEAD 2>/dev/null | cut -f1); [ -n \"$remote\" ] || exit 0; git merge-base --is-ancestor \"$remote\" HEAD 2>/dev/null || echo available", "update-check", root.pluginDir]
+    command: ["bash", "-c", "cd \"$1\" && [ -d .git ] || exit 0; export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -oBatchMode=yes'; remote=$(timeout 30 git ls-remote origin HEAD 2>/dev/null | cut -f1); [ -n \"$remote\" ] || exit 0; git merge-base --is-ancestor \"$remote\" HEAD 2>/dev/null || echo available", "update-check", root.setup.pluginDir]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -337,84 +313,7 @@ Item {
   }
   Process {
     id: islandUpdate
-    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", root.pluginDir.replace(/.*\//, "")]
-  }
-
-  // Setup runs detached and reports through a status file: installing the
-  // companion makes the shell reload the island, which would otherwise end
-  // setup with it and lose track of how it went. Its output goes to
-  // island-setup.log next to the status file.
-  // A broken menu file can't take the island's entries, so the pill opens it
-  // for fixing; the check runs again whenever it's saved.
-  Process { id: menuEditor; command: ["omarchy-launch-editor", root.menuExtensionPath] }
-  FileView {
-    path: root.menuExtensionPath
-    watchChanges: true
-    printErrors: false
-    onFileChanged: {
-      reload()
-      if (!companionCheck.running && !root.companionInstalling) companionCheck.running = true
-    }
-  }
-  // A failed setup shows its reason as a banner first; clicking the banner
-  // runs setup again.
-  function companionPillClicked() {
-    if (companionStatus === "menu-invalid") menuEditor.running = true
-    else if (companionFailure !== "") {
-      showBanner({ summary: "Island Setup Failed · Click to Retry", body: companionFailure.charAt(0).toUpperCase() + companionFailure.slice(1),
-        glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true }, 10000)
-    }
-    else installCompanion()
-  }
-  function installCompanion() {
-    if (companionInstalling) return
-    companionFailure = ""
-    companionInstalling = true
-    companionInstall.running = true
-  }
-  Process {
-    id: companionInstall
-    command: ["setsid", "-f", "bash", "-c", "mkdir -p \"$(dirname \"$2\")\"; exec bash \"$1\" >\"$2\" 2>&1 </dev/null",
-      "island-setup", root.companionDir + "/install.sh", root.stateDir + "/island-setup.log"]
-  }
-  FileView {
-    id: setupStatusFile
-    path: root.stateDir + "/island-setup"
-    watchChanges: true
-    printErrors: false
-    onFileChanged: reload()
-    onLoaded: root.setupStatusChanged(text())
-  }
-  // "running <started>", "done", or "failed". A run older than two minutes
-  // was cut short.
-  function setupStatusChanged(raw) {
-    var parts = String(raw || "").trim().split(/\s+/)
-    var running = parts[0] === "running" && Date.now() / 1000 - Number(parts[1] || 0) < 120
-    setupRunning = running
-    if (running) { companionInstalling = true; return }
-    companionFailure = parts[0] === "failed" ? parts.slice(1).join(" ") || "setup stopped unexpectedly"
-      : parts[0] === "running" ? "setup stopped before it finished" : ""
-    // Keep showing "Setting up…" until the check below says how it went.
-    if (companionCheck.running) companionRecheck = true
-    else companionCheck.running = true
-  }
-  // The status file may not exist until setup creates it, which a file watch
-  // can miss; look again while setup runs, and give up after two minutes.
-  Timer {
-    interval: 2000
-    repeat: true
-    running: root.companionInstalling
-    onTriggered: setupStatusFile.reload()
-  }
-  Timer {
-    interval: 120000
-    running: root.companionInstalling
-    onTriggered: {
-      root.setupRunning = false
-      root.companionInstalling = false
-      root.companionFailure = "setup didn't finish within two minutes"
-      companionCheck.running = true
-    }
+    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", root.setup.pluginDir.replace(/.*\//, "")]
   }
 
   Timer {
@@ -482,9 +381,9 @@ Item {
       root.ask(question)
       return root.view
     }
-    function companionStatus(): string { return root.companionStatus }
+    function companionStatus(): string { return root.setup.status }
     function installCompanion(): string {
-      root.installCompanion()
+      root.setup.install()
       return "installing"
     }
     function showHistory(): string {
@@ -595,7 +494,7 @@ Item {
             : root.clipboardPill || root.activityPill ? 320
             : root.workspacesPill ? root.workspaceIds.length * 24 + 42
             : root.view === "feedback" ? 280
-            : root.companionNeedsSetup ? (root.companionWarning.length > 24 ? 320 : 250)
+            : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
             : root.downloadActive ? (root.downloads.active ? 240 : 280)
             : root.mediaPill ? 240
@@ -640,11 +539,11 @@ Item {
             onClicked: function(mouse) {
               feedbackTimer.stop()
               if (root.notificationPill && root.notifications.last && root.notifications.last.islandUpdate) root.updateIsland()
-              else if (root.notificationPill && root.notifications.last && root.notifications.last.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.installCompanion() }
+              else if (root.notificationPill && root.notifications.last && root.notifications.last.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.setup.install() }
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
               else if (root.activityPill) root.view = root.activity.kind === "bluetooth" ? "bluetooth" : "controls"
-              else if (root.view === "rest" && root.companionNeedsSetup) root.companionPillClicked()
+              else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
               else root.view = "controls"
