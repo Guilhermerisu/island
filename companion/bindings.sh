@@ -4,9 +4,11 @@
 #
 #   bindings.sh init               write the file if it's missing, taking the
 #                                  keys the user already uses for each action
-#   bindings.sh list               id, label, keys, and command of every island action
+#   bindings.sh list               id, label, keys, command, and addon of every island action
 #   bindings.sh bound              every live binding: keys, description, command
 #   bindings.sh set <id> <keys>    bind an action ("" clears it)
+#   bindings.sh addons <ids>       the enabled addons, comma-separated: the
+#                                  others' bindings are kept but switched off
 #   bindings.sh reset              forget every change and match the keys again
 #   bindings.sh remove [--dry-run] delete the file and its loader line
 set -euo pipefail
@@ -16,7 +18,9 @@ hyprland="$HOME/.config/hypr/hyprland.lua"
 loader='require("default.hypr.require_optional").module("hypr.island-bindings")'
 prefix="omarchy-shell guilhermerisu.island"
 
-# id|label|island command|Omarchy default keys|stock commands that do the same
+# id|label|island command|Omarchy default keys|stock commands that do the same|addon
+# An action that opens an addon's view is only bound while the addon is
+# enabled (see `addons`).
 catalog=(
   'menu|Omarchy menu|show menu|SUPER + SPACE|omarchy-menu toggle;omarchy-menu toggle root;omarchy-menu'
   'apps|App launcher|apps|SUPER + ALT + SPACE|omarchy-menu toggle apps'
@@ -69,10 +73,17 @@ records() {
     done || true
 }
 
-# The file's current keys, as "command<TAB>keys".
+# The file's current keys, as "command<TAB>keys", switched off or not.
 current() {
   [[ -f $file ]] || return 0
-  sed -nE 's/^island\("([^"]*)", "[^"]*", "([^"]*)"\)$/\2\t\1/p' "$file"
+  sed -nE 's/^(-- off: )?island\("([^"]*)", "[^"]*", "([^"]*)"\)$/\3\t\2/p' "$file"
+}
+
+# The enabled addons, as the file last recorded them.
+enabled_addons=""
+[[ -f $file ]] && enabled_addons=$(sed -n 's/^-- addons: //p' "$file" | head -n 1)
+addon_enabled() {
+  [[ -z $1 || ",$enabled_addons," == *",$1,"* ]]
 }
 
 declare -A keys_for
@@ -97,9 +108,11 @@ write_file() {
     echo "  o.bind(keys, description, \"$prefix \" .. command)"
     echo "end"
     echo
+    echo "-- addons: $enabled_addons"
     for spec in "${catalog[@]}"; do
       id=$(field "$spec" 0)
       [[ -n ${keys_for[$id]:-} ]] || continue
+      addon_enabled "$(field "$spec" 5)" || printf -- '-- off: '
       printf 'island("%s", "%s", "%s")\n' "${keys_for[$id]}" "$(field "$spec" 1)" "$(field "$spec" 2)"
     done
     echo
@@ -154,7 +167,7 @@ cmd_list() {
   local spec id
   for spec in "${catalog[@]}"; do
     id=$(field "$spec" 0)
-    printf '%s\t%s\t%s\t%s\n' "$id" "$(field "$spec" 1)" "${keys_for[$id]:-}" "$prefix $(field "$spec" 2)"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$(field "$spec" 1)" "${keys_for[$id]:-}" "$prefix $(field "$spec" 2)" "$(field "$spec" 5)"
   done
 }
 
@@ -182,6 +195,20 @@ cmd_set() {
   write_file
   add_loader
   reload
+}
+
+# Rewrites the file only when the list changed, and reloads Hyprland only when
+# a binding did, so the island can call this on every start.
+cmd_addons() {
+  local wanted before
+  wanted=$(tr ',' '\n' <<<"${1:-}" | sed '/^$/d' | sort -u | paste -sd, -)
+  [[ -f $file ]] || return 0
+  [[ $wanted == "$enabled_addons" ]] && grep -q '^-- addons: ' "$file" && return 0
+  before=$(grep -v '^-- addons: ' "$file")
+  enabled_addons=$wanted
+  load_current
+  write_file
+  [[ $(grep -v '^-- addons: ' "$file") == "$before" ]] || reload
 }
 
 cmd_reset() {
@@ -214,7 +241,8 @@ case "${1:-}" in
   list) cmd_list ;;
   bound) records ;;
   set) (( $# >= 2 )) || { echo "Usage: bindings.sh set <id> <keys>" >&2; exit 1; }; cmd_set "$2" "${3:-}" ;;
+  addons) cmd_addons "${2:-}" ;;
   reset) cmd_reset ;;
   remove) cmd_remove "${2:-}" ;;
-  *) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

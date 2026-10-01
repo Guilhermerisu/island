@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 
 // Addons: niche features kept out of the core, each switched on in Settings →
 // Addons and kept in its own folder here. An addon's files are only read
@@ -9,9 +10,10 @@ Item {
   required property var host
   required property var settings
 
-  // Each addon: id, name, icon, description, whether it starts enabled, its
-  // root file (relative to this folder), the bindings.sh ids it owns, and its
-  // options ({ key, label, detail, type: "switch" | "popup", default, choices }).
+  // Each addon: id, name, icon (and its color), description, whether it
+  // starts enabled, its root file (relative to this folder), and its options
+  // ({ key, label, detail, type: "switch" | "popup", default, choices }). Its
+  // views' keybindings are tagged with its id in companion/bindings.sh.
   readonly property var entries: []
 
   function entry(id) {
@@ -42,6 +44,25 @@ Item {
     next[id] = Object.assign({}, next[id] || {})
     next[id][key] = value
     settings.addonOptions = next
+  }
+
+  // A disabled addon's keybindings are switched off in island-bindings.lua,
+  // their keys kept (see companion/bindings.sh). Synced on start and on
+  // each change; the script does nothing when the list is unchanged.
+  readonly property string enabledIds: entries.filter(function(e) { return addons.isEnabled(e.id) })
+    .map(function(e) { return e.id }).join(",")
+  onEnabledIdsChanged: syncBindings()
+  Component.onCompleted: syncBindings()
+  property bool bindingsStale: false
+  Process {
+    id: bindingSync
+    onExited: if (addons.bindingsStale) addons.syncBindings()
+  }
+  function syncBindings() {
+    if (bindingSync.running) { bindingsStale = true; return }
+    bindingsStale = false
+    bindingSync.command = ["bash", host.setup.companionDir + "/bindings.sh", "addons", enabledIds]
+    bindingSync.running = true
   }
 
   // The enabled addons' roots, in registry order.

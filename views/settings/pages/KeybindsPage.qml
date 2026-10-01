@@ -4,7 +4,8 @@ import Quickshell.Io
 import "../controls"
 
 // Settings → Keybinds: the island's shortcuts from companion/bindings.sh, and
-// recording new ones. While recording, Hyprland is switched to an empty
+// recording new ones. An addon's shortcuts show under Addons while it's
+// enabled. While recording, Hyprland is switched to an empty
 // submap so its own bindings don't take the keys.
 ColumnLayout {
   id: page
@@ -40,7 +41,7 @@ ColumnLayout {
         var list = []
         String(text || "").split("\n").forEach(function(line) {
           var cols = line.split("\t")
-          if (cols.length >= 2 && cols[0]) list.push({ id: cols[0], label: cols[1], keys: cols[2] || "", command: cols[3] || "" })
+          if (cols.length >= 2 && cols[0]) list.push({ id: cols[0], label: cols[1], keys: cols[2] || "", command: cols[3] || "", addon: cols[4] || "" })
         })
         page.shortcuts = list
       }
@@ -76,8 +77,8 @@ ColumnLayout {
 
   function setShortcut(id, keys) {
     shortcuts = shortcuts.map(function(entry) {
-      if (entry.id === id) return { id: entry.id, label: entry.label, keys: keys, command: entry.command }
-      if (keys !== "" && entry.keys === keys) return { id: entry.id, label: entry.label, keys: "", command: entry.command }
+      if (entry.id === id) return { id: entry.id, label: entry.label, keys: keys, command: entry.command, addon: entry.addon }
+      if (keys !== "" && entry.keys === keys) return { id: entry.id, label: entry.label, keys: "", command: entry.command, addon: entry.addon }
       return entry
     })
     queueRun(["set", id, keys])
@@ -175,8 +176,15 @@ ColumnLayout {
     { title: "Menus", ids: ["menu", "apps", "power"] },
     { title: "Search", ids: ["keybinds", "emoji", "clipboard"] },
     { title: "Appearance", ids: ["themes", "wallpapers"] },
-    { title: "Island", ids: ["controls", "player", "plugins", "tray", "settings"] }
+    { title: "Island", ids: ["controls", "player", "plugins", "tray", "settings"] },
+    { title: "Addons", addons: true }
   ]
+  function sectionEntries(section) {
+    var addons = page.view.host.addons
+    return page.shortcuts.filter(function(e) {
+      return section.addons ? e.addon !== "" && addons.isEnabled(e.addon) : e.addon === "" && section.ids.indexOf(e.id) !== -1
+    })
+  }
 
   Repeater {
     model: page.shortcutSections
@@ -184,7 +192,8 @@ ColumnLayout {
       id: section
       view: page.view
       required property var modelData
-      readonly property var entries: page.shortcuts.filter(function(e) { return section.modelData.ids.indexOf(e.id) !== -1 })
+      readonly property var entries: page.sectionEntries(modelData)
+      visible: entries.length > 0
       title: modelData.title
       Repeater {
         model: section.entries
