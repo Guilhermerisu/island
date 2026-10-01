@@ -16,12 +16,13 @@ Item {
   readonly property var settings: host.settings
   property string currentPage: "General"
   property string searchQuery: ""
-  readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Keybinds"]
+  readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Addons", "Keybinds"]
   readonly property var pageInfo: ({
     "General": { icon: "󰒓", color: "#8e8e93", about: "Appearance, motion, and how the pill looks at rest." },
     "Search": { icon: "󰍉", color: "#5e7a99", about: "Get answers to launcher questions right in the island." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
     "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
+    "Addons": { icon: "󰐱", color: "#af52de", about: "Extras that stay unloaded until you switch them on." },
     "Keybinds": { icon: "󰌌", color: "#8e8e93", about: "Keyboard shortcuts that open each part of the island." }
   })
   function pageMatches(page) {
@@ -32,6 +33,9 @@ Item {
       "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices volume hud workspace workspaces keyboard layout indicator languages",
       "Notifications": "notifications banner duration",
+      "Addons": "addons extensions extras " + host.addons.entries.map(function(addon) {
+        return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
+      }).join(" "),
       "Keybinds": "keybinds keybindings keyboard shortcuts keys"
     }
     return String(terms[page] || page).toLowerCase().indexOf(query) !== -1
@@ -200,6 +204,7 @@ Item {
           SearchPage { view: settingsView }
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
+          AddonsPage { view: settingsView }
           KeybindsPage { view: settingsView }
         }
       }
