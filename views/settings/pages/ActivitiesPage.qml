@@ -19,7 +19,6 @@ ColumnLayout {
     { kind: "bluetooth", key: "bluetoothActivity", title: "Bluetooth Devices", description: "Show Bluetooth connection status" },
     { kind: "battery", key: "batteryActivity", title: "Battery", description: "Charging and low battery alerts" },
     { kind: "volume", key: "volumeHud", title: "Volume", description: "Display the current volume level" },
-    { kind: "keyboard", key: "keyboardHud", title: "Keyboard Layout", description: "Show the active keyboard layout" },
     { kind: "clipboard", key: "clipboard", title: "Clipboard", description: "Preview recently copied content" }
   ]
 

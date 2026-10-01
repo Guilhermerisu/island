@@ -13,7 +13,7 @@ Item {
   readonly property bool colorfulActivities: !!view.settings.colorfulLiveActivities
   readonly property bool transfer: kind === "downloads" || kind === "updates"
   readonly property color transferColor: colorfulActivities ? "#30d158" : accent
-  readonly property string glyph: ({ media: "󰝚", clipboard: "󰆏", downloads: "󰁅", updates: "󰏗", bluetooth: "󰋋", keyboard: "󰌌" })[kind] || ""
+  readonly property string glyph: ({ media: "󰝚", clipboard: "󰆏", downloads: "󰁅", updates: "󰏗", bluetooth: "󰋋" })[kind] || ""
 
   Rectangle {
     id: pill
@@ -104,8 +104,8 @@ Item {
     Text {
       x: preview.kind === "battery" ? 47 : preview.transfer ? 57 : 43
       anchors.verticalCenter: parent.verticalCenter
-      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.kind === "keyboard" || preview.transfer
-      text: ({ battery: "Charging", clipboard: "Hello, world!", keyboard: "English" })[preview.kind] || "12:34"
+      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer
+      text: ({ battery: "Charging", clipboard: "Hello, world!" })[preview.kind] || "12:34"
       color: "#ffffff"
       font.family: "Adwaita Sans"
       font.pixelSize: preview.transfer ? 12 : 10
@@ -121,31 +121,6 @@ Item {
       font.family: "Adwaita Sans"
       font.pixelSize: 10
       font.weight: Font.DemiBold
-    }
-    Row {
-      anchors.right: parent.right
-      anchors.rightMargin: 12
-      anchors.verticalCenter: parent.verticalCenter
-      visible: preview.kind === "keyboard"
-      spacing: 7
-      Repeater {
-        model: ["EN", "PT"]
-        delegate: Rectangle {
-          id: language
-          required property int index
-          required property string modelData
-          width: 29; height: 20; radius: 10
-          color: index === 0 ? "#ffffff" : "transparent"
-          Text {
-            anchors.centerIn: parent
-            text: language.modelData
-            color: language.index === 0 ? "#000000" : "#888888"
-            font.family: "Adwaita Sans"
-            font.pixelSize: 9
-            font.weight: Font.Bold
-          }
-        }
-      }
     }
     Column {
       x: 52

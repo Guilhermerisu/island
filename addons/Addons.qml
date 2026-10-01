@@ -18,7 +18,9 @@ Item {
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
       description: "Apps' tray icons and menus, in a view" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
-      description: "Open and switch Omarchy plugins, in a view" }
+      description: "Open and switch Omarchy plugins, in a view" },
+    { id: "keyboard", name: "Keyboard Layout", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
+      description: "Show the layout on the pill when it changes" }
   ]
 
   function entry(id) {

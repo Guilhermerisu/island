@@ -1,12 +1,15 @@
 import QtQuick
+import "../../components"
 
 // Shown for a moment when the keyboard layout changes: the keyboard leading,
 // the layout's name in the middle, and trailing a chip for each layout with a
 // white capsule that slides from the one you left, like WorkspacePill.
+// `layout` is the KeyboardAddon.
 Item {
   id: pill
-  required property var host
-  readonly property bool shown: host.keyboardPill
+  required property var layout
+  readonly property var host: layout.host
+  readonly property bool shown: layout.pillShown
   readonly property int chip: 30
   readonly property int gap: 8
 
@@ -35,7 +38,7 @@ Item {
     anchors.right: trailing.left
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.host.keyboardLayoutName
+    text: pill.layout.name
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: "#ffffff"
@@ -52,11 +55,11 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
-    width: pill.host.keyboardLayoutCodes.length * (pill.chip + pill.gap) - pill.gap
+    width: pill.layout.codes.length * (pill.chip + pill.gap) - pill.gap
     height: 22
 
     Rectangle {
-      x: pill.host.keyboardLayoutIndex * (pill.chip + pill.gap)
+      x: pill.layout.index * (pill.chip + pill.gap)
       width: pill.chip
       height: parent.height
       radius: height / 2
@@ -67,7 +70,7 @@ Item {
     Row {
       spacing: pill.gap
       Repeater {
-        model: pill.host.keyboardLayoutCodes
+        model: pill.layout.codes
         delegate: Text {
           required property string modelData
           required property int index
@@ -76,7 +79,7 @@ Item {
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           text: modelData.toUpperCase()
-          color: index === pill.host.keyboardLayoutIndex ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
+          color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: "Adwaita Sans"
           font.pixelSize: 11
