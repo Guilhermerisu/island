@@ -14,7 +14,12 @@ Item {
   // starts enabled, its root file (relative to this folder), and its options
   // ({ key, label, detail, type: "switch" | "popup", default, choices }). Its
   // views' keybindings are tagged with its id in companion/bindings.sh.
-  readonly property var entries: []
+  readonly property var entries: [
+    { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
+      description: "Apps' tray icons and menus, in a view" },
+    { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
+      description: "Open and switch Omarchy plugins, in a view" }
+  ]
 
   function entry(id) {
     for (var i = 0; i < entries.length; i++) if (entries[i].id === id) return entries[i]

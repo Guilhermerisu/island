@@ -33,8 +33,8 @@ catalog=(
   'controls|Control center|toggle||'
   'player|Now playing|show player||'
   'settings|Island settings|show settings||'
-  'plugins|Plugins|show plugins||'
-  'tray|System tray|show tray||'
+  'plugins|Plugins|show plugins|||plugins'
+  'tray|System tray|show tray|||tray'
 )
 
 field() { local IFS='|'; local parts=($1); printf '%s' "${parts[$2]:-}"; }
@@ -96,6 +96,7 @@ load_current() {
   done < <(current)
 }
 
+# Leaves the file alone when nothing in it would change.
 write_file() {
   local tmp spec id
   mkdir -p "$(dirname "$file")"
@@ -122,7 +123,7 @@ write_file() {
     echo '  hl.bind("SUPER + SHIFT + CTRL + ALT + ESCAPE", hl.dsp.submap("reset"))'
     echo 'end)'
   } >"$tmp"
-  mv "$tmp" "$file"
+  if [[ -f $file ]] && cmp -s "$tmp" "$file"; then rm -f "$tmp"; else mv "$tmp" "$file"; fi
 }
 
 add_loader() {
@@ -197,13 +198,12 @@ cmd_set() {
   reload
 }
 
-# Rewrites the file only when the list changed, and reloads Hyprland only when
-# a binding did, so the island can call this on every start.
+# Reloads Hyprland only when a binding changed, so the island can call this on
+# every start.
 cmd_addons() {
   local wanted before
   wanted=$(tr ',' '\n' <<<"${1:-}" | sed '/^$/d' | sort -u | paste -sd, -)
   [[ -f $file ]] || return 0
-  [[ $wanted == "$enabled_addons" ]] && grep -q '^-- addons: ' "$file" && return 0
   before=$(grep -v '^-- addons: ' "$file")
   enabled_addons=$wanted
   load_current
