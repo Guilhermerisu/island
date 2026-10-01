@@ -45,6 +45,7 @@ Item {
 
   // Lets the island know this view exists (for its open/closed logic).
   Component.onCompleted: host.registerSurface(viewName)
+  Component.onDestruction: host.unregisterSurface(viewName)
 
   Item {
     id: holder

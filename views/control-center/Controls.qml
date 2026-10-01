@@ -10,7 +10,8 @@ import Quickshell.Services.UPower
 // What the control center's controls show and do: network, sound,
 // microphone, Bluetooth, battery and power profile, keyboard layout, Focus,
 // Night Shift, Game Mode and brightness, plus which controls are shown and in
-// what order (saved in the island's settings). Nothing here is drawn.
+// what order (saved in the island's settings), enabled addons' tiles among
+// them (see addons/Addon.qml). Nothing here is drawn.
 Item {
   id: controls
   required property var host
@@ -18,8 +19,10 @@ Item {
 
   // --- Which controls, in what order ---
 
+  readonly property var known: ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
+    .concat(host.addons.tiles.map(function(tile) { return tile.key }))
   readonly property var keys: {
-    var known = ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
+    var known = controls.known
     var saved = String(settings.controlCenterOrder || "").split(",")
     var result = []
     for (var i = 0; i < saved.length; i++)
@@ -28,7 +31,17 @@ Item {
       if (result.indexOf(known[j]) === -1) result.push(known[j])
     return result
   }
+  // A disabled addon's tiles keep their place for when it's back.
+  function saveOrder(order) {
+    var saved = String(settings.controlCenterOrder || "").split(",").filter(function(key) { return key !== "" })
+    var result = order.slice()
+    for (var i = 0; i < saved.length; i++)
+      if (result.indexOf(saved[i]) === -1) result.splice(Math.min(i, result.length), 0, saved[i])
+    settings.controlCenterOrder = result.join(",")
+  }
   function title(key) {
+    var tile = host.addons.tileFor(key)
+    if (tile) return String(tile.title || key)
     var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", power: "Power Mode", keyboard: "Keyboard", sound: "Sound", microphone: "Microphone", microphoneMute: "Microphone", display: "Display" }
     return names[key] || key
   }
@@ -156,6 +169,8 @@ Item {
   readonly property bool dnd: notifications ? !!notifications.doNotDisturb : false
   readonly property bool nightOn: nightlight ? !!nightlight.enabled : false
   function controlPresent(key) {
+    var tile = host.addons.tileFor(key)
+    if (tile) return tile.present !== false
     if (key === "night") return !!nightlight
     if (isMicrophoneControl(key)) return !!(microphoneSource && microphoneSource.audio)
     if (key === "sound") return !!(sink && sink.audio)
@@ -163,7 +178,10 @@ Item {
     return true
   }
   function isMicrophoneControl(key) { return key === "microphone" || key === "microphoneMute" }
-  function controlWide(key) { return key === "sound" || key === "microphone" || key === "display" }
+  function controlWide(key) {
+    var tile = host.addons.tileFor(key)
+    return tile ? !!tile.wide : key === "sound" || key === "microphone" || key === "display"
+  }
   function controlIcon(key) {
     if (key === "microphoneMute") return microphoneMuted ? "󰍭" : "󰍬"
     if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"

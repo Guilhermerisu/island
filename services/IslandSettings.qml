@@ -42,6 +42,9 @@ Item {
       property string controlCenterHidden: "game,power,keyboard"
       property bool microphoneMuteControl: false
       property string askAi: "chatgpt"
+      // Addon id → enabled, and addon id → its options (see addons/Addons.qml).
+      property var addons: ({})
+      property var addonOptions: ({})
     }
   }
 }

@@ -14,7 +14,8 @@ ColumnLayout {
   readonly property var sections: [
     { title: "Connectivity", keys: ["wifi", "bluetooth"] },
     { title: "Focus & System", keys: ["focus", "microphoneMute", "night", "game", "power", "keyboard"] },
-    { title: "Sound & Display", keys: ["sound", "microphone", "display"] }
+    { title: "Sound & Display", keys: ["sound", "microphone", "display"] },
+    { title: "Addons", keys: gallery.cc.host.addons.tiles.map(function(tile) { return tile.key }) }
   ]
   readonly property bool hasResults: {
     for (var i = 0; i < sections.length; i++)
@@ -91,6 +92,7 @@ ColumnLayout {
                   anchors.fill: parent
                   anchors.margins: 4
                   enabled: false
+                  property var center: gallery.cc
                   property string controlKey: choice.modelData
                   property bool galleryPreview: true
                   sourceComponent: gallery.cc.controlComponent(choice.modelData)

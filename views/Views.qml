@@ -20,7 +20,8 @@ import "tray"
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
 // island gets, its padding, and the view itself. Adding a view means adding
-// its folder under views/ and one Surface here.
+// its folder under views/ and one Surface here. Enabled addons' views are
+// added at the end (see addons/Addon.qml).
 Item {
   id: views
   required property var host
@@ -28,6 +29,10 @@ Item {
   readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, answerSurface, pluginsSurface, traySurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
+    for (var j = 0; j < addonSurfaces.count; j++) {
+      var surface = addonSurfaces.itemAt(j)
+      if (surface && surface.viewName === name) return surface
+    }
     return null
   }
 
@@ -164,5 +169,18 @@ Item {
     viewName: "power"
     padding: 18
     PowerMenu { host: views.host; active: powerSurface.active; anchors.fill: parent }
+  }
+
+  Repeater {
+    id: addonSurfaces
+    model: views.host.addons.views
+    delegate: Surface {
+      required property var modelData
+      host: views.host
+      viewName: modelData.name
+      fixedWidth: modelData.width || 0
+      padding: modelData.padding === undefined ? 16 : modelData.padding
+      Loader { anchors.fill: parent; sourceComponent: modelData.component }
+    }
   }
 }

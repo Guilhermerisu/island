@@ -5,6 +5,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
+import "addons"
 import "components"
 import "services"
 import "views"
@@ -84,6 +85,8 @@ Item {
   readonly property bool activityPill: view === "feedback" && feedbackKind === "activity"
   readonly property bool workspacesPill: view === "feedback" && feedbackKind === "workspaces"
   readonly property bool keyboardPill: view === "feedback" && feedbackKind === "keyboard"
+  // The addon whose pill is on the island, if any (see addons/Addon.qml).
+  readonly property var addonPill: view === "feedback" ? addons.pillFor(feedbackKind) : null
 
   // ---------- Workspace switches ----------
 
@@ -155,6 +158,9 @@ Item {
   }
 
 
+  readonly property var addons: addonHost
+  Addons { id: addonHost; host: root; settings: root.settings }
+
   readonly property var clipboard: clipboardWatcher
   ClipboardWatcher {
     id: clipboardWatcher
@@ -167,8 +173,18 @@ Item {
   property string feedback: ""
   property string feedbackKind: ""
   property var surfaceNames: []
+  // Once per screen's copy of a view; it stops counting as one when the last
+  // copy goes (an addon switched off, a screen unplugged).
   function registerSurface(name) {
-    if (surfaceNames.indexOf(name) === -1) surfaceNames = surfaceNames.concat([name])
+    surfaceNames = surfaceNames.concat([name])
+  }
+  function unregisterSurface(name) {
+    var i = surfaceNames.indexOf(name)
+    if (i === -1) return
+    var next = surfaceNames.slice()
+    next.splice(i, 1)
+    surfaceNames = next
+    if (view === name && next.indexOf(name) === -1) view = "rest"
   }
   readonly property bool surfaceOpen: surfaceNames.indexOf(view) !== -1
   property bool initialized: false
@@ -303,6 +319,8 @@ Item {
   IpcHandler {
     target: "guilhermerisu.island"
     function show(name: string): string {
+      // A view that isn't there (a disabled addon's) leaves the island alone.
+      if (!root.surfaceOpenFor(name)) return root.view
       if (name === "menu") root.menuRoute = "root"
       return root.toggleView(name)
     }
@@ -433,6 +451,7 @@ Item {
             : root.clipboardPill || root.activityPill ? 320
             : root.workspacesPill ? root.workspaceIds.length * 24 + 42
             : root.keyboardPill ? 170 + root.keyboardLayoutCodes.length * 38
+            : root.addonPill ? root.addonPill.pillWidth
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
             : root.downloadDone ? 360
@@ -443,6 +462,7 @@ Item {
             : root.notificationPill ? 84
             : root.activityPill && root.activities.current.kind === "bluetooth" ? 64
             : root.clipboardPill || root.activityPill || root.keyboardPill ? (root.settings.notch ? 40 : 44)
+            : root.addonPill ? root.addonPill.pillHeight
             : root.workspacesPill ? (root.settings.notch ? 36 : 40)
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
@@ -483,6 +503,7 @@ Item {
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
               else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth" : "controls"
+              else if (root.addonPill) root.addonPill.pillClicked()
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
@@ -501,6 +522,8 @@ Item {
           WorkspacePill { host: root; anchors.fill: parent }
 
           KeyboardPill { host: root; anchors.fill: parent }
+
+          AddonPills { host: root; anchors.fill: parent }
 
           MediaPill { host: root; anchors.fill: parent }
 

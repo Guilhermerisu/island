@@ -36,6 +36,8 @@ ColumnLayout {
     controls.refresh()
   }
   function controlComponent(key) {
+    var tile = host.addons.tileFor(key)
+    if (tile) return tile.component
     if (key === "sound") return soundCard
     if (key === "microphone") return microphoneCard
     if (key === "display") return displayCard

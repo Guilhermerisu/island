@@ -92,7 +92,7 @@ ColumnLayout {
     if (draggedKey !== "" && removeDropActive) {
       controls.setShown(draggedKey, false)
     } else if (draggedKey !== "" && dropActive) {
-      controls.settings.controlCenterOrder = previewOrder.join(",")
+      controls.saveOrder(previewOrder)
       if (dragFromGallery) controls.setShown(draggedKey, true)
     }
     endDrag()
@@ -188,7 +188,7 @@ ColumnLayout {
         return result
       }
       Repeater {
-        model: ["wifi", "bluetooth", "focus", "game", "night", "power", "keyboard", "sound", "microphone", "microphoneMute", "display"]
+        model: layout.controls.known
         delegate: Item {
           id: controlCard
           required property string modelData
@@ -205,6 +205,7 @@ ColumnLayout {
 
           Loader {
             anchors.fill: parent
+            property var center: layout.center
             property string controlKey: controlCard.modelData
             property bool galleryPreview: false
             sourceComponent: layout.center.controlComponent(controlCard.modelData)
@@ -305,6 +306,7 @@ ColumnLayout {
       Loader {
         anchors.fill: parent
         enabled: false
+        property var center: layout.center
         property string controlKey: layout.draggedKey
         property bool galleryPreview: layout.dragFromGallery
         sourceComponent: layout.center.controlComponent(layout.draggedKey)
