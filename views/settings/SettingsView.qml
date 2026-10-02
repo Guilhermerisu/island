@@ -4,11 +4,6 @@ import QtQuick.Layouts
 import "controls"
 import "pages"
 
-// The island's own settings, laid out like macOS System Settings: a sidebar
-// with search, and a pane of grouped rows. Opened from
-// the control center's gear; Esc goes back to it. Changes apply live and are
-// saved to ~/.config/omarchy/island.json (see services/IslandSettings.qml).
-// Each pane is a page in pages/; the rows and switches are in controls/.
 Item {
   id: settingsView
   required property var host
@@ -22,7 +17,7 @@ Item {
     "Search": { icon: "󰍉", color: "#5e7a99", about: "Get answers to launcher questions right in the island." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
     "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
-    "Addons": { icon: "󰐱", color: "#af52de", about: "Extras that stay unloaded until you switch them on." },
+    "Addons": { icon: "󰄐", color: "#0a84ff", about: "Extras that stay unloaded until you add them." },
     "Keybinds": { icon: "󰌌", color: "#8e8e93", about: "Keyboard shortcuts that open each part of the island." }
   })
   function pageMatches(page) {
@@ -33,7 +28,7 @@ Item {
       "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices volume hud workspace workspaces indicator",
       "Notifications": "notifications banner duration",
-      "Addons": "addons extensions extras " + host.addons.entries.map(function(addon) {
+      "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
         return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
       }).join(" "),
       "Keybinds": "keybinds keybindings keyboard shortcuts keys"
@@ -62,7 +57,6 @@ Item {
   readonly property int detailCaptionFontSize: 13
   readonly property int detailTitleFontSize: 19
 
-  // Keep keyboard-focused gallery cards inside the detail pane's viewport.
   function revealSettingsItem(item) {
     var top = item.mapToItem(groups, 0, 0).y
     var bottom = top + item.height
@@ -85,13 +79,10 @@ Item {
     else host.view = "controls"
   }
 
-  // ---------- Window ----------
-
   RowLayout {
     anchors.fill: parent
     spacing: 10
 
-    // Sidebar: search and the panes.
     Rectangle {
       Layout.preferredWidth: 212
       Layout.fillHeight: true
@@ -180,7 +171,6 @@ Item {
       }
     }
 
-    // Detail pane: the pane's groups, under its header.
     ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
@@ -211,9 +201,6 @@ Item {
     }
   }
 
-  // ---------- Pop-up menu ----------
-
-  // The open pop-up button; its choices show in popMenu, under it.
   property Item menuButton: null
   property var menuOptions: []
   property var menuValue
