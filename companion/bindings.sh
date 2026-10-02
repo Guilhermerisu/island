@@ -36,6 +36,7 @@ catalog=(
   'plugins|Plugins|show plugins|||plugins'
   'tray|System tray|show tray|||tray'
   'weather|Weather|show weather|||weather'
+  'calendar|Calendar|show calendar|||calendar'
 )
 
 field() { local IFS='|'; local parts=($1); printf '%s' "${parts[$2]:-}"; }

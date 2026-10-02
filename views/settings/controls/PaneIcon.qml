@@ -10,9 +10,12 @@ Item {
   property bool neutral: !paneIcon.view.settings.colorfulSettingsIcons
   property bool onAccent: false
   // Drawn in place of the glyph while colorful, each centred at x, y (as a
-  // share of the icon's size): { glyph, color, opacity, x, y, size } with
-  // size the glyph's pixel size, or { circle: true, ... } with size its
-  // diameter, both as a share of the icon's width.
+  // share of the icon's size), and cut to its shape: { glyph, color,
+  // opacity, x, y, size } with size the glyph's pixel size, or
+  // { circle: true, ... } with size its diameter, both as a share of the
+  // icon's width; or { rect: true, ..., width, height, radius } as shares
+  // of the icon's (radius of the rect's shorter side). A glyph can instead be today's { date: "month" } ("OCT") or
+  // { date: "day" } ("2"), in Adwaita Sans of `weight`.
   property var layers: []
   readonly property bool layered: layers.length > 0 && !neutral
   implicitWidth: 20
@@ -101,34 +104,65 @@ Item {
       font.family: paneIcon.view.host.theme.fontFamily
       font.pixelSize: Math.round(paneIcon.width * 0.6)
     }
-    Repeater {
-      model: paneIcon.layered ? paneIcon.layers : []
-      delegate: Item {
-        id: layer
-        required property var modelData
-        readonly property real size: paneIcon.width * modelData.size
-        x: paneIcon.width * modelData.x - width / 2
-        y: paneIcon.height * modelData.y - height / 2
-        width: modelData.circle ? size : layerGlyph.implicitWidth
-        height: modelData.circle ? size : layerGlyph.implicitHeight
-        opacity: modelData.opacity === undefined ? 1 : modelData.opacity
-        Rectangle {
-          visible: !!layer.modelData.circle
-          anchors.fill: parent
-          radius: width / 2
-          gradient: Gradient {
-            GradientStop { position: 0; color: Qt.lighter(layer.modelData.color, 1.15) }
-            GradientStop { position: 1; color: Qt.darker(layer.modelData.color, 1.08) }
+    // The layers, cut to the icon's shape.
+    Shape {
+      id: layerMask
+      anchors.fill: parent
+      visible: false
+      layer.enabled: paneIcon.layered
+      preferredRendererType: Shape.CurveRenderer
+      ShapePath {
+        strokeWidth: -1
+        fillColor: "#ffffff"
+        PathPolyline { path: paneIcon.outline }
+      }
+    }
+    Item {
+      anchors.fill: parent
+      visible: paneIcon.layered
+      layer.enabled: paneIcon.layered
+      layer.samples: 4
+      layer.effect: MultiEffect {
+        maskEnabled: true
+        maskSource: layerMask
+        maskThresholdMin: 0.5
+        maskSpreadAtMin: 1
+      }
+      Repeater {
+        model: paneIcon.layered ? paneIcon.layers : []
+        delegate: Item {
+          id: layer
+          required property var modelData
+          readonly property real size: paneIcon.width * (modelData.size || 0)
+          readonly property bool shaped: !!(modelData.circle || modelData.rect)
+          readonly property var today: paneIcon.view.host.clockDate
+          x: paneIcon.width * modelData.x - width / 2
+          y: paneIcon.height * modelData.y - height / 2
+          width: modelData.rect ? paneIcon.width * modelData.width : modelData.circle ? size : layerGlyph.implicitWidth
+          height: modelData.rect ? paneIcon.height * modelData.height : modelData.circle ? size : layerGlyph.implicitHeight
+          opacity: modelData.opacity === undefined ? 1 : modelData.opacity
+          Rectangle {
+            visible: layer.shaped
+            anchors.fill: parent
+            radius: layer.modelData.circle ? width / 2 : Math.min(width, height) * (layer.modelData.radius || 0)
+            gradient: Gradient {
+              GradientStop { position: 0; color: Qt.lighter(layer.modelData.color, 1.15) }
+              GradientStop { position: 1; color: Qt.darker(layer.modelData.color, 1.08) }
+            }
           }
-        }
-        Text {
-          id: layerGlyph
-          visible: !layer.modelData.circle
-          anchors.centerIn: parent
-          text: layer.modelData.glyph || ""
-          color: layer.modelData.color
-          font.family: paneIcon.view.host.theme.fontFamily
-          font.pixelSize: Math.round(layer.size)
+          Text {
+            id: layerGlyph
+            visible: !layer.shaped
+            anchors.centerIn: parent
+            text: layer.modelData.date === "month"
+              ? ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][layer.today.getMonth()]
+              : layer.modelData.date === "day" ? String(layer.today.getDate())
+              : layer.modelData.glyph || ""
+            color: layer.modelData.color
+            font.family: layer.modelData.date ? "Adwaita Sans" : paneIcon.view.host.theme.fontFamily
+            font.weight: layer.modelData.weight || Font.Normal
+            font.pixelSize: Math.round(layer.size)
+          }
         }
       }
     }

@@ -27,11 +27,46 @@ Item {
         { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon" },
         { key: "fahrenheit", label: "Fahrenheit", detail: "Show °F instead of °C", type: "switch", default: false }
       ] },
+    { id: "calendar", name: "Calendar", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
+      iconLayers: [
+        { rect: true, color: "#f2564f", x: 0.5, y: 0.13, width: 1, height: 0.36 },
+        { date: "month", color: "#ffffff", weight: Font.Bold, x: 0.5, y: 0.17, size: 0.2 },
+        { date: "day", color: "#2c2c2e", weight: Font.Light, x: 0.5, y: 0.63, size: 0.56 }
+      ],
+      description: "Your month and the day's events",
+      options: [
+        { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: "https://…/basic.ics" }
+      ] },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
+      iconLayers: [
+        { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
+        { circle: true, color: "#34c759", x: 0.56, y: 0.26, size: 0.07 },
+        { circle: true, color: "#ff9f0a", x: 0.68, y: 0.26, size: 0.07 },
+        { circle: true, color: "#5e5ce6", x: 0.8, y: 0.26, size: 0.07 },
+        { rect: true, color: "#ffffff", opacity: 0.95, x: 0.66, y: 0.61, width: 0.52, height: 0.46, radius: 0.16 },
+        { rect: true, color: "#c7c7cc", x: 0.66, y: 0.47, width: 0.34, height: 0.05, radius: 0.5 },
+        { rect: true, color: "#5e5ce6", x: 0.66, y: 0.61, width: 0.44, height: 0.12, radius: 0.3 },
+        { rect: true, color: "#ffffff", x: 0.66, y: 0.61, width: 0.34, height: 0.05, radius: 0.5 },
+        { rect: true, color: "#c7c7cc", x: 0.66, y: 0.75, width: 0.34, height: 0.05, radius: 0.5 }
+      ],
       description: "Apps tray icons and menus" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
+      iconLayers: [
+        { rect: true, color: "#ffffff", x: 0.33, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
+        { rect: true, color: "#ffffff", x: 0.67, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
+        { rect: true, color: "#ffffff", x: 0.33, y: 0.67, width: 0.3, height: 0.3, radius: 0.28 },
+        { rect: true, color: "#ffffff", opacity: 0.4, x: 0.67, y: 0.67, width: 0.3, height: 0.3, radius: 0.28 },
+        { glyph: "󰐕", color: "#ffffff", x: 0.67, y: 0.67, size: 0.28 }
+      ],
       description: "Open and switch Omarchy plugins" },
     { id: "keyboard", name: "Keyboard Layout", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
+      iconLayers: [{ rect: true, color: "#ffffff", x: 0.5, y: 0.55, width: 0.8, height: 0.5, radius: 0.16 }]
+        .concat([0.41, 0.55].reduce(function(keys, y) {
+          return keys.concat([0.23, 0.365, 0.5, 0.635, 0.77].map(function(x) {
+            return { rect: true, color: "#a9bcc2", x: x, y: y, width: 0.1, height: 0.09, radius: 0.25 }
+          }))
+        }, []))
+        .concat([{ rect: true, color: "#a9bcc2", x: 0.5, y: 0.69, width: 0.5, height: 0.09, radius: 0.4 }]),
       description: "Show the layout on the pill when it changes" }
   ]
 
