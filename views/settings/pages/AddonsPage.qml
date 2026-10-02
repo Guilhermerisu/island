@@ -34,7 +34,8 @@ ColumnLayout {
       readonly property bool on: page.addons.isEnabled(modelData.id)
       readonly property var options: modelData.options || []
       readonly property var shortcuts: page.view.keybinds ? page.view.keybinds.addonEntries(modelData.id) : []
-      readonly property bool hasOptions: options.length > 0 || shortcuts.length > 0
+      // Only an enabled addon has its options and shortcuts to open.
+      readonly property bool hasOptions: on && (options.length > 0 || shortcuts.length > 0)
       readonly property bool open: hasOptions && page.expanded === modelData.id
       Layout.fillWidth: true
       spacing: 4
@@ -107,7 +108,10 @@ ColumnLayout {
             anchors.verticalCenter: parent.verticalCenter
             view: page.view
             added: addon.on
-            onClicked: page.addons.setEnabled(addon.modelData.id, !addon.on)
+            onClicked: {
+              if (addon.on && page.expanded === addon.modelData.id) page.expanded = ""
+              page.addons.setEnabled(addon.modelData.id, !addon.on)
+            }
           }
           Text {
             anchors.verticalCenter: parent.verticalCenter
@@ -133,7 +137,6 @@ ColumnLayout {
         color: page.view.card
         border.width: 1
         border.color: page.view.host.theme.withAlpha(page.view.text, 0.04)
-        opacity: addon.on ? 1 : 0.5
         ColumnLayout {
           id: optionList
           anchors.left: parent.left
