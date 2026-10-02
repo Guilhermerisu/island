@@ -10,15 +10,27 @@ Item {
   required property var host
   required property var settings
 
-  // Each addon: id, name, icon (and its color), description, whether it
-  // starts enabled, its root file (relative to this folder), and its options
-  // ({ key, label, detail, type: "switch" | "popup", default, choices }). Its
-  // views' keybindings are tagged with its id in companion/bindings.sh.
+  // Each addon: id, name, icon (and its color, and optionally iconLayers drawn
+  // in its place, see PaneIcon), description, whether it starts enabled, its
+  // root file (relative to this folder), and its options
+  // ({ key, label, detail, type: "switch" | "popup" | "text", default, choices,
+  // placeholder }). Its views' keybindings are tagged with its id in
+  // companion/bindings.sh.
   readonly property var entries: [
+    { id: "weather", name: "Weather", icon: "󰖐", color: "#1f8ef1", default: false, source: "weather/WeatherAddon.qml",
+      iconLayers: [
+        { circle: true, color: "#ffd60a", x: 0.65, y: 0.37, size: 0.36 },
+        { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
+      ],
+      description: "Current conditions for your city",
+      options: [
+        { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon" },
+        { key: "fahrenheit", label: "Fahrenheit", detail: "Show °F instead of °C", type: "switch", default: false }
+      ] },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
-      description: "Apps' tray icons and menus, in a view" },
+      description: "Apps tray icons and menus" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
-      description: "Open and switch Omarchy plugins, in a view" },
+      description: "Open and switch Omarchy plugins" },
     { id: "keyboard", name: "Keyboard Layout", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
       description: "Show the layout on the pill when it changes" }
   ]

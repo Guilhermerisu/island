@@ -9,6 +9,12 @@ Item {
   property color tint: paneIcon.view.accent
   property bool neutral: !paneIcon.view.settings.colorfulSettingsIcons
   property bool onAccent: false
+  // Drawn in place of the glyph while colorful, each centred at x, y (as a
+  // share of the icon's size): { glyph, color, opacity, x, y, size } with
+  // size the glyph's pixel size, or { circle: true, ... } with size its
+  // diameter, both as a share of the icon's width.
+  property var layers: []
+  readonly property bool layered: layers.length > 0 && !neutral
   implicitWidth: 20
   implicitHeight: 20
 
@@ -80,7 +86,7 @@ Item {
     Text {
       anchors.centerIn: parent
       anchors.verticalCenterOffset: paneIcon.large ? 1 : 0.5
-      visible: !paneIcon.neutral
+      visible: !paneIcon.neutral && !paneIcon.layered
       text: paneIcon.glyph
       color: Qt.rgba(0, 0, 0, 0.18)
       font.family: paneIcon.view.host.theme.fontFamily
@@ -89,10 +95,42 @@ Item {
     Text {
       id: glyphText
       anchors.centerIn: parent
+      visible: !paneIcon.layered
       text: paneIcon.glyph
       color: paneIcon.ink
       font.family: paneIcon.view.host.theme.fontFamily
       font.pixelSize: Math.round(paneIcon.width * 0.6)
+    }
+    Repeater {
+      model: paneIcon.layered ? paneIcon.layers : []
+      delegate: Item {
+        id: layer
+        required property var modelData
+        readonly property real size: paneIcon.width * modelData.size
+        x: paneIcon.width * modelData.x - width / 2
+        y: paneIcon.height * modelData.y - height / 2
+        width: modelData.circle ? size : layerGlyph.implicitWidth
+        height: modelData.circle ? size : layerGlyph.implicitHeight
+        opacity: modelData.opacity === undefined ? 1 : modelData.opacity
+        Rectangle {
+          visible: !!layer.modelData.circle
+          anchors.fill: parent
+          radius: width / 2
+          gradient: Gradient {
+            GradientStop { position: 0; color: Qt.lighter(layer.modelData.color, 1.15) }
+            GradientStop { position: 1; color: Qt.darker(layer.modelData.color, 1.08) }
+          }
+        }
+        Text {
+          id: layerGlyph
+          visible: !layer.modelData.circle
+          anchors.centerIn: parent
+          text: layer.modelData.glyph || ""
+          color: layer.modelData.color
+          font.family: paneIcon.view.host.theme.fontFamily
+          font.pixelSize: Math.round(layer.size)
+        }
+      }
     }
   }
 }

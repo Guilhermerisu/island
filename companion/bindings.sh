@@ -35,6 +35,7 @@ catalog=(
   'settings|Island settings|show settings||'
   'plugins|Plugins|show plugins|||plugins'
   'tray|System tray|show tray|||tray'
+  'weather|Weather|show weather|||weather'
 )
 
 field() { local IFS='|'; local parts=($1); printf '%s' "${parts[$2]:-}"; }

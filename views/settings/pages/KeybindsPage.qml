@@ -4,9 +4,10 @@ import Quickshell.Io
 import "../controls"
 
 // Settings → Keybinds: the island's shortcuts from companion/bindings.sh, and
-// recording new ones. An addon's shortcuts show under Addons while it's
-// enabled. While recording, Hyprland is switched to an empty
-// submap so its own bindings don't take the keys.
+// recording new ones. Addons' shortcuts aren't listed here: they're set in
+// each addon's options on the Addons page, through this page's recorder.
+// While recording, Hyprland is switched to an empty submap so its own
+// bindings don't take the keys.
 ColumnLayout {
   id: page
   required property var view
@@ -14,9 +15,9 @@ ColumnLayout {
   Layout.fillWidth: true
   spacing: 20
 
-  // Loaded when the page opens; recording and a pending conflict end when
-  // it closes.
-  readonly property bool shown: view.active && view.currentPage === "Keybinds"
+  // Loaded when the page (or Addons, which shows each addon's shortcuts)
+  // opens; recording and a pending conflict end when it closes.
+  readonly property bool shown: view.active && (view.currentPage === "Keybinds" || view.currentPage === "Addons")
   onShownChanged: {
     if (shown) { shortcutList.running = true; boundList.running = true }
     else { stopRecording(); cancelPending() }
@@ -176,14 +177,13 @@ ColumnLayout {
     { title: "Menus", ids: ["menu", "apps", "power"] },
     { title: "Search", ids: ["keybinds", "emoji", "clipboard"] },
     { title: "Appearance", ids: ["themes", "wallpapers"] },
-    { title: "Island", ids: ["controls", "player", "settings"] },
-    { title: "Addons", addons: true }
+    { title: "Island", ids: ["controls", "player", "settings"] }
   ]
+  function addonEntries(addonId) {
+    return page.shortcuts.filter(function(e) { return e.addon === addonId })
+  }
   function sectionEntries(section) {
-    var addons = page.view.host.addons
-    return page.shortcuts.filter(function(e) {
-      return section.addons ? e.addon !== "" && addons.isEnabled(e.addon) : e.addon === "" && section.ids.indexOf(e.id) !== -1
-    })
+    return page.shortcuts.filter(function(e) { return e.addon === "" && section.ids.indexOf(e.id) !== -1 })
   }
 
   Repeater {

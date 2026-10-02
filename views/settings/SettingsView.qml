@@ -10,6 +10,8 @@ Item {
   property bool active: false
   readonly property var settings: host.settings
   property string currentPage: "General"
+  // The shortcuts, for the Addons page's rows too.
+  readonly property var keybinds: keybindsPage
   property string searchQuery: ""
   readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Addons", "Keybinds"]
   readonly property var pageInfo: ({
@@ -67,6 +69,10 @@ Item {
 
   implicitHeight: 640
   onActiveChanged: {
+    if (active && host.settingsPage !== "") {
+      currentPage = host.settingsPage
+      host.settingsPage = ""
+    }
     if (active) Qt.callLater(function() { settingsView.forceActiveFocus() })
     else menuButton = null
   }
@@ -195,7 +201,7 @@ Item {
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
           AddonsPage { view: settingsView }
-          KeybindsPage { view: settingsView }
+          KeybindsPage { id: keybindsPage; view: settingsView }
         }
       }
     }

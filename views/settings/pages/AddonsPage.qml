@@ -13,6 +13,18 @@ ColumnLayout {
   spacing: 4
 
   property string expanded: ""
+  // An addon asked to be shown (host.openSettings("Addons", id)) opens with
+  // its options out.
+  Connections {
+    target: page.view.host
+    function onSettingsAddonChanged() { page.takeAddon() }
+  }
+  Component.onCompleted: takeAddon()
+  function takeAddon() {
+    if (view.host.settingsAddon === "") return
+    expanded = view.host.settingsAddon
+    view.host.settingsAddon = ""
+  }
 
   Repeater {
     model: page.addons.entries
@@ -21,7 +33,8 @@ ColumnLayout {
       required property var modelData
       readonly property bool on: page.addons.isEnabled(modelData.id)
       readonly property var options: modelData.options || []
-      readonly property bool hasOptions: options.length > 0
+      readonly property var shortcuts: page.view.keybinds ? page.view.keybinds.addonEntries(modelData.id) : []
+      readonly property bool hasOptions: options.length > 0 || shortcuts.length > 0
       readonly property bool open: hasOptions && page.expanded === modelData.id
       Layout.fillWidth: true
       spacing: 4
@@ -52,6 +65,7 @@ ColumnLayout {
           width: 32
           height: 32
           glyph: addon.modelData.icon || ""
+          layers: addon.modelData.iconLayers || []
           tint: addon.modelData.color || page.view.accent
         }
         Column {
@@ -113,8 +127,6 @@ ColumnLayout {
       Rectangle {
         visible: addon.open
         Layout.fillWidth: true
-        Layout.leftMargin: 56
-        Layout.rightMargin: 4
         Layout.bottomMargin: 6
         Layout.preferredHeight: optionList.implicitHeight
         radius: 10
@@ -138,15 +150,25 @@ ColumnLayout {
               view: page.view
               label: modelData.label || modelData.key
               detail: modelData.detail || ""
-              last: index === addon.options.length - 1
+              last: index === addon.options.length - 1 && addon.shortcuts.length === 0
               Loader {
-                sourceComponent: optionRow.modelData.type === "popup" ? popUpOption : switchOption
+                sourceComponent: optionRow.modelData.type === "popup" ? popUpOption
+                  : optionRow.modelData.type === "text" ? textOption : switchOption
                 Component {
                   id: switchOption
                   SettingsSwitch {
                     view: page.view
                     checked: !!optionRow.value
                     onToggled: function(on) { optionRow.pick(on) }
+                  }
+                }
+                Component {
+                  id: textOption
+                  SettingsTextField {
+                    view: page.view
+                    value: optionRow.value === undefined ? "" : String(optionRow.value)
+                    placeholder: optionRow.modelData.placeholder || ""
+                    onCommitted: function(v) { optionRow.pick(v) }
                   }
                 }
                 Component {
@@ -159,6 +181,18 @@ ColumnLayout {
                   }
                 }
               }
+            }
+          }
+          // Its shortcuts, recorded by the Keybinds page (which leaves them out).
+          Repeater {
+            model: addon.open ? addon.shortcuts : []
+            delegate: ShortcutRow {
+              required property var modelData
+              required property int index
+              view: page.view
+              keybinds: page.view.keybinds
+              entry: addon.shortcuts.length === 1 ? Object.assign({}, modelData, { label: "Keyboard Shortcut" }) : modelData
+              last: index === addon.shortcuts.length - 1
             }
           }
         }

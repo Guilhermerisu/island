@@ -79,6 +79,15 @@ Item {
 
   readonly property var clockDate: clock.date
   property string view: "rest"
+  // Settings opens on settingsPage (and, on Addons, with settingsAddon's
+  // options out) the next time it's shown; both are cleared once taken.
+  property string settingsPage: ""
+  property string settingsAddon: ""
+  function openSettings(page, addonId) {
+    settingsPage = page || ""
+    settingsAddon = addonId || ""
+    view = "settings"
+  }
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
