@@ -4,9 +4,10 @@ import QtQuick
 // that share its spot.
 Text {
   required property var host
-  // Hidden behind the notification, volume, clipboard, and finished-download
-  // pills (the media and downloading pills keep the clock in the middle).
-  opacity: !host.notificationPill && !host.volumePill && !host.clipboardPill && !host.activityPill && !host.workspacesPill && !host.addonPill && !host.downloadDone && (host.view === "rest" || host.view === "feedback") ? 1 : 0
+  // Hidden behind the notification, volume, clipboard, finished-download,
+  // and addons' momentary pills (the media, downloading, and addons'
+  // ongoing pills keep the clock in the middle).
+  opacity: !host.notificationPill && !host.volumePill && !host.clipboardPill && !host.activityPill && !host.workspacesPill && !(host.addonPill && host.view === "feedback") && !host.downloadDone && (host.view === "rest" || host.view === "feedback") ? 1 : 0
   width: parent.width - 24
   horizontalAlignment: Text.AlignHCenter
   elide: Text.ElideRight

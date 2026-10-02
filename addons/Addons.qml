@@ -37,6 +37,15 @@ Item {
       options: [
         { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: "https://…/basic.ics" }
       ] },
+    { id: "timer", name: "Timer", icon: "󰔛", color: "#1c1c1e", default: false, source: "timer/TimerAddon.qml",
+      iconLayers: [
+        { rect: true, color: "#ff9f0a", x: 0.5, y: 0.13, width: 0.2, height: 0.08, radius: 0.5 },
+        { circle: true, color: "#ff9f0a", x: 0.5, y: 0.56, size: 0.68 },
+        { circle: true, color: "#1c1c1e", x: 0.5, y: 0.56, size: 0.52 },
+        { rect: true, color: "#ffffff", x: 0.5, y: 0.47, width: 0.07, height: 0.2, radius: 0.5 },
+        { circle: true, color: "#ffffff", x: 0.5, y: 0.56, size: 0.1 }
+      ],
+      description: "A countdown on the island" },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
       iconLayers: [
         { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
@@ -161,6 +170,14 @@ Item {
     var id = String(kind).slice(6)
     for (var i = 0; i < loaded.length; i++)
       if (loaded[i].addon.id === id && loaded[i].pill) return loaded[i]
+    return null
+  }
+
+  // The addon whose ongoing activity holds the resting island, if any: the
+  // first in registry order with `ongoing` set.
+  readonly property var ongoing: {
+    for (var i = 0; i < loaded.length; i++)
+      if (loaded[i].ongoing && loaded[i].pill) return loaded[i]
     return null
   }
 

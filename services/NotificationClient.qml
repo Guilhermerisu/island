@@ -39,6 +39,8 @@ Item {
     return Quickshell.iconPath(value, true)
   }
   function agent(row) {
+    // The timer addon's, sent under its own app name (see TimerAddon).
+    if (String(row.app || "") === "Island Timer") return "timer"
     var summary = String(row.summary || "")
     if (summary === "Claude Code") return "claude"
     var fromTerminal = /ghostty|kitty|alacritty|foot|wezterm/i.test(String(row.appIcon || "") + " " + String(row.app || ""))
@@ -47,7 +49,8 @@ Item {
   }
   readonly property var brands: ({
     claude: { glyph: "", tile: "#d97757", ink: "#ffffff" },
-    codex: { glyph: "", tile: "#f2f2f2", ink: "#000000" }
+    codex: { glyph: "", tile: "#f2f2f2", ink: "#000000" },
+    timer: { glyph: "󰔛", tile: "#ff9f0a", ink: "#ffffff" }
   })
   function brand(row) {
     var name = row ? agent(row) : ""

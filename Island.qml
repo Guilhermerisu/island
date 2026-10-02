@@ -21,7 +21,7 @@ Item {
 
   readonly property var nowPlaying: nowPlayingData
   NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
-  readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !setup.needsSetup && settings.mediaPill && !downloadPill
+  readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !setup.needsSetup && settings.mediaPill && !downloadPill && !addons.ongoing
 
   property string askQuestion: ""
   readonly property var askProviders: ({
@@ -40,9 +40,9 @@ Item {
   DownloadTracker { id: downloadTracker; enabled: root.settings.downloads }
   readonly property var packages: packageTracker
   PackageUpdateTracker { id: packageTracker; enabled: root.settings.systemUpdates }
-  readonly property bool downloadDone: view === "rest" && !setup.needsSetup
+  readonly property bool downloadDone: view === "rest" && !setup.needsSetup && !addons.ongoing
     && (downloads.finishedName !== "" || packages.finishedTitle !== "")
-  readonly property bool downloadActive: view === "rest" && !setup.needsSetup
+  readonly property bool downloadActive: view === "rest" && !setup.needsSetup && !addons.ongoing
     && (downloads.active || packages.active) && !downloadDone
   readonly property bool downloadPill: downloadDone || downloadActive
   Process { id: downloadOpener }
@@ -93,8 +93,10 @@ Item {
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
   readonly property bool activityPill: view === "feedback" && feedbackKind === "activity"
   readonly property bool workspacesPill: view === "feedback" && feedbackKind === "workspaces"
-  // The addon whose pill is on the island, if any (see addons/Addon.qml).
-  readonly property var addonPill: view === "feedback" ? addons.pillFor(feedbackKind) : null
+  // The addon whose pill is on the island, if any (see addons/Addon.qml):
+  // the one shown for a moment, or at rest an ongoing one's.
+  readonly property var addonPill: view === "feedback" ? addons.pillFor(feedbackKind)
+    : view === "rest" && !setup.needsSetup ? addons.ongoing : null
 
   // ---------- Workspace switches ----------
 
