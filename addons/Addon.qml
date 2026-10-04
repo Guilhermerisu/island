@@ -14,6 +14,11 @@ import QtQuick
 //   tiles   [{ key, title, wide, present, component }], control center cards.
 //           Each component's parent has `center` (the ControlCenter),
 //           `controlKey`, and `galleryPreview`, as the core cards get.
+//   settingsPages  [{ title, icon, color, about, search, source,
+//           properties }], each a pane in Settings' sidebar after Addons,
+//           made from the file at `source` with `properties` and `view`
+//           (the SettingsView) while it's the open pane, and told `shown`
+//           while Settings is on screen too.
 //
 // `addon` is its id and name, plus option(key) and setOption(key, value).
 Item {
@@ -30,4 +35,5 @@ Item {
 
   property var views: []
   property var tiles: []
+  property var settingsPages: []
 }

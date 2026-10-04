@@ -29,6 +29,7 @@ Rectangle {
       Layout.preferredHeight: 26
       glyph: side.info.icon || ""
       tint: side.info.color || side.view.accent
+      layers: side.info.layers || []
       onAccent: side.selected
     }
     Text {

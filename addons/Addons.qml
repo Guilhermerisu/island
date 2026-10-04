@@ -46,6 +46,21 @@ Item {
         { circle: true, color: "#ffffff", x: 0.5, y: 0.56, size: 0.1 }
       ],
       description: "A countdown on the island" },
+    { id: "stats", name: "System Stats", icon: "󰓅", color: "#232325", default: true, source: "stats/StatsAddon.qml",
+      // Activity Monitor's: a red and a blue wave either side of a line,
+      // over a faint grid.
+      iconLayers: [1, 2, 3, 4, 5, 6, 7].reduce(function(grid, n) {
+        return grid.concat([
+          { rect: true, color: "#ffffff", opacity: 0.07, x: 0.5, y: n / 8, width: 1, height: 0.01 },
+          { rect: true, color: "#ffffff", opacity: 0.07, x: n / 8, y: 0.5, width: 0.01, height: 1 }
+        ])
+      }, []).concat([
+        { line: wave(-1, [0.22, 0.34, 0.49, 0.63, 0.76], [0.07, 0.15, 0.25, 0.12, 0.15]), color: "#ff6b5e", fill: true },
+        { line: wave(1, [0.3, 0.42, 0.55, 0.67, 0.77], [0.08, 0.17, 0.27, 0.15, 0.08]), color: "#3d8bff", fill: true },
+        { rect: true, color: "#ff6b5e", x: 0.5, y: 0.492, width: 1, height: 0.03 },
+        { rect: true, color: "#3d8bff", x: 0.5, y: 0.518, width: 1, height: 0.025 }
+      ]),
+      description: "Live CPU, memory, GPU, and disk use" },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
       iconLayers: [
         { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
@@ -79,6 +94,18 @@ Item {
       description: "Show the layout on the pill when it changes" }
   ]
 
+  // A smooth wave off the icon's middle line, rising (sign -1) or falling,
+  // with a bump of each height at each x; for the System Stats icon.
+  function wave(sign, centers, heights) {
+    var points = [[0, 0.5]]
+    for (var x = 0; x <= 1.0001; x += 0.0125) {
+      var y = 0
+      for (var i = 0; i < centers.length; i++) y += heights[i] * Math.exp(-Math.pow((x - centers[i]) / 0.042, 2))
+      points.push([x, 0.5 + sign * Math.min(0.34, y)])
+    }
+    points.push([1, 0.5])
+    return points
+  }
   function entry(id) {
     for (var i = 0; i < entries.length; i++) if (entries[i].id === id) return entries[i]
     return null
@@ -196,6 +223,22 @@ Item {
         result.push(Object.assign({}, own[j], { key: loaded[i].addon.id + "." + own[j].key }))
     }
     return result
+  }
+  // Every enabled addon's Settings panes, in registry order.
+  readonly property var settingsPages: {
+    var result = []
+    for (var i = 0; i < loaded.length; i++) {
+      // Drawn with its addon's icon unless it has its own.
+      var own = entry(loaded[i].addon.id)
+      result = result.concat((loaded[i].settingsPages || []).map(function(page) {
+        return Object.assign({ icon: own.icon, color: own.color, iconLayers: own.iconLayers }, page)
+      }))
+    }
+    return result
+  }
+  function settingsPage(title) {
+    for (var i = 0; i < settingsPages.length; i++) if (settingsPages[i].title === title) return settingsPages[i]
+    return null
   }
   function tileFor(key) {
     for (var i = 0; i < tiles.length; i++) if (tiles[i].key === key) return tiles[i]

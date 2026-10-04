@@ -29,6 +29,7 @@ Rectangle {
       height: 48
       glyph: header.info.icon || ""
       tint: header.info.color || header.view.accent
+      layers: header.info.layers || []
     }
     Text {
       width: parent.width

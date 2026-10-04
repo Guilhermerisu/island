@@ -13,8 +13,19 @@ Item {
   // The shortcuts, for the Addons page's rows too.
   readonly property var keybinds: keybindsPage
   property string searchQuery: ""
-  readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Addons", "Keybinds"]
-  readonly property var pageInfo: ({
+  // The core panes, with the enabled addons' own (see addons/Addon.qml)
+  // after Addons.
+  readonly property var addonPages: host.addons.settingsPages
+  readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Addons"]
+    .concat(addonPages.map(function(page) { return page.title }), ["Keybinds"])
+  onPagesChanged: if (pages.indexOf(currentPage) === -1) currentPage = "General"
+  readonly property var pageInfo: {
+    var info = Object.assign({}, corePageInfo)
+    for (var i = 0; i < addonPages.length; i++)
+      info[addonPages[i].title] = { icon: addonPages[i].icon, color: addonPages[i].color, layers: addonPages[i].iconLayers || [], about: addonPages[i].about || "" }
+    return info
+  }
+  readonly property var corePageInfo: ({
     "General": { icon: "󰒓", color: "#8e8e93", about: "Appearance, motion, and how the pill looks at rest." },
     "Search": { icon: "󰍉", color: "#5e7a99", about: "Get answers to launcher questions right in the island." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
@@ -35,6 +46,8 @@ Item {
       }).join(" "),
       "Keybinds": "keybinds keybindings keyboard shortcuts keys"
     }
+    var addonPage = host.addons.settingsPage(page)
+    if (addonPage) terms[page] = page + " " + (addonPage.search || "")
     return String(terms[page] || page).toLowerCase().indexOf(query) !== -1
   }
   readonly property bool hasSearchResults: {
@@ -201,6 +214,27 @@ Item {
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
           AddonsPage { view: settingsView }
+          // By count: addonPages is rebuilt whenever any addon loads, and a
+          // new array as the model would recreate the open page.
+          Repeater {
+            model: settingsView.addonPages.length
+            delegate: Loader {
+              id: addonPage
+              required property int index
+              readonly property var modelData: settingsView.addonPages[index] || ({})
+              readonly property bool shown: settingsView.currentPage === modelData.title
+              visible: shown
+              Layout.fillWidth: true
+              Layout.preferredHeight: item ? item.implicitHeight : 0
+              onShownChanged: load()
+              Component.onCompleted: load()
+              function load() {
+                if (!shown) { source = ""; return }
+                setSource(modelData.source, Object.assign({ view: settingsView }, modelData.properties || {}))
+              }
+              Binding { target: addonPage.item; property: "shown"; value: addonPage.shown && settingsView.active; when: addonPage.item !== null }
+            }
+          }
           KeybindsPage { id: keybindsPage; view: settingsView }
         }
       }

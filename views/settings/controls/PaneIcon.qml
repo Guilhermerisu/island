@@ -14,7 +14,9 @@ Item {
   // opacity, x, y, size } with size the glyph's pixel size, or
   // { circle: true, ... } with size its diameter, both as a share of the
   // icon's width; or { rect: true, ..., width, height, radius } as shares
-  // of the icon's (radius of the rect's shorter side). A glyph can instead be today's { date: "month" } ("OCT") or
+  // of the icon's (radius of the rect's shorter side), or { line: [[x, y],
+  // ...], color, opacity, width } stroked through those points (shares of
+  // the icon's size, width of its width), or filled with `fill: true`. A glyph can instead be today's { date: "month" } ("OCT") or
   // { date: "day" } ("2"), in Adwaita Sans of `weight`.
   property var layers: []
   readonly property bool layered: layers.length > 0 && !neutral
@@ -135,11 +137,12 @@ Item {
           required property var modelData
           readonly property real size: paneIcon.width * (modelData.size || 0)
           readonly property bool shaped: !!(modelData.circle || modelData.rect)
+          readonly property bool lined: !!modelData.line
           readonly property var today: paneIcon.view.host.clockDate
-          x: paneIcon.width * modelData.x - width / 2
-          y: paneIcon.height * modelData.y - height / 2
-          width: modelData.rect ? paneIcon.width * modelData.width : modelData.circle ? size : layerGlyph.implicitWidth
-          height: modelData.rect ? paneIcon.height * modelData.height : modelData.circle ? size : layerGlyph.implicitHeight
+          x: lined ? 0 : paneIcon.width * modelData.x - width / 2
+          y: lined ? 0 : paneIcon.height * modelData.y - height / 2
+          width: lined ? paneIcon.width : modelData.rect ? paneIcon.width * modelData.width : modelData.circle ? size : layerGlyph.implicitWidth
+          height: lined ? paneIcon.height : modelData.rect ? paneIcon.height * modelData.height : modelData.circle ? size : layerGlyph.implicitHeight
           opacity: modelData.opacity === undefined ? 1 : modelData.opacity
           Rectangle {
             visible: layer.shaped
@@ -150,9 +153,25 @@ Item {
               GradientStop { position: 1; color: Qt.darker(layer.modelData.color, 1.08) }
             }
           }
+          Shape {
+            visible: layer.lined
+            anchors.fill: parent
+            // The curve renderer leaves fills undrawn inside the masked layer.
+            preferredRendererType: layer.modelData.fill ? Shape.GeometryRenderer : Shape.CurveRenderer
+            ShapePath {
+              fillColor: layer.modelData.fill ? layer.modelData.color : "transparent"
+              strokeColor: layer.modelData.fill ? "transparent" : layer.modelData.color || "transparent"
+              strokeWidth: Math.max(1, paneIcon.width * (layer.modelData.width || 0.05))
+              capStyle: ShapePath.RoundCap
+              joinStyle: ShapePath.RoundJoin
+              PathPolyline {
+                path: (layer.modelData.line || []).map(function(p) { return Qt.point(p[0] * paneIcon.width, p[1] * paneIcon.height) })
+              }
+            }
+          }
           Text {
             id: layerGlyph
-            visible: !layer.shaped
+            visible: !layer.shaped && !layer.lined
             anchors.centerIn: parent
             text: layer.modelData.date === "month"
               ? ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][layer.today.getMonth()]
