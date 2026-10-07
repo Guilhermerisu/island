@@ -4,7 +4,7 @@
 #   missing      not installed in ~/.config/omarchy/plugins
 #   outdated     installed but differs from this repo's copy
 #   not-enabled  installed, but shell.json doesn't load it (or still loads
-#                the stock omarchy.notifications alongside it)
+#                the stock omarchy.notifications or omarchy.osd alongside it)
 #   menu-invalid the Omarchy menu extension isn't valid JSONC, so Omarchy
 #                ignores it and setup can't add the island's entries to it
 #   menu         the Omarchy menu's Theme, Background, Apps, System, Emoji, or Keybindings entry
@@ -30,6 +30,7 @@ fi
 if ! jq -e '
   ((.plugins // []) | map(.id) | index("guilhermerisu.notifications")) != null
   and ((.disabledPlugins // []) | index("omarchy.notifications")) != null
+  and ((.disabledPlugins // []) | index("omarchy.osd")) != null
 ' "$config" >/dev/null 2>&1; then
   echo not-enabled
   exit 0

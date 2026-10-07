@@ -27,6 +27,7 @@ Item {
       property bool clock24h: true
       property bool mediaPill: true
       property bool volumeHud: true
+      property bool brightnessHud: true
       property int bannerSeconds: 5
       property bool notch: false
       property bool downloads: true

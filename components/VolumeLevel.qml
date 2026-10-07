@@ -6,6 +6,8 @@ Item {
   required property var theme
   property real level: 0
   property bool muted: false
+  // Overrides the speaker glyph (the brightness preview uses the display one).
+  property string icon: ""
   property bool animateLevel: true
   readonly property real effectiveLevel: muted ? 0 : Math.max(0, Math.min(1, level))
   property real shownLevel: effectiveLevel
@@ -21,7 +23,8 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 24
     horizontalAlignment: Text.AlignHCenter
-    text: volume.effectiveLevel <= 0 ? "󰖁" : volume.effectiveLevel < 0.34 ? "󰕿" : volume.effectiveLevel < 0.67 ? "󰖀" : "󰕾"
+    text: volume.icon !== "" ? volume.icon
+      : volume.effectiveLevel <= 0 ? "󰖁" : volume.effectiveLevel < 0.34 ? "󰕿" : volume.effectiveLevel < 0.67 ? "󰖀" : "󰕾"
     color: "#ffffff"
     font.family: volume.theme.fontFamily
     font.pixelSize: 21

@@ -36,9 +36,10 @@ Item {
 
     VolumeLevel {
       anchors.fill: parent
-      visible: preview.kind === "volume"
+      visible: preview.kind === "volume" || preview.kind === "brightness"
       theme: preview.view.host.theme
-      level: 0.18
+      level: preview.kind === "brightness" ? 0.4 : 0.18
+      icon: preview.kind === "brightness" ? "󰍹" : ""
       animateLevel: false
     }
     Row {
