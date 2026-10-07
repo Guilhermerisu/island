@@ -524,7 +524,8 @@ Item {
               else if (root.notificationPill && root.notifications.last && root.notifications.last.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.setup.install() }
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
-              else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth" : "controls"
+              else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth"
+                : root.activities.current.kind === "network" ? "wifi" : "controls"
               else if (root.addonPill) root.addonPill.pillClicked()
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()

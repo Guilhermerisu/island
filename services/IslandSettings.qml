@@ -35,6 +35,7 @@ Item {
       property bool systemUpdates: true
       property bool batteryActivity: true
       property bool bluetoothActivity: true
+      property bool networkActivity: true
       property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
       property bool colorfulLiveActivities: true

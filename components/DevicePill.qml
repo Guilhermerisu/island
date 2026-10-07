@@ -20,6 +20,11 @@ Item {
     : activity.connected ? host.theme.accent : Qt.rgba(1, 1, 1, 0.55)
   readonly property color connectedColor: colorfulActivities ? "#30d158" : host.theme.accent
   readonly property color lowBatteryColor: colorfulActivities ? "#ff453a" : host.theme.accent
+  // The leading glyph for the single-line kinds: Bluetooth's mark, or the
+  // network's, on (solid) or off (slashed) and wired when it is.
+  readonly property string leadingGlyph: activity.kind !== "network" ? "󰂯"
+    : activity.wired ? "󰈀"
+    : activity.connected ? "󰤨" : "󰤭"
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
@@ -50,7 +55,7 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: !pill.isBattery
-      text: "󰂯"
+      text: pill.leadingGlyph
       color: pill.activity.connected ? pill.connectedColor : Qt.rgba(1, 1, 1, 0.55)
       font.family: pill.host.theme.fontFamily
       font.pixelSize: 19

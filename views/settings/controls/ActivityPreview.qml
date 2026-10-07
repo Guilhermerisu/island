@@ -13,7 +13,7 @@ Item {
   readonly property bool colorfulActivities: !!view.settings.colorfulLiveActivities
   readonly property bool transfer: kind === "downloads" || kind === "updates"
   readonly property color transferColor: colorfulActivities ? "#30d158" : accent
-  readonly property string glyph: ({ media: "󰝚", clipboard: "󰆏", downloads: "󰁅", updates: "󰏗", bluetooth: "󰋋" })[kind] || ""
+  readonly property string glyph: ({ media: "󰝚", clipboard: "󰆏", downloads: "󰁅", updates: "󰏗", bluetooth: "󰋋", network: "󰤨" })[kind] || ""
 
   Rectangle {
     id: pill
@@ -105,8 +105,8 @@ Item {
     Text {
       x: preview.kind === "battery" ? 47 : preview.transfer ? 57 : 43
       anchors.verticalCenter: parent.verticalCenter
-      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer
-      text: ({ battery: "Charging", clipboard: "Hello, world!" })[preview.kind] || "12:34"
+      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer || preview.kind === "network"
+      text: ({ battery: "Charging", clipboard: "Hello, world!", network: "Home" })[preview.kind] || "12:34"
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: preview.transfer ? 12 : 10
@@ -116,9 +116,9 @@ Item {
       anchors.right: parent.right
       anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
-      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer
-      text: ({ battery: "64%", clipboard: "Copied", updates: "Updating", downloads: "2 MB/s" })[preview.kind] || ""
-      color: preview.kind === "battery" ? (preview.colorfulActivities ? "#30d158" : preview.accent) : preview.kind === "clipboard" ? preview.accent : preview.transfer ? preview.transferColor : "#ffffff"
+      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer || preview.kind === "network"
+      text: ({ battery: "64%", clipboard: "Copied", updates: "Updating", downloads: "2 MB/s", network: "Connected" })[preview.kind] || ""
+      color: preview.kind === "battery" ? (preview.colorfulActivities ? "#30d158" : preview.accent) : preview.kind === "clipboard" ? preview.accent : preview.kind === "network" ? preview.accent : preview.transfer ? preview.transferColor : "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: 10
       font.weight: Font.DemiBold
