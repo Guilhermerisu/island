@@ -83,14 +83,12 @@ ColumnLayout {
     SettingsRow {
       view: page.view
       label: "Custom Font"
-      detail: "Family name, e.g. JetBrainsMono Nerd Font"
+      detail: "Search the installed fonts"
       visible: page.view.settings.textFontMode === "custom"
       last: true
-      SettingsTextField {
+      SettingsFontPicker {
         view: page.view
         value: page.view.settings.customFont
-        placeholder: "Font family"
-        onCommitted: function(v) { page.view.settings.customFont = v }
       }
     }
   }
