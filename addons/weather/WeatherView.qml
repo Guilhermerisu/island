@@ -84,7 +84,7 @@ Item {
           elide: Text.ElideRight
           color: view.ink
           font.family: view.theme.textFontFamily
-          font.pixelSize: 20
+          font.pixelSize: view.theme.px(20)
           font.weight: Font.Medium
           font.letterSpacing: -0.3
         }
@@ -95,7 +95,7 @@ Item {
           elide: Text.ElideRight
           color: view.inkMuted
           font.family: view.theme.textFontFamily
-          font.pixelSize: 15
+          font.pixelSize: view.theme.px(15)
           font.weight: Font.Normal
         }
       }
@@ -107,7 +107,7 @@ Item {
         text: view.now ? view.degrees(view.now.temperature) : ""
         color: view.ink
         font.family: view.theme.textFontFamily
-        font.pixelSize: 46
+        font.pixelSize: view.theme.px(46)
         font.weight: Font.Light
         font.letterSpacing: -1
       }
@@ -131,7 +131,7 @@ Item {
             text: modelData.now ? "Now" : view.hourText(modelData.hour)
             color: view.inkMuted
             font.family: view.theme.textFontFamily
-            font.pixelSize: 13
+            font.pixelSize: view.theme.px(13)
             font.weight: Font.Medium
           }
           // The icon, and the chance of rain under it, share one height so
@@ -155,7 +155,7 @@ Item {
               text: modelData.rain + "%"
               color: "#5ac8fa"
               font.family: view.theme.textFontFamily
-              font.pixelSize: 10
+              font.pixelSize: view.theme.px(10)
               font.weight: Font.Bold
             }
           }
@@ -164,7 +164,7 @@ Item {
             text: Math.round(modelData.temperature)
             color: view.ink
             font.family: view.theme.textFontFamily
-            font.pixelSize: 15
+            font.pixelSize: view.theme.px(15)
             font.weight: Font.Medium
             Text {
               anchors.left: parent.right
@@ -198,7 +198,7 @@ Item {
         : "Couldn't reach Open-Meteo"
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily
-      font.pixelSize: 15
+      font.pixelSize: view.theme.px(15)
     }
     Rectangle {
       visible: notice.status !== "loading"
@@ -216,7 +216,7 @@ Item {
         text: notice.needsCity ? "Open Settings" : "Try Again"
         color: view.theme.accentText
         font.family: view.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: view.theme.px(14)
         font.weight: Font.Medium
       }
       MouseArea {

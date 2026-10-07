@@ -122,7 +122,7 @@ ColumnLayout {
             rotation: addon.open ? 90 : 0
             color: page.view.textMuted
             font.family: page.view.host.theme.fontFamily
-            font.pixelSize: 14
+            font.pixelSize: page.view.host.theme.px(14)
             Behavior on rotation { MotionAnimation { theme: page.view.host.theme; pace: "standard" } }
           }
         }

@@ -61,7 +61,7 @@ Item {
       text: view.weekdays[view.calendar.selected.getDay()].toUpperCase()
       color: view.accent
       font.family: view.theme.textFontFamily
-      font.pixelSize: 14
+      font.pixelSize: view.theme.px(14)
       font.weight: Font.Bold
       font.letterSpacing: 0.4
     }
@@ -69,7 +69,7 @@ Item {
       text: view.calendar.selected.getDate()
       color: view.ink
       font.family: view.theme.textFontFamily
-      font.pixelSize: 52
+      font.pixelSize: view.theme.px(52)
       font.weight: Font.Light
       font.letterSpacing: -1.5
       font.features: { "tnum": 1 }
@@ -108,7 +108,7 @@ Item {
               elide: Text.ElideRight
               color: Qt.lighter(modelData.color, 1.2)
               font.family: view.theme.textFontFamily
-              font.pixelSize: 13
+              font.pixelSize: view.theme.px(13)
               font.weight: Font.DemiBold
               font.letterSpacing: -0.1
             }
@@ -117,7 +117,7 @@ Item {
               text: view.calendar.spanText(modelData)
               color: view.theme.withAlpha(Qt.lighter(modelData.color, 1.2), 0.7)
               font.family: view.theme.textFontFamily
-              font.pixelSize: 12
+              font.pixelSize: view.theme.px(12)
               font.weight: Font.Normal
               font.features: { "tnum": 1 }
             }
@@ -130,7 +130,7 @@ Item {
         text: rest + " more event" + (rest === 1 ? "" : "s")
         color: view.inkMuted
         font.family: view.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: view.theme.px(12)
         font.weight: Font.Medium
       }
       // Nothing that day, or why there's nothing to show.
@@ -147,7 +147,7 @@ Item {
           : "No events"
         color: actionable && noticeMouse.containsMouse ? view.ink : view.inkMuted
         font.family: view.theme.textFontFamily
-        font.pixelSize: 13
+        font.pixelSize: view.theme.px(13)
         font.weight: Font.Medium
         font.underline: actionable
         MouseArea {
@@ -203,7 +203,7 @@ Item {
         + (view.calendar.shownYear !== view.calendar.today.getFullYear() ? " " + view.calendar.shownYear : "")
       color: view.accent
       font.family: view.theme.textFontFamily
-      font.pixelSize: 14
+      font.pixelSize: view.theme.px(14)
       font.weight: Font.Bold
       font.letterSpacing: 0.4
     }
@@ -221,7 +221,7 @@ Item {
           text: modelData.glyph
           color: chevronMouse.containsMouse ? view.ink : view.inkMuted
           font.family: view.theme.fontFamily
-          font.pixelSize: 16
+          font.pixelSize: view.theme.px(16)
           MouseArea {
             id: chevronMouse
             anchors.fill: parent
@@ -247,7 +247,7 @@ Item {
           text: modelData
           color: index >= 5 ? view.inkMuted : view.ink
           font.family: view.theme.textFontFamily
-          font.pixelSize: 14
+          font.pixelSize: view.theme.px(14)
           font.weight: Font.Normal
         }
       }
@@ -290,7 +290,7 @@ Item {
             color: day.isToday ? (day.isSelected ? view.theme.accentText : view.accent)
               : day.slot % 7 >= 5 ? view.inkMuted : view.ink
             font.family: view.theme.textFontFamily
-            font.pixelSize: 14
+            font.pixelSize: view.theme.px(14)
             font.weight: day.isToday ? Font.DemiBold : Font.Normal
             font.features: { "tnum": 1 }
           }

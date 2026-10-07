@@ -69,9 +69,9 @@ Item {
   readonly property color accent: host.theme.accent
   readonly property color accentInk: host.theme.accentText
 
-  readonly property int detailFontSize: 15
-  readonly property int detailCaptionFontSize: 13
-  readonly property int detailTitleFontSize: 19
+  readonly property int detailFontSize: host.theme.px(15)
+  readonly property int detailCaptionFontSize: host.theme.px(13)
+  readonly property int detailTitleFontSize: host.theme.px(19)
 
   function revealSettingsItem(item) {
     var top = item.mapToItem(groups, 0, 0).y
@@ -133,7 +133,7 @@ Item {
             text: "󰍉"
             color: settingsView.textMuted
             font.family: settingsView.host.theme.fontFamily
-            font.pixelSize: 14
+            font.pixelSize: settingsView.host.theme.px(14)
           }
           Text {
             anchors.left: parent.left
@@ -143,7 +143,7 @@ Item {
             text: "Search"
             color: settingsView.textMuted
             font.family: settingsView.host.theme.textFontFamily
-            font.pixelSize: 13
+            font.pixelSize: settingsView.host.theme.px(13)
           }
           TextInput {
             id: searchInput
@@ -154,7 +154,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             color: settingsView.text
             font.family: settingsView.host.theme.textFontFamily
-            font.pixelSize: 13
+            font.pixelSize: settingsView.host.theme.px(13)
             onTextChanged: {
               settingsView.searchQuery = text
               if (text.trim() === "" || settingsView.pageMatches(settingsView.currentPage)) return
@@ -184,7 +184,7 @@ Item {
           text: "No Results"
           color: settingsView.textMuted
           font.family: settingsView.host.theme.textFontFamily
-          font.pixelSize: 13
+          font.pixelSize: settingsView.host.theme.px(13)
           Layout.alignment: Qt.AlignHCenter
           Layout.topMargin: 18
         }
@@ -309,7 +309,7 @@ Item {
             text: "󰄬"
             color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
             font.family: settingsView.host.theme.fontFamily
-            font.pixelSize: 12
+            font.pixelSize: settingsView.host.theme.px(12)
           }
           Text {
             id: menuText
@@ -410,7 +410,7 @@ Item {
         text: "󰍉"
         color: settingsView.textMuted
         font.family: settingsView.host.theme.fontFamily
-        font.pixelSize: 13
+        font.pixelSize: settingsView.host.theme.px(13)
       }
       Text {
         anchors.left: parent.left
@@ -475,7 +475,7 @@ Item {
           text: "󰄬"
           color: fontMouse.containsMouse || fontRow.current ? settingsView.accentInk : settingsView.text
           font.family: settingsView.host.theme.fontFamily
-          font.pixelSize: 12
+          font.pixelSize: settingsView.host.theme.px(12)
         }
         Text {
           x: 26

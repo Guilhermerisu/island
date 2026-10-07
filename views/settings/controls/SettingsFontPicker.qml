@@ -35,7 +35,7 @@ Rectangle {
     text: "󰅀"
     color: picker.view.textMuted
     font.family: picker.view.host.theme.fontFamily
-    font.pixelSize: 12
+    font.pixelSize: picker.view.host.theme.px(12)
   }
   MouseArea {
     id: pickMouse

@@ -64,7 +64,7 @@ Item {
               text: "2"
               color: preview.colorfulActivities ? "#000000" : preview.view.accentInk
               font.family: preview.view.host.theme.textFontFamily
-              font.pixelSize: 11
+              font.pixelSize: preview.view.host.theme.px(11)
               font.weight: Font.Bold
             }
           }
@@ -89,7 +89,7 @@ Item {
         text: preview.glyph
         color: preview.kind === "bluetooth" || preview.kind === "media" ? "#ffffff" : preview.transfer ? preview.transferColor : preview.accent
         font.family: preview.iconFont
-        font.pixelSize: preview.kind === "bluetooth" ? 27 : preview.transfer ? 13 : 17
+        font.pixelSize: preview.kind === "bluetooth" ? preview.view.host.theme.px(27) : preview.transfer ? preview.view.host.theme.px(13) : preview.view.host.theme.px(17)
       }
     }
     BatteryIcon {
@@ -109,7 +109,7 @@ Item {
       text: ({ battery: "Charging", clipboard: "Hello, world!" })[preview.kind] || "12:34"
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
-      font.pixelSize: preview.transfer ? 12 : 10
+      font.pixelSize: preview.transfer ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10)
       font.weight: preview.transfer ? Font.DemiBold : Font.Normal
     }
     Text {
@@ -120,7 +120,7 @@ Item {
       text: ({ battery: "64%", clipboard: "Copied", updates: "Updating", downloads: "2 MB/s" })[preview.kind] || ""
       color: preview.kind === "battery" ? (preview.colorfulActivities ? "#30d158" : preview.accent) : preview.kind === "clipboard" ? preview.accent : preview.transfer ? preview.transferColor : "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
-      font.pixelSize: 10
+      font.pixelSize: preview.view.host.theme.px(10)
       font.weight: Font.DemiBold
     }
     Column {
@@ -132,9 +132,9 @@ Item {
         text: "Connected"
         color: "#888888"
         font.family: preview.view.host.theme.textFontFamily
-        font.pixelSize: 10
+        font.pixelSize: preview.view.host.theme.px(10)
       }
-      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: 12 }
+      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(12) }
     }
     Rectangle {
       anchors.right: parent.right
@@ -145,7 +145,7 @@ Item {
       color: "transparent"
       border.width: 2
       border.color: preview.colorfulActivities ? "#30d158" : preview.accent
-      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? "#30d158" : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: 10 }
+      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? "#30d158" : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(10) }
     }
     Text {
       anchors.centerIn: parent
@@ -153,7 +153,7 @@ Item {
       text: "12:34"
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
-      font.pixelSize: 12
+      font.pixelSize: preview.view.host.theme.px(12)
       font.weight: Font.DemiBold
     }
     Row {

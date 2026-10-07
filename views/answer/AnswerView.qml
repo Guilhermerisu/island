@@ -170,7 +170,7 @@ Item {
         wrapMode: Text.Wrap
         color: answer.error ? answer.host.theme.urgent : "#ffffff"
         font.family: answer.host.theme.textFontFamily
-        font.pixelSize: 21
+        font.pixelSize: answer.host.theme.px(21)
         font.letterSpacing: -0.3
         lineHeight: 1.1
       }
@@ -205,7 +205,7 @@ Item {
           text: "Copy"
           color: "#ffffff"
           font.family: answer.host.theme.textFontFamily
-          font.pixelSize: 12
+          font.pixelSize: answer.host.theme.px(12)
           font.weight: Font.DemiBold
         }
         MouseArea {

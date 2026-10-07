@@ -56,7 +56,7 @@ ListPicker {
           text: launcher.provider ? launcher.provider.glyph : ""
           color: launcher.provider ? launcher.provider.ink : "transparent"
           font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 22
+          font.pixelSize: launcher.host.theme.px(22)
         }
         Image {
           id: appIcon
@@ -75,7 +75,7 @@ ListPicker {
           text: "󰀻"
           color: launcher.host.theme.muted
           font.family: launcher.host.theme.fontFamily
-          font.pixelSize: 18
+          font.pixelSize: launcher.host.theme.px(18)
         }
       }
       Text {
@@ -89,7 +89,7 @@ ListPicker {
         elide: Text.ElideRight
         color: launcher.host.theme.text
         font.family: launcher.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: launcher.host.theme.px(14)
         font.weight: Font.DemiBold
       }
       // "Ask Claude" and the question, muted, on one line.
@@ -105,7 +105,7 @@ ListPicker {
           text: launcher.provider ? "Ask " + launcher.provider.name : ""
           color: launcher.host.theme.text
           font.family: launcher.host.theme.textFontFamily
-          font.pixelSize: 14
+          font.pixelSize: launcher.host.theme.px(14)
           font.weight: Font.DemiBold
         }
         Text {
@@ -115,7 +115,7 @@ ListPicker {
           elide: Text.ElideRight
           color: launcher.host.theme.muted
           font.family: launcher.host.theme.textFontFamily
-          font.pixelSize: 14
+          font.pixelSize: launcher.host.theme.px(14)
         }
       }
     }

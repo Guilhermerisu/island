@@ -67,7 +67,7 @@ Item {
         text: pill.host.focusedWorkspaceId
         color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: pill.host.theme.px(12)
         font.weight: Font.Bold
         font.features: { "tnum": 1 }
       }

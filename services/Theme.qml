@@ -21,6 +21,10 @@ Item {
     if (mode === "custom" && custom) return custom
     return pluginFont
   }
+  // One knob for every text size in the island: sizes are written as the
+  // value at 1.0 and passed through px().
+  readonly property real textScale: settings.textScale > 0 ? settings.textScale : 1
+  function px(size) { return Math.max(1, Math.round(size * textScale)) }
   readonly property color background: "#000000"
   readonly property bool textIsLight: luminance(Color.foreground) > 0.5
   readonly property color text: textIsLight ? Color.foreground : Color.background

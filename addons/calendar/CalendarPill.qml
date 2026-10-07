@@ -104,7 +104,7 @@ Item {
           text: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][pill.day.getMonth()]
           color: "#ffffff"
           font.family: pill.host.theme.textFontFamily
-          font.pixelSize: 8
+          font.pixelSize: pill.host.theme.px(8)
           font.weight: Font.Bold
           font.letterSpacing: 0.2
         }
@@ -117,7 +117,7 @@ Item {
         text: pill.day.getDate()
         color: "#2c2c2e"
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 18
+        font.pixelSize: pill.host.theme.px(18)
         font.weight: Font.Normal
         font.features: { "tnum": 1 }
       }
@@ -144,7 +144,7 @@ Item {
       elide: Text.ElideRight
       color: "#ffffff"
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: 14
+      font.pixelSize: pill.host.theme.px(14)
       font.weight: Font.DemiBold
       font.letterSpacing: -0.3
     }
@@ -155,7 +155,7 @@ Item {
       // Apple's secondary label.
       color: Qt.rgba(235 / 255, 235 / 255, 245 / 255, 0.6)
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: 12
+      font.pixelSize: pill.host.theme.px(12)
       font.features: { "tnum": 1 }
     }
   }
@@ -173,7 +173,7 @@ Item {
     text: pill.calendar.reminderMs / 60000 + " min"
     color: "#ffffff"
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: 15
+    font.pixelSize: pill.host.theme.px(15)
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }
   }

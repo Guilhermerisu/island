@@ -48,7 +48,7 @@ CcSection {
         elide: Text.ElideRight
         color: outputRow.isDefault ? card.center.text : card.center.textMuted
         font.family: card.center.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: card.center.host.theme.px(12)
       }
       Text {
         id: outputCheck
@@ -59,7 +59,7 @@ CcSection {
         text: "󰄬"
         color: card.center.accent
         font.family: card.center.iconFont
-        font.pixelSize: 14
+        font.pixelSize: card.center.host.theme.px(14)
       }
       MouseArea {
         id: outputMouse
@@ -75,7 +75,7 @@ CcSection {
     text: "No audio output available"
     color: card.center.textMuted
     font.family: card.center.host.theme.textFontFamily
-    font.pixelSize: 12
+    font.pixelSize: card.center.host.theme.px(12)
     Layout.fillWidth: true
   }
 }

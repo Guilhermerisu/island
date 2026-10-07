@@ -26,7 +26,7 @@ Item {
     text: "󰍉"
     color: field.host.theme.muted
     font.family: field.host.theme.fontFamily
-    font.pixelSize: field.iconSize
+    font.pixelSize: field.host.theme.px(field.iconSize)
   }
   TextInput {
     id: input
@@ -39,7 +39,7 @@ Item {
     selectionColor: field.host.theme.withAlpha(field.host.theme.accent, 0.4)
     selectedTextColor: field.host.theme.text
     font.family: field.host.theme.textFontFamily
-    font.pixelSize: field.fontSize
+    font.pixelSize: field.host.theme.px(field.fontSize)
     clip: true
     Keys.onPressed: function(event) { field.keyPressed(event) }
     Text {

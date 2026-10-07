@@ -99,7 +99,7 @@ ListPicker {
         text: "󰐱"
         color: pluginRow.entry.enabled ? plugins.host.theme.accent : plugins.host.theme.muted
         font.family: plugins.host.theme.fontFamily
-        font.pixelSize: 17
+        font.pixelSize: plugins.host.theme.px(17)
       }
       Column {
         anchors.left: icon.right
@@ -115,7 +115,7 @@ ListPicker {
           elide: Text.ElideRight
           color: plugins.host.theme.text
           font.family: plugins.host.theme.textFontFamily
-          font.pixelSize: 14
+          font.pixelSize: plugins.host.theme.px(14)
           font.weight: Font.Medium
         }
         Text {
@@ -125,7 +125,7 @@ ListPicker {
           elide: Text.ElideRight
           color: plugins.host.theme.muted
           font.family: plugins.host.theme.textFontFamily
-          font.pixelSize: 11
+          font.pixelSize: plugins.host.theme.px(11)
         }
       }
       Text {
@@ -135,7 +135,7 @@ ListPicker {
         text: pluginRow.entry.enabled ? (pluginRow.entry.openable ? "Open" : "On") : "Off"
         color: pluginRow.entry.enabled ? plugins.host.theme.text : plugins.host.theme.muted
         font.family: plugins.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: plugins.host.theme.px(12)
       }
     }
   }

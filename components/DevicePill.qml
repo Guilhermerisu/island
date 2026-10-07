@@ -53,7 +53,7 @@ Item {
       text: "󰂯"
       color: pill.activity.connected ? pill.connectedColor : Qt.rgba(1, 1, 1, 0.55)
       font.family: pill.host.theme.fontFamily
-      font.pixelSize: 19
+      font.pixelSize: pill.host.theme.px(19)
     }
   }
 
@@ -70,7 +70,7 @@ Item {
     elide: Text.ElideRight
     color: "#ffffff"
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: 13
+    font.pixelSize: pill.host.theme.px(13)
     font.weight: Font.Medium
     font.letterSpacing: -0.2
   }
@@ -95,7 +95,7 @@ Item {
       text: pill.activity.status || ""
       color: pill.statusColor
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: 13
+      font.pixelSize: pill.host.theme.px(13)
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
       font.features: { "tnum": 1 }
@@ -136,7 +136,7 @@ Item {
     text: pill.deviceGlyph
     color: pill.activity.connected ? "#ffffff" : Qt.rgba(1, 1, 1, 0.55)
     font.family: pill.host.theme.fontFamily
-    font.pixelSize: 32
+    font.pixelSize: pill.host.theme.px(32)
     scale: pill.shown ? 1 : 0.86
     Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
   }
@@ -153,7 +153,7 @@ Item {
       text: pill.activity.status || ""
       color: "#888888"
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: 13
+      font.pixelSize: pill.host.theme.px(13)
       font.weight: Font.Medium
     }
     Text {
@@ -163,7 +163,7 @@ Item {
       elide: Text.ElideRight
       color: "#ffffff"
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: 16
+      font.pixelSize: pill.host.theme.px(16)
       font.weight: Font.Medium
       font.letterSpacing: -0.2
     }
@@ -215,7 +215,7 @@ Item {
       text: pill.deviceBattery
       color: pill.ringColor
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: 14
+      font.pixelSize: pill.host.theme.px(14)
       font.weight: Font.DemiBold
       font.features: { "tnum": 1 }
     }

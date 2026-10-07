@@ -164,7 +164,7 @@ Item {
               text: head.modelData.title
               color: head.sorted ? table.view.text : table.view.textMuted
               font.family: "Adwaita Sans"
-              font.pixelSize: 12
+              font.pixelSize: table.view.host.theme.px(12)
               font.weight: Font.DemiBold
             }
             Text {
@@ -173,7 +173,7 @@ Item {
               text: table.ascending ? "󰅃" : "󰅀"
               color: table.view.textMuted
               font.family: table.view.host.theme.fontFamily
-              font.pixelSize: 9
+              font.pixelSize: table.view.host.theme.px(9)
             }
           }
           Rectangle {
@@ -265,7 +265,7 @@ Item {
                   text: row.modelData.open ? "▾" : "▸"
                   color: row.inkMuted
                   font.family: "Adwaita Sans"
-                  font.pixelSize: 11
+                  font.pixelSize: table.view.host.theme.px(11)
                 }
                 MouseArea {
                   anchors.fill: parent
@@ -303,7 +303,7 @@ Item {
                 elide: Text.ElideRight
                 color: row.ink
                 font.family: "Adwaita Sans"
-                font.pixelSize: 13
+                font.pixelSize: table.view.host.theme.px(13)
               }
             }
             // Quit Process, at the end of the name.
@@ -322,7 +322,7 @@ Item {
                 text: "󰅙"
                 color: quitMouse.containsMouse ? row.ink : row.inkMuted
                 font.family: table.view.host.theme.fontFamily
-                font.pixelSize: 15
+                font.pixelSize: table.view.host.theme.px(15)
               }
               MouseArea {
                 id: quitMouse
@@ -344,7 +344,7 @@ Item {
               text: cellItem.isName ? "" : table.cell(row.modelData, cellItem.modelData.key)
               color: row.ink
               font.family: "Adwaita Sans"
-              font.pixelSize: 12
+              font.pixelSize: table.view.host.theme.px(12)
               font.features: { "tnum": 1 }
             }
           }
@@ -359,6 +359,6 @@ Item {
     text: table.stats.latest ? "No Processes" : "Loading…"
     color: table.view.textMuted
     font.family: "Adwaita Sans"
-    font.pixelSize: 13
+    font.pixelSize: table.view.host.theme.px(13)
   }
 }

@@ -263,7 +263,7 @@ ListPicker {
         text: String(menuRow.entry.icon || "")
         color: menu.host.theme.muted
         font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
-        font.pixelSize: 17
+        font.pixelSize: menu.host.theme.px(17)
       }
       Column {
         anchors.left: icon.right
@@ -279,7 +279,7 @@ ListPicker {
           elide: Text.ElideRight
           color: menu.host.theme.text
           font.family: menu.host.theme.textFontFamily
-          font.pixelSize: 14
+          font.pixelSize: menu.host.theme.px(14)
           font.weight: Font.Medium
         }
         Text {
@@ -290,7 +290,7 @@ ListPicker {
           elide: Text.ElideRight
           color: menu.host.theme.muted
           font.family: menu.host.theme.textFontFamily
-          font.pixelSize: 11
+          font.pixelSize: menu.host.theme.px(11)
         }
       }
       Text {
@@ -301,7 +301,7 @@ ListPicker {
         text: "󰅂"
         color: menu.host.theme.muted
         font.family: menu.host.theme.fontFamily
-        font.pixelSize: 16
+        font.pixelSize: menu.host.theme.px(16)
       }
     }
   }

@@ -37,7 +37,7 @@ Rectangle {
       text: header.page
       color: header.view.text
       font.family: header.view.host.theme.textFontFamily
-      font.pixelSize: header.compact ? 22 : header.view.detailTitleFontSize
+      font.pixelSize: header.compact ? header.view.host.theme.px(22) : header.view.detailTitleFontSize
       font.weight: Font.Bold
     }
     Text {

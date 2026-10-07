@@ -78,7 +78,7 @@ FocusScope {
           text: "󰄬"
           color: card.view.accentInk
           font.family: card.view.host.theme.fontFamily
-          font.pixelSize: 11
+          font.pixelSize: card.view.host.theme.px(11)
         }
       }
     }

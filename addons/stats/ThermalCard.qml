@@ -35,7 +35,7 @@ Card {
         text: "󰔏"
         color: card.levels[card.level].color
         font.family: card.view.host.theme.fontFamily
-        font.pixelSize: 16
+        font.pixelSize: card.view.host.theme.px(16)
       }
       Text {
         Layout.fillWidth: true
@@ -51,7 +51,7 @@ Card {
       text: card.temps.length ? card.levels[card.level].label : "—"
       color: card.levels[card.level].color
       font.family: "Adwaita Sans"
-      font.pixelSize: 24
+      font.pixelSize: card.view.host.theme.px(24)
       font.weight: Font.DemiBold
     }
     Text {
@@ -60,7 +60,7 @@ Card {
       elide: Text.ElideRight
       color: card.view.textMuted
       font.family: "Adwaita Sans"
-      font.pixelSize: 13
+      font.pixelSize: card.view.host.theme.px(13)
       font.features: { "tnum": 1 }
     }
     Item { Layout.fillHeight: true }
@@ -85,7 +85,7 @@ Card {
             text: key.modelData.label
             color: key.current ? card.view.text : card.view.textMuted
             font.family: "Adwaita Sans"
-            font.pixelSize: 13
+            font.pixelSize: card.view.host.theme.px(13)
             font.weight: key.current ? Font.DemiBold : Font.Normal
           }
         }

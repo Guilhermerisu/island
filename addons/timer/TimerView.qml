@@ -125,7 +125,7 @@ Item {
       text: "Timer"
       color: view.timer.tint
       font.family: view.host.theme.textFontFamily
-      font.pixelSize: Math.round(46 * 0.4)
+      font.pixelSize: Math.round(view.host.theme.px(46) * 0.4)
       font.weight: Font.Medium
     }
 
@@ -169,7 +169,7 @@ Item {
         y: (drum.height - height) / 2 + shift * drum.height * 0.8
         color: view.timer.tint
         font.family: view.host.theme.textFontFamily
-        font.pixelSize: 46
+        font.pixelSize: view.host.theme.px(46)
         font.weight: Font.Light
         font.features: { "tnum": 1, "case": 1 }
         font.letterSpacing: -1

@@ -127,7 +127,7 @@ ListPicker {
         text: trayRow.entry.checked ? "󰄬" : trayRow.entry.kind === "open" ? "󰏌" : ""
         color: tray.host.theme.muted
         font.family: tray.host.theme.fontFamily
-        font.pixelSize: 16
+        font.pixelSize: tray.host.theme.px(16)
       }
       Text {
         anchors.left: icon.right
@@ -140,7 +140,7 @@ ListPicker {
         elide: Text.ElideRight
         color: tray.host.theme.text
         font.family: tray.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: tray.host.theme.px(14)
         font.weight: Font.Medium
       }
       Text {
@@ -151,7 +151,7 @@ ListPicker {
         text: "󰅂"
         color: tray.host.theme.muted
         font.family: tray.host.theme.fontFamily
-        font.pixelSize: 16
+        font.pixelSize: tray.host.theme.px(16)
       }
     }
   }

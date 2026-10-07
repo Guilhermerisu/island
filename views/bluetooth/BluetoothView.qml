@@ -213,14 +213,14 @@ ColumnLayout {
       radius: 16
       color: backMouse.containsMouse ? bt.well : bt.card
       Tooltip { theme: bt.host.theme; text: "Control Center" }
-      Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: 17 }
+      Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(17) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
     Text {
       text: "Bluetooth"
       color: bt.text
       font.family: bt.host.theme.textFontFamily
-      font.pixelSize: 17
+      font.pixelSize: bt.host.theme.px(17)
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
@@ -251,7 +251,7 @@ ColumnLayout {
         text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
         color: bt.textMuted
         font.family: bt.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: bt.host.theme.px(14)
       }
 
       ListView {
@@ -298,7 +298,7 @@ ColumnLayout {
               text: row.modelData.header || ""
               color: bt.textMuted
               font.family: bt.host.theme.textFontFamily
-              font.pixelSize: 14
+              font.pixelSize: bt.host.theme.px(14)
               font.weight: Font.DemiBold
             }
             Row {
@@ -314,7 +314,7 @@ ColumnLayout {
                 text: "󰑓"
                 color: bt.textMuted
                 font.family: bt.iconFont
-                font.pixelSize: 14
+                font.pixelSize: bt.host.theme.px(14)
                 AmbientRotation {
                   target: spinner
                   period: 1200
@@ -327,7 +327,7 @@ ColumnLayout {
                 rotation: bt.otherOpen ? 90 : 0
                 color: bt.textMuted
                 font.family: bt.iconFont
-                font.pixelSize: 17
+                font.pixelSize: bt.host.theme.px(17)
                 Behavior on rotation { MotionAnimation { theme: bt.host.theme; pace: "standard" } }
               }
             }
@@ -361,7 +361,7 @@ ColumnLayout {
                 text: "󰂯"
                 color: row.modelData.connected ? bt.accentInk : bt.text
                 font.family: bt.iconFont
-                font.pixelSize: 18
+                font.pixelSize: bt.host.theme.px(18)
               }
             }
             Column {
@@ -377,7 +377,7 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: bt.text
                 font.family: bt.host.theme.textFontFamily
-                font.pixelSize: 15
+                font.pixelSize: bt.host.theme.px(15)
               }
               Text {
                 width: parent.width
@@ -389,7 +389,7 @@ ColumnLayout {
                 text: status
                 color: bt.textMuted
                 font.family: bt.host.theme.textFontFamily
-                font.pixelSize: 12
+                font.pixelSize: bt.host.theme.px(12)
               }
             }
             MouseArea {
@@ -417,7 +417,7 @@ ColumnLayout {
                   text: row.modelData.battery + "%"
                   color: parent.low ? "#ff453a" : bt.textMuted
                   font.family: bt.host.theme.textFontFamily
-                  font.pixelSize: 13
+                  font.pixelSize: bt.host.theme.px(13)
                   font.features: { "tnum": 1 }
                 }
                 BatteryIcon {
@@ -439,7 +439,7 @@ ColumnLayout {
                   text: "󰅖"
                   color: forgetMouse.containsMouse ? bt.text : bt.textMuted
                   font.family: bt.iconFont
-                  font.pixelSize: 15
+                  font.pixelSize: bt.host.theme.px(15)
                 }
                 MouseArea {
                   id: forgetMouse

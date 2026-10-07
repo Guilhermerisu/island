@@ -68,7 +68,6 @@ ColumnLayout {
       view: page.view
       label: "Font"
       detail: "Island default, Omarchy's menu font, or your own"
-      last: page.view.settings.textFontMode !== "custom"
       SettingsPopUp {
         view: page.view
         options: [
@@ -78,6 +77,22 @@ ColumnLayout {
         ]
         value: page.view.settings.textFontMode
         onPicked: function(v) { page.view.settings.textFontMode = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      label: "Text Size"
+      last: page.view.settings.textFontMode !== "custom"
+      SettingsPopUp {
+        view: page.view
+        options: [
+          { label: "Small", value: 0.9 },
+          { label: "Default", value: 1 },
+          { label: "Large", value: 1.15 },
+          { label: "Extra Large", value: 1.3 }
+        ]
+        value: page.view.settings.textScale
+        onPicked: function(v) { page.view.settings.textScale = v }
       }
     }
     SettingsRow {

@@ -40,7 +40,7 @@ Item {
       text: "󰝚"
       color: media.host.theme.accentText
       font.family: media.host.theme.fontFamily
-      font.pixelSize: 14
+      font.pixelSize: media.host.theme.px(14)
     }
   }
 

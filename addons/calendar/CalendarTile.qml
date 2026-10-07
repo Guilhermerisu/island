@@ -43,7 +43,7 @@ CcTile {
       text: tile.weekday.slice(0, 3).toUpperCase()
       color: tile.checked ? tile.center.accentInk : tile.center.accent
       font.family: tile.center.host.theme.textFontFamily
-      font.pixelSize: 9
+      font.pixelSize: tile.center.host.theme.px(9)
       font.weight: Font.Bold
       font.letterSpacing: 0.3
     }
@@ -52,7 +52,7 @@ CcTile {
       text: tile.calendar.today.getDate()
       color: tile.checked ? tile.center.accentInk : tile.center.text
       font.family: tile.center.host.theme.textFontFamily
-      font.pixelSize: 19
+      font.pixelSize: tile.center.host.theme.px(19)
       font.weight: Font.Normal
       font.features: { "tnum": 1 }
     }

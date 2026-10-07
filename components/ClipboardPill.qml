@@ -65,7 +65,7 @@ Item {
       text: pill.isFiles ? "󰈔" : "󰆏"
       color: pill.host.theme.accent
       font.family: pill.host.theme.fontFamily
-      font.pixelSize: 19
+      font.pixelSize: pill.host.theme.px(19)
     }
   }
 
@@ -93,7 +93,7 @@ Item {
     elide: Text.ElideRight
     color: "#ffffff"
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: 13
+    font.pixelSize: pill.host.theme.px(13)
     font.weight: Font.Medium
     font.letterSpacing: -0.2
   }
@@ -107,7 +107,7 @@ Item {
     text: "Copied"
     color: pill.host.theme.accent
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: 13
+    font.pixelSize: pill.host.theme.px(13)
     font.weight: Font.DemiBold
     font.letterSpacing: -0.2
     opacity: pill.shown ? 1 : 0
