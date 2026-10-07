@@ -213,6 +213,30 @@ Item {
   onSinkReadyChanged: volumeFeedback()
   Component.onCompleted: initialized = true
 
+  // The media service handles the media keys and summons the stock OSD, which
+  // is off, so the island watches the player instead. The last player seen
+  // stays the target even once it pauses and stops being the service's active
+  // one, so pause and play still show.
+  property var mediaPlayer: null
+  readonly property var mediaSourcePlayer: nowPlaying.player
+  onMediaSourcePlayerChanged: if (mediaSourcePlayer) mediaPlayer = mediaSourcePlayer
+  Connections {
+    target: root.mediaPlayer
+    function onIsPlayingChanged() { root.mediaFeedback() }
+    function onTrackTitleChanged() { root.mediaFeedback() }
+  }
+  function mediaFeedback() {
+    if (!initialized || !mediaPlayer || !settings.mediaPill) return
+    var title = String(mediaPlayer.trackTitle || "")
+    if (title === "") return
+    var artist = String(mediaPlayer.trackArtist || "")
+    showOsd(JSON.stringify({
+      icon: mediaPlayer.isPlaying ? "media-play" : "media-pause",
+      message: title + (artist ? " - " + artist : ""),
+      duration: "1500"
+    }))
+  }
+
   // ---------- Omarchy OSD ----------
   //
   // Payloads from the `osd` IPC target (omarchy-osd and Omarchy's scripts)
@@ -500,7 +524,8 @@ Item {
               else if (root.notificationPill && root.notifications.last && root.notifications.last.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.setup.install() }
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
-              else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth" : "controls"
+              else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth"
+                : root.activities.current.kind === "network" ? "wifi" : "controls"
               else if (root.addonPill) root.addonPill.pillClicked()
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()

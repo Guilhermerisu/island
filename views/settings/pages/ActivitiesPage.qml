@@ -17,6 +17,7 @@ ColumnLayout {
     { kind: "downloads", key: "downloads", title: "Downloads", description: "Show active download progress" },
     { kind: "updates", key: "systemUpdates", title: "System Updates", description: "Show available system updates" },
     { kind: "bluetooth", key: "bluetoothActivity", title: "Bluetooth Devices", description: "Show Bluetooth connection status" },
+    { kind: "network", key: "networkActivity", title: "Network", description: "Wi-Fi and Ethernet connection status" },
     { kind: "battery", key: "batteryActivity", title: "Battery", description: "Charging and low battery alerts" },
     { kind: "volume", key: "volumeHud", title: "Volume", description: "Display the current volume level" },
     { kind: "brightness", key: "brightnessHud", title: "Brightness", description: "Display the current brightness level" },
