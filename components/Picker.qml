@@ -214,7 +214,7 @@ Item {
         Loader {
           anchors.fill: parent
           sourceComponent: picker.card
-          onLoaded: item.entry = Qt.binding(function() { return slot.modelData })
+          onLoaded: item.entry = Qt.binding(function() { return slot.modelData || ({}) })
         }
         // Hairline so dark cards still read against the black island.
         Rectangle {
@@ -237,7 +237,7 @@ Item {
         }
         // Checkmark badge on the item that's active right now.
         Rectangle {
-          visible: slot.modelData.key === picker.currentKey
+          visible: !!slot.modelData && slot.modelData.key === picker.currentKey
           anchors.right: parent.right
           anchors.top: parent.top
           anchors.margins: 7
@@ -270,7 +270,7 @@ Item {
       visible: picker.filtered.length === 0 && picker.items.length > 0
       text: picker.emptyText
       color: picker.host.theme.muted
-      font.family: "Adwaita Sans"
+      font.family: picker.host.theme.textFontFamily
       font.pixelSize: 13
     }
   }

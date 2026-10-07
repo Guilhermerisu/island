@@ -43,6 +43,8 @@ ListPicker {
   property var itemOrder: []
   property var whenResults: ({})
   property var checkedResults: ({})
+  property var disabledResults: ({})
+  property bool guardsPending: false
 
   FileView {
     path: menu.omarchyPath + "/default/omarchy/omarchy-menu.jsonc"
@@ -75,7 +77,7 @@ ListPicker {
     stdout: SplitParser { onRead: function(data) { guardProc.collected += data + "\n" } }
     onExited: function(exitCode, exitStatus) {
       if (exitCode !== 0 || exitStatus !== 0) return
-      var nextWhen = ({}), nextChecked = ({})
+      var nextWhen = ({}), nextChecked = ({}), nextDisabled = ({})
       guardProc.collected.split("\n").forEach(function(line) {
         line = line.trim()
         var colon = line.lastIndexOf(":")
@@ -87,15 +89,29 @@ ListPicker {
         var id = rest.substring(0, tagAt), tag = rest.substring(tagAt + 1)
         if (tag === "w") nextWhen[id] = value
         else if (tag === "c") nextChecked[id] = value
+        else if (tag === "d") nextDisabled[id] = value
       })
       menu.whenResults = nextWhen
       menu.checkedResults = nextChecked
+      menu.disabledResults = nextDisabled
+      if (menu.guardsPending) Qt.callLater(function() { menu.evaluateGuards() })
     }
   }
   function evaluateGuards() {
-    if (guardProc.running) return
+    // Process ignores a command change while it is running, so a second
+    // evaluation has to wait for the batch in flight rather than be dropped.
+    if (guardProc.running) {
+      guardsPending = true
+      return
+    }
+    guardsPending = false
     var script = MenuModel.guardScript(items_)
-    if (!script) return
+    if (!script) {
+      whenResults = ({})
+      checkedResults = ({})
+      disabledResults = ({})
+      return
+    }
     guardProc.collected = ""
     guardProc.command = ["bash", "-lc", script]
     guardProc.running = true
@@ -162,6 +178,15 @@ ListPicker {
   property var navStack: []
   function isVisible(entry) { return MenuModel.isVisible(items_, itemOrder, whenResults, entry, 0) }
 
+  // Newer MenuModel builds slot disabledResults (the `disabled:` guard) into
+  // displayRow before the entry, older ones don't. Route through one wrapper
+  // so the island runs against either instead of shifting every argument.
+  function displayRow(entry, detail, score, section) {
+    if (MenuModel.displayRow.length >= 8)
+      return MenuModel.displayRow(items_, itemOrder, checkedResults, disabledResults, entry, detail, score, section)
+    return MenuModel.displayRow(items_, itemOrder, checkedResults, entry, detail, score)
+  }
+
   readonly property var rows: {
     var q = query.trim()
     var active = MenuModel.item(items_, activeMenu) ? activeMenu : "root"
@@ -171,13 +196,11 @@ ListPicker {
       if (!entry || entry.id === "root") continue
       if (q) {
         if (!MenuModel.isDescendantOf(items_, entry.id, active)) continue
-        if (!MenuModel.matchesQuery(entry, q, isVisible(entry))) continue
-        var row = MenuModel.displayRow(items_, itemOrder, checkedResults, entry,
-          MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q))
-        list.push(row)
+        if (!MenuModel.matchesQuery(entry, q, isVisible(entry) && !MenuModel.isDisabled(disabledResults, entry))) continue
+        list.push(displayRow(entry, MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q)))
       } else {
         if (entry.parent !== active || !isVisible(entry)) continue
-        list.push(MenuModel.displayRow(items_, itemOrder, checkedResults, entry, "", entry.order))
+        list.push(displayRow(entry, "", entry.order))
       }
     }
     if (q) list.sort(function(a, b) { return a.score !== b.score ? a.score - b.score : a.path.localeCompare(b.path) })
@@ -210,7 +233,7 @@ ListPicker {
     runner.startDetached()
   }
   function activate(row) {
-    if (!row) return
+    if (!row || row.disabled) return
     // The Apps submenu is a native list in Omarchy's menu; the island's
     // launcher covers it.
     if (row.provider === "apps") { host.view = "apps"; return }
@@ -249,7 +272,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: menu.host.theme.text
-          font.family: "Adwaita Sans"
+          font.family: menu.host.theme.textFontFamily
           font.pixelSize: 14
           font.weight: Font.Medium
         }
@@ -260,7 +283,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: menu.host.theme.muted
-          font.family: "Adwaita Sans"
+          font.family: menu.host.theme.textFontFamily
           font.pixelSize: 11
         }
       }

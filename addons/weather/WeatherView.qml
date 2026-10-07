@@ -83,7 +83,7 @@ Item {
           text: view.weather.place
           elide: Text.ElideRight
           color: view.ink
-          font.family: "Adwaita Sans"
+          font.family: view.theme.textFontFamily
           font.pixelSize: 20
           font.weight: Font.Medium
           font.letterSpacing: -0.3
@@ -94,7 +94,7 @@ Item {
           text: view.now ? view.weather.describe(view.now.code) : ""
           elide: Text.ElideRight
           color: view.inkMuted
-          font.family: "Adwaita Sans"
+          font.family: view.theme.textFontFamily
           font.pixelSize: 15
           font.weight: Font.Normal
         }
@@ -106,7 +106,7 @@ Item {
         y: place.y + condition.y + condition.baselineOffset - baselineOffset
         text: view.now ? view.degrees(view.now.temperature) : ""
         color: view.ink
-        font.family: "Adwaita Sans"
+        font.family: view.theme.textFontFamily
         font.pixelSize: 46
         font.weight: Font.Light
         font.letterSpacing: -1
@@ -130,7 +130,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: modelData.now ? "Now" : view.hourText(modelData.hour)
             color: view.inkMuted
-            font.family: "Adwaita Sans"
+            font.family: view.theme.textFontFamily
             font.pixelSize: 13
             font.weight: Font.Medium
           }
@@ -154,7 +154,7 @@ Item {
               anchors.bottom: parent.bottom
               text: modelData.rain + "%"
               color: "#5ac8fa"
-              font.family: "Adwaita Sans"
+              font.family: view.theme.textFontFamily
               font.pixelSize: 10
               font.weight: Font.Bold
             }
@@ -163,7 +163,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: Math.round(modelData.temperature)
             color: view.ink
-            font.family: "Adwaita Sans"
+            font.family: view.theme.textFontFamily
             font.pixelSize: 15
             font.weight: Font.Medium
             Text {
@@ -197,7 +197,7 @@ Item {
         : notice.status === "unknown" ? "Couldn't find “" + view.weather.city + "”"
         : "Couldn't reach Open-Meteo"
       color: notice.status === "loading" ? view.textMuted : view.theme.text
-      font.family: "Adwaita Sans"
+      font.family: view.theme.textFontFamily
       font.pixelSize: 15
     }
     Rectangle {
@@ -215,7 +215,7 @@ Item {
         anchors.centerIn: parent
         text: notice.needsCity ? "Open Settings" : "Try Again"
         color: view.theme.accentText
-        font.family: "Adwaita Sans"
+        font.family: view.theme.textFontFamily
         font.pixelSize: 14
         font.weight: Font.Medium
       }

@@ -142,7 +142,7 @@ Item {
               text: slot.modelData.label
               color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
-              font.family: "Adwaita Sans"
+              font.family: power.host.theme.textFontFamily
               font.pixelSize: 13
               font.weight: Font.DemiBold
               Behavior on color { MotionColorAnimation { theme: power.host.theme } }

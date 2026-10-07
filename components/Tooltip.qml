@@ -56,7 +56,7 @@ Item {
       anchors.centerIn: parent
       text: tip.text
       color: "#f2f2f7"
-      font.family: "Adwaita Sans"
+      font.family: tip.theme.textFontFamily
       font.pixelSize: 12
     }
   }

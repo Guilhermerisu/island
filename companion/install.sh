@@ -1,6 +1,7 @@
 #!/bin/bash
 # Installs (or updates) the guilhermerisu.notifications companion from this repo,
-# enables it in shell.json in place of the stock notification service, points
+# enables it in shell.json in place of the stock notification service, turns
+# the stock OSD off so Omarchy's popups show on the island instead, points
 # the Omarchy menu's Theme, Background, System, and Apps entries at the island,
 # writes ~/.config/hypr/island-bindings.lua (see bindings.sh), and restarts the
 # shell so the new notification server takes over.
@@ -57,7 +58,7 @@ fi
 jq -e 'type == "object"' "$config" >/dev/null 2>&1 || fail "$config isn't valid JSON"
 cp "$config" "$config.bak.$(date +%s)"
 
-disable='["omarchy.notifications"]'
+disable='["omarchy.notifications","omarchy.osd"]'
 
 tmp=$(mktemp "$config.XXXXXX")
 jq --argjson disable "$disable" '

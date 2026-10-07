@@ -40,7 +40,7 @@ Item {
       text: row.label
       elide: Text.ElideRight
       color: row.view.text
-      font.family: "Adwaita Sans"
+      font.family: row.view.host.theme.textFontFamily
       font.pixelSize: row.view.detailFontSize
     }
     Text {
@@ -49,7 +49,7 @@ Item {
       text: row.detail
       elide: Text.ElideRight
       color: row.view.textMuted
-      font.family: "Adwaita Sans"
+      font.family: row.view.host.theme.textFontFamily
       font.pixelSize: row.view.detailCaptionFontSize
     }
   }

@@ -27,6 +27,7 @@ Item {
       property bool clock24h: true
       property bool mediaPill: true
       property bool volumeHud: true
+      property bool brightnessHud: true
       property int bannerSeconds: 5
       property bool notch: false
       property bool downloads: true
@@ -37,6 +38,8 @@ Item {
       property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
       property bool colorfulLiveActivities: true
+      property string textFontMode: "island"
+      property string customFont: ""
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
       property bool microphoneMuteControl: false

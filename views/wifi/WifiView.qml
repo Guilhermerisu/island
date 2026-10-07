@@ -228,7 +228,7 @@ ColumnLayout {
     Text {
       text: "Wi-Fi"
       color: wf.text
-      font.family: "Adwaita Sans"
+      font.family: wf.host.theme.textFontFamily
       font.pixelSize: 17
       font.weight: Font.DemiBold
     }
@@ -259,7 +259,7 @@ ColumnLayout {
         verticalAlignment: Text.AlignVCenter
         text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
         color: wf.textMuted
-        font.family: "Adwaita Sans"
+        font.family: wf.host.theme.textFontFamily
         font.pixelSize: 14
       }
 
@@ -307,7 +307,7 @@ ColumnLayout {
               anchors.verticalCenter: parent.verticalCenter
               text: row.modelData.header || ""
               color: wf.textMuted
-              font.family: "Adwaita Sans"
+              font.family: wf.host.theme.textFontFamily
               font.pixelSize: 14
               font.weight: Font.DemiBold
             }
@@ -388,7 +388,7 @@ ColumnLayout {
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: wf.text
-                font.family: "Adwaita Sans"
+                font.family: wf.host.theme.textFontFamily
                 font.pixelSize: 15
               }
               Text {
@@ -400,7 +400,7 @@ ColumnLayout {
                 visible: status !== ""
                 text: status
                 color: wf.textMuted
-                font.family: "Adwaita Sans"
+                font.family: wf.host.theme.textFontFamily
                 font.pixelSize: 12
               }
             }
@@ -437,7 +437,7 @@ ColumnLayout {
                 color: wf.text
                 selectionColor: wf.host.theme.withAlpha(wf.accent, 0.4)
                 selectedTextColor: wf.text
-                font.family: "Adwaita Sans"
+                font.family: wf.host.theme.textFontFamily
                 font.pixelSize: 15
                 clip: true
                 function sync() { if (row.askingPassword) { text = wf.passwordText; forceActiveFocus() } }
@@ -525,7 +525,7 @@ ColumnLayout {
           anchors.verticalCenter: parent.verticalCenter
           text: "Wi-Fi Settings…"
           color: wf.text
-          font.family: "Adwaita Sans"
+          font.family: wf.host.theme.textFontFamily
           font.pixelSize: 15
         }
         MouseArea {

@@ -53,15 +53,34 @@ Item {
     Qt.callLater(function() { search.focusInput() })
   }
   onQueryChanged: reset()
+  // The list re-forms under the cursor (results, clipboard, the live app
+  // list), so keep the selection on a row that exists and can be picked.
+  onItemsChanged: {
+    if (!list) return
+    if (!items.length) { list.currentIndex = 0; return }
+    if (list.currentIndex >= items.length || isDisabled(items[list.currentIndex]))
+      list.currentIndex = firstSelectable()
+  }
 
   function clearSearch() { search.clear() }
+  // Rows whose `disabled:` guard answered true stay listed but dimmed, and
+  // the cursor steps over them, the way Omarchy's menu treats them.
+  function isDisabled(item) { return !!(item && item.disabled) }
+  function firstSelectable() {
+    for (var i = 0; i < items.length; i++) if (!isDisabled(items[i])) return i
+    return 0
+  }
   function reset() {
-    list.currentIndex = 0
-    list.positionViewAtBeginning()
+    list.currentIndex = firstSelectable()
+    if (items.length) list.positionViewAtIndex(list.currentIndex, GridView.Contain)
   }
   function move(delta) {
     if (!items.length) return
-    list.currentIndex = Math.max(0, Math.min(items.length - 1, list.currentIndex + delta))
+    var next = list.currentIndex
+    for (var step = 0; step < items.length; step++) {
+      next = Math.max(0, Math.min(items.length - 1, next + delta))
+      if (!isDisabled(items[next])) { list.currentIndex = next; return }
+    }
   }
 
   SearchField {
@@ -95,7 +114,7 @@ Item {
       } else if (event.key === Qt.Key_PageUp) {
         picker.move(-picker.visibleRows * picker.columns); event.accepted = true
       } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-        if (picker.selected) picker.chosen(picker.selected)
+        if (picker.selected && !picker.isDisabled(picker.selected)) picker.chosen(picker.selected)
         event.accepted = true
       } else if (event.key === Qt.Key_Escape) {
         picker.host.view = "rest"; event.accepted = true
@@ -136,8 +155,10 @@ Item {
       required property var modelData
       required property int index
       readonly property bool isSelected: GridView.isCurrentItem
+      readonly property bool itemDisabled: picker.isDisabled(slot.modelData)
       width: list.cellWidth
       height: list.cellHeight
+      opacity: slot.itemDisabled ? 0.4 : 1
 
       Rectangle {
         anchors.fill: parent
@@ -167,14 +188,14 @@ Item {
         anchors.rightMargin: picker.grid ? 0 : 12
         sourceComponent: picker.row
         onLoaded: {
-          item.entry = Qt.binding(function() { return slot.modelData })
+          item.entry = Qt.binding(function() { return slot.modelData || ({}) })
           item.selected = Qt.binding(function() { return slot.isSelected })
         }
       }
       MouseArea {
         anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: picker.chosen(slot.modelData)
+        cursorShape: slot.itemDisabled ? Qt.ArrowCursor : Qt.PointingHandCursor
+        onClicked: if (!slot.itemDisabled) picker.chosen(slot.modelData)
       }
     }
 
@@ -183,7 +204,7 @@ Item {
       visible: picker.items.length === 0
       text: picker.emptyText
       color: picker.host.theme.muted
-      font.family: "Adwaita Sans"
+      font.family: picker.host.theme.textFontFamily
       font.pixelSize: 13
     }
   }

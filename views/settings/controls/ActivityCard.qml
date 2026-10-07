@@ -88,7 +88,7 @@ FocusScope {
       text: card.title
       horizontalAlignment: Text.AlignHCenter
       color: card.view.text
-      font.family: "Adwaita Sans"
+      font.family: card.view.host.theme.textFontFamily
       font.pixelSize: card.view.detailFontSize
       font.weight: Font.Normal
     }
@@ -99,7 +99,7 @@ FocusScope {
       wrapMode: Text.NoWrap
       elide: Text.ElideRight
       color: card.view.textMuted
-      font.family: "Adwaita Sans"
+      font.family: card.view.host.theme.textFontFamily
       font.pixelSize: card.view.detailCaptionFontSize
     }
   }

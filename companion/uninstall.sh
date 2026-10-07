@@ -1,8 +1,8 @@
 #!/bin/bash
 # Uninstalls Island: switches back to the stock bar, removes the notification
-# companion (Omarchy's own notification service comes back with it), cleans
-# shell.json, takes out the Omarchy menu overrides that still point at the
-# island, deletes ~/.config/hypr/island-bindings.lua and the line in
+# companion (Omarchy's own notification service and OSD come back with it),
+# cleans shell.json, takes out the Omarchy menu overrides that still point at
+# the island, deletes ~/.config/hypr/island-bindings.lua and the line in
 # hyprland.lua that loads it, removes the island plugin itself, and restarts
 # the shell.
 #
@@ -59,7 +59,7 @@ if [[ -f $config ]]; then
   step "Cleaning $config"
   filter='
     .plugins = ((.plugins // []) | map(select(.id != "'"$companion_id"'")))
-    | .disabledPlugins = ((.disabledPlugins // []) | map(select(. != "omarchy.notifications")))'
+    | .disabledPlugins = ((.disabledPlugins // []) | map(select(. != "omarchy.notifications" and . != "omarchy.osd")))'
   if $dry_run; then
     diff <(jq . "$config") <(jq "$filter" "$config") | sed 's/^/    /' || true
   else

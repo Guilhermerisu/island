@@ -11,6 +11,16 @@ Item {
   required property string home
 
   readonly property string fontFamily: "monospace"
+  // Text family for the island's surfaces: its own, Omarchy's (the menu font,
+  // so `omarchy font set` and OMARCHY_MENU_FONT carry over), or a custom one.
+  readonly property string pluginFont: "Adwaita Sans"
+  readonly property string textFontFamily: {
+    var mode = settings.textFontMode || "island"
+    if (mode === "omarchy") return Style.font.menuFamily || Style.font.family || pluginFont
+    var custom = String(settings.customFont || "").trim()
+    if (mode === "custom" && custom) return custom
+    return pluginFont
+  }
   readonly property color background: "#000000"
   readonly property bool textIsLight: luminance(Color.foreground) > 0.5
   readonly property color text: textIsLight ? Color.foreground : Color.background

@@ -58,7 +58,7 @@ Rectangle {
       text: t.title
       elide: Text.ElideRight
       color: center.text
-      font.family: "Adwaita Sans"
+      font.family: center.host.theme.textFontFamily
       font.pixelSize: 14
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
@@ -70,7 +70,7 @@ Rectangle {
       textFormat: Text.PlainText
       elide: Text.ElideRight
       color: center.textMuted
-      font.family: "Adwaita Sans"
+      font.family: center.host.theme.textFontFamily
       font.pixelSize: 12
     }
   }

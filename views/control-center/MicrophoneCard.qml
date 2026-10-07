@@ -48,7 +48,7 @@ CcSection {
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: inputRow.isDefault ? card.center.text : card.center.textMuted
-        font.family: "Adwaita Sans"
+        font.family: center.host.theme.textFontFamily
         font.pixelSize: 12
       }
       Text {

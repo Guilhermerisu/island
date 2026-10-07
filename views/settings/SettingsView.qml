@@ -127,7 +127,7 @@ Item {
             visible: searchInput.text === ""
             text: "Search"
             color: settingsView.textMuted
-            font.family: "Adwaita Sans"
+            font.family: settingsView.host.theme.textFontFamily
             font.pixelSize: 13
           }
           TextInput {
@@ -138,7 +138,7 @@ Item {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             color: settingsView.text
-            font.family: "Adwaita Sans"
+            font.family: settingsView.host.theme.textFontFamily
             font.pixelSize: 13
             onTextChanged: {
               settingsView.searchQuery = text
@@ -168,7 +168,7 @@ Item {
           visible: settingsView.searchQuery !== "" && !settingsView.hasSearchResults
           text: "No Results"
           color: settingsView.textMuted
-          font.family: "Adwaita Sans"
+          font.family: settingsView.host.theme.textFontFamily
           font.pixelSize: 13
           Layout.alignment: Qt.AlignHCenter
           Layout.topMargin: 18
@@ -210,7 +210,7 @@ Item {
   property Item menuButton: null
   property var menuOptions: []
   property var menuValue
-  FontMetrics { id: menuFont; font.family: "Adwaita Sans"; font.pixelSize: settingsView.detailFontSize }
+  FontMetrics { id: menuFont; font.family: settingsView.host.theme.textFontFamily; font.pixelSize: settingsView.detailFontSize }
   function openMenu(button) {
     var widest = 0
     for (var i = 0; i < button.options.length; i++) widest = Math.max(widest, menuFont.advanceWidth(button.options[i].label))
@@ -275,7 +275,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: menuItem.modelData.label
             color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
-            font.family: "Adwaita Sans"
+            font.family: settingsView.host.theme.textFontFamily
             font.pixelSize: settingsView.detailFontSize
           }
           MouseArea {

@@ -42,7 +42,7 @@ CcTile {
       anchors.horizontalCenter: parent.horizontalCenter
       text: tile.weekday.slice(0, 3).toUpperCase()
       color: tile.checked ? tile.center.accentInk : tile.center.accent
-      font.family: "Adwaita Sans"
+      font.family: tile.center.host.theme.textFontFamily
       font.pixelSize: 9
       font.weight: Font.Bold
       font.letterSpacing: 0.3
@@ -51,7 +51,7 @@ CcTile {
       anchors.horizontalCenter: parent.horizontalCenter
       text: tile.calendar.today.getDate()
       color: tile.checked ? tile.center.accentInk : tile.center.text
-      font.family: "Adwaita Sans"
+      font.family: tile.center.host.theme.textFontFamily
       font.pixelSize: 19
       font.weight: Font.Normal
       font.features: { "tnum": 1 }

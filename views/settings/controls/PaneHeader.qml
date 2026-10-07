@@ -35,7 +35,7 @@ Rectangle {
       horizontalAlignment: header.compact ? Text.AlignLeft : Text.AlignHCenter
       text: header.page
       color: header.view.text
-      font.family: "Adwaita Sans"
+      font.family: header.view.host.theme.textFontFamily
       font.pixelSize: header.compact ? 22 : header.view.detailTitleFontSize
       font.weight: Font.Bold
     }
@@ -47,7 +47,7 @@ Rectangle {
       wrapMode: Text.WordWrap
       lineHeight: 1.1
       color: header.view.textMuted
-      font.family: "Adwaita Sans"
+      font.family: header.view.host.theme.textFontFamily
       font.pixelSize: header.view.detailFontSize - 1
     }
   }

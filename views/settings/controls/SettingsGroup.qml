@@ -16,7 +16,7 @@ ColumnLayout {
     Layout.leftMargin: 2
     text: group.title
     color: group.view.text
-    font.family: "Adwaita Sans"
+    font.family: group.view.host.theme.textFontFamily
     font.pixelSize: group.view.detailFontSize
     font.weight: Font.DemiBold
   }
@@ -41,7 +41,7 @@ ColumnLayout {
     text: group.footer
     wrapMode: Text.WordWrap
     color: group.view.textMuted
-    font.family: "Adwaita Sans"
+    font.family: group.view.host.theme.textFontFamily
     font.pixelSize: group.view.detailCaptionFontSize
   }
 }

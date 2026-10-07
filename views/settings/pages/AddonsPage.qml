@@ -82,7 +82,7 @@ ColumnLayout {
             text: addon.modelData.name
             elide: Text.ElideRight
             color: page.view.text
-            font.family: "Adwaita Sans"
+            font.family: page.view.host.theme.textFontFamily
             font.pixelSize: page.view.detailFontSize + 1
             font.weight: Font.Medium
           }
@@ -94,7 +94,7 @@ ColumnLayout {
             maximumLineCount: 2
             elide: Text.ElideRight
             color: page.view.textMuted
-            font.family: "Adwaita Sans"
+            font.family: page.view.host.theme.textFontFamily
             font.pixelSize: page.view.detailCaptionFontSize + 1
           }
         }
@@ -210,7 +210,7 @@ ColumnLayout {
     horizontalAlignment: Text.AlignHCenter
     text: "No addons available"
     color: page.view.textMuted
-    font.family: "Adwaita Sans"
+    font.family: page.view.host.theme.textFontFamily
     font.pixelSize: page.view.detailFontSize
   }
 }

@@ -36,9 +36,10 @@ Item {
 
     VolumeLevel {
       anchors.fill: parent
-      visible: preview.kind === "volume"
+      visible: preview.kind === "volume" || preview.kind === "brightness"
       theme: preview.view.host.theme
-      level: 0.18
+      level: preview.kind === "brightness" ? 0.4 : 0.18
+      icon: preview.kind === "brightness" ? "󰍹" : ""
       animateLevel: false
     }
     Row {
@@ -62,7 +63,7 @@ Item {
               visible: workspace.index === 1
               text: "2"
               color: preview.colorfulActivities ? "#000000" : preview.view.accentInk
-              font.family: "Adwaita Sans"
+              font.family: preview.view.host.theme.textFontFamily
               font.pixelSize: 11
               font.weight: Font.Bold
             }
@@ -107,7 +108,7 @@ Item {
       visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer
       text: ({ battery: "Charging", clipboard: "Hello, world!" })[preview.kind] || "12:34"
       color: "#ffffff"
-      font.family: "Adwaita Sans"
+      font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: preview.transfer ? 12 : 10
       font.weight: preview.transfer ? Font.DemiBold : Font.Normal
     }
@@ -118,7 +119,7 @@ Item {
       visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer
       text: ({ battery: "64%", clipboard: "Copied", updates: "Updating", downloads: "2 MB/s" })[preview.kind] || ""
       color: preview.kind === "battery" ? (preview.colorfulActivities ? "#30d158" : preview.accent) : preview.kind === "clipboard" ? preview.accent : preview.transfer ? preview.transferColor : "#ffffff"
-      font.family: "Adwaita Sans"
+      font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: 10
       font.weight: Font.DemiBold
     }
@@ -130,10 +131,10 @@ Item {
       Text {
         text: "Connected"
         color: "#888888"
-        font.family: "Adwaita Sans"
+        font.family: preview.view.host.theme.textFontFamily
         font.pixelSize: 10
       }
-      Text { text: "Headphones"; color: "#ffffff"; font.family: "Adwaita Sans"; font.pixelSize: 12 }
+      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: 12 }
     }
     Rectangle {
       anchors.right: parent.right
@@ -144,14 +145,14 @@ Item {
       color: "transparent"
       border.width: 2
       border.color: preview.colorfulActivities ? "#30d158" : preview.accent
-      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? "#30d158" : preview.accent; font.family: "Adwaita Sans"; font.pixelSize: 10 }
+      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? "#30d158" : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: 10 }
     }
     Text {
       anchors.centerIn: parent
       visible: preview.kind === "media"
       text: "12:34"
       color: "#ffffff"
-      font.family: "Adwaita Sans"
+      font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: 12
       font.weight: Font.DemiBold
     }

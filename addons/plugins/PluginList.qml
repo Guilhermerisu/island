@@ -114,7 +114,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: plugins.host.theme.text
-          font.family: "Adwaita Sans"
+          font.family: plugins.host.theme.textFontFamily
           font.pixelSize: 14
           font.weight: Font.Medium
         }
@@ -124,7 +124,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: plugins.host.theme.muted
-          font.family: "Adwaita Sans"
+          font.family: plugins.host.theme.textFontFamily
           font.pixelSize: 11
         }
       }
@@ -134,7 +134,7 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         text: pluginRow.entry.enabled ? (pluginRow.entry.openable ? "Open" : "On") : "Off"
         color: pluginRow.entry.enabled ? plugins.host.theme.text : plugins.host.theme.muted
-        font.family: "Adwaita Sans"
+        font.family: plugins.host.theme.textFontFamily
         font.pixelSize: 12
       }
     }

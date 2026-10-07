@@ -42,7 +42,7 @@ Item {
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: "#ffffff"
-    font.family: "Adwaita Sans"
+    font.family: pill.host.theme.textFontFamily
     font.pixelSize: 13
     font.weight: Font.Medium
     font.letterSpacing: -0.2
@@ -81,7 +81,7 @@ Item {
           text: modelData.toUpperCase()
           color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
-          font.family: "Adwaita Sans"
+          font.family: pill.host.theme.textFontFamily
           font.pixelSize: 11
           font.weight: Font.Bold
         }

@@ -24,7 +24,7 @@ Text {
   color: host.view === "rest" && host.setup.needsSetup ? host.theme.urgent : "#e2e6de"
   // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
   // digits from shifting as the time changes.
-  font.family: "Adwaita Sans"
+  font.family: host.theme.textFontFamily
   font.pixelSize: 16
   font.weight: Font.DemiBold
   // Apple-style: tabular digits, the colon raised to sit centered on them
