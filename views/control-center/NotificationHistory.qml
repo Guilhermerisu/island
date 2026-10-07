@@ -32,7 +32,7 @@ Rectangle {
       Text {
         text: "Notifications"
         color: history.center.text
-        font.family: "Adwaita Sans"
+        font.family: history.center.host.theme.textFontFamily
         font.pixelSize: 14
         font.weight: Font.DemiBold
         font.letterSpacing: -0.2
@@ -51,7 +51,7 @@ Rectangle {
           anchors.centerIn: parent
           text: "Clear All"
           color: history.center.text
-          font.family: "Adwaita Sans"
+          font.family: history.center.host.theme.textFontFamily
           font.pixelSize: 12
           font.weight: Font.Medium
         }
@@ -73,7 +73,7 @@ Rectangle {
       horizontalAlignment: Text.AlignHCenter
       text: "No notifications"
       color: history.center.textMuted
-      font.family: "Adwaita Sans"
+      font.family: history.center.host.theme.textFontFamily
       font.pixelSize: 12
     }
 
@@ -133,7 +133,7 @@ Rectangle {
             visible: noteIcon.status !== Image.Ready
             text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
             color: avatar.brand ? avatar.brand.ink : history.center.accent
-            font.family: avatar.brand ? "JetBrainsMono Nerd Font" : "Adwaita Sans"
+            font.family: avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily
             font.pixelSize: avatar.brand ? 20 : 14
             font.weight: Font.DemiBold
           }
@@ -161,7 +161,7 @@ Rectangle {
               textFormat: Text.PlainText
               elide: Text.ElideRight
               color: history.center.text
-              font.family: "Adwaita Sans"
+              font.family: history.center.host.theme.textFontFamily
               font.pixelSize: 14
               font.weight: Font.DemiBold
               font.letterSpacing: -0.2
@@ -173,7 +173,7 @@ Rectangle {
               text: history.center.host.notifications.age(note.modelData.timestamp)
               textFormat: Text.PlainText
               color: history.center.textMuted
-              font.family: "Adwaita Sans"
+              font.family: history.center.host.theme.textFontFamily
               font.pixelSize: 12
             }
           }
@@ -186,7 +186,7 @@ Rectangle {
             maximumLineCount: 3
             elide: Text.ElideRight
             color: history.center.host.theme.withAlpha(history.center.text, 0.72)
-            font.family: "Adwaita Sans"
+            font.family: history.center.host.theme.textFontFamily
             font.pixelSize: 13
           }
         }

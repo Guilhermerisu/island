@@ -66,7 +66,7 @@ Item {
         anchors.centerIn: parent
         text: pill.host.focusedWorkspaceId
         color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
-        font.family: "Adwaita Sans"
+        font.family: pill.host.theme.textFontFamily
         font.pixelSize: 12
         font.weight: Font.Bold
         font.features: { "tnum": 1 }

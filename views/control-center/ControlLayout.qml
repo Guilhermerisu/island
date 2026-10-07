@@ -149,7 +149,7 @@ ColumnLayout {
       visible: layout.center.editMode && layout.visibleControlKeys.length === 0
       text: "Drag a control here"
       color: layout.center.textMuted
-      font.family: "Adwaita Sans"
+      font.family: layout.center.host.theme.textFontFamily
       font.pixelSize: 13
     }
     Item {
@@ -270,7 +270,7 @@ ColumnLayout {
       anchors.centerIn: parent
       text: "Click the pencil to add controls"
       color: layout.center.textMuted
-      font.family: "Adwaita Sans"
+      font.family: layout.center.host.theme.textFontFamily
       font.pixelSize: 12
     }
   }

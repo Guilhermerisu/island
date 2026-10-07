@@ -139,7 +139,7 @@ ListPicker {
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: tray.host.theme.text
-        font.family: "Adwaita Sans"
+        font.family: tray.host.theme.textFontFamily
         font.pixelSize: 14
         font.weight: Font.Medium
       }

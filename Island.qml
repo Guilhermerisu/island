@@ -9,6 +9,8 @@ import "addons"
 import "components"
 import "services"
 import "views"
+// Omarchy's own OSD payload model, so what the island shows matches it.
+import "file:///usr/share/omarchy/shell/plugins/osd/OsdModel.js" as OsdModel
 
 Item {
   id: root
@@ -90,6 +92,7 @@ Item {
   }
   readonly property bool notificationPill: view === "feedback" && feedbackKind === "notification"
   readonly property bool volumePill: view === "feedback" && feedbackKind === "volume"
+  readonly property bool osdPill: view === "feedback" && feedbackKind === "osd"
   readonly property bool clipboardPill: view === "feedback" && feedbackKind === "clipboard"
   readonly property bool activityPill: view === "feedback" && feedbackKind === "activity"
   readonly property bool workspacesPill: view === "feedback" && feedbackKind === "workspaces"
@@ -210,6 +213,34 @@ Item {
   onSinkReadyChanged: volumeFeedback()
   Component.onCompleted: initialized = true
 
+  // ---------- Omarchy OSD ----------
+  //
+  // Payloads from the `osd` IPC target (omarchy-osd and Omarchy's scripts)
+  // and from the backlight watch, shown in the island's own pill. Volume and
+  // mute payloads are skipped while the sink watcher above covers them.
+  property string osdIcon: ""
+  property string osdMessage: ""
+  property bool osdProgress: false
+  property real osdValue: 0
+  property real osdMaxValue: 100
+  function showOsd(payloadJson) {
+    var p
+    try { p = JSON.parse(String(payloadJson || "{}")) } catch (e) { return }
+    var state = OsdModel.stateForShow(p.icon || "", p.message || "",
+      p.value === undefined ? "" : String(p.value),
+      p.max === undefined ? "100" : String(p.max),
+      p.progressText || "",
+      p.duration === undefined ? "" : String(p.duration))
+    if (settings.volumeHud && /^(volume|mute)/.test(state.iconKey)) return
+    if (!settings.brightnessHud && /^(brightness|display)$/.test(state.iconKey)) return
+    osdIcon = state.icon
+    osdMessage = state.message
+    osdProgress = state.hasProgress
+    osdValue = state.value
+    osdMaxValue = state.maxValue
+    showFeedback("", state.duration > 0 ? state.duration : 1200, "osd")
+  }
+
   readonly property var setup: companionSetup
   CompanionSetup {
     id: companionSetup
@@ -223,6 +254,7 @@ Item {
     pluginDir: root.setup.pluginDir
     onAvailable: root.announceUpdate()
   }
+  OsdBridge { id: osdBridge; host: root }
   // The banner waits until nothing else is on the island.
   property bool updateAnnouncePending: false
   function announceUpdate() {
@@ -412,6 +444,7 @@ Item {
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
             : root.volumePill ? 240
+            : root.osdPill ? (root.osdProgress ? 240 : (root.osdMessage.length > 26 ? 340 : 280))
             : root.activityPill && root.activities.current.kind === "bluetooth" ? 360
             : root.clipboardPill || root.activityPill ? 320
             : root.workspacesPill ? root.workspaceIds.length * 24 + 42
@@ -431,6 +464,7 @@ Item {
             : root.downloadDone ? 64
             : root.mediaPill || root.downloadPill ? (root.settings.notch ? 40 : 44)
             : root.volumePill ? (root.settings.notch ? 40 : 44)
+            : root.osdPill ? (root.settings.notch ? 40 : 44)
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
           property real radiusCap: root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
@@ -471,6 +505,7 @@ Item {
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
               else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
+              else if (root.osdPill) { root.feedbackTimer.stop(); root.feedbackKind = ""; root.view = "rest" }
               else root.view = "controls"
             }
           }
@@ -478,6 +513,8 @@ Item {
           NotificationPill { host: root; shape: island; anchors.fill: parent }
 
           VolumeSlider { host: root; anchors.fill: parent }
+
+          OsdPill { host: root; anchors.fill: parent }
 
           ClipboardPill { host: root; anchors.fill: parent }
 

@@ -169,7 +169,7 @@ Item {
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: answer.error ? answer.host.theme.urgent : "#ffffff"
-        font.family: "Adwaita Sans"
+        font.family: answer.host.theme.textFontFamily
         font.pixelSize: 21
         font.letterSpacing: -0.3
         lineHeight: 1.1
@@ -204,7 +204,7 @@ Item {
           anchors.centerIn: parent
           text: "Copy"
           color: "#ffffff"
-          font.family: "Adwaita Sans"
+          font.family: answer.host.theme.textFontFamily
           font.pixelSize: 12
           font.weight: Font.DemiBold
         }

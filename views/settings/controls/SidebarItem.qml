@@ -37,7 +37,7 @@ Rectangle {
       text: side.title
       elide: Text.ElideRight
       color: side.selected ? side.view.accentInk : side.view.text
-      font.family: "Adwaita Sans"
+      font.family: side.view.host.theme.textFontFamily
       font.pixelSize: 15
     }
   }

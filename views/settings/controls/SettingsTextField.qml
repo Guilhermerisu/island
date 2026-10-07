@@ -53,7 +53,7 @@ Rectangle {
     color: field.view.text
     selectionColor: field.view.accent
     selectedTextColor: field.view.accentInk
-    font.family: "Adwaita Sans"
+    font.family: field.view.host.theme.textFontFamily
     font.pixelSize: field.view.detailFontSize - 1
     onAccepted: { field.commit(); field.view.forceActiveFocus() }
     onActiveFocusChanged: if (!activeFocus) field.commit()

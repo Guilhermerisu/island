@@ -47,7 +47,7 @@ CcSection {
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: outputRow.isDefault ? card.center.text : card.center.textMuted
-        font.family: "Adwaita Sans"
+        font.family: card.center.host.theme.textFontFamily
         font.pixelSize: 12
       }
       Text {
@@ -74,7 +74,7 @@ CcSection {
     visible: !galleryPreview && !card.controls.controlPresent("sound")
     text: "No audio output available"
     color: card.center.textMuted
-    font.family: "Adwaita Sans"
+    font.family: card.center.host.theme.textFontFamily
     font.pixelSize: 12
     Layout.fillWidth: true
   }

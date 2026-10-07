@@ -60,7 +60,7 @@ Item {
     Text {
       text: view.weekdays[view.calendar.selected.getDay()].toUpperCase()
       color: view.accent
-      font.family: "Adwaita Sans"
+      font.family: view.theme.textFontFamily
       font.pixelSize: 14
       font.weight: Font.Bold
       font.letterSpacing: 0.4
@@ -68,7 +68,7 @@ Item {
     Text {
       text: view.calendar.selected.getDate()
       color: view.ink
-      font.family: "Adwaita Sans"
+      font.family: view.theme.textFontFamily
       font.pixelSize: 52
       font.weight: Font.Light
       font.letterSpacing: -1.5
@@ -107,7 +107,7 @@ Item {
               textFormat: Text.PlainText
               elide: Text.ElideRight
               color: Qt.lighter(modelData.color, 1.2)
-              font.family: "Adwaita Sans"
+              font.family: view.theme.textFontFamily
               font.pixelSize: 13
               font.weight: Font.DemiBold
               font.letterSpacing: -0.1
@@ -116,7 +116,7 @@ Item {
               width: parent.width
               text: view.calendar.spanText(modelData)
               color: view.theme.withAlpha(Qt.lighter(modelData.color, 1.2), 0.7)
-              font.family: "Adwaita Sans"
+              font.family: view.theme.textFontFamily
               font.pixelSize: 12
               font.weight: Font.Normal
               font.features: { "tnum": 1 }
@@ -129,7 +129,7 @@ Item {
         readonly property int rest: view.dayEvents.length - view.eventsShown
         text: rest + " more event" + (rest === 1 ? "" : "s")
         color: view.inkMuted
-        font.family: "Adwaita Sans"
+        font.family: view.theme.textFontFamily
         font.pixelSize: 12
         font.weight: Font.Medium
       }
@@ -146,7 +146,7 @@ Item {
           : status === "loading" ? "Loading…"
           : "No events"
         color: actionable && noticeMouse.containsMouse ? view.ink : view.inkMuted
-        font.family: "Adwaita Sans"
+        font.family: view.theme.textFontFamily
         font.pixelSize: 13
         font.weight: Font.Medium
         font.underline: actionable
@@ -202,7 +202,7 @@ Item {
       text: view.months[view.calendar.shownMonth].toUpperCase()
         + (view.calendar.shownYear !== view.calendar.today.getFullYear() ? " " + view.calendar.shownYear : "")
       color: view.accent
-      font.family: "Adwaita Sans"
+      font.family: view.theme.textFontFamily
       font.pixelSize: 14
       font.weight: Font.Bold
       font.letterSpacing: 0.4
@@ -246,7 +246,7 @@ Item {
           horizontalAlignment: Text.AlignHCenter
           text: modelData
           color: index >= 5 ? view.inkMuted : view.ink
-          font.family: "Adwaita Sans"
+          font.family: view.theme.textFontFamily
           font.pixelSize: 14
           font.weight: Font.Normal
         }
@@ -289,7 +289,7 @@ Item {
             text: day.index + 1
             color: day.isToday ? (day.isSelected ? view.theme.accentText : view.accent)
               : day.slot % 7 >= 5 ? view.inkMuted : view.ink
-            font.family: "Adwaita Sans"
+            font.family: view.theme.textFontFamily
             font.pixelSize: 14
             font.weight: day.isToday ? Font.DemiBold : Font.Normal
             font.features: { "tnum": 1 }
