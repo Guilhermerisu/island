@@ -43,6 +43,7 @@ ListPicker {
   property var itemOrder: []
   property var whenResults: ({})
   property var checkedResults: ({})
+  property var disabledResults: ({})
 
   FileView {
     path: menu.omarchyPath + "/default/omarchy/omarchy-menu.jsonc"
@@ -75,7 +76,7 @@ ListPicker {
     stdout: SplitParser { onRead: function(data) { guardProc.collected += data + "\n" } }
     onExited: function(exitCode, exitStatus) {
       if (exitCode !== 0 || exitStatus !== 0) return
-      var nextWhen = ({}), nextChecked = ({})
+      var nextWhen = ({}), nextChecked = ({}), nextDisabled = ({})
       guardProc.collected.split("\n").forEach(function(line) {
         line = line.trim()
         var colon = line.lastIndexOf(":")
@@ -87,9 +88,11 @@ ListPicker {
         var id = rest.substring(0, tagAt), tag = rest.substring(tagAt + 1)
         if (tag === "w") nextWhen[id] = value
         else if (tag === "c") nextChecked[id] = value
+        else if (tag === "d") nextDisabled[id] = value
       })
       menu.whenResults = nextWhen
       menu.checkedResults = nextChecked
+      menu.disabledResults = nextDisabled
     }
   }
   function evaluateGuards() {
@@ -162,6 +165,15 @@ ListPicker {
   property var navStack: []
   function isVisible(entry) { return MenuModel.isVisible(items_, itemOrder, whenResults, entry, 0) }
 
+  // Newer MenuModel builds slot disabledResults (the `disabled:` guard) into
+  // displayRow before the entry, older ones don't. Route through one wrapper
+  // so the island runs against either instead of shifting every argument.
+  function displayRow(entry, detail, score, section) {
+    if (MenuModel.displayRow.length >= 8)
+      return MenuModel.displayRow(items_, itemOrder, checkedResults, disabledResults, entry, detail, score, section)
+    return MenuModel.displayRow(items_, itemOrder, checkedResults, entry, detail, score)
+  }
+
   readonly property var rows: {
     var q = query.trim()
     var active = MenuModel.item(items_, activeMenu) ? activeMenu : "root"
@@ -172,12 +184,10 @@ ListPicker {
       if (q) {
         if (!MenuModel.isDescendantOf(items_, entry.id, active)) continue
         if (!MenuModel.matchesQuery(entry, q, isVisible(entry))) continue
-        var row = MenuModel.displayRow(items_, itemOrder, checkedResults, entry,
-          MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q))
-        list.push(row)
+        list.push(displayRow(entry, MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q)))
       } else {
         if (entry.parent !== active || !isVisible(entry)) continue
-        list.push(MenuModel.displayRow(items_, itemOrder, checkedResults, entry, "", entry.order))
+        list.push(displayRow(entry, "", entry.order))
       }
     }
     if (q) list.sort(function(a, b) { return a.score !== b.score ? a.score - b.score : a.path.localeCompare(b.path) })
