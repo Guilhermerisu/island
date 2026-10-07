@@ -38,7 +38,7 @@ Item {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock",
+      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock font typography text size custom",
       "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices volume hud workspace workspaces indicator",
       "Notifications": "notifications banner duration",
