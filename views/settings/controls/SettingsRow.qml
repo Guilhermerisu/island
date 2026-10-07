@@ -16,7 +16,8 @@ Item {
   property int indent: 0
   default property alias control: slot.data
   Layout.fillWidth: true
-  implicitHeight: detail !== "" ? 54 : 42
+  // Grows with the text size so a larger label and detail keep their margins.
+  implicitHeight: Math.max(detail !== "" ? 54 : 42, labels.implicitHeight + 16)
   PaneIcon {
     id: rowIcon
     visible: row.icon !== ""
@@ -29,6 +30,7 @@ Item {
     tint: row.iconTint
   }
   Column {
+    id: labels
     anchors.left: parent.left
     anchors.leftMargin: 14 + row.indent + (row.icon !== "" ? rowIcon.width + 12 : 0)
     anchors.right: slot.left

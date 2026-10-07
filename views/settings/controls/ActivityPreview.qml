@@ -12,8 +12,21 @@ Item {
   readonly property string iconFont: view.host.theme.fontFamily
   readonly property bool colorfulActivities: !!view.settings.colorfulLiveActivities
   readonly property bool transfer: kind === "downloads" || kind === "updates"
-  readonly property color transferColor: colorfulActivities ? "#30d158" : accent
-  readonly property string glyph: ({ media: "󰝚", clipboard: "󰆏", downloads: "󰁅", updates: "󰏗", bluetooth: "󰋋", network: "󰤨" })[kind] || ""
+  readonly property color positiveColor: colorfulActivities ? "#30d158" : accent
+  // Each kind's sample: the leading glyph (in glyphColor, accent by default),
+  // the label after it, and the status trailing (in statusColor). Kinds with
+  // their own layout (bluetooth, media, workspace, volume) draw the rest below.
+  readonly property var sample: ({
+    media: { glyph: "󰝚", glyphColor: "#ffffff" },
+    bluetooth: { glyph: "󰋋", glyphColor: "#ffffff" },
+    playback: { glyph: "󰏤", glyphColor: "#ffffff", label: "Song Title - Artist" },
+    clipboard: { glyph: "󰆏", label: "Hello, world!", status: "Copied", statusColor: accent },
+    downloads: { glyph: "󰁅", glyphColor: positiveColor, label: "12:34", status: "2 MB/s", statusColor: positiveColor },
+    updates: { glyph: "󰏗", glyphColor: positiveColor, label: "12:34", status: "Updating", statusColor: positiveColor },
+    network: { glyph: "󰤨", label: "Home", status: "Connected", statusColor: accent },
+    battery: { label: "Charging", status: "64%", statusColor: positiveColor }
+  })[kind] || ({})
+  readonly property string glyph: sample.glyph || ""
 
   Rectangle {
     id: pill
@@ -82,12 +95,12 @@ Item {
       radius: preview.transfer ? 14 : 7
       color: preview.kind === "media" ? Qt.tint("#252525", preview.view.host.theme.withAlpha(preview.accent, 0.5)) : "transparent"
       border.width: preview.transfer ? 2 : 0
-      border.color: preview.transfer ? preview.transferColor : preview.accent
+      border.color: preview.transfer ? preview.positiveColor : preview.accent
       Text {
         anchors.centerIn: parent
         visible: preview.glyph !== ""
         text: preview.glyph
-        color: preview.kind === "bluetooth" || preview.kind === "media" ? "#ffffff" : preview.transfer ? preview.transferColor : preview.accent
+        color: preview.sample.glyphColor || preview.accent
         font.family: preview.iconFont
         font.pixelSize: preview.kind === "bluetooth" ? preview.view.host.theme.px(27) : preview.transfer ? preview.view.host.theme.px(13) : preview.view.host.theme.px(17)
       }
@@ -99,14 +112,14 @@ Item {
       width: 25; height: 12
       level: 64
       charging: true
-      chargingColor: preview.colorfulActivities ? "#30d158" : preview.accent
+      chargingColor: preview.positiveColor
       lowColor: preview.colorfulActivities ? "#ff453a" : preview.accent
     }
     Text {
       x: preview.kind === "battery" ? 47 : preview.transfer ? 57 : 43
       anchors.verticalCenter: parent.verticalCenter
-      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer || preview.kind === "network"
-      text: ({ battery: "Charging", clipboard: "Hello, world!", network: "Home" })[preview.kind] || "12:34"
+      visible: !!preview.sample.label
+      text: preview.sample.label || ""
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: preview.transfer ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10)
@@ -116,9 +129,9 @@ Item {
       anchors.right: parent.right
       anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
-      visible: preview.kind === "battery" || preview.kind === "clipboard" || preview.transfer || preview.kind === "network"
-      text: ({ battery: "64%", clipboard: "Copied", updates: "Updating", downloads: "2 MB/s", network: "Connected" })[preview.kind] || ""
-      color: preview.kind === "battery" ? (preview.colorfulActivities ? "#30d158" : preview.accent) : preview.kind === "clipboard" ? preview.accent : preview.kind === "network" ? preview.accent : preview.transfer ? preview.transferColor : "#ffffff"
+      visible: !!preview.sample.status
+      text: preview.sample.status || ""
+      color: preview.sample.statusColor || "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
       font.pixelSize: preview.view.host.theme.px(10)
       font.weight: Font.DemiBold

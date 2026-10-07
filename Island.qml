@@ -3,6 +3,7 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import "addons"
@@ -214,27 +215,41 @@ Item {
   Component.onCompleted: initialized = true
 
   // The media service handles the media keys and summons the stock OSD, which
-  // is off, so the island watches the player instead. The last player seen
-  // stays the target even once it pauses and stops being the service's active
-  // one, so pause and play still show.
-  property var mediaPlayer: null
-  readonly property var mediaSourcePlayer: nowPlaying.player
-  onMediaSourcePlayerChanged: if (mediaSourcePlayer) mediaPlayer = mediaSourcePlayer
-  Connections {
-    target: root.mediaPlayer
-    function onIsPlayingChanged() { root.mediaFeedback() }
-    function onTrackTitleChanged() { root.mediaFeedback() }
+  // is off, so the island watches every player instead: the one that paused,
+  // resumed or changed track is the one shown, whichever the service calls
+  // active. The pill waits a beat so a skip (title and state changing
+  // together) shows once, and a player that is closing (stopping, then
+  // vanishing) shows nothing.
+  Instantiator {
+    model: Mpris.players
+    delegate: Connections {
+      required property var modelData
+      target: modelData
+      function onIsPlayingChanged() { root.mediaFeedback(modelData) }
+      function onTrackTitleChanged() { root.mediaFeedback(modelData) }
+    }
   }
-  function mediaFeedback() {
-    if (!initialized || !mediaPlayer || !settings.mediaPill) return
-    var title = String(mediaPlayer.trackTitle || "")
-    if (title === "") return
-    var artist = String(mediaPlayer.trackArtist || "")
-    showOsd(JSON.stringify({
-      icon: mediaPlayer.isPlaying ? "media-play" : "media-pause",
-      message: title + (artist ? " - " + artist : ""),
-      duration: "1500"
-    }))
+  function mediaFeedback(player) {
+    if (!initialized || !settings.playbackOsd) return
+    mediaFeedbackTimer.player = player
+    mediaFeedbackTimer.restart()
+  }
+  Timer {
+    id: mediaFeedbackTimer
+    interval: 250
+    property var player: null
+    onTriggered: {
+      var players = Mpris.players ? Mpris.players.values : []
+      if (!player || players.indexOf(player) < 0 || !root.settings.playbackOsd) return
+      var title = String(player.trackTitle || "")
+      if (title === "") return
+      var artist = String(player.trackArtist || "")
+      root.showOsd(JSON.stringify({
+        icon: player.isPlaying ? "media-play" : "media-pause",
+        message: title + (artist ? " - " + artist : ""),
+        duration: "1500"
+      }))
+    }
   }
 
   // ---------- Omarchy OSD ----------
@@ -525,7 +540,7 @@ Item {
               else if (root.notificationPill) root.dismissPillNotification()
               else if (root.clipboardPill) root.view = "clipboard"
               else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth"
-                : root.activities.current.kind === "network" ? "wifi" : "controls"
+                : root.activities.current.kind === "network" && !root.activities.current.wired ? "wifi" : "controls"
               else if (root.addonPill) root.addonPill.pillClicked()
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()

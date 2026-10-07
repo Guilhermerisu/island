@@ -40,7 +40,7 @@ Item {
     var terms = {
       "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock font typography text size custom",
       "Search": "search ask with claude codex launcher answers",
-      "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
+      "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration",
       "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
         return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
@@ -88,16 +88,20 @@ Item {
       host.settingsPage = ""
     }
     if (active) Qt.callLater(function() { settingsView.forceActiveFocus() })
-    else menuButton = null
+    else closePopups()
   }
   onCurrentPageChanged: {
-    menuButton = null
+    closePopups()
     scroller.contentY = 0
   }
   Keys.onEscapePressed: {
-    if (fontPickerButton) fontPickerButton = null
-    else if (menuButton) menuButton = null
+    if (menuButton || fontPickerButton) closePopups()
     else host.view = "controls"
+  }
+  // The pop-up menu and the font picker share one scrim and close together.
+  function closePopups() {
+    menuButton = null
+    fontPickerButton = null
   }
 
   RowLayout {
@@ -264,14 +268,8 @@ Item {
     anchors.fill: parent
     z: 49
     visible: settingsView.menuButton !== null || settingsView.fontPickerButton !== null
-    onClicked: {
-      settingsView.menuButton = null
-      settingsView.fontPickerButton = null
-    }
-    onWheel: function(wheel) {
-      settingsView.menuButton = null
-      settingsView.fontPickerButton = null
-    }
+    onClicked: settingsView.closePopups()
+    onWheel: function(wheel) { settingsView.closePopups() }
   }
   Rectangle {
     id: popMenu
@@ -386,8 +384,10 @@ Item {
     transformOrigin: Item.Top
     Behavior on opacity { MotionAnimation { theme: settingsView.host.theme; pace: settingsView.fontPickerButton ? "fade" : "exit"; curve: "fade" } }
     Behavior on scale { MotionAnimation { theme: settingsView.host.theme; pace: settingsView.fontPickerButton ? "standard" : "exit" } }
+    // Rows grow with the text size, from 26 at the default.
+    readonly property int rowHeight: Math.max(26, settingsView.detailFontSize + 11)
     width: 264
-    height: fontSearch.height + 10 + Math.max(1, Math.min(9, settingsView.filteredFonts.length)) * 26 + 10
+    height: fontSearch.height + 10 + Math.max(1, Math.min(9, settingsView.filteredFonts.length)) * fontPanel.rowHeight + 10
     radius: 9
     color: Qt.tint(settingsView.panel, settingsView.host.theme.withAlpha(settingsView.text, 0.13))
     border.width: 1
@@ -398,7 +398,7 @@ Item {
       x: 5
       y: 5
       width: parent.width - 10
-      height: 28
+      height: Math.max(28, settingsView.detailFontSize + 13)
       radius: 5
       color: settingsView.host.theme.withAlpha(settingsView.text, 0.08)
       border.width: fontInput.activeFocus ? 2 : 0
@@ -465,7 +465,7 @@ Item {
         readonly property bool chosen: modelData === settingsView.settings.customFont
         readonly property bool current: index === settingsView.fontCursor
         width: fontRows.width
-        height: 26
+        height: fontPanel.rowHeight
         radius: 5
         color: fontMouse.containsMouse || fontRow.current ? settingsView.accent : "transparent"
         Text {
@@ -478,7 +478,8 @@ Item {
           font.pixelSize: settingsView.host.theme.px(12)
         }
         Text {
-          x: 26
+          anchors.left: parent.left
+          anchors.leftMargin: 26
           anchors.right: parent.right
           anchors.rightMargin: 8
           anchors.verticalCenter: parent.verticalCenter

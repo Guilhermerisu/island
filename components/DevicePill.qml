@@ -1,12 +1,13 @@
 import QtQuick
 
-// Device live activities. Battery is laid out like the clipboard pill on one
-// line: the battery leading, what's happening in the middle, the level
-// trailing. Bluetooth devices are laid out like iOS's AirPods activity: the
+// Device live activities. Battery and network are laid out like the clipboard
+// pill on one line: the battery or network mark leading, what's happening in
+// the middle, the level or status trailing. Bluetooth devices are laid out like iOS's AirPods activity: the
 // device's picture, its status over its name, and a battery ring when the
 // device reports one. Fed by Island.qml's showActivity():
-//   { kind: "charging" | "lowBattery" | "bluetooth",
-//     title, status, connected, battery (-1 when unknown), icon (BlueZ's) }
+//   { kind: "charging" | "lowBattery" | "bluetooth" | "network",
+//     title, status, connected, battery (-1 when unknown), icon (BlueZ's),
+//     wired (network only) }
 Item {
   id: pill
   required property var host
