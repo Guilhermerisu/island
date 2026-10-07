@@ -31,7 +31,7 @@ Rectangle {
     text: sec.title
     color: center.text
     font.family: center.host.theme.textFontFamily
-    font.pixelSize: 14
+    font.pixelSize: center.host.theme.px(14)
     font.weight: Font.DemiBold
     font.letterSpacing: -0.2
   }
@@ -43,7 +43,7 @@ Rectangle {
     text: sec.detail
     color: center.textMuted
     font.family: center.host.theme.textFontFamily
-    font.pixelSize: 12
+    font.pixelSize: center.host.theme.px(12)
   }
   Rectangle {
     id: chevron
@@ -61,7 +61,7 @@ Rectangle {
       rotation: sec.chevronOpen ? 90 : 0
       color: center.textMuted
       font.family: center.iconFont
-      font.pixelSize: 15
+      font.pixelSize: center.host.theme.px(15)
       Behavior on rotation { MotionAnimation { theme: center.host.theme; pace: "standard" } }
     }
     MouseArea { id: chevronMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sec.chevronClicked() }

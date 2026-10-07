@@ -76,7 +76,7 @@ Item {
         text: "󰅙"
         color: "#ff453a"
         font.family: sheet.view.host.theme.fontFamily
-        font.pixelSize: 40
+        font.pixelSize: sheet.view.host.theme.px(40)
       }
       Text {
         Layout.fillWidth: true

@@ -57,7 +57,7 @@ Item {
       text: tip.text
       color: "#f2f2f7"
       font.family: tip.theme.textFontFamily
-      font.pixelSize: 12
+      font.pixelSize: tip.theme.px(12)
     }
   }
 }

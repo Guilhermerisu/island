@@ -91,7 +91,7 @@ ListPicker {
         elide: Text.ElideRight
         color: keybinds.host.theme.text
         font.family: keybinds.host.theme.textFontFamily
-        font.pixelSize: 16
+        font.pixelSize: keybinds.host.theme.px(16)
         font.weight: Font.Medium
       }
       // Keys as keycaps.
@@ -118,7 +118,7 @@ ListPicker {
               textFormat: Text.PlainText
               color: keybinds.host.theme.muted
               font.family: keybinds.host.theme.textFontFamily
-              font.pixelSize: 11
+              font.pixelSize: keybinds.host.theme.px(11)
               font.weight: Font.DemiBold
             }
           }

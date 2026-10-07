@@ -33,7 +33,7 @@ Rectangle {
         text: "Notifications"
         color: history.center.text
         font.family: history.center.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: history.center.host.theme.px(14)
         font.weight: Font.DemiBold
         font.letterSpacing: -0.2
       }
@@ -52,7 +52,7 @@ Rectangle {
           text: "Clear All"
           color: history.center.text
           font.family: history.center.host.theme.textFontFamily
-          font.pixelSize: 12
+          font.pixelSize: history.center.host.theme.px(12)
           font.weight: Font.Medium
         }
         MouseArea {
@@ -74,7 +74,7 @@ Rectangle {
       text: "No notifications"
       color: history.center.textMuted
       font.family: history.center.host.theme.textFontFamily
-      font.pixelSize: 12
+      font.pixelSize: history.center.host.theme.px(12)
     }
 
     ListView {
@@ -134,7 +134,7 @@ Rectangle {
             text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
             color: avatar.brand ? avatar.brand.ink : history.center.accent
             font.family: avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily
-            font.pixelSize: avatar.brand ? 20 : 14
+            font.pixelSize: avatar.brand ? history.center.host.theme.px(20) : history.center.host.theme.px(14)
             font.weight: Font.DemiBold
           }
         }
@@ -162,7 +162,7 @@ Rectangle {
               elide: Text.ElideRight
               color: history.center.text
               font.family: history.center.host.theme.textFontFamily
-              font.pixelSize: 14
+              font.pixelSize: history.center.host.theme.px(14)
               font.weight: Font.DemiBold
               font.letterSpacing: -0.2
             }
@@ -174,7 +174,7 @@ Rectangle {
               textFormat: Text.PlainText
               color: history.center.textMuted
               font.family: history.center.host.theme.textFontFamily
-              font.pixelSize: 12
+              font.pixelSize: history.center.host.theme.px(12)
             }
           }
           Text {
@@ -187,7 +187,7 @@ Rectangle {
             elide: Text.ElideRight
             color: history.center.host.theme.withAlpha(history.center.text, 0.72)
             font.family: history.center.host.theme.textFontFamily
-            font.pixelSize: 13
+            font.pixelSize: history.center.host.theme.px(13)
           }
         }
         Text {
@@ -198,7 +198,7 @@ Rectangle {
           text: "󰅖"
           color: closeMouse.containsMouse ? history.center.text : history.center.textMuted
           font.family: history.center.iconFont
-          font.pixelSize: 13
+          font.pixelSize: history.center.host.theme.px(13)
           MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: history.center.host.notifications.dismiss(note.modelData) }
           Tooltip { theme: history.center.host.theme; text: "Dismiss" }
         }

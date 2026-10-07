@@ -43,7 +43,7 @@ Rectangle {
       text: t.icon
       color: t.checked ? center.accentInk : center.text
       font.family: center.iconFont
-      font.pixelSize: 19
+      font.pixelSize: center.host.theme.px(19)
     }
   }
   Column {
@@ -59,7 +59,7 @@ Rectangle {
       elide: Text.ElideRight
       color: center.text
       font.family: center.host.theme.textFontFamily
-      font.pixelSize: 14
+      font.pixelSize: center.host.theme.px(14)
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
     }
@@ -71,7 +71,7 @@ Rectangle {
       elide: Text.ElideRight
       color: center.textMuted
       font.family: center.host.theme.textFontFamily
-      font.pixelSize: 12
+      font.pixelSize: center.host.theme.px(12)
     }
   }
   MouseArea {

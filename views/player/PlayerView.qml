@@ -94,7 +94,7 @@ Item {
           text: "󰝚"
           color: player.host.theme.accentText
           font.family: player.host.theme.fontFamily
-          font.pixelSize: 30
+          font.pixelSize: player.host.theme.px(30)
         }
       }
       ColumnLayout {
@@ -107,7 +107,7 @@ Item {
           elide: Text.ElideRight
           color: "#ffffff"
           font.family: player.host.theme.textFontFamily
-          font.pixelSize: 17
+          font.pixelSize: player.host.theme.px(17)
           font.weight: Font.DemiBold
         }
         Text {
@@ -118,7 +118,7 @@ Item {
           elide: Text.ElideRight
           color: Qt.rgba(1, 1, 1, 0.55)
           font.family: player.host.theme.textFontFamily
-          font.pixelSize: 15
+          font.pixelSize: player.host.theme.px(15)
         }
       }
       SoundWave {
@@ -143,7 +143,7 @@ Item {
         text: player.clock(player.position)
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: player.host.theme.px(12)
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }
@@ -178,7 +178,7 @@ Item {
         text: "−" + player.clock(player.length - player.position)
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: player.host.theme.px(12)
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }
@@ -220,7 +220,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰑟"
           name: "Previous"
-          font.pixelSize: 34
+          font.pixelSize: player.host.theme.px(34)
           available: !!(player.mpris && player.mpris.canGoPrevious)
           onActivated: player.action("previous")
         }
@@ -228,7 +228,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           text: player.playing ? "󰏤" : "󰐊"
           name: player.playing ? "Pause" : "Play"
-          font.pixelSize: 42
+          font.pixelSize: player.host.theme.px(42)
           available: !!player.mpris
           onActivated: player.action("playPause")
         }
@@ -236,7 +236,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰈑"
           name: "Next"
-          font.pixelSize: 34
+          font.pixelSize: player.host.theme.px(34)
           available: !!(player.mpris && player.mpris.canGoNext)
           onActivated: player.action("next")
         }

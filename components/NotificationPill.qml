@@ -55,7 +55,7 @@ Item {
       text: pill.brand ? pill.brand.glyph : String(pill.row.glyph || "") || "󰂚"
       color: pill.brand ? pill.brand.ink : host.theme.accentText
       font.family: pill.brand ? "JetBrainsMono Nerd Font" : host.theme.fontFamily
-      font.pixelSize: pill.brand ? Math.round(parent.height * 0.6) : 24
+      font.pixelSize: pill.brand ? Math.round(parent.height * 0.6) : pill.host.theme.px(24)
     }
   }
 
@@ -81,7 +81,7 @@ Item {
         // size, in SF's stand-in (Adwaita Sans).
         color: "#ffffff"
         font.family: host.theme.textFontFamily
-        font.pixelSize: 15
+        font.pixelSize: host.theme.px(15)
         font.weight: Font.DemiBold
         font.letterSpacing: -0.2
       }
@@ -93,7 +93,7 @@ Item {
         textFormat: Text.PlainText
         color: Qt.rgba(1, 1, 1, 0.45)
         font.family: host.theme.textFontFamily
-        font.pixelSize: 13
+        font.pixelSize: host.theme.px(13)
       }
     }
     Text {
@@ -104,7 +104,7 @@ Item {
       elide: Text.ElideRight
       color: Qt.rgba(1, 1, 1, 0.72)
       font.family: host.theme.textFontFamily
-      font.pixelSize: 14
+      font.pixelSize: host.theme.px(14)
       font.letterSpacing: -0.1
     }
   }

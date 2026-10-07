@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 import "../../components"
 import QtQuick.Layouts
 import "controls"
@@ -37,7 +38,7 @@ Item {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock",
+      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock font typography text size custom",
       "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave clipboard downloads system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration",
@@ -68,9 +69,9 @@ Item {
   readonly property color accent: host.theme.accent
   readonly property color accentInk: host.theme.accentText
 
-  readonly property int detailFontSize: 15
-  readonly property int detailCaptionFontSize: 13
-  readonly property int detailTitleFontSize: 19
+  readonly property int detailFontSize: host.theme.px(15)
+  readonly property int detailCaptionFontSize: host.theme.px(13)
+  readonly property int detailTitleFontSize: host.theme.px(19)
 
   function revealSettingsItem(item) {
     var top = item.mapToItem(groups, 0, 0).y
@@ -94,7 +95,8 @@ Item {
     scroller.contentY = 0
   }
   Keys.onEscapePressed: {
-    if (menuButton) menuButton = null
+    if (fontPickerButton) fontPickerButton = null
+    else if (menuButton) menuButton = null
     else host.view = "controls"
   }
 
@@ -131,7 +133,7 @@ Item {
             text: "󰍉"
             color: settingsView.textMuted
             font.family: settingsView.host.theme.fontFamily
-            font.pixelSize: 14
+            font.pixelSize: settingsView.host.theme.px(14)
           }
           Text {
             anchors.left: parent.left
@@ -141,7 +143,7 @@ Item {
             text: "Search"
             color: settingsView.textMuted
             font.family: settingsView.host.theme.textFontFamily
-            font.pixelSize: 13
+            font.pixelSize: settingsView.host.theme.px(13)
           }
           TextInput {
             id: searchInput
@@ -152,7 +154,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             color: settingsView.text
             font.family: settingsView.host.theme.textFontFamily
-            font.pixelSize: 13
+            font.pixelSize: settingsView.host.theme.px(13)
             onTextChanged: {
               settingsView.searchQuery = text
               if (text.trim() === "" || settingsView.pageMatches(settingsView.currentPage)) return
@@ -182,7 +184,7 @@ Item {
           text: "No Results"
           color: settingsView.textMuted
           font.family: settingsView.host.theme.textFontFamily
-          font.pixelSize: 13
+          font.pixelSize: settingsView.host.theme.px(13)
           Layout.alignment: Qt.AlignHCenter
           Layout.topMargin: 18
         }
@@ -261,9 +263,15 @@ Item {
   MouseArea {
     anchors.fill: parent
     z: 49
-    visible: settingsView.menuButton !== null
-    onClicked: settingsView.menuButton = null
-    onWheel: function(wheel) { settingsView.menuButton = null }
+    visible: settingsView.menuButton !== null || settingsView.fontPickerButton !== null
+    onClicked: {
+      settingsView.menuButton = null
+      settingsView.fontPickerButton = null
+    }
+    onWheel: function(wheel) {
+      settingsView.menuButton = null
+      settingsView.fontPickerButton = null
+    }
   }
   Rectangle {
     id: popMenu
@@ -301,7 +309,7 @@ Item {
             text: "󰄬"
             color: itemMouse.containsMouse ? settingsView.accentInk : settingsView.text
             font.family: settingsView.host.theme.fontFamily
-            font.pixelSize: 12
+            font.pixelSize: settingsView.host.theme.px(12)
           }
           Text {
             id: menuText
@@ -324,6 +332,178 @@ Item {
             }
           }
         }
+      }
+    }
+  }
+
+  // ---------- Font picker ----------
+  //
+  // The custom font row opens a searchable list of every installed family;
+  // typing a family name from memory is guesswork.
+
+  property Item fontPickerButton: null
+  property var fontList: []
+  property string fontQuery: ""
+  property int fontCursor: 0
+
+  Process {
+    command: ["bash", "-c", "fc-list : -f '%{family[0]}\\n' | grep -v -iE 'emoji|signwriting' | sort -u"]
+    running: true
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: settingsView.fontList = String(text || "").split("\n").filter(function(f) { return f.trim() !== "" })
+    }
+  }
+  readonly property var filteredFonts: {
+    var q = settingsView.fontQuery.trim().toLowerCase()
+    if (q === "") return settingsView.fontList
+    return settingsView.fontList.filter(function(f) { return f.toLowerCase().indexOf(q) !== -1 })
+  }
+  function openFontPicker(button) {
+    fontQuery = ""
+    fontCursor = 0
+    fontPickerButton = button
+    var p = button.mapToItem(settingsView, 0, 0)
+    fontPanel.x = Math.max(4, Math.min(settingsView.width - fontPanel.width - 4, p.x + button.width - fontPanel.width))
+    var below = p.y + button.height + 4
+    fontPanel.y = below + fontPanel.height <= settingsView.height - 4 ? below : Math.max(4, p.y - fontPanel.height - 4)
+    Qt.callLater(function() { fontInput.forceActiveFocus() })
+  }
+  function pickFont(font) {
+    if (!font) return
+    settingsView.settings.customFont = font
+    settingsView.settings.textFontMode = "custom"
+    settingsView.fontPickerButton = null
+  }
+
+  Rectangle {
+    id: fontPanel
+    z: 51
+    visible: opacity > 0.01
+    enabled: !!settingsView.fontPickerButton
+    opacity: settingsView.fontPickerButton ? 1 : 0
+    scale: settingsView.fontPickerButton ? 1 : 0.96
+    transformOrigin: Item.Top
+    Behavior on opacity { MotionAnimation { theme: settingsView.host.theme; pace: settingsView.fontPickerButton ? "fade" : "exit"; curve: "fade" } }
+    Behavior on scale { MotionAnimation { theme: settingsView.host.theme; pace: settingsView.fontPickerButton ? "standard" : "exit" } }
+    width: 264
+    height: fontSearch.height + 10 + Math.max(1, Math.min(9, settingsView.filteredFonts.length)) * 26 + 10
+    radius: 9
+    color: Qt.tint(settingsView.panel, settingsView.host.theme.withAlpha(settingsView.text, 0.13))
+    border.width: 1
+    border.color: settingsView.host.theme.withAlpha(settingsView.text, 0.1)
+
+    Rectangle {
+      id: fontSearch
+      x: 5
+      y: 5
+      width: parent.width - 10
+      height: 28
+      radius: 5
+      color: settingsView.host.theme.withAlpha(settingsView.text, 0.08)
+      border.width: fontInput.activeFocus ? 2 : 0
+      border.color: settingsView.host.theme.withAlpha(settingsView.accent, 0.6)
+      Text {
+        anchors.left: parent.left
+        anchors.leftMargin: 8
+        anchors.verticalCenter: parent.verticalCenter
+        text: "󰍉"
+        color: settingsView.textMuted
+        font.family: settingsView.host.theme.fontFamily
+        font.pixelSize: settingsView.host.theme.px(13)
+      }
+      Text {
+        anchors.left: parent.left
+        anchors.leftMargin: 28
+        anchors.verticalCenter: parent.verticalCenter
+        visible: fontInput.text === ""
+        text: "Search fonts"
+        color: settingsView.textMuted
+        font.family: settingsView.host.theme.textFontFamily
+        font.pixelSize: settingsView.detailFontSize - 1
+      }
+      TextInput {
+        id: fontInput
+        anchors.left: parent.left
+        anchors.leftMargin: 28
+        anchors.right: parent.right
+        anchors.rightMargin: 8
+        anchors.verticalCenter: parent.verticalCenter
+        color: settingsView.text
+        selectionColor: settingsView.accent
+        selectedTextColor: settingsView.accentInk
+        font.family: settingsView.host.theme.textFontFamily
+        font.pixelSize: settingsView.detailFontSize - 1
+        onTextChanged: { settingsView.fontQuery = text; settingsView.fontCursor = 0 }
+        Keys.onDownPressed: function(event) { settingsView.fontCursor = Math.min(settingsView.filteredFonts.length - 1, settingsView.fontCursor + 1); event.accepted = true }
+        Keys.onUpPressed: function(event) { settingsView.fontCursor = Math.max(0, settingsView.fontCursor - 1); event.accepted = true }
+        Keys.onEscapePressed: function(event) { settingsView.fontPickerButton = null; event.accepted = true }
+        Keys.onReturnPressed: function(event) { settingsView.pickFont(settingsView.filteredFonts[settingsView.fontCursor]); event.accepted = true }
+        Keys.onEnterPressed: function(event) { settingsView.pickFont(settingsView.filteredFonts[settingsView.fontCursor]); event.accepted = true }
+      }
+    }
+
+    ListView {
+      id: fontRows
+      x: 5
+      y: fontSearch.y + fontSearch.height + 5
+      width: parent.width - 10
+      height: parent.height - y - 5
+      clip: true
+      model: settingsView.filteredFonts
+      boundsBehavior: Flickable.StopAtBounds
+      keyNavigationEnabled: false
+      onCountChanged: if (count > 0) positionViewAtIndex(Math.min(settingsView.fontCursor, count - 1), ListView.Contain)
+      MouseArea {
+        anchors.fill: parent
+        onWheel: function(wheel) { fontRows.flick(0, wheel.angleDelta.y * 2) }
+      }
+      delegate: Rectangle {
+        id: fontRow
+        required property string modelData
+        required property int index
+        readonly property bool chosen: modelData === settingsView.settings.customFont
+        readonly property bool current: index === settingsView.fontCursor
+        width: fontRows.width
+        height: 26
+        radius: 5
+        color: fontMouse.containsMouse || fontRow.current ? settingsView.accent : "transparent"
+        Text {
+          x: 8
+          anchors.verticalCenter: parent.verticalCenter
+          visible: fontRow.chosen
+          text: "󰄬"
+          color: fontMouse.containsMouse || fontRow.current ? settingsView.accentInk : settingsView.text
+          font.family: settingsView.host.theme.fontFamily
+          font.pixelSize: settingsView.host.theme.px(12)
+        }
+        Text {
+          x: 26
+          anchors.right: parent.right
+          anchors.rightMargin: 8
+          anchors.verticalCenter: parent.verticalCenter
+          text: fontRow.modelData
+          elide: Text.ElideRight
+          color: fontMouse.containsMouse || fontRow.current ? settingsView.accentInk : settingsView.text
+          font.family: settingsView.host.theme.textFontFamily
+          font.pixelSize: settingsView.detailFontSize
+        }
+        MouseArea {
+          id: fontMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onEntered: settingsView.fontCursor = fontRow.index
+          onClicked: settingsView.pickFont(fontRow.modelData)
+        }
+      }
+      Text {
+        anchors.centerIn: parent
+        visible: settingsView.filteredFonts.length === 0
+        text: "No fonts match"
+        color: settingsView.textMuted
+        font.family: settingsView.host.theme.textFontFamily
+        font.pixelSize: settingsView.detailFontSize - 2
       }
     }
   }

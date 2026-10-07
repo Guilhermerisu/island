@@ -38,7 +38,7 @@ ColumnLayout {
       : "Drag a control into the layout above. Scroll to see more."
     color: gallery.cc.textMuted
     font.family: gallery.cc.host.theme.textFontFamily
-    font.pixelSize: 12
+    font.pixelSize: gallery.cc.host.theme.px(12)
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
   }
@@ -68,7 +68,7 @@ ColumnLayout {
             text: section.modelData.title
             color: gallery.cc.text
             font.family: gallery.cc.host.theme.textFontFamily
-            font.pixelSize: 14
+            font.pixelSize: gallery.cc.host.theme.px(14)
             font.weight: Font.DemiBold
           }
           GridLayout {
@@ -118,7 +118,7 @@ ColumnLayout {
                     text: "+"
                     color: gallery.cc.accentInk
                     font.family: gallery.cc.host.theme.textFontFamily
-                    font.pixelSize: 18
+                    font.pixelSize: gallery.cc.host.theme.px(18)
                     font.weight: Font.DemiBold
                   }
                 }
@@ -163,7 +163,7 @@ ColumnLayout {
         text: "All controls have been added"
         color: gallery.cc.textMuted
         font.family: gallery.cc.host.theme.textFontFamily
-        font.pixelSize: 13
+        font.pixelSize: gallery.cc.host.theme.px(13)
       }
     }
   }

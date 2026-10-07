@@ -33,7 +33,7 @@ Card {
         text: card.icon
         color: card.iconColor
         font.family: card.view.host.theme.fontFamily
-        font.pixelSize: 16
+        font.pixelSize: card.view.host.theme.px(16)
       }
       Text {
         Layout.fillWidth: true
@@ -56,7 +56,7 @@ Card {
           text: card.status
           color: card.statusColor
           font.family: "Adwaita Sans"
-          font.pixelSize: 12
+          font.pixelSize: card.view.host.theme.px(12)
           font.weight: Font.DemiBold
         }
       }
@@ -94,7 +94,7 @@ Card {
               text: figure.modelData.label
               color: card.view.textMuted
               font.family: "Adwaita Sans"
-              font.pixelSize: 13
+              font.pixelSize: card.view.host.theme.px(13)
             }
             Text {
               anchors.right: parent.right
@@ -102,7 +102,7 @@ Card {
               text: figure.modelData.value
               color: figure.modelData.color || card.view.text
               font.family: "Adwaita Sans"
-              font.pixelSize: 14
+              font.pixelSize: card.view.host.theme.px(14)
               font.weight: Font.DemiBold
               font.features: { "tnum": 1 }
             }

@@ -250,7 +250,7 @@ Item {
             text: "󰄬"
             color: picker.host.theme.accentText
             font.family: picker.host.theme.fontFamily
-            font.pixelSize: 12
+            font.pixelSize: picker.host.theme.px(12)
           }
         }
         MouseArea {
@@ -271,7 +271,7 @@ Item {
       text: picker.emptyText
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
-      font.pixelSize: 13
+      font.pixelSize: picker.host.theme.px(13)
     }
   }
 

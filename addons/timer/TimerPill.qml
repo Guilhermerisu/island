@@ -32,7 +32,7 @@ Item {
     text: pill.timer.timeText(pill.timer.remaining)
     color: pill.ink
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: 14
+    font.pixelSize: pill.host.theme.px(14)
     font.weight: Font.Medium
     font.features: { "tnum": 1, "case": 1 }
     font.letterSpacing: -0.2

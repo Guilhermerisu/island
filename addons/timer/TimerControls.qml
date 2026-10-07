@@ -65,7 +65,7 @@ Item {
     text: controls.phase === "paused" ? "Paused" : "Timer"
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
-    font.pixelSize: Math.round(controls.timeSize * 0.4)
+    font.pixelSize: Math.round(controls.theme.px(controls.timeSize) * 0.4)
     font.weight: Font.Medium
   }
   Text {
@@ -75,7 +75,7 @@ Item {
     text: controls.timer.timeText(controls.timer.remaining)
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
-    font.pixelSize: controls.timeSize
+    font.pixelSize: controls.theme.px(controls.timeSize)
     font.weight: Font.Light
     font.features: { "tnum": 1, "case": 1 }
     font.letterSpacing: -1

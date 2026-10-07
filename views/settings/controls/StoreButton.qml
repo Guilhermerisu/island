@@ -19,7 +19,7 @@ Rectangle {
     text: button.added ? "REMOVE" : "ADD"
     color: button.added ? button.view.textMuted : button.view.text
     font.family: button.view.host.theme.textFontFamily
-    font.pixelSize: 12
+    font.pixelSize: button.view.host.theme.px(12)
     font.weight: Font.Bold
     font.letterSpacing: 0.3
   }

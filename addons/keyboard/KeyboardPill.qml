@@ -26,7 +26,7 @@ Item {
     text: "󰌌"
     color: pill.host.theme.accent
     font.family: pill.host.theme.fontFamily
-    font.pixelSize: 20
+    font.pixelSize: pill.host.theme.px(20)
     scale: pill.shown ? 1 : 0.86
     Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
   }
@@ -43,7 +43,7 @@ Item {
     elide: Text.ElideRight
     color: "#ffffff"
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: 13
+    font.pixelSize: pill.host.theme.px(13)
     font.weight: Font.Medium
     font.letterSpacing: -0.2
   }
@@ -82,7 +82,7 @@ Item {
           color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: pill.host.theme.textFontFamily
-          font.pixelSize: 11
+          font.pixelSize: pill.host.theme.px(11)
           font.weight: Font.Bold
         }
       }

@@ -36,7 +36,7 @@ ListPicker {
         anchors.centerIn: parent
         text: String(cell.entry.e || "")
         font.family: "Noto Color Emoji"
-        font.pixelSize: 28
+        font.pixelSize: emojis.host.theme.px(28)
       }
     }
   }

@@ -170,7 +170,7 @@ ColumnLayout {
             text: "󰋊"
             color: page.gray
             font.family: page.view.host.theme.fontFamily
-            font.pixelSize: 16
+            font.pixelSize: page.view.host.theme.px(16)
           }
           Text {
             text: "Storage"
@@ -213,7 +213,7 @@ ColumnLayout {
                 text: page.bytes(volume.modelData.used) + " of " + page.bytes(volume.modelData.size) + " used"
                 color: page.view.textMuted
                 font.family: "Adwaita Sans"
-                font.pixelSize: 13
+                font.pixelSize: page.view.host.theme.px(13)
                 font.features: { "tnum": 1 }
               }
             }
@@ -264,7 +264,7 @@ ColumnLayout {
             text: "󰒋"
             color: page.gray
             font.family: page.view.host.theme.fontFamily
-            font.pixelSize: 16
+            font.pixelSize: page.view.host.theme.px(16)
           }
           Text {
             text: "Processes"
@@ -288,7 +288,7 @@ ColumnLayout {
               text: "󰍉"
               color: page.view.textMuted
               font.family: page.view.host.theme.fontFamily
-              font.pixelSize: 13
+              font.pixelSize: page.view.host.theme.px(13)
             }
             Text {
               x: 26
@@ -297,7 +297,7 @@ ColumnLayout {
               text: "Search"
               color: page.view.textMuted
               font.family: "Adwaita Sans"
-              font.pixelSize: 13
+              font.pixelSize: page.view.host.theme.px(13)
             }
             TextInput {
               id: filter
@@ -307,7 +307,7 @@ ColumnLayout {
               clip: true
               color: page.view.text
               font.family: "Adwaita Sans"
-              font.pixelSize: 13
+              font.pixelSize: page.view.host.theme.px(13)
               Keys.onEscapePressed: function(event) {
                 if (text !== "") { text = ""; event.accepted = true }
                 else event.accepted = false

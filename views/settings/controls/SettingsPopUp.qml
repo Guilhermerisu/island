@@ -45,7 +45,7 @@ Rectangle {
         text: modelData
         color: pop.view.textMuted
         font.family: pop.view.host.theme.fontFamily
-        font.pixelSize: 10
+        font.pixelSize: pop.view.host.theme.px(10)
       }
     }
   }

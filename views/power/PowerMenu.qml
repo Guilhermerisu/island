@@ -134,7 +134,7 @@ Item {
               text: slot.modelData.icon
               color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
               font.family: power.host.theme.fontFamily
-              font.pixelSize: 26
+              font.pixelSize: power.host.theme.px(26)
               Behavior on color { MotionColorAnimation { theme: power.host.theme } }
             }
             Text {
@@ -143,7 +143,7 @@ Item {
               color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
               font.family: power.host.theme.textFontFamily
-              font.pixelSize: 13
+              font.pixelSize: power.host.theme.px(13)
               font.weight: Font.DemiBold
               Behavior on color { MotionColorAnimation { theme: power.host.theme } }
             }

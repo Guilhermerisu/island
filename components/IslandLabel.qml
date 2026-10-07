@@ -25,7 +25,7 @@ Text {
   // Adwaita Sans (Inter-based) at semibold; tabular figures keep the
   // digits from shifting as the time changes.
   font.family: host.theme.textFontFamily
-  font.pixelSize: 16
+  font.pixelSize: host.theme.px(16)
   font.weight: Font.DemiBold
   // Apple-style: tabular digits, the colon raised to sit centered on them
   // (Inter's "case" forms), and SF's tight tracking.

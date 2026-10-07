@@ -38,7 +38,7 @@ Rectangle {
       elide: Text.ElideRight
       color: side.selected ? side.view.accentInk : side.view.text
       font.family: side.view.host.theme.textFontFamily
-      font.pixelSize: 15
+      font.pixelSize: side.view.host.theme.px(15)
     }
   }
   MouseArea {

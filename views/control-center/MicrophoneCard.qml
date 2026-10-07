@@ -49,7 +49,7 @@ CcSection {
         elide: Text.ElideRight
         color: inputRow.isDefault ? card.center.text : card.center.textMuted
         font.family: center.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: center.host.theme.px(12)
       }
       Text {
         id: inputCheck
@@ -60,7 +60,7 @@ CcSection {
         text: "󰄬"
         color: card.center.accent
         font.family: card.center.iconFont
-        font.pixelSize: 14
+        font.pixelSize: center.host.theme.px(14)
       }
       MouseArea {
         id: inputMouse

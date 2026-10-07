@@ -77,7 +77,7 @@ Item {
         text: pill.packageMode ? "󰏗" : "󰁅"
         color: pill.activityAccent
         font.family: pill.host.theme.fontFamily
-        font.pixelSize: 15
+        font.pixelSize: pill.host.theme.px(15)
         font.weight: Font.Bold
       }
     }
@@ -92,7 +92,7 @@ Item {
         text: pill.tracker.items.length
         color: Qt.rgba(1, 1, 1, 0.5)
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: pill.host.theme.px(12)
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }
       }
@@ -102,7 +102,7 @@ Item {
         textFormat: Text.PlainText
         color: pill.activityAccent
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: pill.host.theme.px(12)
         font.weight: Font.DemiBold
         font.letterSpacing: -0.2
         font.features: { "tnum": 1 }
@@ -131,7 +131,7 @@ Item {
         text: "󰄬"
         color: pill.activityInk
         font.family: pill.host.theme.fontFamily
-        font.pixelSize: 22
+        font.pixelSize: pill.host.theme.px(22)
         font.weight: Font.Bold
       }
     }
@@ -149,7 +149,7 @@ Item {
         elide: Text.ElideMiddle
         color: "#ffffff"
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 15
+        font.pixelSize: pill.host.theme.px(15)
         font.weight: Font.DemiBold
         font.letterSpacing: -0.2
       }
@@ -161,7 +161,7 @@ Item {
         elide: Text.ElideRight
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 12
+        font.pixelSize: pill.host.theme.px(12)
       }
     }
     // App Store–style capsule; the whole pill opens the file too.
@@ -181,7 +181,7 @@ Item {
         text: "Open"
         color: pill.activityAccent
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: pill.host.theme.px(14)
         font.weight: Font.Bold
       }
     }

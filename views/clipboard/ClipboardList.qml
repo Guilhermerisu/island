@@ -134,7 +134,7 @@ ListPicker {
           text: "Image unavailable"
           color: clipboard.host.theme.muted
           font.family: clipboard.host.theme.textFontFamily
-          font.pixelSize: 12
+          font.pixelSize: clipboard.host.theme.px(12)
         }
         Text {
           anchors.fill: parent
@@ -146,7 +146,7 @@ ListPicker {
           clip: true
           color: clipboard.host.theme.text
           font.family: clipboard.host.theme.textFontFamily
-          font.pixelSize: 15
+          font.pixelSize: clipboard.host.theme.px(15)
           lineHeight: 1.3
         }
       }
@@ -188,7 +188,7 @@ ListPicker {
           text: clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : "󰆒"
           color: clipRow.selected ? clipRow.ink : clipboard.host.theme.muted
           font.family: clipboard.host.theme.fontFamily
-          font.pixelSize: 18
+          font.pixelSize: clipboard.host.theme.px(18)
         }
       }
       Text {
@@ -202,7 +202,7 @@ ListPicker {
         maximumLineCount: 1
         color: clipRow.ink
         font.family: clipboard.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: clipboard.host.theme.px(14)
         font.weight: clipRow.selected ? Font.Medium : Font.Normal
       }
     }

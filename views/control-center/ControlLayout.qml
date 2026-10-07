@@ -150,7 +150,7 @@ ColumnLayout {
       text: "Drag a control here"
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
-      font.pixelSize: 13
+      font.pixelSize: layout.center.host.theme.px(13)
     }
     Item {
       id: cardArea
@@ -245,7 +245,7 @@ ColumnLayout {
             color: layout.center.wellHover
             border.width: 1
             border.color: layout.center.edge
-            Text { anchors.centerIn: parent; text: "−"; color: layout.center.text; font.pixelSize: 18 }
+            Text { anchors.centerIn: parent; text: "−"; color: layout.center.text; font.pixelSize: layout.center.host.theme.px(18) }
             Tooltip { theme: layout.center.host.theme; text: "Remove" }
             MouseArea {
               anchors.fill: parent
@@ -271,7 +271,7 @@ ColumnLayout {
       text: "Click the pencil to add controls"
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
-      font.pixelSize: 12
+      font.pixelSize: layout.center.host.theme.px(12)
     }
   }
 

@@ -51,7 +51,7 @@ Item {
     text: s.icon
     color: sliderFill.width - parent.height > x + width ? center.host.theme.background : center.textMuted
     font.family: center.iconFont
-    font.pixelSize: 18
+    font.pixelSize: center.host.theme.px(18)
   }
   MouseArea {
     id: sliderMouse

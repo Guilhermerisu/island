@@ -63,7 +63,7 @@ ColumnLayout {
       text: "Control Center"
       color: cc.text
       font.family: cc.host.theme.textFontFamily
-      font.pixelSize: 17
+      font.pixelSize: cc.host.theme.px(17)
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
@@ -78,7 +78,7 @@ ColumnLayout {
         text: cc.editMode ? "Done" : "󰏫"
         color: cc.text
         font.family: cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont
-        font.pixelSize: cc.editMode ? 12 : 17
+        font.pixelSize: cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(17)
         font.weight: Font.DemiBold
       }
       MouseArea {
@@ -100,7 +100,7 @@ ColumnLayout {
         text: "󰒓"
         color: cc.text
         font.family: cc.iconFont
-        font.pixelSize: 17
+        font.pixelSize: cc.host.theme.px(17)
       }
       MouseArea {
         id: settingsMouse
@@ -124,7 +124,7 @@ ColumnLayout {
         text: cc.controls.batteryPercent + "%"
         color: parent.low ? "#ff453a" : cc.text
         font.family: cc.host.theme.textFontFamily
-        font.pixelSize: 13
+        font.pixelSize: cc.host.theme.px(13)
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }
       }

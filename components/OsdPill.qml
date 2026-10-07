@@ -24,7 +24,7 @@ Item {
     text: osd.host.osdIcon
     color: "#ffffff"
     font.family: osd.host.theme.fontFamily
-    font.pixelSize: 21
+    font.pixelSize: osd.host.theme.px(21)
   }
 
   Rectangle {
@@ -57,7 +57,7 @@ Item {
     text: osd.host.osdMessage
     color: "#ffffff"
     font.family: osd.host.theme.textFontFamily
-    font.pixelSize: 12
+    font.pixelSize: osd.host.theme.px(12)
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }
   }
@@ -74,7 +74,7 @@ Item {
     elide: Text.ElideRight
     color: "#ffffff"
     font.family: osd.host.theme.textFontFamily
-    font.pixelSize: 14
+    font.pixelSize: osd.host.theme.px(14)
     font.weight: Font.Medium
   }
 }

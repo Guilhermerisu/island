@@ -24,7 +24,7 @@ CcSection {
     text: "No brightness control available"
     color: card.center.textMuted
     font.family: card.center.host.theme.textFontFamily
-    font.pixelSize: 12
+    font.pixelSize: card.center.host.theme.px(12)
     Layout.fillWidth: true
   }
 }

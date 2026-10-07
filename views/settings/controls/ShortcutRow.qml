@@ -93,7 +93,7 @@ Item {
       text: "󰀪"
       color: "#febc2e"
       font.family: shortcutRow.view.host.theme.fontFamily
-      font.pixelSize: 12
+      font.pixelSize: shortcutRow.view.host.theme.px(12)
     }
     Text {
       text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict

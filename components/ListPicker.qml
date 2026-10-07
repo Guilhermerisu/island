@@ -205,7 +205,7 @@ Item {
       text: picker.emptyText
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
-      font.pixelSize: 13
+      font.pixelSize: picker.host.theme.px(13)
     }
   }
 

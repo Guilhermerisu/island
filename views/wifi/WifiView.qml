@@ -222,14 +222,14 @@ ColumnLayout {
       radius: 16
       color: backMouse.containsMouse ? wf.well : wf.card
       Tooltip { theme: wf.host.theme; text: "Control Center" }
-      Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: 17 }
+      Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(17) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
     }
     Text {
       text: "Wi-Fi"
       color: wf.text
       font.family: wf.host.theme.textFontFamily
-      font.pixelSize: 17
+      font.pixelSize: wf.host.theme.px(17)
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
@@ -260,7 +260,7 @@ ColumnLayout {
         text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
         color: wf.textMuted
         font.family: wf.host.theme.textFontFamily
-        font.pixelSize: 14
+        font.pixelSize: wf.host.theme.px(14)
       }
 
       ListView {
@@ -308,7 +308,7 @@ ColumnLayout {
               text: row.modelData.header || ""
               color: wf.textMuted
               font.family: wf.host.theme.textFontFamily
-              font.pixelSize: 14
+              font.pixelSize: wf.host.theme.px(14)
               font.weight: Font.DemiBold
             }
             Row {
@@ -324,7 +324,7 @@ ColumnLayout {
                 text: "󰑓"
                 color: wf.textMuted
                 font.family: wf.iconFont
-                font.pixelSize: 14
+                font.pixelSize: wf.host.theme.px(14)
                 AmbientRotation {
                   target: spinner
                   period: 1200
@@ -337,7 +337,7 @@ ColumnLayout {
                 rotation: wf.otherOpen ? 90 : 0
                 color: wf.textMuted
                 font.family: wf.iconFont
-                font.pixelSize: 17
+                font.pixelSize: wf.host.theme.px(17)
                 Behavior on rotation { MotionAnimation { theme: wf.host.theme; pace: "standard" } }
               }
             }
@@ -372,7 +372,7 @@ ColumnLayout {
                 text: "\uf1eb"
                 color: row.modelData.connected ? wf.accentInk : wf.text
                 font.family: wf.iconFont
-                font.pixelSize: 18
+                font.pixelSize: wf.host.theme.px(18)
               }
             }
             Column {
@@ -389,7 +389,7 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: wf.text
                 font.family: wf.host.theme.textFontFamily
-                font.pixelSize: 15
+                font.pixelSize: wf.host.theme.px(15)
               }
               Text {
                 width: parent.width
@@ -401,7 +401,7 @@ ColumnLayout {
                 text: status
                 color: wf.textMuted
                 font.family: wf.host.theme.textFontFamily
-                font.pixelSize: 12
+                font.pixelSize: wf.host.theme.px(12)
               }
             }
             MouseArea {
@@ -438,7 +438,7 @@ ColumnLayout {
                 selectionColor: wf.host.theme.withAlpha(wf.accent, 0.4)
                 selectedTextColor: wf.text
                 font.family: wf.host.theme.textFontFamily
-                font.pixelSize: 15
+                font.pixelSize: wf.host.theme.px(15)
                 clip: true
                 function sync() { if (row.askingPassword) { text = wf.passwordText; forceActiveFocus() } }
                 Component.onCompleted: sync()
@@ -481,7 +481,7 @@ ColumnLayout {
                   text: "󰅖"
                   color: forgetMouse.containsMouse ? wf.text : wf.textMuted
                   font.family: wf.iconFont
-                  font.pixelSize: 15
+                  font.pixelSize: wf.host.theme.px(15)
                 }
                 MouseArea {
                   id: forgetMouse
@@ -497,7 +497,7 @@ ColumnLayout {
                 text: "󰌾"
                 color: wf.textMuted
                 font.family: wf.iconFont
-                font.pixelSize: 15
+                font.pixelSize: wf.host.theme.px(15)
               }
             }
           }
@@ -526,7 +526,7 @@ ColumnLayout {
           text: "Wi-Fi Settings…"
           color: wf.text
           font.family: wf.host.theme.textFontFamily
-          font.pixelSize: 15
+          font.pixelSize: wf.host.theme.px(15)
         }
         MouseArea {
           id: settingsMouse
