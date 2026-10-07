@@ -147,6 +147,15 @@ press Backspace to remove it and give the key back to Omarchy. **Restore
 Defaults** matches your keys again. These are saved to
 `~/.config/hypr/island-bindings.lua`.
 
+### Other plugins
+
+Island is the bar, so plugins that add their own panel, overlay, or menu keep
+working — open the Plugins view (Settings → Keybinds, or the plugins addon) to
+enable one and open it. Plugins that add a **bar widget** can't show while
+Island is the bar, since Island doesn't render other plugins' widgets; if you
+need one, switch back with `omarchy bar use omarchy.bar`. See
+[issue #8](https://github.com/Guilhermerisu/island/issues/8).
+
 ### Ask AI
 
 Questions typed in the launcher are answered by the AI chosen under **Ask With**
