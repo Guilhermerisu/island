@@ -42,7 +42,7 @@ ListPicker {
       id: appRow
       property var entry: ({})
       property bool selected: false
-      readonly property bool isAsk: !!entry.askAi
+      readonly property bool isAsk: !!(entry && entry.askAi)
 
       ClippingRectangle {
         id: iconTile
@@ -63,7 +63,7 @@ ListPicker {
           anchors.centerIn: parent
           width: 26; height: 26
           visible: !appRow.isAsk && status === Image.Ready
-          source: appRow.isAsk ? "" : launcher.iconSource(appRow.entry.icon)
+          source: appRow.isAsk ? "" : launcher.iconSource(appRow.entry && appRow.entry.icon)
           sourceSize.width: 52
           sourceSize.height: 52
           fillMode: Image.PreserveAspectFit
@@ -110,7 +110,7 @@ ListPicker {
         }
         Text {
           width: parent.width - askLabel.width - parent.spacing
-          text: appRow.isAsk ? "\u201c" + appRow.entry.question + "\u201d" : ""
+          text: appRow.isAsk ? "\u201c" + (appRow.entry && appRow.entry.question) + "\u201d" : ""
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: launcher.host.theme.muted

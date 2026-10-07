@@ -33,15 +33,30 @@ ListPicker {
 
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
   property var history: []
+  // A delete re-reads the file first and drops the entry by its stable key, so
+  // a copy that landed since the last watch still survives the write.
+  property string pendingRemoveKey: ""
   FileView {
     id: historyFile
     path: clipboard.host.home + "/.local/state/omarchy/clipboard-history.json"
     watchChanges: true
     atomicWrites: true
     printErrors: false
-    onLoaded: clipboard.history = ClipboardHistory.parseHistory(text())
-    onLoadFailed: clipboard.history = []
+    onLoaded: clipboard.historyLoaded(text())
+    onLoadFailed: { clipboard.pendingRemoveKey = ""; clipboard.history = [] }
     onFileChanged: reload()
+  }
+  function historyLoaded(raw) {
+    var fresh = ClipboardHistory.parseHistory(raw)
+    if (pendingRemoveKey) {
+      var key = pendingRemoveKey
+      pendingRemoveKey = ""
+      var next = fresh.filter(function(entry) { return ClipboardHistory.entryKey(entry) !== key })
+      history = next
+      if (next.length !== fresh.length) historyFile.setText(JSON.stringify(next, null, 2) + "\n")
+      return
+    }
+    history = fresh
   }
 
   // Close first so the keyboard goes back to the previous app, then let
@@ -69,8 +84,10 @@ ListPicker {
   // Writing the shared history file; Omarchy's plugin reloads it too.
   function remove(row) {
     if (!row) return
-    history = ClipboardHistory.removeEntryAt(history, row.index)
-    historyFile.setText(JSON.stringify(history, null, 2) + "\n")
+    var entry = history[row.index]
+    if (!entry) return
+    pendingRemoveKey = ClipboardHistory.entryKey(entry)
+    historyFile.reload(true)
   }
 
   // Preview pane: the selected picture, rounded, at its own proportions.

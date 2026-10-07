@@ -44,6 +44,7 @@ ListPicker {
   property var whenResults: ({})
   property var checkedResults: ({})
   property var disabledResults: ({})
+  property bool guardsPending: false
 
   FileView {
     path: menu.omarchyPath + "/default/omarchy/omarchy-menu.jsonc"
@@ -93,12 +94,24 @@ ListPicker {
       menu.whenResults = nextWhen
       menu.checkedResults = nextChecked
       menu.disabledResults = nextDisabled
+      if (menu.guardsPending) Qt.callLater(function() { menu.evaluateGuards() })
     }
   }
   function evaluateGuards() {
-    if (guardProc.running) return
+    // Process ignores a command change while it is running, so a second
+    // evaluation has to wait for the batch in flight rather than be dropped.
+    if (guardProc.running) {
+      guardsPending = true
+      return
+    }
+    guardsPending = false
     var script = MenuModel.guardScript(items_)
-    if (!script) return
+    if (!script) {
+      whenResults = ({})
+      checkedResults = ({})
+      disabledResults = ({})
+      return
+    }
     guardProc.collected = ""
     guardProc.command = ["bash", "-lc", script]
     guardProc.running = true
@@ -183,7 +196,7 @@ ListPicker {
       if (!entry || entry.id === "root") continue
       if (q) {
         if (!MenuModel.isDescendantOf(items_, entry.id, active)) continue
-        if (!MenuModel.matchesQuery(entry, q, isVisible(entry))) continue
+        if (!MenuModel.matchesQuery(entry, q, isVisible(entry) && !MenuModel.isDisabled(disabledResults, entry))) continue
         list.push(displayRow(entry, MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q)))
       } else {
         if (entry.parent !== active || !isVisible(entry)) continue
@@ -220,7 +233,7 @@ ListPicker {
     runner.startDetached()
   }
   function activate(row) {
-    if (!row) return
+    if (!row || row.disabled) return
     // The Apps submenu is a native list in Omarchy's menu; the island's
     // launcher covers it.
     if (row.provider === "apps") { host.view = "apps"; return }
