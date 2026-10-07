@@ -27,7 +27,7 @@ Item {
     text: shortcutRow.entry.label
     elide: Text.ElideRight
     color: shortcutRow.view.text
-    font.family: "Adwaita Sans"
+    font.family: shortcutRow.view.host.theme.textFontFamily
     font.pixelSize: shortcutRow.view.detailFontSize
   }
   Rectangle {
@@ -63,7 +63,7 @@ Item {
       text: shortcutRow.recording ? (shortcutRow.keybinds.recordHint || "Type Shortcut") : shortcutRow.keybinds.shortcutText(shortcutRow.entry.keys)
       color: shortcutRow.recording ? shortcutRow.view.accent
         : shortcutRow.entry.keys === "" ? shortcutRow.view.textMuted : shortcutRow.view.text
-      font.family: "Adwaita Sans"
+      font.family: shortcutRow.view.host.theme.textFontFamily
       font.pixelSize: shortcutRow.view.detailFontSize
       Behavior on color { MotionColorAnimation { theme: shortcutRow.view.host.theme } }
     }
@@ -98,7 +98,7 @@ Item {
     Text {
       text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict
       color: shortcutRow.view.textMuted
-      font.family: "Adwaita Sans"
+      font.family: shortcutRow.view.host.theme.textFontFamily
       font.pixelSize: shortcutRow.view.detailCaptionFontSize
     }
   }

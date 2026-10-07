@@ -54,7 +54,7 @@ Item {
     horizontalAlignment: Text.AlignRight
     text: Math.round(volume.effectiveLevel * 100) + "%"
     color: "#ffffff"
-    font.family: "Adwaita Sans"
+    font.family: volume.theme.textFontFamily
     font.pixelSize: 12
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }

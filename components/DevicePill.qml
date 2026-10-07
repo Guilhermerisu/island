@@ -69,7 +69,7 @@ Item {
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: "#ffffff"
-    font.family: "Adwaita Sans"
+    font.family: pill.host.theme.textFontFamily
     font.pixelSize: 13
     font.weight: Font.Medium
     font.letterSpacing: -0.2
@@ -94,7 +94,7 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       text: pill.activity.status || ""
       color: pill.statusColor
-      font.family: "Adwaita Sans"
+      font.family: pill.host.theme.textFontFamily
       font.pixelSize: 13
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
@@ -152,7 +152,7 @@ Item {
       width: parent.width
       text: pill.activity.status || ""
       color: "#888888"
-      font.family: "Adwaita Sans"
+      font.family: pill.host.theme.textFontFamily
       font.pixelSize: 13
       font.weight: Font.Medium
     }
@@ -162,7 +162,7 @@ Item {
       textFormat: Text.PlainText
       elide: Text.ElideRight
       color: "#ffffff"
-      font.family: "Adwaita Sans"
+      font.family: pill.host.theme.textFontFamily
       font.pixelSize: 16
       font.weight: Font.Medium
       font.letterSpacing: -0.2
@@ -214,7 +214,7 @@ Item {
       anchors.centerIn: parent
       text: pill.deviceBattery
       color: pill.ringColor
-      font.family: "Adwaita Sans"
+      font.family: pill.host.theme.textFontFamily
       font.pixelSize: 14
       font.weight: Font.DemiBold
       font.features: { "tnum": 1 }

@@ -37,6 +37,8 @@ Item {
       property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
       property bool colorfulLiveActivities: true
+      property string textFontMode: "island"
+      property string customFont: ""
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
       property bool microphoneMuteControl: false

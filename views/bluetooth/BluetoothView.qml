@@ -219,7 +219,7 @@ ColumnLayout {
     Text {
       text: "Bluetooth"
       color: bt.text
-      font.family: "Adwaita Sans"
+      font.family: bt.host.theme.textFontFamily
       font.pixelSize: 17
       font.weight: Font.DemiBold
     }
@@ -250,7 +250,7 @@ ColumnLayout {
         verticalAlignment: Text.AlignVCenter
         text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
         color: bt.textMuted
-        font.family: "Adwaita Sans"
+        font.family: bt.host.theme.textFontFamily
         font.pixelSize: 14
       }
 
@@ -297,7 +297,7 @@ ColumnLayout {
               anchors.verticalCenter: parent.verticalCenter
               text: row.modelData.header || ""
               color: bt.textMuted
-              font.family: "Adwaita Sans"
+              font.family: bt.host.theme.textFontFamily
               font.pixelSize: 14
               font.weight: Font.DemiBold
             }
@@ -376,7 +376,7 @@ ColumnLayout {
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 color: bt.text
-                font.family: "Adwaita Sans"
+                font.family: bt.host.theme.textFontFamily
                 font.pixelSize: 15
               }
               Text {
@@ -388,7 +388,7 @@ ColumnLayout {
                 visible: status !== ""
                 text: status
                 color: bt.textMuted
-                font.family: "Adwaita Sans"
+                font.family: bt.host.theme.textFontFamily
                 font.pixelSize: 12
               }
             }
@@ -416,7 +416,7 @@ ColumnLayout {
                   anchors.verticalCenter: parent.verticalCenter
                   text: row.modelData.battery + "%"
                   color: parent.low ? "#ff453a" : bt.textMuted
-                  font.family: "Adwaita Sans"
+                  font.family: bt.host.theme.textFontFamily
                   font.pixelSize: 13
                   font.features: { "tnum": 1 }
                 }

@@ -116,7 +116,7 @@ ListPicker {
           visible: preview.isImage && previewImage.status === Image.Error
           text: "Image unavailable"
           color: clipboard.host.theme.muted
-          font.family: "Adwaita Sans"
+          font.family: clipboard.host.theme.textFontFamily
           font.pixelSize: 12
         }
         Text {
@@ -128,7 +128,7 @@ ListPicker {
           elide: Text.ElideRight
           clip: true
           color: clipboard.host.theme.text
-          font.family: "Adwaita Sans"
+          font.family: clipboard.host.theme.textFontFamily
           font.pixelSize: 15
           lineHeight: 1.3
         }
@@ -184,7 +184,7 @@ ListPicker {
         elide: Text.ElideRight
         maximumLineCount: 1
         color: clipRow.ink
-        font.family: "Adwaita Sans"
+        font.family: clipboard.host.theme.textFontFamily
         font.pixelSize: 14
         font.weight: clipRow.selected ? Font.Medium : Font.Normal
       }

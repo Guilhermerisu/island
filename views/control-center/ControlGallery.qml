@@ -37,7 +37,7 @@ ColumnLayout {
       ? "Release to remove this control."
       : "Drag a control into the layout above. Scroll to see more."
     color: gallery.cc.textMuted
-    font.family: "Adwaita Sans"
+    font.family: gallery.cc.host.theme.textFontFamily
     font.pixelSize: 12
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.WordWrap
@@ -67,7 +67,7 @@ ColumnLayout {
             Layout.leftMargin: 5
             text: section.modelData.title
             color: gallery.cc.text
-            font.family: "Adwaita Sans"
+            font.family: gallery.cc.host.theme.textFontFamily
             font.pixelSize: 14
             font.weight: Font.DemiBold
           }
@@ -117,7 +117,7 @@ ColumnLayout {
                     anchors.centerIn: parent
                     text: "+"
                     color: gallery.cc.accentInk
-                    font.family: "Adwaita Sans"
+                    font.family: gallery.cc.host.theme.textFontFamily
                     font.pixelSize: 18
                     font.weight: Font.DemiBold
                   }
@@ -162,7 +162,7 @@ ColumnLayout {
         horizontalAlignment: Text.AlignHCenter
         text: "All controls have been added"
         color: gallery.cc.textMuted
-        font.family: "Adwaita Sans"
+        font.family: gallery.cc.host.theme.textFontFamily
         font.pixelSize: 13
       }
     }

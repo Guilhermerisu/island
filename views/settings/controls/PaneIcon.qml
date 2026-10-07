@@ -159,7 +159,7 @@ Item {
               : layer.modelData.date === "day" ? String(layer.today.getDate())
               : layer.modelData.glyph || ""
             color: layer.modelData.color
-            font.family: layer.modelData.date ? "Adwaita Sans" : paneIcon.view.host.theme.fontFamily
+            font.family: layer.modelData.date ? paneIcon.view.host.theme.textFontFamily : paneIcon.view.host.theme.fontFamily
             font.weight: layer.modelData.weight || Font.Normal
             font.pixelSize: Math.round(layer.size)
           }

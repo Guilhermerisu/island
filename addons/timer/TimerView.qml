@@ -124,7 +124,7 @@ Item {
       y: well.y + (drum.height - current.height) / 2 + current.baselineOffset - baselineOffset
       text: "Timer"
       color: view.timer.tint
-      font.family: "Adwaita Sans"
+      font.family: view.host.theme.textFontFamily
       font.pixelSize: Math.round(46 * 0.4)
       font.weight: Font.Medium
     }
@@ -168,7 +168,7 @@ Item {
         anchors.rightMargin: 10
         y: (drum.height - height) / 2 + shift * drum.height * 0.8
         color: view.timer.tint
-        font.family: "Adwaita Sans"
+        font.family: view.host.theme.textFontFamily
         font.pixelSize: 46
         font.weight: Font.Light
         font.features: { "tnum": 1, "case": 1 }

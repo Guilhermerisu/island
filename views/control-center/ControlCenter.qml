@@ -62,7 +62,7 @@ ColumnLayout {
     Text {
       text: "Control Center"
       color: cc.text
-      font.family: "Adwaita Sans"
+      font.family: cc.host.theme.textFontFamily
       font.pixelSize: 17
       font.weight: Font.DemiBold
     }
@@ -77,7 +77,7 @@ ColumnLayout {
         anchors.centerIn: parent
         text: cc.editMode ? "Done" : "󰏫"
         color: cc.text
-        font.family: cc.editMode ? "Adwaita Sans" : cc.iconFont
+        font.family: cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont
         font.pixelSize: cc.editMode ? 12 : 17
         font.weight: Font.DemiBold
       }
@@ -123,7 +123,7 @@ ColumnLayout {
         anchors.verticalCenter: parent.verticalCenter
         text: cc.controls.batteryPercent + "%"
         color: parent.low ? "#ff453a" : cc.text
-        font.family: "Adwaita Sans"
+        font.family: cc.host.theme.textFontFamily
         font.pixelSize: 13
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }

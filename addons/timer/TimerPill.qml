@@ -31,7 +31,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     text: pill.timer.timeText(pill.timer.remaining)
     color: pill.ink
-    font.family: "Adwaita Sans"
+    font.family: pill.host.theme.textFontFamily
     font.pixelSize: 14
     font.weight: Font.Medium
     font.features: { "tnum": 1, "case": 1 }

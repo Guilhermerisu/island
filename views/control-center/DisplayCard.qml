@@ -23,7 +23,7 @@ CcSection {
     visible: !galleryPreview && !card.controls.brightnessAvailable
     text: "No brightness control available"
     color: card.center.textMuted
-    font.family: "Adwaita Sans"
+    font.family: card.center.host.theme.textFontFamily
     font.pixelSize: 12
     Layout.fillWidth: true
   }

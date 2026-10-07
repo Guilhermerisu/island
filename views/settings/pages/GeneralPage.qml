@@ -63,6 +63,40 @@ ColumnLayout {
 
   SettingsGroup {
     view: page.view
+    title: "Typography"
+    SettingsRow {
+      view: page.view
+      label: "Font"
+      detail: "Island default, Omarchy's menu font, or your own"
+      last: page.view.settings.textFontMode !== "custom"
+      SettingsPopUp {
+        view: page.view
+        options: [
+          { label: "Island default", value: "island" },
+          { label: "Omarchy default", value: "omarchy" },
+          { label: "Custom", value: "custom" }
+        ]
+        value: page.view.settings.textFontMode
+        onPicked: function(v) { page.view.settings.textFontMode = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      label: "Custom Font"
+      detail: "Family name, e.g. JetBrainsMono Nerd Font"
+      visible: page.view.settings.textFontMode === "custom"
+      last: true
+      SettingsTextField {
+        view: page.view
+        value: page.view.settings.customFont
+        placeholder: "Font family"
+        onCommitted: function(v) { page.view.settings.customFont = v }
+      }
+    }
+  }
+
+  SettingsGroup {
+    view: page.view
     title: "Motion"
     SettingsRow {
       view: page.view

@@ -64,7 +64,7 @@ Item {
     y: time.y + time.baselineOffset - baselineOffset
     text: controls.phase === "paused" ? "Paused" : "Timer"
     color: controls.timer.tint
-    font.family: "Adwaita Sans"
+    font.family: controls.theme.textFontFamily
     font.pixelSize: Math.round(controls.timeSize * 0.4)
     font.weight: Font.Medium
   }
@@ -74,7 +74,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     text: controls.timer.timeText(controls.timer.remaining)
     color: controls.timer.tint
-    font.family: "Adwaita Sans"
+    font.family: controls.theme.textFontFamily
     font.pixelSize: controls.timeSize
     font.weight: Font.Light
     font.features: { "tnum": 1, "case": 1 }

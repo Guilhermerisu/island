@@ -80,7 +80,7 @@ Item {
         // iOS's type: a semibold title and a regular body of nearly the same
         // size, in SF's stand-in (Adwaita Sans).
         color: "#ffffff"
-        font.family: "Adwaita Sans"
+        font.family: host.theme.textFontFamily
         font.pixelSize: 15
         font.weight: Font.DemiBold
         font.letterSpacing: -0.2
@@ -92,7 +92,7 @@ Item {
         text: host.notifications.age(pill.row.timestamp)
         textFormat: Text.PlainText
         color: Qt.rgba(1, 1, 1, 0.45)
-        font.family: "Adwaita Sans"
+        font.family: host.theme.textFontFamily
         font.pixelSize: 13
       }
     }
@@ -103,7 +103,7 @@ Item {
       textFormat: Text.PlainText
       elide: Text.ElideRight
       color: Qt.rgba(1, 1, 1, 0.72)
-      font.family: "Adwaita Sans"
+      font.family: host.theme.textFontFamily
       font.pixelSize: 14
       font.letterSpacing: -0.1
     }

@@ -259,7 +259,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: menu.host.theme.text
-          font.family: "Adwaita Sans"
+          font.family: menu.host.theme.textFontFamily
           font.pixelSize: 14
           font.weight: Font.Medium
         }
@@ -270,7 +270,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: menu.host.theme.muted
-          font.family: "Adwaita Sans"
+          font.family: menu.host.theme.textFontFamily
           font.pixelSize: 11
         }
       }

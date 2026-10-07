@@ -38,7 +38,7 @@ Item {
     color: field.host.theme.text
     selectionColor: field.host.theme.withAlpha(field.host.theme.accent, 0.4)
     selectedTextColor: field.host.theme.text
-    font.family: "Adwaita Sans"
+    font.family: field.host.theme.textFontFamily
     font.pixelSize: field.fontSize
     clip: true
     Keys.onPressed: function(event) { field.keyPressed(event) }

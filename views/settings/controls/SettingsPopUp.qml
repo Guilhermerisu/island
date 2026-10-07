@@ -30,7 +30,7 @@ Rectangle {
     anchors.verticalCenter: parent.verticalCenter
     text: pop.currentLabel
     color: pop.view.text
-    font.family: "Adwaita Sans"
+    font.family: pop.view.host.theme.textFontFamily
     font.pixelSize: pop.view.detailFontSize
   }
   Column {

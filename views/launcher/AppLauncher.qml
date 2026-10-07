@@ -88,7 +88,7 @@ ListPicker {
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: launcher.host.theme.text
-        font.family: "Adwaita Sans"
+        font.family: launcher.host.theme.textFontFamily
         font.pixelSize: 14
         font.weight: Font.DemiBold
       }
@@ -104,7 +104,7 @@ ListPicker {
           id: askLabel
           text: launcher.provider ? "Ask " + launcher.provider.name : ""
           color: launcher.host.theme.text
-          font.family: "Adwaita Sans"
+          font.family: launcher.host.theme.textFontFamily
           font.pixelSize: 14
           font.weight: Font.DemiBold
         }
@@ -114,7 +114,7 @@ ListPicker {
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: launcher.host.theme.muted
-          font.family: "Adwaita Sans"
+          font.family: launcher.host.theme.textFontFamily
           font.pixelSize: 14
         }
       }

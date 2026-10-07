@@ -30,7 +30,7 @@ Rectangle {
     anchors.topMargin: 14
     text: sec.title
     color: center.text
-    font.family: "Adwaita Sans"
+    font.family: center.host.theme.textFontFamily
     font.pixelSize: 14
     font.weight: Font.DemiBold
     font.letterSpacing: -0.2
@@ -42,7 +42,7 @@ Rectangle {
     anchors.topMargin: 15
     text: sec.detail
     color: center.textMuted
-    font.family: "Adwaita Sans"
+    font.family: center.host.theme.textFontFamily
     font.pixelSize: 12
   }
   Rectangle {

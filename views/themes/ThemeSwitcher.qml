@@ -43,7 +43,7 @@ Picker {
         elide: Text.ElideRight
         text: themeCard.entry.name || ""
         color: themeCard.entry.foreground || ts.host.theme.text
-        font.family: "Adwaita Sans"
+        font.family: ts.host.theme.textFontFamily
         font.pixelSize: 13
         font.weight: Font.DemiBold
       }

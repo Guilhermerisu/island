@@ -183,7 +183,7 @@ Item {
       visible: picker.items.length === 0
       text: picker.emptyText
       color: picker.host.theme.muted
-      font.family: "Adwaita Sans"
+      font.family: picker.host.theme.textFontFamily
       font.pixelSize: 13
     }
   }

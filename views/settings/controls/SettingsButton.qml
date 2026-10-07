@@ -22,7 +22,7 @@ Rectangle {
     anchors.centerIn: parent
     text: button.label
     color: button.primary ? button.view.accentInk : button.view.text
-    font.family: "Adwaita Sans"
+    font.family: button.view.host.theme.textFontFamily
     font.pixelSize: button.view.detailFontSize
     font.weight: button.primary ? Font.DemiBold : Font.Normal
   }
