@@ -186,6 +186,12 @@ ListPicker {
       return MenuModel.displayRow(items_, itemOrder, checkedResults, disabledResults, entry, detail, score, section)
     return MenuModel.displayRow(items_, itemOrder, checkedResults, entry, detail, score)
   }
+  // Same for the `disabled:` guard check: older MenuModel builds don't have
+  // isDisabled, and their guard script never reports one anyway.
+  function entryDisabled(entry) {
+    if (typeof MenuModel.isDisabled === "function") return MenuModel.isDisabled(disabledResults, entry)
+    return !!(entry && disabledResults[entry.id])
+  }
 
   readonly property var rows: {
     var q = query.trim()
@@ -196,7 +202,7 @@ ListPicker {
       if (!entry || entry.id === "root") continue
       if (q) {
         if (!MenuModel.isDescendantOf(items_, entry.id, active)) continue
-        if (!MenuModel.matchesQuery(entry, q, isVisible(entry) && !MenuModel.isDisabled(disabledResults, entry))) continue
+        if (!MenuModel.matchesQuery(entry, q, isVisible(entry) && !entryDisabled(entry))) continue
         list.push(displayRow(entry, MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q)))
       } else {
         if (entry.parent !== active || !isVisible(entry)) continue

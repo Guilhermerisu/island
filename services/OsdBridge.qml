@@ -1,23 +1,23 @@
 import QtQuick
 import Quickshell.Io
-import qs.Commons
 
 // The island's side of Omarchy's OSD plumbing, so the stock omarchy.osd plugin
 // can stay off (setup disables it) and no popup appears twice. `omarchy-osd`
-// and Omarchy's scripts reach the OSD over IPC target "osd"; ShellIpc (not a
-// bare IpcHandler) is what `omarchy-shell` answers. The internal panel's
+// and Omarchy's scripts reach the OSD over IPC target "osd": ShellIpc on newer
+// Omarchy, a bare IpcHandler on releases without it. The internal panel's
 // brightness keys are handled inside the shell with no IPC, so the backlight
 // is watched here and reported the same way.
 Item {
   id: bridge
   required property var host
 
-  ShellIpc {
-    target: "osd"
-    function show(payload: string): string {
-      bridge.host.showOsd(payload)
-      return "ok"
-    }
+  // ShellIpc is a compile-time type, so it sits in its own file: where it
+  // doesn't exist that file fails to load and the IpcHandler one takes over,
+  // instead of the whole island failing with it.
+  Loader {
+    source: "OsdShellIpc.qml"
+    onStatusChanged: if (status === Loader.Error) source = "OsdIpcHandler.qml"
+    onLoaded: item.shown.connect(bridge.host.showOsd)
   }
 
   property string device: ""
