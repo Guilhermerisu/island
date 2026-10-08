@@ -98,15 +98,6 @@ ColumnLayout {
                   sourceComponent: gallery.cc.controlComponent(choice.modelData)
                 }
                 Rectangle {
-                  anchors.fill: parent
-                  anchors.margins: 3
-                  radius: 17
-                  color: "transparent"
-                  border.width: 1
-                  border.color: addMouse.containsMouse ? gallery.cc.accent : "transparent"
-                  Behavior on border.color { MotionColorAnimation { theme: gallery.cc.host.theme } }
-                }
-                Rectangle {
                   anchors.right: parent.right
                   anchors.top: parent.top
                   width: 24; height: 24; radius: 12

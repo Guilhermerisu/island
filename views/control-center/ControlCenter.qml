@@ -22,6 +22,10 @@ ColumnLayout {
   readonly property color well: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.16))
   readonly property color wellHover: Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.22))
   readonly property string iconFont: host.theme.fontFamily
+  // macOS shapes: switches are capsules, cards concentric with the island.
+  readonly property real cardRadius: 24
+  // The icon on a switched-on (accent) badge: a deep shade of the accent.
+  readonly property color badgeOnInk: Qt.hsla(accent.hslHue, accent.hslSaturation, 0.16, 1)
   property bool editMode: false
   property bool outputsOpen: false
   property bool inputsOpen: false
@@ -160,6 +164,7 @@ ColumnLayout {
       subtitle: cc.controls.controlSubtitle(parent.controlKey)
       checked: cc.controls.controlChecked(parent.controlKey)
       available: parent.galleryPreview || cc.controls.controlAvailable(parent.controlKey)
+      clickable: cc.controls.controlClickable(parent.controlKey)
       opens: (parent.controlKey === "bluetooth" && !!cc.controls.btAdapter) || (parent.controlKey === "wifi" && !!cc.controls.wifiDevice)
       onClicked: cc.controls.toggleControl(parent.controlKey)
       onOpened: cc.host.view = parent.controlKey

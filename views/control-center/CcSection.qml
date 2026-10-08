@@ -18,14 +18,14 @@ Rectangle {
 
   Layout.fillWidth: true
   Layout.preferredHeight: body.implicitHeight + 54
-  radius: 16
+  radius: center.cardRadius
   color: center.card
   border.width: 1
   border.color: center.edge
 
   Text {
     anchors.left: parent.left
-    anchors.leftMargin: 16
+    anchors.leftMargin: 18
     anchors.top: parent.top
     anchors.topMargin: 14
     text: sec.title
@@ -37,7 +37,7 @@ Rectangle {
   }
   Text {
     anchors.right: parent.right
-    anchors.rightMargin: sec.showChevron ? 44 : 16
+    anchors.rightMargin: sec.showChevron ? 46 : 18
     anchors.top: parent.top
     anchors.topMargin: 15
     text: sec.detail
@@ -49,7 +49,7 @@ Rectangle {
     id: chevron
     visible: sec.showChevron
     anchors.right: parent.right
-    anchors.rightMargin: 12
+    anchors.rightMargin: 14
     anchors.top: parent.top
     anchors.topMargin: 10
     width: 24; height: 24; radius: 12
@@ -72,8 +72,8 @@ Rectangle {
     anchors.right: parent.right
     anchors.top: parent.top
     anchors.topMargin: 42
-    anchors.leftMargin: 12
-    anchors.rightMargin: 12
+    anchors.leftMargin: 16
+    anchors.rightMargin: 18
     spacing: 6
   }
 }

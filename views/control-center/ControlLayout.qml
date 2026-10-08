@@ -241,11 +241,9 @@ ColumnLayout {
             anchors.leftMargin: 0
             anchors.topMargin: 0
             z: 2
-            width: 24; height: 24; radius: 12
-            color: layout.center.wellHover
-            border.width: 1
-            border.color: layout.center.edge
-            Text { anchors.centerIn: parent; text: "−"; color: layout.center.text; font.pixelSize: layout.center.host.theme.px(18) }
+            width: 22; height: 22; radius: 11
+            color: Qt.tint(layout.center.wellHover, layout.center.host.theme.withAlpha(layout.center.text, 0.12))
+            Rectangle { anchors.centerIn: parent; width: 10; height: 2; radius: 1; color: layout.center.host.theme.background }
             Tooltip { theme: layout.center.host.theme; text: "Remove" }
             MouseArea {
               anchors.fill: parent
@@ -262,7 +260,7 @@ ColumnLayout {
     visible: !layout.center.editMode && layout.visibleControlKeys.length === 0
     Layout.fillWidth: true
     Layout.preferredHeight: 74
-    radius: 16
+    radius: height / 2
     color: layout.center.card
     border.width: 1
     border.color: layout.center.edge
@@ -297,10 +295,8 @@ ColumnLayout {
     Rectangle {
       id: dragProxy
       visible: layout.draggedKey !== ""
-      radius: 16
+      radius: layout.draggedKey !== "" && layout.controls.controlWide(layout.draggedKey) ? layout.center.cardRadius : height / 2
       color: layout.center.card
-      border.width: 1
-      border.color: layout.center.accent
       opacity: 0.96
       scale: 1.04
       Loader {

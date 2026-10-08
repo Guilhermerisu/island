@@ -32,16 +32,18 @@ CcTile {
     : calendar.spanText(next)
   onClicked: calendar.host.view = "calendar"
 
-  // Over the badge (left 12, 42 wide), which is left without an icon.
+  // Over the badge (44 wide, centred on the capsule's end), left without an
+  // icon.
+  readonly property real badgeLeft: (height - 44) / 2
   Column {
-    x: 12 + (42 - width) / 2
+    x: tile.badgeLeft + (44 - width) / 2
     anchors.verticalCenter: parent.verticalCenter
     anchors.verticalCenterOffset: 1
     spacing: -5
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       text: tile.weekday.slice(0, 3).toUpperCase()
-      color: tile.checked ? tile.center.accentInk : tile.center.accent
+      color: tile.checked ? tile.center.badgeOnInk : tile.center.accent
       font.family: tile.center.host.theme.textFontFamily
       font.pixelSize: tile.center.host.theme.px(9)
       font.weight: Font.Bold
@@ -50,7 +52,7 @@ CcTile {
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       text: tile.calendar.today.getDate()
-      color: tile.checked ? tile.center.accentInk : tile.center.text
+      color: tile.checked ? tile.center.badgeOnInk : tile.center.text
       font.family: tile.center.host.theme.textFontFamily
       font.pixelSize: tile.center.host.theme.px(19)
       font.weight: Font.Normal
@@ -60,8 +62,8 @@ CcTile {
   // The next event's calendar, on the badge's edge.
   Rectangle {
     visible: !!tile.next
-    x: 12 + 42 - width + 1
-    y: (tile.height + 42) / 2 - height + 1
+    x: tile.badgeLeft + 44 - width + 1
+    y: (tile.height + 44) / 2 - height + 1
     width: 13
     height: 13
     radius: width / 2

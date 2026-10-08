@@ -3,103 +3,105 @@ import QtQuick.Layouts
 import Quickshell.Widgets
 import "../../components"
 
-// The control center's Notifications card: the newest ten, Clear All, and
-// dismissing one. `center` is the ControlCenter.
-Rectangle {
+// The control center's notifications, as macOS's Notification Center: a
+// heading with Clear All over the newest ten as banners, each dismissed by
+// the round × on its corner while hovered. `center` is the ControlCenter.
+ColumnLayout {
   id: history
   required property var center
+  readonly property bool empty: history.center.host.notifications.history.length === 0
   visible: !history.center.editMode
   Layout.fillWidth: true
-  Layout.preferredHeight: notificationBody.implicitHeight + 20
-  radius: 16
-  color: history.center.card
-  border.width: 1
-  border.color: history.center.edge
+  Layout.topMargin: 4
+  spacing: 6
 
-  ColumnLayout {
-    id: notificationBody
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: parent.top
-    anchors.margins: 10
-    spacing: 8
-
-    RowLayout {
-      Layout.fillWidth: true
-      Layout.leftMargin: 4
-      Layout.rightMargin: 4
-      Layout.topMargin: 2
+  RowLayout {
+    Layout.fillWidth: true
+    Layout.leftMargin: 8
+    Layout.rightMargin: 2
+    Text {
+      text: "Notifications"
+      color: history.center.text
+      font.family: history.center.host.theme.textFontFamily
+      font.pixelSize: history.center.host.theme.px(15)
+      font.weight: Font.DemiBold
+      font.letterSpacing: -0.2
+    }
+    Item { Layout.fillWidth: true }
+    Rectangle {
+      visible: !history.empty
+      implicitWidth: clearLabel.implicitWidth + 22
+      implicitHeight: 24
+      radius: height / 2
+      color: clearMouse.containsMouse ? history.center.wellHover : history.center.card
+      Behavior on color { MotionColorAnimation { theme: history.center.host.theme } }
       Text {
-        text: "Notifications"
+        id: clearLabel
+        anchors.centerIn: parent
+        text: "Clear All"
         color: history.center.text
         font.family: history.center.host.theme.textFontFamily
-        font.pixelSize: history.center.host.theme.px(14)
-        font.weight: Font.DemiBold
-        font.letterSpacing: -0.2
+        font.pixelSize: history.center.host.theme.px(12)
+        font.weight: Font.Medium
       }
-      Item { Layout.fillWidth: true }
-      // macOS push button.
+      MouseArea {
+        id: clearMouse
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: history.center.host.notifications.clearAll()
+      }
+    }
+  }
+
+  Text {
+    visible: history.empty
+    Layout.fillWidth: true
+    Layout.topMargin: 10
+    Layout.bottomMargin: 12
+    horizontalAlignment: Text.AlignHCenter
+    text: "No Notifications"
+    color: history.center.textMuted
+    font.family: history.center.host.theme.textFontFamily
+    font.pixelSize: history.center.host.theme.px(13)
+  }
+
+  ListView {
+    visible: !history.empty
+    Layout.fillWidth: true
+    // Out by the × button's overhang, so the banners line up with the cards.
+    Layout.leftMargin: -6
+    Layout.preferredHeight: Math.min(contentHeight, 320)
+    clip: true
+    spacing: 2
+    boundsBehavior: Flickable.StopAtBounds
+    model: history.center.host.notifications.history
+    // Inset by the × button's overhang, which sits on the banner's corner.
+    delegate: Item {
+      id: note
+      required property var modelData
+      readonly property string appName: String(modelData.app || modelData.summary || "?")
+      readonly property bool hovered: noteMouse.containsMouse || closeMouse.containsMouse
+      width: ListView.view.width
+      height: banner.height + 6
       Rectangle {
-        visible: history.center.host.notifications.history.length > 0
-        implicitWidth: clearLabel.implicitWidth + 20
-        implicitHeight: 22
-        radius: 6
-        color: clearMouse.containsMouse ? history.center.wellHover : history.center.well
+        id: banner
+        x: 6
+        y: 6
+        width: parent.width - 6
+        height: Math.max(noteBody.implicitHeight, 40) + 26
+        radius: 20
+        color: note.hovered ? history.center.tile : history.center.card
+        border.width: 1
+        border.color: history.center.edge
         Behavior on color { MotionColorAnimation { theme: history.center.host.theme } }
-        Text {
-          id: clearLabel
-          anchors.centerIn: parent
-          text: "Clear All"
-          color: history.center.text
-          font.family: history.center.host.theme.textFontFamily
-          font.pixelSize: history.center.host.theme.px(12)
-          font.weight: Font.Medium
-        }
-        MouseArea {
-          id: clearMouse
-          anchors.fill: parent
-          hoverEnabled: true
-          cursorShape: Qt.PointingHandCursor
-          onClicked: history.center.host.notifications.clearAll()
-        }
-      }
-    }
-
-    Text {
-      visible: history.center.host.notifications.history.length === 0
-      Layout.fillWidth: true
-      Layout.topMargin: 4
-      Layout.bottomMargin: 8
-      horizontalAlignment: Text.AlignHCenter
-      text: "No notifications"
-      color: history.center.textMuted
-      font.family: history.center.host.theme.textFontFamily
-      font.pixelSize: history.center.host.theme.px(12)
-    }
-
-    ListView {
-      visible: history.center.host.notifications.history.length > 0
-      Layout.fillWidth: true
-      Layout.preferredHeight: Math.min(contentHeight, 240)
-      clip: true
-      spacing: 8
-      boundsBehavior: Flickable.StopAtBounds
-      model: history.center.host.notifications.history
-      delegate: Rectangle {
-        id: note
-        required property var modelData
-        readonly property string appName: String(modelData.app || modelData.summary || "?")
-        width: ListView.view.width
-        height: noteBody.implicitHeight + 22
-        radius: 14
-        color: noteMouse.containsMouse && modelData.isActive ? history.center.wellHover : history.center.tile
 
         MouseArea {
           id: noteMouse
           anchors.fill: parent
           hoverEnabled: true
-          enabled: !!note.modelData.isActive
-          onClicked: history.center.host.notifications.command("invokeKey", note.modelData)
+          cursorShape: note.modelData.isActive ? Qt.PointingHandCursor : Qt.ArrowCursor
+          onClicked: if (note.modelData.isActive) history.center.host.notifications.command("invokeKey", note.modelData)
         }
         // The notification's image or app icon; a letter avatar when
         // there's none (or it fails to load).
@@ -111,10 +113,10 @@ Rectangle {
           readonly property string source: history.center.host.notifications.iconSource(note.modelData, imageFailed)
           readonly property var brand: history.center.host.notifications.brand(note.modelData)
           anchors.left: parent.left
-          anchors.leftMargin: 12
+          anchors.leftMargin: 13
           anchors.top: parent.top
-          anchors.topMargin: 12
-          width: 32; height: 32; radius: 8
+          anchors.topMargin: 13
+          width: 40; height: 40; radius: 10
           color: brand ? brand.tile
             : noteIcon.status === Image.Ready ? "transparent" : history.center.host.theme.withAlpha(history.center.accent, 0.18)
           Image {
@@ -134,21 +136,21 @@ Rectangle {
             text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
             color: avatar.brand ? avatar.brand.ink : history.center.accent
             font.family: avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily
-            font.pixelSize: avatar.brand ? history.center.host.theme.px(20) : history.center.host.theme.px(14)
+            font.pixelSize: avatar.brand ? history.center.host.theme.px(22) : history.center.host.theme.px(17)
             font.weight: Font.DemiBold
           }
         }
         Column {
           id: noteBody
           anchors.left: avatar.right
-          anchors.leftMargin: 12
+          anchors.leftMargin: 11
           anchors.right: parent.right
-          anchors.rightMargin: 32
+          anchors.rightMargin: 16
           anchors.top: parent.top
-          anchors.topMargin: 12
+          anchors.topMargin: 13
           spacing: 2
-          // Like iOS's Notification Center: the title with the time on the
-          // same line (the icon already says which app).
+          // Like macOS's Notification Center: the title with the time on
+          // the same line (the icon already says which app).
           Item {
             width: parent.width
             height: noteTitle.height
@@ -162,7 +164,7 @@ Rectangle {
               elide: Text.ElideRight
               color: history.center.text
               font.family: history.center.host.theme.textFontFamily
-              font.pixelSize: history.center.host.theme.px(14)
+              font.pixelSize: history.center.host.theme.px(13)
               font.weight: Font.DemiBold
               font.letterSpacing: -0.2
             }
@@ -183,25 +185,40 @@ Rectangle {
             visible: text !== ""
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
-            maximumLineCount: 3
+            maximumLineCount: 4
             elide: Text.ElideRight
-            color: history.center.host.theme.withAlpha(history.center.text, 0.72)
+            lineHeight: 1.08
+            color: history.center.host.theme.withAlpha(history.center.text, 0.78)
             font.family: history.center.host.theme.textFontFamily
             font.pixelSize: history.center.host.theme.px(13)
           }
         }
+      }
+      // macOS's × on the banner's corner, while the banner is hovered.
+      Rectangle {
+        width: 20; height: 20; radius: 10
+        opacity: note.hovered ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
+        color: closeMouse.containsMouse ? history.center.wellHover : history.center.well
+        border.width: 1
+        border.color: history.center.host.theme.withAlpha(history.center.text, 0.1)
         Text {
-          anchors.right: parent.right
-          anchors.rightMargin: 13
-          anchors.top: parent.top
-          anchors.topMargin: 12
+          anchors.centerIn: parent
           text: "󰅖"
-          color: closeMouse.containsMouse ? history.center.text : history.center.textMuted
+          color: history.center.text
           font.family: history.center.iconFont
-          font.pixelSize: history.center.host.theme.px(13)
-          MouseArea { id: closeMouse; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; onClicked: history.center.host.notifications.dismiss(note.modelData) }
-          Tooltip { theme: history.center.host.theme; text: "Dismiss" }
+          font.pixelSize: history.center.host.theme.px(12)
         }
+        MouseArea {
+          id: closeMouse
+          anchors.fill: parent
+          anchors.margins: -3
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: history.center.host.notifications.dismiss(note.modelData)
+        }
+        Tooltip { theme: history.center.host.theme; text: "Dismiss" }
       }
     }
   }

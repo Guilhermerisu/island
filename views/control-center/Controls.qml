@@ -217,11 +217,13 @@ Item {
   }
   function controlAvailable(key) {
     if (key === "microphoneMute") return microphoneReady
-    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : false
+    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : !!wiredDevice
     if (key === "bluetooth") return !!btAdapter
     if (key === "focus") return !!notifications
     return true
   }
+  // Ethernet only reports; there's nothing to switch.
+  function controlClickable(key) { return key !== "wifi" || !!wifiDevice }
   function toggleControl(key) {
     if (key === "microphoneMute") { toggleMicrophoneMute(); return }
     if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
