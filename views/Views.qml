@@ -13,7 +13,6 @@ import "clipboard"
 import "menu"
 import "player"
 import "settings"
-import "answer"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -24,7 +23,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, answerSurface]
+  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     for (var j = 0; j < addonSurfaces.count; j++) {
@@ -127,16 +126,6 @@ Item {
   }
 
   Surface {
-    id: answerSurface
-    host: views.host
-    viewName: "answer"
-    readonly property bool thinking: !!(view && view.thinking)
-    fixedWidth: thinking ? 280 : 580
-    padding: thinking ? 14 : 28
-    AnswerView { host: views.host; active: answerSurface.active; anchors.fill: parent }
-  }
-
-  Surface {
     id: settingsSurface
     host: views.host
     viewName: "settings"
@@ -158,10 +147,14 @@ Item {
     model: views.host.addons.views
     delegate: Surface {
       required property var modelData
+      // Its item's own size, if it has one, over its entry's.
+      readonly property var own: view && view.item
       host: views.host
       viewName: modelData.name
-      fixedWidth: modelData.width || 0
-      padding: modelData.padding === undefined ? 16 : modelData.padding
+      fixedWidth: own && own.surfaceWidth !== undefined ? own.surfaceWidth : modelData.width || 0
+      padding: own && own.surfacePadding !== undefined ? own.surfacePadding
+        : modelData.padding === undefined ? 16 : modelData.padding
+      cornerRadius: own && own.surfaceRadius !== undefined ? own.surfaceRadius : 0
       Loader { anchors.fill: parent; sourceComponent: modelData.component }
     }
   }

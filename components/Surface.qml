@@ -19,6 +19,8 @@ Item {
   // Space between the island's edge and the view, on every side.
   property int padding: 16
   property int maxHeight: 100000
+  // The island's corner radius while open; 0 keeps the usual one.
+  property int cornerRadius: 0
   // Whether the island takes the keyboard while this is open.
   property bool wantsKeyboard: true
 

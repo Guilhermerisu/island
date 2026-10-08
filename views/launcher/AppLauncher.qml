@@ -9,19 +9,22 @@ import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 // Application launcher: the shared list view over the installed apps (icon
 // tile and name). Search matches names, descriptions, and keywords. Uses the
 // same app set as Omarchy's launcher (desktop entries minus its hidden lists)
-// and launches the same way. Typed text can also be sent to an AI (the Ask
-// row): it comes first when the text reads like a question or no app matches.
+// and launches the same way. Enabled addons can add rows for the typed text
+// (Ask AI's, see addons/Addon.qml): after the apps, or first when they say
+// so or no app matches.
 ListPicker {
   id: launcher
-  placeholder: provider ? "Search or ask" : "Search"
+  placeholder: ["Search"].concat(host.addons.launcherHints).join(" or ")
   emptyText: "No apps match"
   items: {
     var text = query.trim()
-    if (!text || !provider) return results
-    var ask = { askAi: true, question: text }
-    return looksLikeQuestion(text) || !results.length ? [ask].concat(results) : results.concat([ask])
+    if (!text) return results
+    var rows = host.addons.launcherRows(text)
+    var first = rows.filter(function(row) { return row.first || !results.length })
+    var last = rows.filter(function(row) { return first.indexOf(row) === -1 })
+    return first.concat(results, last)
   }
-  onChosen: function(entry) { if (entry.askAi) askAi(entry.question); else launch(entry) }
+  onChosen: function(entry) { if (entry.addonRow) entry.run(); else launch(entry) }
   onActiveChanged: if (active) hiddenScan.running = true
 
   // DesktopEntries changes when apps are installed or removed.
@@ -42,19 +45,19 @@ ListPicker {
       id: appRow
       property var entry: ({})
       property bool selected: false
-      readonly property bool isAsk: !!(entry && entry.askAi)
+      readonly property bool isAddon: !!(entry && entry.addonRow)
 
       ClippingRectangle {
         id: iconTile
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         width: 36; height: 36; radius: 10
-        color: appRow.isAsk && launcher.provider ? launcher.provider.tile : launcher.host.theme.withAlpha(launcher.host.theme.text, 0.08)
+        color: appRow.isAddon && appRow.entry.tile ? appRow.entry.tile : launcher.host.theme.withAlpha(launcher.host.theme.text, 0.08)
         Text {
           anchors.centerIn: parent
-          visible: appRow.isAsk
-          text: launcher.provider ? launcher.provider.glyph : ""
-          color: launcher.provider ? launcher.provider.ink : "transparent"
+          visible: appRow.isAddon
+          text: appRow.isAddon ? appRow.entry.glyph || "" : ""
+          color: appRow.isAddon && appRow.entry.ink ? appRow.entry.ink : launcher.host.theme.text
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: launcher.host.theme.px(22)
         }
@@ -62,8 +65,8 @@ ListPicker {
           id: appIcon
           anchors.centerIn: parent
           width: 26; height: 26
-          visible: !appRow.isAsk && status === Image.Ready
-          source: appRow.isAsk ? "" : launcher.iconSource(appRow.entry && appRow.entry.icon)
+          visible: !appRow.isAddon && status === Image.Ready
+          source: appRow.isAddon ? "" : launcher.iconSource(appRow.entry && appRow.entry.icon)
           sourceSize.width: 52
           sourceSize.height: 52
           fillMode: Image.PreserveAspectFit
@@ -71,7 +74,7 @@ ListPicker {
         }
         Text {
           anchors.centerIn: parent
-          visible: !appRow.isAsk && appIcon.status !== Image.Ready
+          visible: !appRow.isAddon && appIcon.status !== Image.Ready
           text: "󰀻"
           color: launcher.host.theme.muted
           font.family: launcher.host.theme.fontFamily
@@ -83,8 +86,8 @@ ListPicker {
         anchors.leftMargin: 12
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        visible: !appRow.isAsk
-        text: appRow.isAsk ? "" : AppSearch.entryName(appRow.entry)
+        visible: !appRow.isAddon
+        text: appRow.isAddon ? "" : AppSearch.entryName(appRow.entry)
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: launcher.host.theme.text
@@ -92,17 +95,18 @@ ListPicker {
         font.pixelSize: launcher.host.theme.px(14)
         font.weight: Font.DemiBold
       }
-      // "Ask Claude" and the question, muted, on one line.
+      // An addon's row: its label and detail, muted, on one line
+      // ("Ask Claude" and the question).
       Row {
         anchors.left: iconTile.right
         anchors.leftMargin: 12
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        visible: appRow.isAsk
+        visible: appRow.isAddon
         spacing: 8
         Text {
           id: askLabel
-          text: launcher.provider ? "Ask " + launcher.provider.name : ""
+          text: appRow.isAddon ? appRow.entry.label || "" : ""
           color: launcher.host.theme.text
           font.family: launcher.host.theme.textFontFamily
           font.pixelSize: launcher.host.theme.px(14)
@@ -110,7 +114,7 @@ ListPicker {
         }
         Text {
           width: parent.width - askLabel.width - parent.spacing
-          text: appRow.isAsk ? "\u201c" + (appRow.entry && appRow.entry.question) + "\u201d" : ""
+          text: appRow.isAddon ? appRow.entry.detail || "" : ""
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: launcher.host.theme.muted
@@ -166,19 +170,6 @@ ListPicker {
     runner.command = ["uwsm-app", "--", "gtk-launch", String(entry.id) + ".desktop"]
     runner.startDetached()
   }
-
-  // ---------- Asking an AI ----------
-
-  readonly property var provider: host.askProvider
-
-  function looksLikeQuestion(text) {
-    if (/\?$/.test(text)) return true
-    var words = text.split(/\s+/)
-    return words.length >= 3
-      && /^(who|what|when|where|why|how|which|whose|can|could|should|would|is|are|was|were|do|does|did|will|explain|write|tell|give|summari[sz]e|translate|define|compare|help)$/i.test(words[0])
-  }
-
-  function askAi(question) { host.ask(question) }
 
   function iconSource(icon) {
     var value = String(icon || "")

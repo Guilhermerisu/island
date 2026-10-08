@@ -46,7 +46,8 @@ Item {
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
       property bool microphoneMuteControl: false
-      property string askAi: "chatgpt"
+      // Before Ask AI was an addon; carried over and cleared (see Addons.qml).
+      property string askAi: ""
       // Addon id → enabled, and addon id → its options (see addons/Addons.qml).
       property var addons: ({})
       property var addonOptions: ({})

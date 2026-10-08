@@ -17,7 +17,7 @@ Item {
   // The core panes, with the enabled addons' own (see addons/Addon.qml)
   // after Addons.
   readonly property var addonPages: host.addons.settingsPages
-  readonly property var pages: ["General", "Search", "Live Activities", "Notifications", "Addons"]
+  readonly property var pages: ["General", "Live Activities", "Notifications", "Addons"]
     .concat(addonPages.map(function(page) { return page.title }), ["Keybinds"])
   onPagesChanged: if (pages.indexOf(currentPage) === -1) currentPage = "General"
   readonly property var pageInfo: {
@@ -28,7 +28,6 @@ Item {
   }
   readonly property var corePageInfo: ({
     "General": { icon: "󰒓", color: "#8e8e93", about: "Appearance, motion, and how the pill looks at rest." },
-    "Search": { icon: "󰍉", color: "#5e7a99", about: "Get answers to launcher questions right in the island." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
     "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
     "Addons": { icon: "󰄐", color: "#0a84ff", about: "Extras that stay unloaded until you add them." },
@@ -39,7 +38,6 @@ Item {
     if (query === "") return true
     var terms = {
       "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock font typography text size custom",
-      "Search": "search ask with claude codex launcher answers",
       "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration",
       "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
@@ -216,7 +214,6 @@ Item {
 
           PaneHeader { view: settingsView; page: settingsView.currentPage; Layout.topMargin: 4 }
           GeneralPage { view: settingsView }
-          SearchPage { view: settingsView }
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
           AddonsPage { view: settingsView }

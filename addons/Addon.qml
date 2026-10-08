@@ -11,6 +11,8 @@ import QtQuick
 //           the media and download pills), the clock kept in its middle.
 //   views   [{ name, width, padding, component }], each opened with
 //           `show <name>`; its item is on screen while host.view is name.
+//           An item with surfaceWidth, surfacePadding, or surfaceRadius
+//           (corner radius) shapes the island to them as they change.
 //   tiles   [{ key, title, wide, present, component }], control center cards.
 //           Each component's parent has `center` (the ControlCenter),
 //           `controlKey`, and `galleryPreview`, as the core cards get.
@@ -19,6 +21,12 @@ import QtQuick
 //           made from the file at `source` with `properties` and `view`
 //           (the SettingsView) while it's the open pane, and told `shown`
 //           while Settings is on screen too.
+//   launcherRow(text)  a row the launcher adds for its typed text, or null:
+//           { glyph, tile, ink, label, detail, first, run }, a glyph on a
+//           tile of its colors, then label and muted detail. `first` puts
+//           it above the apps (it is also first when no app matches), and
+//           `run` is called when it's chosen. launcherHint ("ask") joins
+//           the search field's placeholder: "Search or ask".
 //
 // `addon` is its id and name, plus option(key) and setOption(key, value).
 Item {
@@ -36,4 +44,6 @@ Item {
   property var views: []
   property var tiles: []
   property var settingsPages: []
+  property string launcherHint: ""
+  function launcherRow(text) { return null }
 }

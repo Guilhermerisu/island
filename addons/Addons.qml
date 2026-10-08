@@ -91,7 +91,26 @@ Item {
           }))
         }, []))
         .concat([{ rect: true, color: "#a9bcc2", x: 0.5, y: 0.69, width: 0.5, height: 0.09, radius: 0.4 }]),
-      description: "Show the layout on the pill when it changes" }
+      description: "Show the layout on the pill when it changes" },
+    { id: "ask", name: "Ask AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
+      // Siri's: a glass sphere on black, with a ribbon of light across it,
+      // white in the middle and tinted orange and blue at its edges.
+      iconLayers: [
+        { circle: true, color: "#e5e5ea", opacity: 0.9, x: 0.5, y: 0.5, size: 0.78 },
+        { circle: true, color: "#7c7c82", x: 0.5, y: 0.5, size: 0.75 },
+        { circle: true, color: "#2c2c2e", opacity: 0.75, x: 0.5, y: 0.47, size: 0.62 },
+        { circle: true, color: "#ffffff", opacity: 0.12, x: 0.42, y: 0.32, size: 0.3 },
+        siriWave(0.2, 0.8, 0.012, "#ff9f0a", 0.45, 0.035),
+        siriWave(0.2, 0.8, -0.012, "#64d2ff", 0.45, 0.035),
+        siriWave(0.16, 0.84, 0, "#ffffff", 0.3, 0.09),
+        siriWave(0.24, 0.76, 0, "#ffffff", 0.55, 0.045),
+        siriWave(0.34, 0.66, 0, "#ffffff", 0.95, 0.03)
+      ],
+      description: "Answers launcher questions in the island",
+      options: [
+        { key: "with", label: "Ask With", detail: "Uses the command-line tool you're signed in to", type: "popup", default: "codex",
+          choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }] }
+      ] }
   ]
 
   // A smooth wave off the icon's middle line, rising (sign -1) or falling,
@@ -105,6 +124,14 @@ Item {
     }
     points.push([1, 0.5])
     return points
+  }
+  // Part of Siri's ribbon of light, from x `from` to `to`, shifted down by
+  // `dy`: an S across the sphere, for the Ask AI icon.
+  function siriWave(from, to, dy, color, opacity, width) {
+    var points = []
+    for (var x = from; x <= to + 0.0001; x += 0.01)
+      points.push([x, 0.54 + dy - 0.045 * Math.sin((x - 0.2) / 0.6 * 2 * Math.PI)])
+    return { line: points, color: color, opacity: opacity, width: width }
   }
   function entry(id) {
     for (var i = 0; i < entries.length; i++) if (entries[i].id === id) return entries[i]
@@ -136,13 +163,28 @@ Item {
     settings.addonOptions = next
   }
 
+  // Ask AI was core, set by `askAi` ("claude", "chatgpt" for Codex, or
+  // "none" for off): carried over once to its addon, then cleared. Late,
+  // so the addon settings it fills in are loaded first.
+  Connections {
+    target: addons.settings
+    function onAskAiChanged() { Qt.callLater(addons.migrateAsk) }
+  }
+  function migrateAsk() {
+    var old = settings.askAi
+    if (!old) return
+    if ((settings.addons || {}).ask === undefined) setEnabled("ask", old !== "none")
+    if (old === "claude" && ((settings.addonOptions || {}).ask || {}).with === undefined) setOption("ask", "with", "claude")
+    settings.askAi = ""
+  }
+
   // A disabled addon's keybindings are switched off in island-bindings.lua,
   // their keys kept (see companion/bindings.sh). Synced on start and on
   // each change; the script does nothing when the list is unchanged.
   readonly property string enabledIds: entries.filter(function(e) { return addons.isEnabled(e.id) })
     .map(function(e) { return e.id }).join(",")
   onEnabledIdsChanged: syncBindings()
-  Component.onCompleted: syncBindings()
+  Component.onCompleted: { syncBindings(); Qt.callLater(migrateAsk) }
   property bool bindingsStale: false
   Process {
     id: bindingSync
@@ -189,6 +231,25 @@ Item {
       onItemChanged: addons.collect()
     }
   }
+
+  // An enabled addon's root by id, or null.
+  function root(id) {
+    for (var i = 0; i < loaded.length; i++) if (loaded[i].addon.id === id) return loaded[i]
+    return null
+  }
+
+  // The enabled addons' launcher rows for the typed text (see Addon.qml),
+  // and what they add to its placeholder.
+  function launcherRows(text) {
+    var rows = []
+    for (var i = 0; i < loaded.length; i++) {
+      var row = loaded[i].launcherRow(text)
+      if (row) rows.push(Object.assign({ addonRow: true }, row))
+    }
+    return rows
+  }
+  readonly property var launcherHints: loaded.map(function(own) { return own.launcherHint })
+    .filter(function(hint) { return hint !== "" })
 
   // The live activity on the island now, if an addon's: the feedback kind
   // "addon:<id>" names it.

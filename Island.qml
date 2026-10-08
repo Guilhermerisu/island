@@ -26,19 +26,6 @@ Item {
   NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
   readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !setup.needsSetup && settings.mediaPill && !downloadPill && !addons.ongoing
 
-  property string askQuestion: ""
-  readonly property var askProviders: ({
-    claude: { name: "Claude", cli: "claude", glyph: "\uec82", tile: "#d97757", ink: "#ffffff" },
-    chatgpt: { name: "Codex", cli: "codex", glyph: "\uec81", tile: "#f2f2f2", ink: "#000000" }
-  })
-  readonly property var askProvider: settings.askAi === "none" ? null : askProviders[settings.askAi] || askProviders.chatgpt
-  function ask(question) {
-    question = String(question || "").trim()
-    if (!question || !askProvider) return
-    askQuestion = question
-    view = "answer"
-  }
-
   readonly property var downloads: downloadTracker
   DownloadTracker { id: downloadTracker; enabled: root.settings.downloads }
   readonly property var packages: packageTracker
@@ -370,8 +357,10 @@ Item {
     function wallpapers(): string { return root.toggleView("wallpapers") }
     function apps(): string { return root.toggleView("apps") }
     function power(): string { return root.toggleView("power") }
+    // Ask AI's, while that addon is enabled (see addons/ask).
     function ask(question: string): string {
-      root.ask(question)
+      var ask = root.addons.root("ask")
+      if (ask) ask.ask(question)
       return root.view
     }
     function companionStatus(): string { return root.setup.status }
@@ -505,7 +494,8 @@ Item {
             : root.volumePill ? (root.settings.notch ? 40 : 44)
             : root.osdPill ? (root.settings.notch ? 40 : 44)
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
-          property real radiusCap: root.view === "answer" ? 44 : root.surfaceOpen ? 30 : 38
+          property real radiusCap: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
+            : root.surfaceOpen ? 30 : 38
           Behavior on radiusCap {
             MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
           }

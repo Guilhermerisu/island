@@ -14,9 +14,11 @@ import "../../components"
 Item {
   id: answer
   required property var host
+  // The addon (see AskAddon), which holds the question and the AI.
+  required property var ask
   property bool active: false
 
-  readonly property var provider: host.askProvider
+  readonly property var provider: ask.provider
   property string question: ""
   property string text: ""
   property string error: ""
@@ -63,7 +65,7 @@ Item {
 
   onActiveChanged: {
     if (active) {
-      start(host.askQuestion)
+      start(ask.question)
       Qt.callLater(function() { answer.forceActiveFocus() })
     } else {
       runner.running = false
@@ -132,6 +134,10 @@ Item {
   }
 
   readonly property bool thinking: busy && !text && !error
+  // A compact pill while it thinks, then wide enough for the answer.
+  readonly property int surfaceWidth: thinking ? 280 : 580
+  readonly property int surfacePadding: thinking ? 14 : 28
+  readonly property int surfaceRadius: 44
   HoverHandler { id: hover }
 
   ColumnLayout {

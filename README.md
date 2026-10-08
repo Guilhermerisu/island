@@ -27,7 +27,7 @@ All Omarchy's menus rewritten as one fluid island.
   power menu.
 - **Theme aware:** text and accent colors follow your current Omarchy theme.
 - **Settings:** a pane in the control center for animation speed, a MacBook
-  notch style, the clock, live activities, and the AI.
+  notch style, the clock, live activities, and addons.
 
 Island runs inside Omarchy's Quickshell process and reserves no screen space.
 
@@ -158,13 +158,14 @@ need one, switch back with `omarchy bar use omarchy.bar`. See
 
 ### Ask AI
 
-Questions typed in the launcher are answered by the AI chosen under **Ask With**
-in Settings, through its command-line tool:
+Ask AI is an addon, on by default. Questions typed in the launcher are answered
+by the AI chosen under **Ask With** (Settings → Addons → Ask AI), through its
+command-line tool:
 
 - **Claude:** [Claude Code](https://claude.com/claude-code), signed in (`claude`).
 - **Codex:** [Codex CLI](https://github.com/openai/codex), signed in (`codex`).
 
-Choose **None** to turn asking and all AI features off.
+Remove the addon to turn asking off.
 
 ## Uninstall
 
