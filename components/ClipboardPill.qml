@@ -34,6 +34,8 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
+  PillReveal { id: reveal; theme: pill.host.theme; shown: pill.shown }
+
   // Leading: the thumbnail, or the symbol, settling gently into place.
   Item {
     id: leading
@@ -41,8 +43,10 @@ Item {
     anchors.leftMargin: 10
     anchors.verticalCenter: parent.verticalCenter
     width: 26; height: 26
-    scale: pill.shown ? 1 : 0.86
-    Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
+    opacity: reveal.leadingIn
+    scale: 0.9 + 0.1 * reveal.leadingIn
+    layer.enabled: reveal.leadingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
     ClippingRectangle {
       anchors.fill: parent
       visible: pill.thumbnailReady
@@ -71,6 +75,10 @@ Item {
 
   // Middle: what was copied.
   Text {
+    opacity: reveal.middleIn
+    scale: 0.94 + 0.06 * reveal.middleIn
+    layer.enabled: reveal.middleIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
     anchors.left: leading.right
     anchors.leftMargin: 10
     anchors.right: trailing.left
@@ -101,6 +109,9 @@ Item {
   // Trailing: the status, a beat after the rest.
   Text {
     id: trailing
+    scale: 0.9 + 0.1 * reveal.trailingIn
+    layer.enabled: reveal.trailingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
@@ -110,12 +121,6 @@ Item {
     font.pixelSize: pill.host.theme.px(13)
     font.weight: Font.DemiBold
     font.letterSpacing: -0.2
-    opacity: pill.shown ? 1 : 0
-    Behavior on opacity {
-      SequentialAnimation {
-        PauseAnimation { duration: pill.shown ? pill.host.theme.contentRevealDelay : 0 }
-        MotionAnimation { theme: pill.host.theme; pace: "standard" }
-      }
-    }
+    opacity: reveal.trailingIn
   }
 }

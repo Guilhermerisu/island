@@ -27,16 +27,16 @@ Item {
   readonly property int revealDuration: host.theme.motionDuration("expressive")
   ParallelAnimation {
     id: reveal
-    NumberAnimation { target: pill; property: "leadingIn"; from: 0; to: 1; duration: pill.revealDuration; easing.type: Easing.OutCubic }
+    NumberAnimation { target: pill; property: "leadingIn"; from: 0; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
     SequentialAnimation {
       PropertyAction { target: pill; property: "middleIn"; value: 0 }
       PauseAnimation { duration: pill.revealDuration / 5 }
-      NumberAnimation { target: pill; property: "middleIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.OutCubic }
+      NumberAnimation { target: pill; property: "middleIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
     }
     SequentialAnimation {
       PropertyAction { target: pill; property: "trailingIn"; value: 0 }
       PauseAnimation { duration: pill.revealDuration * 2 / 5 }
-      NumberAnimation { target: pill; property: "trailingIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.OutCubic }
+      NumberAnimation { target: pill; property: "trailingIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
     }
   }
   component Reveal: MultiEffect {

@@ -12,8 +12,8 @@ Item {
   readonly property var host: meetings.host
   readonly property var theme: host.theme
   readonly property bool colorful: host.settings.colorfulLiveActivities
-  readonly property color ink: colorful ? "#30d158" : theme.accent
-  readonly property color endInk: "#ff453a"
+  readonly property color ink: colorful ? pill.theme.system.green : theme.accent
+  readonly property color endInk: pill.theme.system.red
 
   // A button's tooltip: what it does, or where to go when the app has no
   // shortcut for it.

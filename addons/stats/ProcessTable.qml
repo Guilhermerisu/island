@@ -166,7 +166,7 @@ Item {
               font.family: table.view.host.theme.textFontFamily
               font.features: { "tnum": 1 }
               font.pixelSize: table.view.host.theme.px(12)
-              font.weight: Font.DemiBold
+              font.weight: Font.Medium
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
@@ -205,6 +205,7 @@ Item {
   // every name behind the same icon slot so they line up.
   ListView {
     id: list
+    OverlayScrollbar { flickable: list; parent: list; theme: table.view.host.theme }
     anchors.top: header.bottom
     anchors.topMargin: 4
     anchors.bottom: parent.bottom
@@ -322,6 +323,8 @@ Item {
             }
             // Quit Process, at the end of the name.
             Rectangle {
+              scale: quitMouse.pressed ? 0.9 : 1
+              Behavior on scale { MotionAnimation { theme: table.view.host.theme; pace: quitMouse.pressed ? "press" : "standard" } }
               visible: cellItem.isName && row.showQuit
               anchors.right: parent.right
               anchors.rightMargin: 4

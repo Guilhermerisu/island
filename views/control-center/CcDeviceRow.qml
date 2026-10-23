@@ -17,7 +17,7 @@ Rectangle {
   Layout.fillWidth: true
   Layout.preferredHeight: 32
   radius: height / 2
-  color: rowMouse.containsMouse ? center.host.theme.fill("subtle") : "transparent"
+  color: rowMouse.pressed ? center.host.theme.fill("raised") : rowMouse.containsMouse ? center.host.theme.fill("subtle") : "transparent"
 
   Rectangle {
     id: badge

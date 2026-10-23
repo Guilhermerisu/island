@@ -49,6 +49,8 @@ Rectangle {
   }
   Rectangle {
     id: chevron
+    scale: chevronMouse.pressed ? 0.92 : 1
+    Behavior on scale { MotionAnimation { theme: center.host.theme; pace: chevronMouse.pressed ? "press" : "standard" } }
     visible: sec.showChevron
     anchors.right: parent.right
     anchors.rightMargin: 14

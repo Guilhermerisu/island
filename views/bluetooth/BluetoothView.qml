@@ -208,9 +208,11 @@ ColumnLayout {
     Layout.rightMargin: 6
     spacing: 8
     Rectangle {
+      scale: backMouse.pressed ? 0.92 : 1
+      Behavior on scale { MotionAnimation { theme: bt.host.theme; pace: backMouse.pressed ? "press" : "standard" } }
       Layout.preferredWidth: 32
       Layout.preferredHeight: 32
-      radius: 16
+      radius: height / 2
       color: backMouse.containsMouse ? bt.well : bt.card
       Tooltip { theme: bt.host.theme; text: "Control Center" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(17) }
@@ -229,7 +231,7 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 12
-    radius: 16
+    radius: bt.host.theme.radii.card
     color: bt.card
     border.width: 1
     border.color: bt.edge
@@ -252,6 +254,7 @@ ColumnLayout {
 
       ListView {
         id: list
+        OverlayScrollbar { flickable: list; parent: list; theme: bt.host.theme }
         visible: bt.displayRows.length > 0
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(contentHeight, 460)
@@ -343,7 +346,7 @@ ColumnLayout {
             visible: !row.isHeader
             anchors.fill: parent
             radius: 8
-            color: rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected ? bt.tile : "transparent"
+            color: rowMouse.pressed ? bt.well : rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected ? bt.tile : "transparent"
 
             Rectangle {
               id: badge
@@ -411,7 +414,7 @@ ColumnLayout {
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
                   text: row.modelData.battery + "%"
-                  color: parent.low ? "#ff453a" : bt.textMuted
+                  color: parent.low ? bt.host.theme.system.red : bt.textMuted
                   font.family: bt.host.theme.textFontFamily
                   font.pixelSize: bt.host.theme.px(13)
                   font.features: { "tnum": 1 }
@@ -424,6 +427,8 @@ ColumnLayout {
                 }
               }
               Rectangle {
+                scale: forgetMouse.pressed ? 0.9 : 1
+                Behavior on scale { MotionAnimation { theme: bt.host.theme; pace: forgetMouse.pressed ? "press" : "standard" } }
                 visible: row.modelData.section !== "nearby" && !row.modelData.pending
                   && (rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected)
                 anchors.verticalCenter: parent.verticalCenter

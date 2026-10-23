@@ -14,7 +14,7 @@ Rectangle {
   visible: header.info.header !== false
   Layout.fillWidth: true
   implicitHeight: headerColumn.implicitHeight + (compact ? 12 : 30)
-  radius: 12
+  radius: header.view.host.theme.radii.card
   color: compact ? "transparent" : header.view.card
   border.width: compact ? 0 : 1
   border.color: header.view.edge

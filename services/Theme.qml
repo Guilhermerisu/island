@@ -30,6 +30,12 @@ Item {
   readonly property color text: textIsLight ? Color.foreground : Color.background
   readonly property color muted: textIsLight ? Color.muted : withAlpha(text, 0.6)
   readonly property color accent: Color.accent
+  // Apple's dark-mode system colours, for what keeps its meaning whatever
+  // the Omarchy theme: status, colourful live activities, charts.
+  readonly property var system: ({
+    red: "#ff453a", orange: "#ff9f0a", yellow: "#ffd60a", green: "#30d158", cyan: "#64d2ff",
+    blue: "#0a84ff", indigo: "#5e5ce6", purple: "#bf5af2", gray: "#8e8e93"
+  })
   readonly property color accentText: contrastOn(Color.accent)
   readonly property color urgent: Color.urgent
   readonly property color surface: card
@@ -50,15 +56,23 @@ Item {
   readonly property color well: solid("strong")
   readonly property color wellHover: solid("stronger")
   readonly property color hairline: fill("subtle")
+  // Corner radii, so a corner is the same size everywhere. A box sitting
+  // directly in an open view (a card, a group, a list) is concentric with
+  // the island: its 30 radius minus the usual 16 padding.
+  readonly property var radii: ({ tiny: 4, small: 6, medium: 8, large: 10, card: 14 })
   readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
   // Motion roles share one cadence at every user-selected speed. Curves end
   // with a soft landing; geometry stays inside its bounds without bouncing.
   readonly property var motionDurations: ({
     press: 65, quick: 110, standard: 170, expressive: 220,
-    morph: 240, collapse: 190, fade: 110, exit: 90
+    morph: 240, collapse: 190, fade: 110, exit: 90,
+    data: 330
   })
   readonly property int feedbackFadeDuration: motionDuration("fade")
   readonly property int contentRevealDelay: Math.round(45 * motionScale)
+  // How far the island's height trails its width as it grows (and the width
+  // trails the height as it shrinks), so it morphs as one shape.
+  readonly property int morphLag: Math.round(28 * motionScale)
   function motionDuration(pace) {
     return Math.round((motionDurations[pace] || motionDurations.standard) * motionScale)
   }

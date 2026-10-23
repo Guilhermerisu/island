@@ -49,7 +49,7 @@ ColumnLayout {
           width: Math.max(0, track.width * Math.min(1, (modelData.value || 0) / Math.max(1, usage.total)) - 1)
           height: track.height
           color: modelData.color
-          Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+          Behavior on width { MotionAnimation { theme: usage.view.host.theme; pace: "expressive" } }
         }
       }
     }

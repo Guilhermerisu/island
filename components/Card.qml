@@ -6,7 +6,7 @@ import QtQuick
 Rectangle {
   required property var view
   property bool flat: false
-  radius: flat ? 12 : 16
+  radius: view.host.theme.radii.card
   color: view.card
   gradient: flat ? null : widget
   Gradient {

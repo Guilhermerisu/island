@@ -12,8 +12,8 @@ Item {
   readonly property string iconFont: view.host.theme.fontFamily
   readonly property bool colorfulActivities: !!view.settings.colorfulLiveActivities
   readonly property bool transfer: kind === "downloads" || kind === "updates"
-  readonly property color positiveColor: colorfulActivities ? "#30d158" : accent
-  readonly property color recordingColor: colorfulActivities ? "#ff453a" : accent
+  readonly property color positiveColor: colorfulActivities ? preview.view.host.theme.system.green : accent
+  readonly property color recordingColor: colorfulActivities ? preview.view.host.theme.system.red : accent
   // Each kind's sample: the leading glyph (in glyphColor, accent by default),
   // the label after it, and the status trailing (in statusColor). Kinds with
   // their own layout (bluetooth, media, workspace, volume) draw the rest below.
@@ -122,7 +122,7 @@ Item {
       level: 64
       charging: true
       chargingColor: preview.positiveColor
-      lowColor: preview.colorfulActivities ? "#ff453a" : preview.accent
+      lowColor: preview.colorfulActivities ? preview.view.host.theme.system.red : preview.accent
     }
     Text {
       x: preview.kind === "battery" ? 47 : preview.transfer ? 57 : 43
@@ -166,8 +166,8 @@ Item {
       width: 30; height: 30; radius: 15
       color: "transparent"
       border.width: 2
-      border.color: preview.colorfulActivities ? "#30d158" : preview.accent
-      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? "#30d158" : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(10) }
+      border.color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent
+      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(10) }
     }
     Text {
       anchors.centerIn: parent

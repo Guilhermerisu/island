@@ -191,8 +191,8 @@ Item {
     }
     ParallelAnimation {
       id: slide
-      NumberAnimation { id: slideIn; target: grid; property: "x"; to: 0; duration: view.theme.motionDuration("expressive"); easing.type: Easing.OutCubic }
-      NumberAnimation { target: grid; property: "opacity"; from: 0.2; to: 1; duration: view.theme.motionDuration("standard"); easing.type: Easing.OutCubic }
+      NumberAnimation { id: slideIn; target: grid; property: "x"; to: 0; duration: view.theme.motionDuration("expressive"); easing.type: Easing.BezierSpline; easing.bezierCurve: view.theme.motionCurve("settle") }
+      NumberAnimation { target: grid; property: "opacity"; from: 0.2; to: 1; duration: view.theme.motionDuration("standard"); easing.type: Easing.BezierSpline; easing.bezierCurve: view.theme.motionCurve("settle") }
     }
     HoverHandler { id: monthHover }
 
@@ -215,6 +215,8 @@ Item {
       Repeater {
         model: [{ glyph: "󰅁", by: -1 }, { glyph: "󰅂", by: 1 }]
         delegate: Text {
+          scale: chevronMouse.pressed ? 0.88 : 1
+          Behavior on scale { MotionAnimation { theme: view.theme; pace: chevronMouse.pressed ? "press" : "standard" } }
           required property var modelData
           width: view.cell
           horizontalAlignment: Text.AlignHCenter

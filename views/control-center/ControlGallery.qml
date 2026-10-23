@@ -65,6 +65,7 @@ Rectangle {
     }
     Flickable {
       id: galleryScroll
+      OverlayScrollbar { flickable: galleryScroll; parent: galleryScroll; theme: gallery.cc.host.theme }
       Layout.fillWidth: true
       Layout.preferredHeight: 260
       contentWidth: width

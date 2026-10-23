@@ -155,8 +155,9 @@ Item {
         property: "roll"
         from: 1
         to: 0
-        duration: 220
-        easing.type: Easing.OutCubic
+        duration: view.host.theme.motionDuration("expressive")
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: view.host.theme.motionCurve("settle")
       }
       component Face: Text {
         property real shift: 0

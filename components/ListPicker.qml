@@ -118,6 +118,7 @@ Item {
   // A GridView with one full-width column doubles as the list.
   GridView {
     id: list
+    OverlayScrollbar { flickable: list; parent: list; theme: picker.host.theme }
     anchors.left: parent.left
     anchors.right: picker.showSide ? sidePane.left : parent.right
     anchors.rightMargin: picker.showSide ? 12 : 0

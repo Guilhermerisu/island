@@ -20,12 +20,12 @@ Item {
   readonly property var host: agents.host
   readonly property var theme: host.theme
   readonly property color ink: agents.ink
-  readonly property color doneInk: "#30d158"
-  readonly property color errorInk: "#ff453a"
+  readonly property color doneInk: pill.theme.system.green
+  readonly property color errorInk: pill.theme.system.red
   readonly property color textInk: "#eceef0"
   // Secondary text (the title, finished and queued steps, the card's
   // details) in a neutral grey, as Apple's, not the theme's tinted one.
-  readonly property color grayInk: "#8e8e93"
+  readonly property color grayInk: pill.theme.system.gray
   readonly property var live: agents.live
   readonly property var step: agents.current
   readonly property bool done: !!live && live.state === "done"

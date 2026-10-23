@@ -30,6 +30,8 @@ ColumnLayout {
     Item { Layout.fillWidth: true }
     // macOS's round ×, widening into "Clear All" while hovered.
     Rectangle {
+      scale: clearMouse.pressed ? 0.94 : 1
+      Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: clearMouse.pressed ? "press" : "standard" } }
       visible: !history.empty
       implicitWidth: clearMouse.containsMouse ? clearLabel.implicitWidth + 20 : 22
       implicitHeight: 22
@@ -84,6 +86,7 @@ ColumnLayout {
 
   ListView {
     id: notes
+    OverlayScrollbar { flickable: notes; parent: notes; theme: history.center.host.theme }
     visible: !history.empty
     Layout.fillWidth: true
     // Out by the × button's overhang, so the banners line up with the cards.
@@ -125,11 +128,13 @@ ColumnLayout {
       height: banner.height + 6
       Rectangle {
         id: banner
+        scale: noteMouse.pressed ? 0.98 : 1
+        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: noteMouse.pressed ? "press" : "standard" } }
         x: 6
         y: 6
         width: parent.width - 6
         height: Math.max(noteBody.implicitHeight, 36) + 24
-        radius: 18
+        radius: history.center.host.theme.radii.card
         color: note.hovered ? history.center.tile : history.center.card
         border.width: 1
         border.color: history.center.edge
@@ -155,7 +160,7 @@ ColumnLayout {
           anchors.leftMargin: 12
           anchors.top: parent.top
           anchors.topMargin: 12
-          width: 36; height: 36; radius: 9
+          width: 36; height: 36; radius: history.center.host.theme.radii.large
           readonly property bool lettered: !brand && noteIcon.status !== Image.Ready
           color: brand ? brand.tile : "transparent"
           // A letter avatar sits on a soft grey tile, as macOS's generic
@@ -245,6 +250,8 @@ ColumnLayout {
       }
       // macOS's × on the banner's corner, while the banner is hovered.
       Rectangle {
+        scale: closeMouse.pressed ? 0.9 : 1
+        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: closeMouse.pressed ? "press" : "standard" } }
         width: 20; height: 20; radius: 10
         opacity: note.hovered ? 1 : 0
         visible: opacity > 0

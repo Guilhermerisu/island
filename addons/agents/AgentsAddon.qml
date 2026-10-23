@@ -32,7 +32,7 @@ Addon {
   pillRadius: expanded ? 32 : 0
   // Claude's orange, or the theme's accent when live activities aren't
   // colorful; amber while it waits on you.
-  readonly property color ink: asking ? "#ff9f0a"
+  readonly property color ink: asking ? host.theme.system.orange
     : host.settings.colorfulLiveActivities ? "#d97757" : host.theme.accent
   // Drawn with the picked agent's logo, not the addon's, at its size; the
   // pane leads with the agent as its own header (see AgentsPage).
@@ -47,9 +47,9 @@ Addon {
   // Claude's mark reads smaller than Codex's at the same size, so it's drawn larger.
   readonly property var providers: ({
     claude: { id: "claude", name: "Claude Code", glyph: "", glyphSize: 0.7, color: "#d97757", login: "claude auth login" },
-    codex: { id: "codex", name: "Codex", glyph: "", glyphSize: 0.6, color: "#0a84ff", login: "codex login" },
+    codex: { id: "codex", name: "Codex", glyph: "", glyphSize: 0.6, color: host.theme.system.blue, login: "codex login" },
     // Every model on this machine, from all-usage.py: no limits, just tokens.
-    all: { id: "all", name: "All Models", glyph: "󰚩", glyphSize: 0.6, color: "#5e5ce6", login: "" }
+    all: { id: "all", name: "All Models", glyph: "󰚩", glyphSize: 0.6, color: host.theme.system.indigo, login: "" }
   })
   readonly property var provider: providers[addon.option("agent")] || providers.claude
 

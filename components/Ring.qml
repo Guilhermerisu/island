@@ -15,7 +15,7 @@ Item {
   implicitHeight: 84
 
   property real shown: Math.max(0, Math.min(100, value))
-  Behavior on shown { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+  Behavior on shown { MotionAnimation { theme: ring.view.host.theme; pace: "data" } }
 
   Shape {
     anchors.fill: parent

@@ -98,7 +98,7 @@ Item {
           Behavior on color { MotionColorAnimation { theme: hero.theme } }
           font.family: hero.theme.textFontFamily
           font.pixelSize: hero.view.detailFontSize
-          font.weight: Font.DemiBold
+          font.weight: Font.Medium
         }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter

@@ -28,7 +28,7 @@ Item {
   // Every card is the same size, so the strip's row stays even; the selected
   // one is marked by a ring set just outside it (macOS picker style), and
   // the strip is padded so the ring never gets clipped.
-  readonly property int cardRadius: 16
+  readonly property int cardRadius: host.theme.radii.card
   readonly property real ringGap: 4
   readonly property real ringWidth: 2.5
   readonly property real ringReach: ringGap + ringWidth

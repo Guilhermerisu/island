@@ -47,7 +47,7 @@ FocusScope {
       id: backdrop
       Layout.fillWidth: true
       Layout.preferredHeight: 104
-      radius: 16
+      radius: card.view.host.theme.radii.card
       color: mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
       Behavior on color { MotionColorAnimation { theme: card.view.host.theme } }
       ActivityPreview {

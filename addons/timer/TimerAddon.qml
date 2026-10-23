@@ -25,7 +25,7 @@ Addon {
   }
 
   // iOS's timer orange, on the dark island whatever the theme.
-  readonly property color tint: "#ff9f0a"
+  readonly property color tint: host.theme.system.orange
   readonly property color tintDim: Qt.rgba(1, 159 / 255, 10 / 255, 0.35)
   readonly property color tintWell: Qt.rgba(1, 159 / 255, 10 / 255, 0.22)
 

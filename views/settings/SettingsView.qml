@@ -28,11 +28,11 @@ Item {
     return info
   }
   readonly property var corePageInfo: ({
-    "General": { icon: "󰒓", color: "#8e8e93", about: "Appearance, motion, and how the pill looks at rest." },
+    "General": { icon: "󰒓", color: settingsView.host.theme.system.gray, about: "Appearance, motion, and how the pill looks at rest." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
     "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
-    "Addons": { icon: "󰄐", color: "#0a84ff", about: "Extras that stay unloaded until you add them." },
-    "Keybinds": { icon: "󰌌", color: "#8e8e93", about: "Keyboard shortcuts that open each part of the island." }
+    "Addons": { icon: "󰄐", color: settingsView.host.theme.system.blue, about: "Extras that stay unloaded until you add them." },
+    "Keybinds": { icon: "󰌌", color: settingsView.host.theme.system.gray, about: "Keyboard shortcuts that open each part of the island." }
   })
   function pageMatches(page) {
     var query = searchQuery.trim().toLowerCase()
@@ -227,6 +227,7 @@ Item {
       spacing: 6
       Flickable {
         id: scroller
+        OverlayScrollbar { flickable: scroller; parent: scroller; theme: settingsView.host.theme }
         Layout.fillWidth: true
         Layout.fillHeight: true
         contentHeight: groups.implicitHeight + 28
@@ -354,7 +355,7 @@ Item {
           readonly property bool chosen: settingsView.menuValue === modelData.value
           width: menuColumn.width
           height: 28
-          radius: 5
+          radius: settingsView.host.theme.radii.small
           color: itemMouse.containsMouse ? settingsView.accent : "transparent"
           Text {
             x: 8
@@ -462,7 +463,7 @@ Item {
       y: 5
       width: parent.width - 10
       height: Math.max(28, settingsView.detailFontSize + 13)
-      radius: 5
+      radius: settingsView.host.theme.radii.small
       color: settingsView.host.theme.fill("subtle")
       border.width: fontInput.activeFocus ? 2 : 0
       border.color: settingsView.host.theme.accentFill("ring")
@@ -508,6 +509,7 @@ Item {
 
     ListView {
       id: fontRows
+      OverlayScrollbar { flickable: fontRows; parent: fontRows; theme: settingsView.host.theme }
       x: 5
       y: fontSearch.y + fontSearch.height + 5
       width: parent.width - 10
@@ -529,7 +531,7 @@ Item {
         readonly property bool current: index === settingsView.fontCursor
         width: fontRows.width
         height: fontPanel.rowHeight
-        radius: 5
+        radius: settingsView.host.theme.radii.small
         color: fontMouse.containsMouse || fontRow.current ? settingsView.accent : "transparent"
         Text {
           x: 8

@@ -18,7 +18,7 @@ Item {
   readonly property bool packageMode: !tracker.active && tracker.finishedName === ""
   readonly property bool downloading: host.downloadActive
   readonly property bool done: host.downloadDone
-  readonly property color activityAccent: host.settings.colorfulLiveActivities ? "#30d158" : host.theme.accent
+  readonly property color activityAccent: host.settings.colorfulLiveActivities ? pill.host.theme.system.green : host.theme.accent
 
   opacity: downloading || done ? 1 : 0
   visible: opacity > 0.01
@@ -144,16 +144,16 @@ Item {
   readonly property int revealDuration: host.theme.motionDuration("expressive")
   ParallelAnimation {
     id: reveal
-    NumberAnimation { target: pill; property: "leadingIn"; from: 0; to: 1; duration: pill.revealDuration; easing.type: Easing.OutCubic }
+    NumberAnimation { target: pill; property: "leadingIn"; from: 0; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
     SequentialAnimation {
       PropertyAction { target: pill; property: "middleIn"; value: 0 }
       PauseAnimation { duration: pill.revealDuration / 5 }
-      NumberAnimation { target: pill; property: "middleIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.OutCubic }
+      NumberAnimation { target: pill; property: "middleIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
     }
     SequentialAnimation {
       PropertyAction { target: pill; property: "trailingIn"; value: 0 }
       PauseAnimation { duration: pill.revealDuration * 2 / 5 }
-      NumberAnimation { target: pill; property: "trailingIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.OutCubic }
+      NumberAnimation { target: pill; property: "trailingIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
     }
   }
 
@@ -168,7 +168,7 @@ Item {
       anchors.left: parent.left
       anchors.leftMargin: 14
       anchors.verticalCenter: parent.verticalCenter
-      width: 46; height: 46; radius: 12
+      width: 46; height: 46; radius: pill.host.theme.radii.large
       color: Qt.rgba(1, 1, 1, 0.06)
       border.width: 1
       border.color: Qt.rgba(1, 1, 1, 0.08)

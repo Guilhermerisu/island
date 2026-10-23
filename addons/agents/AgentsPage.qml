@@ -37,9 +37,9 @@ ColumnLayout {
     return Math.ceil(busiest / unit) * unit
   }
 
-  readonly property color red: "#ff453a"
-  readonly property color green: "#30d158"
-  readonly property color yellow: "#ffd60a"
+  readonly property color red: page.view.host.theme.system.red
+  readonly property color green: page.view.host.theme.system.green
+  readonly property color yellow: page.view.host.theme.system.yellow
 
   // A clock for the countdowns, ticking while the pane is open.
   property real now: Date.now()
@@ -133,14 +133,14 @@ ColumnLayout {
       var u = usage[id] || {}
       return { label: modelName(id), value: (u.inputTokens || 0) + (u.outputTokens || 0) + (u.cacheReadInputTokens || 0) + (u.cacheCreationInputTokens || 0) }
     }).filter(function(m) { return m.value > 0 }).sort(function(a, b) { return b.value - a.value })
-    var palette = [tint].concat(["#bf5af2", "#64d2ff", "#ffd60a", "#30d158", "#0a84ff"].filter(function(c) {
+    var palette = [tint].concat([page.view.host.theme.system.purple, page.view.host.theme.system.cyan, page.view.host.theme.system.yellow, page.view.host.theme.system.green, page.view.host.theme.system.blue].filter(function(c) {
       return String(c).toLowerCase() !== String(provider.color).toLowerCase()
     }))
     var top = rows.slice(0, 4)
     var rest = rows.slice(4).reduce(function(sum, m) { return sum + m.value }, 0)
     if (rest > 0) top.push({ label: "Other", value: rest, other: true })
     return top.map(function(m, i) {
-      return { label: m.label, value: m.value, color: m.other ? "#8e8e93" : palette[i], text: tokens(m.value) }
+      return { label: m.label, value: m.value, color: m.other ? page.view.host.theme.system.gray : palette[i], text: tokens(m.value) }
     })
   }
   readonly property real modelTotal: models.reduce(function(sum, m) { return sum + m.value }, 0)
@@ -166,7 +166,7 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     implicitHeight: agentColumn.implicitHeight + 32
-    radius: 12
+    radius: page.view.host.theme.radii.card
     color: page.view.card
     border.width: 1
     border.color: page.view.edge
@@ -261,7 +261,7 @@ ColumnLayout {
               color: limit.used >= 0.5 ? page.usedColor(limit.used) : page.view.text
               font.family: page.view.host.theme.textFontFamily
               font.pixelSize: page.view.detailFontSize
-              font.weight: Font.DemiBold
+              font.weight: Font.Medium
               font.features: { "tnum": 1 }
             }
             Text {
@@ -280,7 +280,7 @@ ColumnLayout {
               color: page.view.well
               Rectangle {
                 width: Math.max(limit.used > 0 ? parent.height : 0, parent.width * Math.min(1, limit.used))
-                Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+                Behavior on width { MotionAnimation { theme: page.view.host.theme; pace: "data" } }
                 height: parent.height
                 radius: parent.radius
                 color: page.usedColor(limit.used)
@@ -325,7 +325,7 @@ ColumnLayout {
         width: 24
         height: 24
         glyph: "󰀦"
-        tint: "#ff9f0a"
+        tint: page.view.host.theme.system.orange
       }
       Column {
         id: noLimits
@@ -475,7 +475,7 @@ ColumnLayout {
                 y: chart.plotHeight - height
                 width: Math.min(chart.columnWidth * 0.5, 26)
                 height: day.count > 0 ? Math.max(3, chart.plotHeight - chart.yFor(day.count)) : 0
-                Behavior on height { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+                Behavior on height { MotionAnimation { theme: page.view.host.theme; pace: "data" } }
                 clip: true
                 Rectangle {
                   width: parent.width
@@ -484,7 +484,7 @@ ColumnLayout {
                   // The others greyed out, as Screen Time does, rather than
                   // faded to a muddy tint.
                   color: chart.hovered === -1 || chart.hovered === day.index ? page.tint : page.view.host.theme.fill("stronger")
-                  Behavior on color { ColorAnimation { duration: 150 } }
+                  Behavior on color { MotionColorAnimation { theme: page.view.host.theme } }
                 }
               }
               Text {
@@ -542,7 +542,7 @@ ColumnLayout {
                     color: page.view.text
                     font.family: page.view.host.theme.textFontFamily
                     font.pixelSize: page.view.host.theme.px(12)
-                    font.weight: Font.DemiBold
+                    font.weight: Font.Medium
                     font.features: { "tnum": 1 }
                   }
                 }

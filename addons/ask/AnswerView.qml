@@ -185,6 +185,7 @@ Item {
     // The answer in large type, like Siri; it grows as words stream in.
     Flickable {
       id: scroller
+      OverlayScrollbar { flickable: scroller; parent: scroller; theme: answer.host.theme }
       visible: !answer.thinking
       Layout.fillWidth: true
       Layout.preferredHeight: Math.min(body.implicitHeight, 460)
@@ -230,6 +231,8 @@ Item {
       anchors.centerIn: parent
       spacing: 8
       Rectangle {
+        scale: copyMouse.pressed ? 0.95 : 1
+        Behavior on scale { MotionAnimation { theme: answer.host.theme; pace: copyMouse.pressed ? "press" : "standard" } }
         implicitWidth: copyLabel.implicitWidth + 26
         implicitHeight: 28
         radius: 14
@@ -241,7 +244,7 @@ Item {
           color: "#ffffff"
           font.family: answer.host.theme.textFontFamily
           font.pixelSize: answer.host.theme.px(12)
-          font.weight: Font.DemiBold
+          font.weight: Font.Medium
         }
         MouseArea {
           id: copyMouse

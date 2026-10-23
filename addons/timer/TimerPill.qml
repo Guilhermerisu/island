@@ -14,7 +14,13 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
+  PillReveal { id: reveal; theme: pill.host.theme; shown: pill.timer.pillShown }
+
   TimerRing {
+    opacity: reveal.leadingIn
+    scale: 0.9 + 0.1 * reveal.leadingIn
+    layer.enabled: reveal.leadingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
     anchors.left: parent.left
     anchors.leftMargin: 13
     anchors.verticalCenter: parent.verticalCenter
@@ -26,6 +32,10 @@ Item {
     thickness: 3
   }
   Text {
+    opacity: reveal.trailingIn
+    scale: 0.9 + 0.1 * reveal.trailingIn
+    layer.enabled: reveal.trailingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter

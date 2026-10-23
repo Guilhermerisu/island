@@ -74,7 +74,7 @@ Item {
       Text {
         Layout.alignment: Qt.AlignHCenter
         text: "󰅙"
-        color: "#ff453a"
+        color: sheet.view.host.theme.system.red
         font.family: sheet.view.host.theme.fontFamily
         font.pixelSize: sheet.view.host.theme.px(40)
       }

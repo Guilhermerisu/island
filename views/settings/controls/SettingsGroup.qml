@@ -23,7 +23,7 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: groupBody.implicitHeight
-    radius: 12
+    radius: group.view.host.theme.radii.card
     color: group.view.card
     border.width: 1
     border.color: group.view.edge

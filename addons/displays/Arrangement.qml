@@ -145,7 +145,7 @@ Item {
           color: "#ffffff"
           font.family: arrangement.view.host.theme.textFontFamily
           font.pixelSize: arrangement.view.detailCaptionFontSize
-          font.weight: Font.DemiBold
+          font.weight: Font.Medium
         }
       }
 

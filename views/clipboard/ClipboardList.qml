@@ -117,7 +117,7 @@ ListPicker {
           anchors.left: parent.left
           anchors.right: parent.right
           height: Math.min(inner / ratio, parent.height - 50) + 16 + 26
-          radius: 16
+          radius: clipboard.host.theme.radii.card
           color: clipboard.host.theme.card
           border.width: 1
           border.color: clipboard.host.theme.hairline

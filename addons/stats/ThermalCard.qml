@@ -13,10 +13,10 @@ Card {
   id: card
   property var temps: []          // [{ label, value, ssd }]
   readonly property var levels: [
-    { label: "Good", color: "#30d158" },
-    { label: "Fair", color: "#ffd60a" },
-    { label: "High", color: "#ff9f0a" },
-    { label: "Max", color: "#ff453a" }
+    { label: "Good", color: card.view.host.theme.system.green },
+    { label: "Fair", color: card.view.host.theme.system.yellow },
+    { label: "High", color: card.view.host.theme.system.orange },
+    { label: "Max", color: card.view.host.theme.system.red }
   ]
   function levelOf(t) {
     var good = t.ssd ? 50 : 70

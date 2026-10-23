@@ -63,7 +63,7 @@ Card {
           font.family: card.view.host.theme.textFontFamily
           font.features: { "tnum": 1 }
           font.pixelSize: card.view.host.theme.px(12)
-          font.weight: Font.DemiBold
+          font.weight: Font.Medium
         }
       }
     }

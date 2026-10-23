@@ -1,6 +1,7 @@
 import QtQuick
 import Qt.labs.folderlistmodel
 import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
@@ -11,6 +12,7 @@ import "addons"
 import "components"
 import "services"
 import "views"
+import "components/Squircle.js" as Squircle
 // Omarchy's own OSD payload model, so what the island shows matches it.
 import "file:///usr/share/omarchy/shell/plugins/osd/OsdModel.js" as OsdModel
 
@@ -557,7 +559,21 @@ Item {
         }
 
         // While a view is open the island floats over the windows: a soft,
-        // wide shadow under it (the resting pill stays flat, like hardware).
+        // wide shadow for depth plus a tight, darker one where it meets them
+        // (the resting pill stays flat, like hardware).
+        RectangularShadow {
+          x: island.x
+          y: island.y
+          width: island.width
+          height: island.height
+          radius: island.radius
+          offset.y: 2
+          blur: 8
+          color: Qt.rgba(0, 0, 0, 0.4)
+          opacity: root.surfaceOpen ? 1 : 0
+          visible: opacity > 0.01
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+        }
         RectangularShadow {
           x: island.x
           y: island.y
@@ -649,12 +665,10 @@ Item {
             : root.volumePill ? (root.settings.notch ? 40 : 44)
             : root.osdPill ? (root.settings.notch ? 40 : 44)
             : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
-          property real radiusCap: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
+          readonly property real targetRadius: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
             : root.addonPill && root.addonPill.pillRadius > 0 ? root.addonPill.pillRadius
             : root.surfaceOpen ? 30 : 38
-          Behavior on radiusCap {
-            MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
-          }
+          readonly property real radiusCap: radiusSpring.value
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
@@ -671,20 +685,52 @@ Item {
               }
             }
           }
-          color: root.theme.background
+          // The black itself is the squircle below; the Rectangle only keeps
+          // the radius and clipping the pills and views rely on.
+          color: "transparent"
           clip: true
-          // Width, height and corners travel together and settle softly.
-          property real animatedWidth: targetWidth
-          property real animatedHeight: targetHeight
-          Behavior on animatedWidth {
-            MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
+          readonly property var cornerRadii: ({ topLeft: topLeftRadius, topRight: topRightRadius, bottomLeft: radius, bottomRight: radius })
+          readonly property string outline: Squircle.path(width, height, cornerRadii, 0.6)
+          // The same outline inset half a pixel, so a 1px edge stroke lands
+          // inside the shape.
+          readonly property string edgeOutline: Squircle.path(width - 1, height - 1, ({
+            topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
+            bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
+          Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+              strokeWidth: -1
+              fillColor: root.theme.background
+              Behavior on fillColor { MotionColorAnimation { theme: root.theme } }
+              PathSvg { path: island.outline }
+            }
           }
-          Behavior on animatedHeight {
-            MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "collapse"; curve: "morph" }
+          // Width, height and corners ride springs, so a change of mind
+          // mid-morph keeps its momentum. Growing, the width leads and the
+          // height follows a beat later; shrinking, the height goes first.
+          readonly property string morphPace: root.surfaceOpen ? "morph" : "collapse"
+          MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace }
+          MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace }
+          MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; target: island.targetRadius }
+          Timer { id: widthLag; interval: root.theme.morphLag; onTriggered: widthSpring.target = island.targetWidth }
+          Timer { id: heightLag; interval: root.theme.morphLag; onTriggered: heightSpring.target = island.targetHeight }
+          onTargetWidthChanged: {
+            if (targetWidth < widthSpring.value) { widthLag.restart(); return }
+            widthLag.stop()
+            widthSpring.target = targetWidth
           }
-          width: Math.max(40, animatedWidth)
-          height: Math.max(28, animatedHeight)
-          Behavior on color { MotionColorAnimation { theme: root.theme } }
+          onTargetHeightChanged: {
+            if (targetHeight > heightSpring.value) { heightLag.restart(); return }
+            heightLag.stop()
+            heightSpring.target = targetHeight
+          }
+          Component.onCompleted: {
+            widthSpring.target = widthSpring.value = targetWidth
+            heightSpring.target = heightSpring.value = targetHeight
+          }
+          width: Math.max(40, widthSpring.value)
+          height: Math.max(28, heightSpring.value)
 
           MouseArea {
             anchors.fill: parent
@@ -734,21 +780,26 @@ Item {
         }
         // A faint light edge around the open island, so its black still
         // reads against a dark wallpaper.
-        Rectangle {
+        Item {
           x: island.x
           y: island.y
           width: island.width
           height: island.height
           scale: island.scale
-          radius: island.radius
-          topLeftRadius: island.topLeftRadius
-          topRightRadius: island.topRightRadius
-          color: "transparent"
-          border.width: 1
-          border.color: root.theme.fill("raised")
           opacity: root.surfaceOpen ? 1 : 0
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+          Shape {
+            anchors.fill: parent
+            anchors.margins: 0.5
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+              strokeWidth: 1
+              strokeColor: root.theme.fill("raised")
+              fillColor: "transparent"
+              PathSvg { path: island.edgeOutline }
+            }
+          }
         }
       }
     }

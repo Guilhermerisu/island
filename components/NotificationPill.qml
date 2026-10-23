@@ -20,8 +20,14 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
 
+  PillReveal { id: reveal; theme: host.theme; shown: host.notificationPill }
+
   ClippingRectangle {
     id: appTile
+    opacity: reveal.leadingIn
+    scale: 0.9 + 0.1 * reveal.leadingIn
+    layer.enabled: reveal.leadingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
     anchors.left: parent.left
     anchors.leftMargin: 15
     anchors.verticalCenter: parent.verticalCenter
@@ -60,6 +66,10 @@ Item {
   }
 
   Column {
+    opacity: reveal.middleIn
+    scale: 0.94 + 0.06 * reveal.middleIn
+    layer.enabled: reveal.middleIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
     anchors.left: appTile.right
     anchors.leftMargin: 12
     anchors.right: parent.right

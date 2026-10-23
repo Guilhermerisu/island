@@ -20,13 +20,13 @@ ColumnLayout {
   readonly property var memory: latest ? latest.memory : null
   readonly property var gpus: latest ? latest.gpus : []
 
-  readonly property color red: "#ff453a"
-  readonly property color blue: "#0a84ff"
-  readonly property color green: "#30d158"
-  readonly property color yellow: "#ffd60a"
-  readonly property color orange: "#ff9f0a"
-  readonly property color teal: "#64d2ff"
-  readonly property color gray: "#8e8e93"
+  readonly property color red: page.view.host.theme.system.red
+  readonly property color blue: page.view.host.theme.system.blue
+  readonly property color green: page.view.host.theme.system.green
+  readonly property color yellow: page.view.host.theme.system.yellow
+  readonly property color orange: page.view.host.theme.system.orange
+  readonly property color teal: page.view.host.theme.system.cyan
+  readonly property color gray: page.view.host.theme.system.gray
 
   // Formatting, shared with the table.
   function bytes(b) {

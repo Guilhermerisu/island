@@ -23,7 +23,7 @@ ColumnLayout {
   readonly property color wellHover: host.theme.wellHover
   readonly property string iconFont: host.theme.fontFamily
   // macOS shapes: switches are capsules, cards concentric with the island.
-  readonly property real cardRadius: 22
+  readonly property real cardRadius: host.theme.radii.card
   // macOS's module sizes: a tile, a slider card, and the gap between them.
   readonly property real tileHeight: 64
   readonly property real sectionHeight: 86
@@ -81,6 +81,8 @@ ColumnLayout {
     }
     Item { Layout.fillWidth: true }
     Rectangle {
+      scale: editMouse.pressed ? 0.92 : 1
+      Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: editMouse.pressed ? "press" : "standard" } }
       Layout.preferredWidth: cc.editMode ? 58 : 28
       Layout.preferredHeight: 28
       radius: 14
@@ -92,7 +94,7 @@ ColumnLayout {
         color: cc.text
         font.family: cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont
         font.pixelSize: cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(15)
-        font.weight: Font.DemiBold
+        font.weight: Font.Medium
       }
       MouseArea {
         id: editMouse
@@ -103,6 +105,8 @@ ColumnLayout {
       }
     }
     Rectangle {
+      scale: settingsMouse.pressed ? 0.92 : 1
+      Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: settingsMouse.pressed ? "press" : "standard" } }
       Layout.preferredWidth: 28
       Layout.preferredHeight: 28
       radius: 14
@@ -135,10 +139,10 @@ ColumnLayout {
       Text {
         anchors.verticalCenter: parent.verticalCenter
         text: cc.controls.batteryPercent + "%"
-        color: parent.low ? "#ff453a" : cc.text
+        color: parent.low ? cc.host.theme.system.red : cc.text
         font.family: cc.host.theme.textFontFamily
         font.pixelSize: cc.host.theme.px(13)
-        font.weight: Font.DemiBold
+        font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }
       BatteryIcon {

@@ -217,9 +217,11 @@ ColumnLayout {
     Layout.rightMargin: 6
     spacing: 8
     Rectangle {
+      scale: backMouse.pressed ? 0.92 : 1
+      Behavior on scale { MotionAnimation { theme: wf.host.theme; pace: backMouse.pressed ? "press" : "standard" } }
       Layout.preferredWidth: 32
       Layout.preferredHeight: 32
-      radius: 16
+      radius: height / 2
       color: backMouse.containsMouse ? wf.well : wf.card
       Tooltip { theme: wf.host.theme; text: "Control Center" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(17) }
@@ -238,7 +240,7 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 12
-    radius: 16
+    radius: wf.host.theme.radii.card
     color: wf.card
     border.width: 1
     border.color: wf.edge
@@ -261,6 +263,7 @@ ColumnLayout {
 
       ListView {
         id: list
+        OverlayScrollbar { flickable: list; parent: list; theme: wf.host.theme }
         visible: wf.displayRows.length > 0
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(contentHeight, 460)
@@ -353,7 +356,7 @@ ColumnLayout {
             visible: !row.isHeader
             anchors.fill: parent
             radius: 8
-            color: rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected || row.askingPassword ? wf.tile : "transparent"
+            color: rowMouse.pressed ? wf.well : rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected || row.askingPassword ? wf.tile : "transparent"
 
             Rectangle {
               id: badge
@@ -418,7 +421,7 @@ ColumnLayout {
               anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               height: 32
-              radius: 7
+              radius: wf.host.theme.radii.medium
               color: wf.well
               border.width: 2
               border.color: wf.host.theme.accentFill("ring")
@@ -466,6 +469,8 @@ ColumnLayout {
               anchors.verticalCenter: parent.verticalCenter
               spacing: 6
               Rectangle {
+                scale: forgetMouse.pressed ? 0.9 : 1
+                Behavior on scale { MotionAnimation { theme: wf.host.theme; pace: forgetMouse.pressed ? "press" : "standard" } }
                 visible: row.modelData.section !== "nearby" && !row.modelData.pending
                   && (rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected)
                 anchors.verticalCenter: parent.verticalCenter
@@ -514,7 +519,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 42
         radius: 8
-        color: settingsMouse.containsMouse || (wf.usingKeys && wf.cursor === "settings") ? wf.tile : "transparent"
+        color: settingsMouse.pressed ? wf.well : settingsMouse.containsMouse || (wf.usingKeys && wf.cursor === "settings") ? wf.tile : "transparent"
         Text {
           anchors.left: parent.left
           anchors.leftMargin: 10

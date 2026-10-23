@@ -17,6 +17,8 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
+  PillReveal { id: reveal; theme: pill.host.theme; shown: pill.shown }
+
   // Leading: the keyboard, settling gently into place.
   Text {
     id: leading
@@ -27,12 +29,18 @@ Item {
     color: pill.host.theme.accent
     font.family: pill.host.theme.fontFamily
     font.pixelSize: pill.host.theme.px(20)
-    scale: pill.shown ? 1 : 0.86
-    Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
+    opacity: reveal.leadingIn
+    scale: 0.9 + 0.1 * reveal.leadingIn
+    layer.enabled: reveal.leadingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
   }
 
   // Middle: the layout's name.
   Text {
+    opacity: reveal.middleIn
+    scale: 0.94 + 0.06 * reveal.middleIn
+    layer.enabled: reveal.middleIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
     anchors.left: leading.right
     anchors.leftMargin: 10
     anchors.right: trailing.left
@@ -52,6 +60,10 @@ Item {
   // so the next switch slides it from the last one.
   Item {
     id: trailing
+    opacity: reveal.trailingIn
+    scale: 0.9 + 0.1 * reveal.trailingIn
+    layer.enabled: reveal.trailingIn < 1
+    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter

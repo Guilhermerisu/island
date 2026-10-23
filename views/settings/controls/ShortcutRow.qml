@@ -73,7 +73,7 @@ Item {
           required property string modelData
           width: Math.max(height, capText.implicitWidth + 12)
           height: 22
-          radius: 5
+          radius: shortcutRow.view.host.theme.radii.small
           color: shortcutRow.view.host.theme.solid(keysMouse.containsMouse ? "stronger" : "raised")
           border.width: 1
           border.color: shortcutRow.view.host.theme.fill("subtle")
