@@ -58,8 +58,8 @@ Item {
           Item {
             id: lift
             anchors.fill: parent
-            scale: pick.containsMouse && !screen.picked && hero.view.settings.hoverLift ? 1.035 : 1
-            Behavior on scale { MotionAnimation { theme: hero.theme } }
+            scale: pick.pressed ? 0.97 : pick.containsMouse && !screen.picked && hero.view.settings.hoverLift ? 1.035 : 1
+            Behavior on scale { MotionAnimation { theme: hero.theme; pace: pick.pressed ? "press" : "standard" } }
             DisplayScreen {
               id: bezel
               anchors.centerIn: parent
@@ -97,6 +97,7 @@ Item {
           color: screen.picked || !hero.several ? hero.view.text : hero.view.textMuted
           Behavior on color { MotionColorAnimation { theme: hero.theme } }
           font.family: hero.theme.textFontFamily
+          font.letterSpacing: hero.theme.tracking(hero.theme.textFontFamily, hero.view.detailFontSize)
           font.pixelSize: hero.view.detailFontSize
           font.weight: Font.Medium
         }
@@ -109,6 +110,7 @@ Item {
                                      : screen.modelData.width + " × " + screen.modelData.height) + ")"
           color: hero.view.textMuted
           font.family: hero.theme.textFontFamily
+          font.letterSpacing: hero.theme.tracking(hero.theme.textFontFamily, hero.view.detailCaptionFontSize)
           font.pixelSize: hero.view.detailCaptionFontSize
           font.features: { "tnum": 1 }
         }

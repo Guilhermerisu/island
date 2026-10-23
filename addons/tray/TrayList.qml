@@ -140,6 +140,7 @@ ListPicker {
         elide: Text.ElideRight
         color: tray.host.theme.text
         font.family: tray.host.theme.textFontFamily
+        font.letterSpacing: tray.host.theme.tracking(tray.host.theme.textFontFamily, tray.host.theme.px(13))
         font.pixelSize: tray.host.theme.px(13)
         font.weight: Font.Medium
       }

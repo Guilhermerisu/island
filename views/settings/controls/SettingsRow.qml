@@ -44,6 +44,7 @@ Item {
       elide: Text.ElideRight
       color: row.view.text
       font.family: row.view.host.theme.textFontFamily
+      font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.detailFontSize)
       font.pixelSize: row.view.detailFontSize
     }
     Text {
@@ -53,6 +54,7 @@ Item {
       elide: Text.ElideRight
       color: row.view.textMuted
       font.family: row.view.host.theme.textFontFamily
+      font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.detailCaptionFontSize)
       font.pixelSize: row.view.detailCaptionFontSize
     }
   }

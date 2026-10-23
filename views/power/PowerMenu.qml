@@ -143,6 +143,7 @@ Item {
               color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
               font.family: power.host.theme.textFontFamily
+              font.letterSpacing: power.host.theme.tracking(power.host.theme.textFontFamily, power.host.theme.px(13))
               font.pixelSize: power.host.theme.px(13)
               font.weight: Font.Medium
               Behavior on color { MotionColorAnimation { theme: power.host.theme } }

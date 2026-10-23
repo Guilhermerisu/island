@@ -30,17 +30,13 @@ Item {
     font.family: pill.host.theme.fontFamily
     font.pixelSize: pill.host.theme.px(20)
     opacity: reveal.leadingIn
-    scale: 0.9 + 0.1 * reveal.leadingIn
-    layer.enabled: reveal.leadingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
+    PillPart { progress: reveal.leadingIn }
   }
 
   // Middle: the layout's name.
   Text {
     opacity: reveal.middleIn
-    scale: 0.94 + 0.06 * reveal.middleIn
-    layer.enabled: reveal.middleIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
+    PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: leading.right
     anchors.leftMargin: 10
     anchors.right: trailing.left
@@ -61,9 +57,7 @@ Item {
   Item {
     id: trailing
     opacity: reveal.trailingIn
-    scale: 0.9 + 0.1 * reveal.trailingIn
-    layer.enabled: reveal.trailingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
+    PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
@@ -94,6 +88,7 @@ Item {
           color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: pill.host.theme.textFontFamily
+          font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(11))
           font.pixelSize: pill.host.theme.px(11)
           font.weight: Font.Bold
         }

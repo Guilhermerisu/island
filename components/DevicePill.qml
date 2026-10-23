@@ -8,11 +8,9 @@ import QtQuick
 //   { kind: "charging" | "lowBattery" | "bluetooth" | "network",
 //     title, status, connected, battery (-1 when unknown), icon (BlueZ's),
 //     wired (network only) }
-Item {
+IslandPill {
   id: pill
-  required property var host
   readonly property var activity: host.activities.current || ({})
-  readonly property bool shown: host.activityPill
   readonly property bool isBattery: activity.kind === "charging" || activity.kind === "lowBattery"
   readonly property bool isDevice: activity.kind === "bluetooth"
   readonly property bool colorfulActivities: !!host.settings.colorfulLiveActivities
@@ -27,9 +25,13 @@ Item {
     : activity.wired ? "󰈀"
     : activity.connected ? "󰤨" : "󰤭"
 
-  opacity: shown ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
+  shown: host.activityPill
+  pillWidth: isDevice ? 360 : 320
+  pillHeight: isDevice ? 64 : host.pillHeight
+  // To the device's own view: Bluetooth's, or Wi-Fi's.
+  function clicked(mouse) {
+    host.view = isDevice ? "bluetooth" : activity.kind === "network" && !activity.wired ? "wifi" : "controls"
+  }
 
   PillReveal { id: reveal; theme: pill.host.theme; shown: pill.shown }
 
@@ -43,9 +45,7 @@ Item {
     width: pill.isBattery ? 30 : 26
     height: 26
     opacity: reveal.leadingIn
-    scale: 0.9 + 0.1 * reveal.leadingIn
-    layer.enabled: reveal.leadingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
+    PillPart { progress: reveal.leadingIn }
     BatteryIcon {
       visible: pill.isBattery
       anchors.centerIn: parent
@@ -71,9 +71,7 @@ Item {
   Text {
     visible: !pill.isDevice
     opacity: reveal.middleIn
-    scale: 0.94 + 0.06 * reveal.middleIn
-    layer.enabled: reveal.middleIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
+    PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: leading.right
     anchors.leftMargin: 10
     anchors.right: trailing.left
@@ -93,9 +91,7 @@ Item {
   // Trailing: the status (with a device's battery), a beat after the rest.
   Row {
     id: trailing
-    scale: 0.9 + 0.1 * reveal.trailingIn
-    layer.enabled: reveal.trailingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
+    PillPart { progress: reveal.trailingIn }
     visible: !pill.isDevice
     anchors.right: parent.right
     anchors.rightMargin: 16
@@ -150,16 +146,12 @@ Item {
     font.family: pill.host.theme.fontFamily
     font.pixelSize: pill.host.theme.px(32)
     opacity: reveal.leadingIn
-    scale: 0.9 + 0.1 * reveal.leadingIn
-    layer.enabled: reveal.leadingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
+    PillPart { progress: reveal.leadingIn }
   }
   Column {
     visible: pill.isDevice
     opacity: reveal.middleIn
-    scale: 0.94 + 0.06 * reveal.middleIn
-    layer.enabled: reveal.middleIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
+    PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: devicePicture.right
     anchors.leftMargin: 16
     anchors.right: ring.left
@@ -171,6 +163,7 @@ Item {
       text: pill.activity.status || ""
       color: "#888888"
       font.family: pill.host.theme.textFontFamily
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
       font.features: { "tnum": 1 }
       font.pixelSize: pill.host.theme.px(13)
       font.weight: Font.Medium
@@ -198,9 +191,7 @@ Item {
     width: pill.deviceBattery >= 0 ? 42 : 0
     height: 42
     opacity: (pill.deviceBattery >= 0 ? 1 : 0) * reveal.trailingIn
-    scale: 0.9 + 0.1 * reveal.trailingIn
-    layer.enabled: reveal.trailingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
+    PillPart { progress: reveal.trailingIn }
     Canvas {
       id: ringCanvas
       anchors.fill: parent
@@ -232,6 +223,7 @@ Item {
       text: pill.deviceBattery
       color: pill.ringColor
       font.family: pill.host.theme.textFontFamily
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
       font.pixelSize: pill.host.theme.px(13)
       font.weight: Font.DemiBold
       font.features: { "tnum": 1 }

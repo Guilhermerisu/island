@@ -101,6 +101,7 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: page.view.text
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(15))
                 font.pixelSize: page.view.host.theme.px(15)
                 font.weight: Font.Medium
               }
@@ -113,6 +114,7 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
                 font.pixelSize: page.view.detailFontSize
               }
             }
@@ -234,6 +236,7 @@ ColumnLayout {
     text: "No addons available"
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
+    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
     font.pixelSize: page.view.detailFontSize
   }
 }

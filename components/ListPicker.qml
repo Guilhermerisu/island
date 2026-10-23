@@ -163,6 +163,8 @@ Item {
 
       Loader {
         anchors.fill: parent
+        scale: picker.grid && slotMouse.pressed && !slot.itemDisabled ? 0.96 : 1
+        Behavior on scale { MotionAnimation { theme: picker.host.theme; pace: slotMouse.pressed ? "press" : "standard" } }
         anchors.leftMargin: picker.grid ? 0 : 10
         anchors.rightMargin: picker.grid ? 0 : 12
         sourceComponent: picker.row
@@ -172,6 +174,7 @@ Item {
         }
       }
       MouseArea {
+        id: slotMouse
         anchors.fill: parent
         cursorShape: slot.itemDisabled ? Qt.ArrowCursor : Qt.PointingHandCursor
         onClicked: if (!slot.itemDisabled) picker.chosen(slot.modelData)
@@ -207,6 +210,7 @@ Item {
       text: picker.emptyText
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
+      font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.px(13))
       font.pixelSize: picker.host.theme.px(13)
     }
   }

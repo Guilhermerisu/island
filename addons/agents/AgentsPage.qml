@@ -205,6 +205,7 @@ ColumnLayout {
         elide: Text.ElideRight
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
         font.features: { "tnum": 1 }
         font.pixelSize: page.view.detailCaptionFontSize
       }
@@ -252,6 +253,7 @@ ColumnLayout {
               elide: Text.ElideRight
               color: page.view.text
               font.family: page.view.host.theme.textFontFamily
+              font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
               font.features: { "tnum": 1 }
               font.pixelSize: page.view.detailFontSize
             }
@@ -260,6 +262,7 @@ ColumnLayout {
               text: Math.round(limit.used * 100) + "%"
               color: limit.used >= 0.5 ? page.usedColor(limit.used) : page.view.text
               font.family: page.view.host.theme.textFontFamily
+              font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
               font.pixelSize: page.view.detailFontSize
               font.weight: Font.Medium
               font.features: { "tnum": 1 }
@@ -268,6 +271,7 @@ ColumnLayout {
               text: "used"
               color: page.view.textMuted
               font.family: page.view.host.theme.textFontFamily
+              font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
               font.pixelSize: page.view.detailFontSize
             }
           }
@@ -294,6 +298,7 @@ ColumnLayout {
             elide: Text.ElideRight
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
             font.pixelSize: page.view.detailCaptionFontSize
             font.features: { "tnum": 1 }
           }
@@ -340,6 +345,7 @@ ColumnLayout {
           text: page.record ? "Limits Unavailable" : "Reading Limits…"
           color: page.view.text
           font.family: page.view.host.theme.textFontFamily
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
           font.features: { "tnum": 1 }
           font.pixelSize: page.view.detailFontSize
         }
@@ -353,6 +359,7 @@ ColumnLayout {
             + "Sign in with <font color=\"" + page.view.text + "\">" + page.provider.login + "</font> to see them."
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
           font.features: { "tnum": 1 }
           font.pixelSize: page.view.detailCaptionFontSize
         }
@@ -381,6 +388,7 @@ ColumnLayout {
             text: "Daily Average"
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
             font.features: { "tnum": 1 }
             font.pixelSize: page.view.detailCaptionFontSize
           }
@@ -388,6 +396,7 @@ ColumnLayout {
             text: page.record ? page.tokens(page.average) : "—"
             color: page.view.text
             font.family: page.view.host.theme.textFontFamily
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(22))
             font.pixelSize: page.view.host.theme.px(22)
             font.weight: Font.DemiBold
             font.features: { "tnum": 1 }
@@ -416,6 +425,7 @@ ColumnLayout {
             text: "No usage in the last 7 days"
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
             font.features: { "tnum": 1 }
             font.pixelSize: page.view.detailCaptionFontSize
           }
@@ -450,6 +460,7 @@ ColumnLayout {
                 text: grid.modelData === 0 ? "0" : page.scaleLabel(page.scaleTop * grid.modelData)
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(11))
                 font.pixelSize: page.view.host.theme.px(11)
                 font.features: { "tnum": 1 }
               }
@@ -493,6 +504,7 @@ ColumnLayout {
                 text: page.dayName(day.modelData.date, day.today)
                 color: day.today ? page.view.text : page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(11))
                 font.features: { "tnum": 1 }
                 font.pixelSize: page.view.host.theme.px(11)
                 font.weight: day.today ? Font.DemiBold : Font.Normal
@@ -533,6 +545,7 @@ ColumnLayout {
                     text: page.dayName(day.modelData.date, day.today, true)
                     color: page.view.textMuted
                     font.family: page.view.host.theme.textFontFamily
+                    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(10))
                     font.features: { "tnum": 1 }
                     font.pixelSize: page.view.host.theme.px(10)
                   }
@@ -541,6 +554,7 @@ ColumnLayout {
                     text: page.tokens(day.count)
                     color: page.view.text
                     font.family: page.view.host.theme.textFontFamily
+                    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(12))
                     font.pixelSize: page.view.host.theme.px(12)
                     font.weight: Font.Medium
                     font.features: { "tnum": 1 }
@@ -569,6 +583,7 @@ ColumnLayout {
         text: page.tokens(page.today)
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
         font.pixelSize: page.view.detailFontSize
         font.features: { "tnum": 1 }
       }
@@ -582,6 +597,7 @@ ColumnLayout {
         text: page.tokens(page.week)
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
         font.pixelSize: page.view.detailFontSize
         font.features: { "tnum": 1 }
       }
@@ -615,6 +631,7 @@ ColumnLayout {
             elide: Text.ElideRight
             color: page.view.text
             font.family: page.view.host.theme.textFontFamily
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
             font.features: { "tnum": 1 }
             font.pixelSize: page.view.detailFontSize
           }
@@ -625,6 +642,7 @@ ColumnLayout {
             elide: Text.ElideRight
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
             font.features: { "tnum": 1 }
             font.pixelSize: page.view.detailCaptionFontSize
           }
@@ -637,6 +655,7 @@ ColumnLayout {
           text: page.tokens(modelRow.modelData.value)
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
           font.pixelSize: page.view.detailFontSize
           font.features: { "tnum": 1 }
         }

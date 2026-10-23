@@ -222,6 +222,7 @@ ColumnLayout {
       text: "Bluetooth"
       color: bt.text
       font.family: bt.host.theme.textFontFamily
+      font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(17))
       font.pixelSize: bt.host.theme.px(17)
       font.weight: Font.DemiBold
     }
@@ -297,6 +298,7 @@ ColumnLayout {
               text: row.modelData.header || ""
               color: bt.textMuted
               font.family: bt.host.theme.textFontFamily
+              font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(13))
               font.pixelSize: bt.host.theme.px(13)
               font.weight: Font.DemiBold
             }
@@ -376,6 +378,7 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: bt.text
                 font.family: bt.host.theme.textFontFamily
+                font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(15))
                 font.pixelSize: bt.host.theme.px(15)
               }
               Text {
@@ -388,6 +391,7 @@ ColumnLayout {
                 text: status
                 color: bt.textMuted
                 font.family: bt.host.theme.textFontFamily
+                font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(12))
                 font.pixelSize: bt.host.theme.px(12)
               }
             }
@@ -416,6 +420,7 @@ ColumnLayout {
                   text: row.modelData.battery + "%"
                   color: parent.low ? bt.host.theme.system.red : bt.textMuted
                   font.family: bt.host.theme.textFontFamily
+                  font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(13))
                   font.pixelSize: bt.host.theme.px(13)
                   font.features: { "tnum": 1 }
                 }

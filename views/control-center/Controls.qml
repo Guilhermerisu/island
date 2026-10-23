@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Networking
 import Quickshell.Services.Pipewire
@@ -64,7 +63,7 @@ Item {
   function refresh() {
     if (!brightnessRead.running) brightnessRead.running = true
     if (!gameModeRead.running) gameModeRead.running = true
-    if (!keyboardRead.running) keyboardRead.running = true
+    host.keyboard.refresh()
     if (!screensaverRead.running) screensaverRead.running = true
     if (!reminderRead.running) reminderRead.running = true
     if (!voxtypeCheck.running) voxtypeCheck.running = true
@@ -135,40 +134,8 @@ Item {
     Quickshell.execDetached(["omarchy-powerprofiles-set", "autodetect", next])
   }
 
-  // --- Keyboard layout: the main keyboard's, from Hyprland ---
-  property string keyboardLayout: ""
-  property int keyboardLayoutCount: 1
-  readonly property string keyboardLabel: keyboardLayout || "Unknown"
-  Process {
-    id: keyboardRead
-    command: ["hyprctl", "devices", "-j"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        try {
-          var boards = JSON.parse(text).keyboards || []
-          var main = boards.filter(function(k) { return k.main })[0] || boards[0]
-          if (!main) return
-          controls.keyboardLayout = String(main.active_keymap || "")
-          controls.keyboardLayoutCount = String(main.layout || "").split(",").filter(function(l) { return l !== "" }).length || 1
-        } catch (e) {}
-      }
-    }
-  }
-  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches;
-  // Hyprland is only asked for the rest when the layout's name is new.
-  Connections {
-    target: Hyprland
-    function onRawEvent(event) {
-      if (event.name !== "activelayout" || keyboardRead.running) return
-      if (event.parse(2)[1] !== controls.keyboardLayout) keyboardRead.running = true
-    }
-  }
-  Process { id: keyboardSwitch; command: ["hyprctl", "switchxkblayout", "all", "next"] }
-  function nextKeyboardLayout() {
-    if (keyboardLayoutCount > 1) keyboardSwitch.running = true
-  }
-
+  // --- Keyboard layout: the main keyboard's (see KeyboardLayout) ---
+  readonly property string keyboardLabel: host.keyboard.name || "Unknown"
 
   // --- Shell services ---
   readonly property var notifications: host.shell ? host.shell.firstPartyServiceFor("omarchy.notifications") : null
@@ -264,7 +231,7 @@ Item {
     else if (key === "dictate") toggleDictation()
     else if (key === "reminder") setReminder()
     else if (key === "power") cycleProfile()
-    else if (key === "keyboard") nextKeyboardLayout()
+    else if (key === "keyboard") host.keyboard.next()
     else if (key === "night" && nightlight) nightlight.setNightlight(!nightOn)
   }
 

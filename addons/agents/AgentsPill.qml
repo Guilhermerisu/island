@@ -172,16 +172,15 @@ Item {
                   MotionAnimation { theme: pill.theme; pace: "morph" }
                 }
               }
-              readonly property real first: Math.min(1, draw * 2)
-              readonly property real second: Math.max(0, draw * 2 - 1)
               preferredRendererType: Shape.CurveRenderer
-              Stroke {
+              Tick {
                 strokeColor: doneTick.draw > 0.01 ? pill.doneInk : "transparent"
                 strokeWidth: 2
                 startX: 1.5
                 startY: 7
-                PathLine { x: 1.5 + 3.5 * doneTick.first; y: 7 + 3.5 * doneTick.first }
-                PathLine { x: 5 + 6.5 * doneTick.second; y: 10.5 - 8 * doneTick.second }
+                corner: Qt.point(5, 10.5)
+                end: Qt.point(11.5, 2.5)
+                draw: doneTick.draw
               }
             }
             // "Done", sliding in from the right after the tick.
@@ -366,9 +365,6 @@ Item {
             readonly property color tint: failed ? pill.errorInk : pill.grayInk
             property real draw: row.finished ? 1 : 0
             Behavior on draw { MotionAnimation { theme: pill.theme; pace: "morph" } }
-            // The tick's two strokes in turn, the cross's together.
-            readonly property real first: failed ? draw : Math.min(1, draw * 2)
-            readonly property real second: failed ? draw : Math.max(0, draw * 2 - 1)
             opacity: Math.min(1, draw * 3)
             visible: draw > 0.01
             preferredRendererType: Shape.CurveRenderer
@@ -376,24 +372,26 @@ Item {
               strokeColor: doneMark.tint
               PathAngleArc { centerX: 8; centerY: 8; radiusX: 6.6; radiusY: 6.6; startAngle: -90; sweepAngle: 360 * doneMark.draw }
             }
+            Tick {
+              strokeColor: doneMark.failed ? "transparent" : doneMark.tint
+              startX: 5
+              startY: 8.3
+              corner: Qt.point(7.1, 10.5)
+              end: Qt.point(11.1, 5.6)
+              draw: doneMark.draw
+            }
+            // The cross's two strokes, together.
             Stroke {
-              strokeColor: doneMark.tint
-              startX: doneMark.failed ? 5.6 : 5
-              startY: doneMark.failed ? 5.6 : 8.3
-              PathLine {
-                x: doneMark.failed ? 5.6 + 4.8 * doneMark.first : 5 + 2.1 * doneMark.first
-                y: doneMark.failed ? 5.6 + 4.8 * doneMark.first : 8.3 + 2.2 * doneMark.first
-              }
-              PathLine {
-                x: doneMark.failed ? 5.6 + 4.8 * doneMark.first : 7.1 + 4 * doneMark.second
-                y: doneMark.failed ? 5.6 + 4.8 * doneMark.first : 10.5 - 4.9 * doneMark.second
-              }
+              strokeColor: doneMark.failed ? doneMark.tint : "transparent"
+              startX: 5.6
+              startY: 5.6
+              PathLine { x: 5.6 + 4.8 * doneMark.draw; y: 5.6 + 4.8 * doneMark.draw }
             }
             Stroke {
               strokeColor: doneMark.failed ? doneMark.tint : "transparent"
               startX: 10.4
               startY: 5.6
-              PathLine { x: 10.4 - 4.8 * doneMark.second; y: 5.6 + 4.8 * doneMark.second }
+              PathLine { x: 10.4 - 4.8 * doneMark.draw; y: 5.6 + 4.8 * doneMark.draw }
             }
           }
         }
@@ -424,6 +422,7 @@ Item {
           opacity: 0.8
           color: pill.grayInk
           font.family: pill.theme.textFontFamily
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(12))
           font.pixelSize: pill.theme.px(12)
           font.features: { "tnum": 1 }
         }
@@ -513,6 +512,7 @@ Item {
               // still reads as the title.
               color: Qt.tint(pill.grayInk, Qt.rgba(1, 1, 1, 0.3 + 0.7 * lit))
               font.family: pill.theme.textFontFamily
+              font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(14))
               font.pixelSize: pill.theme.px(14)
               font.weight: Font.Medium
             }
@@ -535,6 +535,7 @@ Item {
               : card.step.file || card.step.label
             color: card.kind === "done" ? pill.grayInk : card.kind === "ask" ? pill.ink : pill.textInk
             font.family: card.quote ? pill.theme.textFontFamily : pill.theme.fontFamily
+            font.letterSpacing: pill.theme.tracking(card.quote ? pill.theme.textFontFamily : pill.theme.fontFamily, pill.theme.px(14))
             font.pixelSize: pill.theme.px(14)
           }
           // Done, the turn's steps and the files it edited.
@@ -548,6 +549,7 @@ Item {
               + (summary.files ? " · " + summary.files + (summary.files === 1 ? " file" : " files") : "")
             color: pill.grayInk
             font.family: pill.theme.textFontFamily
+            font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(12))
             font.pixelSize: pill.theme.px(12)
           }
         }
@@ -593,6 +595,7 @@ Item {
           elide: Text.ElideRight
           color: pill.grayInk
           font.family: pill.theme.textFontFamily
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(13))
           font.pixelSize: pill.theme.px(13)
         }
       }
@@ -636,6 +639,19 @@ Item {
     strokeWidth: 1.5
     capStyle: ShapePath.RoundCap
     joinStyle: ShapePath.RoundJoin
+  }
+
+  // A tick drawing itself in as `draw` runs 0 → 1: from the start down to
+  // `corner`, then up to `end`, one stroke after the other.
+  component Tick: Stroke {
+    id: tick
+    property real draw: 1
+    property point corner
+    property point end
+    readonly property real first: Math.min(1, draw * 2)
+    readonly property real second: Math.max(0, draw * 2 - 1)
+    PathLine { x: tick.startX + (tick.corner.x - tick.startX) * tick.first; y: tick.startY + (tick.corner.y - tick.startY) * tick.first }
+    PathLine { x: tick.corner.x + (tick.end.x - tick.corner.x) * tick.second; y: tick.corner.y + (tick.end.y - tick.corner.y) * tick.second }
   }
 
   // Lines added and removed, then their DiffBar; the removed only when

@@ -59,8 +59,8 @@ Item {
             height: cards.turned ? 92 : 56
             Item {
               anchors.fill: parent
-              scale: press.containsMouse && !card.current && cards.view.settings.hoverLift ? 1.05 : 1
-              Behavior on scale { MotionAnimation { theme: cards.view.host.theme } }
+              scale: press.pressed ? 0.96 : press.containsMouse && !card.current && cards.view.settings.hoverLift ? 1.05 : 1
+              Behavior on scale { MotionAnimation { theme: cards.view.host.theme; pace: press.pressed ? "press" : "standard" } }
               DisplayScreen {
                 id: desk
                 readonly property real ratio: cards.turned ? card.modelData.height / card.modelData.width : card.modelData.width / card.modelData.height
@@ -112,6 +112,7 @@ Item {
                     text: "Aa"
                     color: cards.view.text
                     font.family: cards.view.host.theme.textFontFamily
+                    font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, Math.max(6, Math.round(Math.min(13 * desk.zoom, window.height * 0.42))))
                     font.pixelSize: Math.max(6, Math.round(Math.min(13 * desk.zoom, window.height * 0.42)))
                     font.weight: Font.DemiBold
                   }
@@ -152,6 +153,7 @@ Item {
             text: card.caption || " "
             color: card.current ? cards.view.text : cards.view.textMuted
             font.family: cards.view.host.theme.textFontFamily
+            font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailCaptionFontSize)
             font.pixelSize: cards.view.detailCaptionFontSize
           }
         }

@@ -35,6 +35,7 @@ Rectangle {
     text: pop.currentLabel
     color: pop.view.textMuted
     font.family: pop.view.host.theme.textFontFamily
+    font.letterSpacing: pop.view.host.theme.tracking(pop.view.host.theme.textFontFamily, pop.view.detailFontSize)
     font.pixelSize: pop.view.detailFontSize
   }
   Column {

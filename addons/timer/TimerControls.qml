@@ -65,6 +65,7 @@ Item {
     text: controls.phase === "paused" ? "Paused" : "Timer"
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
+    font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, Math.round(controls.theme.px(controls.timeSize) * 0.4))
     font.pixelSize: Math.round(controls.theme.px(controls.timeSize) * 0.4)
     font.weight: Font.Medium
   }

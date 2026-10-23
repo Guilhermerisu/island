@@ -15,6 +15,8 @@ FocusScope {
 
   implicitWidth: 220
   implicitHeight: content.implicitHeight
+  scale: mouse.pressed ? 0.97 : 1
+  Behavior on scale { MotionAnimation { theme: card.view.host.theme; pace: mouse.pressed ? "press" : "standard" } }
   activeFocusOnTab: true
   Accessible.role: Accessible.CheckBox
   Accessible.name: title
@@ -89,6 +91,7 @@ FocusScope {
       horizontalAlignment: Text.AlignHCenter
       color: card.view.text
       font.family: card.view.host.theme.textFontFamily
+      font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
       font.pixelSize: card.view.detailFontSize
       font.weight: Font.Normal
     }
@@ -100,6 +103,7 @@ FocusScope {
       elide: Text.ElideRight
       color: card.view.textMuted
       font.family: card.view.host.theme.textFontFamily
+      font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailCaptionFontSize)
       font.pixelSize: card.view.detailCaptionFontSize
     }
   }

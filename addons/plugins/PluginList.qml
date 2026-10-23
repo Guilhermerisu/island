@@ -115,6 +115,7 @@ ListPicker {
           elide: Text.ElideRight
           color: plugins.host.theme.text
           font.family: plugins.host.theme.textFontFamily
+          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(13))
           font.pixelSize: plugins.host.theme.px(13)
           font.weight: Font.Medium
         }
@@ -125,6 +126,7 @@ ListPicker {
           elide: Text.ElideRight
           color: plugins.host.theme.muted
           font.family: plugins.host.theme.textFontFamily
+          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(11))
           font.pixelSize: plugins.host.theme.px(11)
         }
       }
@@ -135,6 +137,7 @@ ListPicker {
         text: pluginRow.entry.enabled ? (pluginRow.entry.openable ? "Open" : "On") : "Off"
         color: pluginRow.entry.enabled ? plugins.host.theme.text : plugins.host.theme.muted
         font.family: plugins.host.theme.textFontFamily
+        font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(12))
         font.pixelSize: plugins.host.theme.px(12)
       }
     }

@@ -105,6 +105,7 @@ Item {
           elide: Text.ElideRight
           color: "#ffffff"
           font.family: player.host.theme.textFontFamily
+          font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(17))
           font.pixelSize: player.host.theme.px(17)
           font.weight: Font.DemiBold
         }
@@ -116,6 +117,7 @@ Item {
           elide: Text.ElideRight
           color: Qt.rgba(1, 1, 1, 0.55)
           font.family: player.host.theme.textFontFamily
+          font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(15))
           font.pixelSize: player.host.theme.px(15)
         }
       }
@@ -141,6 +143,7 @@ Item {
         text: player.clock(player.position)
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
+        font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(12))
         font.pixelSize: player.host.theme.px(12)
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
@@ -176,6 +179,7 @@ Item {
         text: "−" + player.clock(player.length - player.position)
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
+        font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(12))
         font.pixelSize: player.host.theme.px(12)
         font.weight: Font.Medium
         font.features: { "tnum": 1 }

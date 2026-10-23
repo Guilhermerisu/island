@@ -14,7 +14,7 @@ Addon {
   tiles: [{ key: "today", title: "Calendar", component: calendarTile }]
   pill: Component { CalendarPill { calendar: calendarAddon } }
   pillWidth: 340
-  pillHeight: host.settings.notch ? 52 : 56
+  pillHeight: restHeight + 12
   function pillClicked() { selectToday(); host.view = "calendar" }
 
   Component {

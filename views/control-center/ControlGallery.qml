@@ -52,6 +52,7 @@ Rectangle {
         text: "Add Controls"
         color: gallery.cc.text
         font.family: gallery.cc.host.theme.textFontFamily
+        font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(13))
         font.pixelSize: gallery.cc.host.theme.px(13)
         font.weight: Font.DemiBold
       }
@@ -60,6 +61,7 @@ Rectangle {
         text: gallery.layout.removeDropActive ? "Release to remove" : "Drag in or click +"
         color: gallery.cc.textMuted
         font.family: gallery.cc.host.theme.textFontFamily
+        font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(11))
         font.pixelSize: gallery.cc.host.theme.px(11)
       }
     }
@@ -90,6 +92,7 @@ Rectangle {
               text: section.modelData.title
               color: gallery.cc.textMuted
               font.family: gallery.cc.host.theme.textFontFamily
+              font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(12))
               font.pixelSize: gallery.cc.host.theme.px(12)
               font.weight: Font.DemiBold
             }
@@ -173,6 +176,7 @@ Rectangle {
           text: "All controls have been added"
           color: gallery.cc.textMuted
           font.family: gallery.cc.host.theme.textFontFamily
+          font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(13))
           font.pixelSize: gallery.cc.host.theme.px(13)
         }
       }

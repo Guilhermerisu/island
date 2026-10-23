@@ -205,6 +205,8 @@ Item {
         anchors.centerIn: parent
         width: picker.cardWidth
         height: picker.cardHeight
+        scale: cardMouse.pressed ? 0.97 : 1
+        Behavior on scale { MotionAnimation { theme: picker.host.theme; pace: cardMouse.pressed ? "press" : "standard" } }
 
         Loader {
           anchors.fill: parent
@@ -249,6 +251,7 @@ Item {
           }
         }
         MouseArea {
+          id: cardMouse
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
           onClicked: {
@@ -266,6 +269,7 @@ Item {
       text: picker.emptyText
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
+      font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.px(13))
       font.pixelSize: picker.host.theme.px(13)
     }
   }

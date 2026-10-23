@@ -68,6 +68,7 @@ Rectangle {
     selectionColor: field.view.accent
     selectedTextColor: field.view.accentInk
     font.family: field.view.host.theme.textFontFamily
+    font.letterSpacing: field.view.host.theme.tracking(field.view.host.theme.textFontFamily, field.view.detailFontSize)
     font.pixelSize: field.view.detailFontSize
     onAccepted: { field.commit(); field.view.forceActiveFocus() }
     onActiveFocusChanged: if (!activeFocus) field.commit()

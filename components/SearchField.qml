@@ -39,6 +39,7 @@ Rectangle {
     selectionColor: field.host.theme.accentFill("ring")
     selectedTextColor: field.host.theme.text
     font.family: field.host.theme.textFontFamily
+    font.letterSpacing: field.host.theme.tracking(field.host.theme.textFontFamily, field.host.theme.px(14))
     font.pixelSize: field.host.theme.px(14)
     clip: true
     Keys.onPressed: function(event) { field.keyPressed(event) }

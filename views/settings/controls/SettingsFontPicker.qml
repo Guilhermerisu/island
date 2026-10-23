@@ -14,6 +14,8 @@ Rectangle {
   radius: 6
   color: open || pickMouse.containsMouse ? picker.view.wellHover : picker.view.well
   Behavior on color { MotionColorAnimation { theme: picker.view.host.theme } }
+  scale: pickMouse.pressed ? 0.98 : 1
+  Behavior on scale { MotionAnimation { theme: picker.view.host.theme; pace: pickMouse.pressed ? "press" : "standard" } }
   Text {
     id: label
     anchors.left: parent.left
@@ -25,6 +27,7 @@ Rectangle {
     elide: Text.ElideRight
     color: picker.value !== "" ? picker.view.text : picker.view.textMuted
     font.family: picker.view.host.theme.textFontFamily
+    font.letterSpacing: picker.view.host.theme.tracking(picker.view.host.theme.textFontFamily, picker.view.detailFontSize)
     font.pixelSize: picker.view.detailFontSize
   }
   Text {

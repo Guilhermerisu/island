@@ -4,10 +4,10 @@ import QtQuick
 // that share its spot.
 Text {
   required property var host
-  // Hidden behind the notification, volume, clipboard, finished-download,
-  // and addons' momentary and asking pills (the media, downloading,
-  // recording, and addons' other ongoing pills keep the clock in the middle).
-  opacity: !host.notificationPill && !host.volumePill && !host.clipboardPill && !host.activityPill && !host.workspacesPill && !(host.addonPill && (host.view === "feedback" || host.addonPill.pillAsks)) && !host.downloadDone && (host.view === "rest" || host.view === "feedback") ? 1 : 0
+  // The pill on the island (see IslandPill); the label hides behind it unless
+  // it keeps the clock in its middle.
+  property Item pill: null
+  opacity: (host.view === "rest" || host.view === "feedback") && (!pill || pill.keepsClock) ? 1 : 0
   width: parent.width - 24
   horizontalAlignment: Text.AlignHCenter
   elide: Text.ElideRight

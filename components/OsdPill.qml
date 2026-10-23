@@ -4,12 +4,11 @@ import QtQuick
 // progress bar and its reading, or a message. Fed by `host.showOsd` — the
 // `osd` IPC target and the backlight watch in OsdBridge — so the stock OSD
 // plugin can stay off and nothing pops up twice.
-Item {
+IslandPill {
   id: osd
-  required property var host
-  opacity: host.osdPill ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
+  shown: host.osdPill
+  pillWidth: host.osdProgress ? 240 : host.osdMessage.length > 26 ? 340 : 280
+  function clicked(mouse) { host.dismissFeedback() }
 
   readonly property real level: host.osdMaxValue > 0
     ? Math.max(0, Math.min(1, host.osdValue / host.osdMaxValue)) : 0
@@ -57,6 +56,7 @@ Item {
     text: osd.host.osdMessage
     color: "#ffffff"
     font.family: osd.host.theme.textFontFamily
+    font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.px(12))
     font.pixelSize: osd.host.theme.px(12)
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }
@@ -74,6 +74,7 @@ Item {
     elide: Text.ElideRight
     color: "#ffffff"
     font.family: osd.host.theme.textFontFamily
+    font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.px(13))
     font.features: { "tnum": 1 }
     font.pixelSize: osd.host.theme.px(13)
     font.weight: Font.Medium

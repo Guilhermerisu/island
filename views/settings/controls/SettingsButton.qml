@@ -23,6 +23,7 @@ Rectangle {
     text: button.label
     color: button.primary ? button.view.accentInk : button.view.text
     font.family: button.view.host.theme.textFontFamily
+    font.letterSpacing: button.view.host.theme.tracking(button.view.host.theme.textFontFamily, button.view.detailFontSize)
     font.pixelSize: button.view.detailFontSize
     font.weight: button.primary ? Font.DemiBold : Font.Normal
   }

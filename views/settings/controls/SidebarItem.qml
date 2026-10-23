@@ -39,6 +39,7 @@ Rectangle {
       elide: Text.ElideRight
       color: side.view.text
       font.family: side.view.host.theme.textFontFamily
+      font.letterSpacing: side.view.host.theme.tracking(side.view.host.theme.textFontFamily, side.view.detailFontSize)
       font.pixelSize: side.view.detailFontSize
       font.weight: side.selected ? Font.Medium : Font.Normal
     }

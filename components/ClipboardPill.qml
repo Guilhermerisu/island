@@ -8,11 +8,12 @@ import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" a
 // and "Copied" trailing in the accent. Fed by the history Omarchy's
 // clipboard plugin records (see Island.qml). Clicking it opens the clipboard
 // history.
-Item {
+IslandPill {
   id: pill
-  required property var host
   readonly property var entry: host.clipboard.last
-  readonly property bool shown: host.clipboardPill
+  shown: host.clipboardPill
+  pillWidth: 320
+  function clicked(mouse) { host.view = "clipboard" }
   // Copied files: file:// URIs (most apps), or plain absolute paths, one per
   // line (Nautilus).
   readonly property var files: {
@@ -30,10 +31,6 @@ Item {
   }
   readonly property bool thumbnailReady: thumbnail.status === Image.Ready
 
-  opacity: shown ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
-
   PillReveal { id: reveal; theme: pill.host.theme; shown: pill.shown }
 
   // Leading: the thumbnail, or the symbol, settling gently into place.
@@ -44,9 +41,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 26; height: 26
     opacity: reveal.leadingIn
-    scale: 0.9 + 0.1 * reveal.leadingIn
-    layer.enabled: reveal.leadingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
+    PillPart { progress: reveal.leadingIn }
     ClippingRectangle {
       anchors.fill: parent
       visible: pill.thumbnailReady
@@ -76,9 +71,7 @@ Item {
   // Middle: what was copied.
   Text {
     opacity: reveal.middleIn
-    scale: 0.94 + 0.06 * reveal.middleIn
-    layer.enabled: reveal.middleIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
+    PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: leading.right
     anchors.leftMargin: 10
     anchors.right: trailing.left
@@ -109,9 +102,7 @@ Item {
   // Trailing: the status, a beat after the rest.
   Text {
     id: trailing
-    scale: 0.9 + 0.1 * reveal.trailingIn
-    layer.enabled: reveal.trailingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
+    PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter

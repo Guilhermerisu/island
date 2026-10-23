@@ -231,6 +231,7 @@ ColumnLayout {
       text: "Wi-Fi"
       color: wf.text
       font.family: wf.host.theme.textFontFamily
+      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(17))
       font.pixelSize: wf.host.theme.px(17)
       font.weight: Font.DemiBold
     }
@@ -307,6 +308,7 @@ ColumnLayout {
               text: row.modelData.header || ""
               color: wf.textMuted
               font.family: wf.host.theme.textFontFamily
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(13))
               font.pixelSize: wf.host.theme.px(13)
               font.weight: Font.DemiBold
             }
@@ -388,6 +390,7 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: wf.text
                 font.family: wf.host.theme.textFontFamily
+                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
                 font.pixelSize: wf.host.theme.px(15)
               }
               Text {
@@ -400,6 +403,7 @@ ColumnLayout {
                 text: status
                 color: wf.textMuted
                 font.family: wf.host.theme.textFontFamily
+                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
                 font.pixelSize: wf.host.theme.px(12)
               }
             }
@@ -437,6 +441,7 @@ ColumnLayout {
                 selectionColor: wf.host.theme.accentFill("ring")
                 selectedTextColor: wf.text
                 font.family: wf.host.theme.textFontFamily
+                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
                 font.pixelSize: wf.host.theme.px(15)
                 clip: true
                 function sync() { if (row.askingPassword) { text = wf.passwordText; forceActiveFocus() } }
@@ -527,6 +532,7 @@ ColumnLayout {
           text: "Wi-Fi Settings…"
           color: wf.text
           font.family: wf.host.theme.textFontFamily
+          font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
           font.pixelSize: wf.host.theme.px(15)
         }
         MouseArea {

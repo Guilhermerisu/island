@@ -74,6 +74,7 @@ Card {
             text: reading.modelData.label
             color: card.view.text
             font.family: card.view.host.theme.textFontFamily
+            font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
             font.features: { "tnum": 1 }
             font.pixelSize: card.view.detailFontSize
           }
@@ -92,6 +93,7 @@ Card {
               text: Math.round(reading.modelData.value) + " °C"
               color: card.view.textMuted
               font.family: card.view.host.theme.textFontFamily
+              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
               font.pixelSize: card.view.detailFontSize
               font.features: { "tnum": 1 }
             }

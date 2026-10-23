@@ -49,6 +49,7 @@ Item {
       text: ring.text
       color: ring.view.text
       font.family: ring.view.host.theme.textFontFamily
+      font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, Math.round(ring.width * 0.2))
       font.pixelSize: Math.round(ring.width * 0.2)
       font.weight: Font.DemiBold
       font.features: { "tnum": 1 }
@@ -59,6 +60,7 @@ Item {
       text: ring.caption
       color: ring.view.textMuted
       font.family: ring.view.host.theme.textFontFamily
+      font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, Math.round(ring.width * 0.13))
       font.pixelSize: Math.round(ring.width * 0.13)
     }
   }

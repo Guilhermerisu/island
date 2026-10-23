@@ -49,6 +49,7 @@ Item {
       text: slider.leading
       color: slider.view.textMuted
       font.family: slider.view.host.theme.textFontFamily
+      font.letterSpacing: slider.view.host.theme.tracking(slider.view.host.theme.textFontFamily, slider.leadingSize)
       font.pixelSize: slider.leadingSize
     }
   }
@@ -64,6 +65,7 @@ Item {
       text: slider.trailing
       color: slider.view.textMuted
       font.family: slider.view.host.theme.textFontFamily
+      font.letterSpacing: slider.view.host.theme.tracking(slider.view.host.theme.textFontFamily, slider.trailingSize)
       font.pixelSize: slider.trailingSize
     }
   }

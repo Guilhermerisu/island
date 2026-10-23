@@ -85,6 +85,7 @@ Item {
         text: "Are you sure you want to quit “" + (sheet.row ? sheet.row.name : "") + "”?"
         color: sheet.view.text
         font.family: sheet.view.host.theme.textFontFamily
+        font.letterSpacing: sheet.view.host.theme.tracking(sheet.view.host.theme.textFontFamily, sheet.view.detailFontSize)
         font.pixelSize: sheet.view.detailFontSize
         font.weight: Font.Bold
       }
@@ -97,6 +98,7 @@ Item {
           : "Force Quit ends it at once, losing unsaved work."
         color: sheet.view.textMuted
         font.family: sheet.view.host.theme.textFontFamily
+        font.letterSpacing: sheet.view.host.theme.tracking(sheet.view.host.theme.textFontFamily, sheet.view.detailCaptionFontSize)
         font.pixelSize: sheet.view.detailCaptionFontSize
       }
       RowLayout {

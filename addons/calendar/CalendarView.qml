@@ -117,6 +117,7 @@ Item {
               text: view.calendar.spanText(modelData)
               color: view.theme.withAlpha(Qt.lighter(modelData.color, 1.2), 0.7)
               font.family: view.theme.textFontFamily
+              font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(12))
               font.pixelSize: view.theme.px(12)
               font.weight: Font.Normal
               font.features: { "tnum": 1 }
@@ -130,6 +131,7 @@ Item {
         text: rest + " more event" + (rest === 1 ? "" : "s")
         color: view.inkMuted
         font.family: view.theme.textFontFamily
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(12))
         font.pixelSize: view.theme.px(12)
         font.weight: Font.Medium
       }
@@ -147,6 +149,7 @@ Item {
           : "No events"
         color: actionable && noticeMouse.containsMouse ? view.ink : view.inkMuted
         font.family: view.theme.textFontFamily
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
         font.pixelSize: view.theme.px(13)
         font.weight: Font.Medium
         font.underline: actionable
@@ -249,6 +252,7 @@ Item {
           text: modelData
           color: index >= 5 ? view.inkMuted : view.ink
           font.family: view.theme.textFontFamily
+          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
           font.pixelSize: view.theme.px(13)
           font.weight: Font.Normal
         }
@@ -292,6 +296,7 @@ Item {
             color: day.isToday ? (day.isSelected ? view.theme.accentText : view.accent)
               : day.slot % 7 >= 5 ? view.inkMuted : view.ink
             font.family: view.theme.textFontFamily
+            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
             font.pixelSize: view.theme.px(13)
             font.weight: day.isToday ? Font.DemiBold : Font.Normal
             font.features: { "tnum": 1 }

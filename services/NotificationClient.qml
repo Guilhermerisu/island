@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../components/IconSource.js" as IconSource
 
 // The island's side of the guilhermerisu.notifications companion. The
 // companion writes the notifications on screen to island-feed.json and keeps
@@ -32,11 +33,7 @@ Item {
   function iconSource(row, appIconOnly) {
     if (!row) return ""
     if (agent(row)) return ""
-    var value = String((appIconOnly ? "" : row.image) || row.appIcon || "")
-    if (value === "") return ""
-    if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
-    if (value.charAt(0) === "/") return "file://" + value
-    return Quickshell.iconPath(value, true)
+    return IconSource.source((appIconOnly ? "" : row.image) || row.appIcon)
   }
   function agent(row) {
     // The timer addon's, sent under its own app name (see TimerAddon).

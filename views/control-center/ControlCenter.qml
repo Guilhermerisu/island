@@ -93,6 +93,7 @@ ColumnLayout {
         text: cc.editMode ? "Done" : "󰏫"
         color: cc.text
         font.family: cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont
+        font.letterSpacing: cc.host.theme.tracking(cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont, cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(15))
         font.pixelSize: cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(15)
         font.weight: Font.Medium
       }
@@ -141,6 +142,7 @@ ColumnLayout {
         text: cc.controls.batteryPercent + "%"
         color: parent.low ? cc.host.theme.system.red : cc.text
         font.family: cc.host.theme.textFontFamily
+        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(13))
         font.pixelSize: cc.host.theme.px(13)
         font.weight: Font.Medium
         font.features: { "tnum": 1 }

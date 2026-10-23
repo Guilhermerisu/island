@@ -306,6 +306,7 @@ ListPicker {
           elide: Text.ElideRight
           color: menu.host.theme.text
           font.family: menu.host.theme.textFontFamily
+          font.letterSpacing: menu.host.theme.tracking(menu.host.theme.textFontFamily, menu.host.theme.px(15))
           font.pixelSize: menu.host.theme.px(15)
           font.weight: Font.Medium
         }
@@ -317,6 +318,7 @@ ListPicker {
           elide: Text.ElideRight
           color: menu.host.theme.muted
           font.family: menu.host.theme.textFontFamily
+          font.letterSpacing: menu.host.theme.tracking(menu.host.theme.textFontFamily, menu.host.theme.px(11))
           font.pixelSize: menu.host.theme.px(11)
         }
       }

@@ -58,6 +58,7 @@ ColumnLayout {
         text: "Clear All"
         color: history.center.text
         font.family: history.center.host.theme.textFontFamily
+        font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(11))
         font.pixelSize: history.center.host.theme.px(11)
         font.weight: Font.Medium
         Behavior on opacity { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
@@ -81,6 +82,7 @@ ColumnLayout {
     text: "No Notifications"
     color: history.center.textMuted
     font.family: history.center.host.theme.textFontFamily
+    font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(13))
     font.pixelSize: history.center.host.theme.px(13)
   }
 
@@ -190,6 +192,7 @@ ColumnLayout {
             text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
             color: avatar.brand ? avatar.brand.ink : history.center.text
             font.family: avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily
+            font.letterSpacing: history.center.host.theme.tracking(avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily, avatar.brand ? history.center.host.theme.px(20) : history.center.host.theme.px(16))
             font.pixelSize: avatar.brand ? history.center.host.theme.px(20) : history.center.host.theme.px(16)
             font.weight: Font.DemiBold
           }
@@ -230,6 +233,7 @@ ColumnLayout {
               textFormat: Text.PlainText
               color: history.center.textMuted
               font.family: history.center.host.theme.textFontFamily
+              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(11))
               font.pixelSize: history.center.host.theme.px(11)
             }
           }
@@ -244,6 +248,7 @@ ColumnLayout {
             lineHeight: 1.08
             color: history.center.host.theme.withAlpha(history.center.text, 0.78)
             font.family: history.center.host.theme.textFontFamily
+            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(12))
             font.pixelSize: history.center.host.theme.px(12)
           }
         }

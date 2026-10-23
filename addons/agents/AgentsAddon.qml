@@ -20,7 +20,6 @@ Addon {
   ongoing: working || finished
   // Grown, it hides the clock and takes the island to itself.
   pillAsks: expanded
-  readonly property real restHeight: host.settings.notch ? 40 : 44
   readonly property real inset: 24
   readonly property int rows: 3
   readonly property real rowHeight: 27

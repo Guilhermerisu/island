@@ -25,6 +25,13 @@ Item {
   // value at 1.0 and passed through px().
   readonly property real textScale: settings.textScale > 0 ? settings.textScale : 1
   function px(size) { return Math.max(1, Math.round(size * textScale)) }
+  // Letter spacing for the island's own font (Adwaita Sans, drawn from
+  // Inter): Inter's size-based tracking, a touch looser below 12px and
+  // tighter as text grows, as macOS does. Other fonts keep their spacing.
+  function tracking(family, size) {
+    if (family !== pluginFont || !(size > 0)) return 0
+    return size * (-0.0223 + 0.185 * Math.exp(-0.1745 * size))
+  }
   readonly property color background: "#000000"
   readonly property bool textIsLight: luminance(Color.foreground) > 0.5
   readonly property color text: textIsLight ? Color.foreground : Color.background
@@ -62,7 +69,9 @@ Item {
   readonly property var radii: ({ tiny: 4, small: 6, medium: 8, large: 10, card: 14 })
   readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
   // Motion roles share one cadence at every user-selected speed. Curves end
-  // with a soft landing; geometry stays inside its bounds without bouncing.
+  // with a soft landing; geometry stays inside its bounds, except the
+  // island itself, which swings a touch past its size as it grows
+  // (morphBounce) and lands flat as it shrinks.
   readonly property var motionDurations: ({
     press: 65, quick: 110, standard: 170, expressive: 220,
     morph: 240, collapse: 190, fade: 110, exit: 90,
@@ -73,6 +82,7 @@ Item {
   // How far the island's height trails its width as it grows (and the width
   // trails the height as it shrinks), so it morphs as one shape.
   readonly property int morphLag: Math.round(28 * motionScale)
+  readonly property real morphBounce: 0.2
   function motionDuration(pace) {
     return Math.round((motionDurations[pace] || motionDurations.standard) * motionScale)
   }

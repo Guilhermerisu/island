@@ -6,17 +6,14 @@ import Quickshell.Hyprland
 // workspace's number that slides from the one you left. Its neutral accent
 // follows the appearance preference. The workspaces are
 // Omarchy's bar's: 1–5 always, and any other up to 10 that exists.
-Item {
+IslandPill {
   id: pill
-  required property var host
-  readonly property bool shown: host.workspacesPill
   readonly property int slot: 18
   readonly property int gap: 6
   readonly property int focusedIndex: host.workspaceIds.indexOf(host.focusedWorkspaceId)
-
-  opacity: shown ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
+  shown: host.workspacesPill
+  pillWidth: host.workspaceIds.length * (slot + gap) + 42
+  pillHeight: host.clockHeight
 
   function workspaceById(id) {
     var values = Hyprland.workspaces.values
@@ -67,6 +64,7 @@ Item {
         text: pill.host.focusedWorkspaceId
         color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
         font.family: pill.host.theme.textFontFamily
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(12))
         font.pixelSize: pill.host.theme.px(12)
         font.weight: Font.Bold
         font.features: { "tnum": 1 }

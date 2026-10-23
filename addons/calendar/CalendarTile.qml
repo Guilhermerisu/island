@@ -53,6 +53,7 @@ CcTile {
       text: tile.calendar.today.getDate()
       color: tile.checked ? tile.center.badgeOnInk : tile.center.text
       font.family: tile.center.host.theme.textFontFamily
+      font.letterSpacing: tile.center.host.theme.tracking(tile.center.host.theme.textFontFamily, tile.center.host.theme.px(17))
       font.pixelSize: tile.center.host.theme.px(17)
       font.weight: Font.Normal
       font.features: { "tnum": 1 }

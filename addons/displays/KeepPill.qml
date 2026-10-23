@@ -60,6 +60,7 @@ Item {
           elide: Text.ElideRight
           color: pill.theme.secondary
           font.family: pill.theme.textFontFamily
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(12))
           font.pixelSize: pill.theme.px(12)
           font.features: { "tnum": 1 }
         }
@@ -95,6 +96,7 @@ Item {
           text: pill.displays.secondsLeft
           color: pill.theme.text
           font.family: pill.theme.textFontFamily
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(11))
           font.pixelSize: pill.theme.px(11)
           font.weight: Font.DemiBold
           font.features: { "tnum": 1 }
@@ -122,6 +124,7 @@ Item {
             text: button.modelData.label
             color: button.modelData.primary ? pill.theme.accentText : pill.theme.text
             font.family: pill.theme.textFontFamily
+            font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(13))
             font.pixelSize: pill.theme.px(13)
             font.weight: Font.DemiBold
           }

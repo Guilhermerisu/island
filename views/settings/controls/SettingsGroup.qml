@@ -17,6 +17,7 @@ ColumnLayout {
     text: group.title
     color: group.view.text
     font.family: group.view.host.theme.textFontFamily
+    font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, group.view.detailFontSize)
     font.pixelSize: group.view.detailFontSize
     font.weight: Font.DemiBold
   }
@@ -43,6 +44,7 @@ ColumnLayout {
     wrapMode: Text.WordWrap
     color: group.view.textMuted
     font.family: group.view.host.theme.textFontFamily
+    font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, group.view.detailCaptionFontSize)
     font.pixelSize: group.view.detailCaptionFontSize
   }
 }

@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 
 // Download live activity, as iOS's, fed by DownloadTracker.qml (browser
@@ -9,9 +8,8 @@ import Quickshell
 // When done, it opens straight into a card: the file's icon, its name over
 // its size and folder, and an outlined check, each coming in from a blur in
 // turn.
-Item {
+IslandPill {
   id: pill
-  required property var host
   readonly property var tracker: host.downloads
   // Package updates share this pill; file downloads take precedence.
   readonly property var packages: host.packages
@@ -20,9 +18,16 @@ Item {
   readonly property bool done: host.downloadDone
   readonly property color activityAccent: host.settings.colorfulLiveActivities ? pill.host.theme.system.green : host.theme.accent
 
-  opacity: downloading || done ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
+  shown: host.downloadPill
+  pillWidth: done ? 380 : tracker.active ? 240 : 280
+  pillHeight: done ? 76 : host.pillHeight
+  keepsClock: !done
+  // The finished file, or while downloading either side, opens it (or its
+  // folder); a finished update just goes.
+  function clicked(mouse) {
+    if (done || mouse.x < 56 || mouse.x > width - 90) host.openDownloads()
+    else host.view = "controls"
+  }
 
   function formatBytes(n) {
     if (n >= 1073741824) return (n / 1073741824).toFixed(2) + " GB"
@@ -38,11 +43,6 @@ Item {
   function folderName(path) {
     var parts = String(path || "").split("/").filter(function(p) { return p !== "" })
     return parts.length ? parts[parts.length - 1] : ""
-  }
-
-  component Reveal: MultiEffect {
-    blurEnabled: true
-    blurMax: 12
   }
 
   // ---------- Downloading ----------
@@ -114,6 +114,7 @@ Item {
         text: pill.tracker.items.length
         color: Qt.rgba(1, 1, 1, 0.5)
         font.family: pill.host.theme.textFontFamily
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
         font.pixelSize: pill.host.theme.px(13)
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }
@@ -137,25 +138,7 @@ Item {
 
   // ---------- Finished ----------
 
-  property real leadingIn: 0
-  property real middleIn: 0
-  property real trailingIn: 0
-  onDoneChanged: if (done) reveal.restart()
-  readonly property int revealDuration: host.theme.motionDuration("expressive")
-  ParallelAnimation {
-    id: reveal
-    NumberAnimation { target: pill; property: "leadingIn"; from: 0; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
-    SequentialAnimation {
-      PropertyAction { target: pill; property: "middleIn"; value: 0 }
-      PauseAnimation { duration: pill.revealDuration / 5 }
-      NumberAnimation { target: pill; property: "middleIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
-    }
-    SequentialAnimation {
-      PropertyAction { target: pill; property: "trailingIn"; value: 0 }
-      PauseAnimation { duration: pill.revealDuration * 2 / 5 }
-      NumberAnimation { target: pill; property: "trailingIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
-    }
-  }
+  PillReveal { id: reveal; theme: pill.host.theme; shown: pill.done }
 
   Item {
     anchors.fill: parent
@@ -172,10 +155,8 @@ Item {
       color: Qt.rgba(1, 1, 1, 0.06)
       border.width: 1
       border.color: Qt.rgba(1, 1, 1, 0.08)
-      opacity: pill.leadingIn
-      scale: 0.9 + 0.1 * pill.leadingIn
-      layer.enabled: pill.leadingIn < 1
-      layer.effect: Reveal { blur: 1 - pill.leadingIn }
+      opacity: reveal.leadingIn
+      PillPart { progress: reveal.leadingIn }
       readonly property string iconSource: pill.packageMode ? ""
         : Quickshell.iconPath(pill.tracker.finishedIcon || "text-x-generic", "text-x-generic")
       Image {
@@ -203,9 +184,8 @@ Item {
       anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       spacing: 2
-      opacity: pill.middleIn
-      layer.enabled: pill.middleIn < 1
-      layer.effect: Reveal { blur: 1 - pill.middleIn }
+      opacity: reveal.middleIn
+      PillPart { progress: reveal.middleIn; scaleFrom: 1 }
       Text {
         width: parent.width
         text: pill.packageMode ? pill.packages.finishedTitle : pill.tracker.finishedName
@@ -227,6 +207,7 @@ Item {
         elide: Text.ElideRight
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: pill.host.theme.textFontFamily
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(12))
         font.features: { "tnum": 1 }
         font.pixelSize: pill.host.theme.px(12)
       }
@@ -241,10 +222,9 @@ Item {
       width: 32; height: 32
       ink: "#ffffff"
       lineWidth: 2.2
-      drawn: pill.trailingIn
-      opacity: Math.min(1, pill.trailingIn * 2)
-      layer.enabled: pill.trailingIn < 1
-      layer.effect: Reveal { blur: 1 - pill.trailingIn }
+      drawn: reveal.trailingIn
+      opacity: Math.min(1, reveal.trailingIn * 2)
+      PillPart { progress: reveal.trailingIn; scaleFrom: 1 }
     }
   }
 

@@ -179,6 +179,7 @@ Item {
               : layer.modelData.glyph || ""
             color: layer.modelData.color
             font.family: layer.modelData.date ? paneIcon.view.host.theme.textFontFamily : paneIcon.view.host.theme.fontFamily
+            font.letterSpacing: paneIcon.view.host.theme.tracking(layer.modelData.date ? paneIcon.view.host.theme.textFontFamily : paneIcon.view.host.theme.fontFamily, Math.round(layer.size))
             font.weight: layer.modelData.weight || Font.Normal
             font.pixelSize: Math.round(layer.size)
           }

@@ -28,6 +28,7 @@ ColumnLayout {
       elide: Text.ElideRight
       color: section.view.text
       font.family: section.view.host.theme.textFontFamily
+      font.letterSpacing: section.view.host.theme.tracking(section.view.host.theme.textFontFamily, section.view.detailFontSize)
       font.pixelSize: section.view.detailFontSize
       font.weight: Font.DemiBold
     }
@@ -44,6 +45,7 @@ ColumnLayout {
       text: section.status
       color: section.view.textMuted
       font.family: section.view.host.theme.textFontFamily
+      font.letterSpacing: section.view.host.theme.tracking(section.view.host.theme.textFontFamily, section.view.detailCaptionFontSize)
       font.pixelSize: section.view.detailCaptionFontSize
     }
     Row { id: accessorySlot }

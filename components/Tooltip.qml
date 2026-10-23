@@ -61,6 +61,7 @@ Item {
       wrapMode: tip.maxWidth > 0 ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
       color: "#f2f2f7"
       font.family: tip.theme.textFontFamily
+      font.letterSpacing: tip.theme.tracking(tip.theme.textFontFamily, tip.theme.px(12))
       font.pixelSize: tip.theme.px(12)
     }
   }

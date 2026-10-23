@@ -79,6 +79,7 @@ Item {
               text: "2"
               color: preview.colorfulActivities ? "#000000" : preview.view.accentInk
               font.family: preview.view.host.theme.textFontFamily
+              font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(11))
               font.pixelSize: preview.view.host.theme.px(11)
               font.weight: Font.Bold
             }
@@ -131,6 +132,7 @@ Item {
       text: preview.sample.label || ""
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
+      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.transfer ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10))
       font.pixelSize: preview.transfer ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10)
       font.weight: preview.transfer ? Font.DemiBold : Font.Normal
     }
@@ -142,6 +144,7 @@ Item {
       text: preview.sample.status || ""
       color: preview.sample.statusColor || "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
+      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(10))
       font.pixelSize: preview.view.host.theme.px(10)
       font.weight: Font.DemiBold
     }
@@ -154,9 +157,10 @@ Item {
         text: "Connected"
         color: "#888888"
         font.family: preview.view.host.theme.textFontFamily
+        font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(10))
         font.pixelSize: preview.view.host.theme.px(10)
       }
-      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(12) }
+      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(12)); font.pixelSize: preview.view.host.theme.px(12) }
     }
     Rectangle {
       anchors.right: parent.right
@@ -167,7 +171,7 @@ Item {
       color: "transparent"
       border.width: 2
       border.color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent
-      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(10) }
+      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(10)); font.pixelSize: preview.view.host.theme.px(10) }
     }
     Text {
       anchors.centerIn: parent
@@ -175,6 +179,7 @@ Item {
       text: "12:34"
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
+      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(12))
       font.pixelSize: preview.view.host.theme.px(12)
       font.weight: Font.DemiBold
     }

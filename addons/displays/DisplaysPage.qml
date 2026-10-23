@@ -48,6 +48,7 @@ ColumnLayout {
     text: "No displays found."
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
+    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
     font.pixelSize: page.view.detailFontSize
   }
 

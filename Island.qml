@@ -25,24 +25,29 @@ Item {
   property var barConfig: ({})
   property string omarchyPath: ""
 
+  // The resting island's pills, highest first: a screen recording, an
+  // addon's ongoing activity (see addonPill), a download or system update,
+  // then the media playing. None shows while the companion needs setting up.
+  readonly property bool resting: view === "rest" && !setup.needsSetup
+  readonly property bool recordingPill: resting && settings.screenRecordingActivity && recorder.active
+  readonly property bool restingFree: resting && !recordingPill && !addons.ongoing
+  readonly property bool downloadDone: restingFree
+    && (downloads.finishedName !== "" || packages.finishedTitle !== "")
+  readonly property bool downloadActive: restingFree && (downloads.active || packages.active) && !downloadDone
+  readonly property bool downloadPill: downloadDone || downloadActive
+  readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
+  // The live-activity pills' height, and the resting clock's.
+  readonly property real pillHeight: settings.notch ? 40 : 44
+  readonly property real clockHeight: settings.notch ? 36 : 40
+
   readonly property var nowPlaying: nowPlayingData
   NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
-  readonly property bool mediaPill: view === "rest" && nowPlaying.playing && !setup.needsSetup && settings.mediaPill && !downloadPill && !addons.ongoing && !recordingPill
-
-  // A screen recording holds the resting island over every other pill.
   readonly property var recorder: screenRecorder
   ScreenRecorder { id: screenRecorder }
-  readonly property bool recordingPill: view === "rest" && !setup.needsSetup && settings.screenRecordingActivity && recorder.active
-
   readonly property var downloads: downloadTracker
   DownloadTracker { id: downloadTracker; enabled: root.settings.downloads }
   readonly property var packages: packageTracker
   PackageUpdateTracker { id: packageTracker; enabled: root.settings.systemUpdates }
-  readonly property bool downloadDone: view === "rest" && !setup.needsSetup && !addons.ongoing && !recordingPill
-    && (downloads.finishedName !== "" || packages.finishedTitle !== "")
-  readonly property bool downloadActive: view === "rest" && !setup.needsSetup && !addons.ongoing && !recordingPill
-    && (downloads.active || packages.active) && !downloadDone
-  readonly property bool downloadPill: downloadDone || downloadActive
   Process { id: downloadOpener }
   function openDownloads() {
     if (!downloads.active && downloads.finishedName === "") {
@@ -113,7 +118,7 @@ Item {
   // The addon whose pill is on the island, if any (see addons/Addon.qml):
   // the one shown for a moment, or at rest an ongoing one's.
   readonly property var addonPill: view === "feedback" ? addons.pillFor(feedbackKind)
-    : view === "rest" && !setup.needsSetup && !recordingPill ? addons.ongoing : null
+    : resting && !recordingPill ? addons.ongoing : null
 
   // ---------- Workspace switches ----------
 
@@ -145,6 +150,9 @@ Item {
 
   readonly property var addons: addonHost
   Addons { id: addonHost; host: root; settings: root.settings }
+
+  readonly property var keyboard: keyboardLayout
+  KeyboardLayout { id: keyboardLayout }
 
   readonly property var clipboard: clipboardWatcher
   ClipboardWatcher {
@@ -377,10 +385,14 @@ Item {
     showFeedback("", duration, "notification")
   }
 
-  function dismissPillNotification() {
-    var row = notifications.last
+  function dismissFeedback() {
+    feedbackTimer.stop()
     feedbackKind = ""
     view = "rest"
+  }
+  function dismissPillNotification() {
+    var row = notifications.last
+    dismissFeedback()
     if (row) notifications.command("dismissKey", row)
   }
 
@@ -561,118 +573,63 @@ Item {
         // While a view is open the island floats over the windows: a soft,
         // wide shadow for depth plus a tight, darker one where it meets them
         // (the resting pill stays flat, like hardware).
-        RectangularShadow {
+        // The tight one is the squircle itself, blurred: a rounded-rect
+        // shadow would peek out where the squircle's corners ease in.
+        Item {
           x: island.x
-          y: island.y
+          y: island.y + 2
           width: island.width
           height: island.height
-          radius: island.radius
-          offset.y: 2
-          blur: 8
-          color: Qt.rgba(0, 0, 0, 0.4)
+          scale: island.scale
           opacity: root.surfaceOpen ? 1 : 0
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+          layer.enabled: visible
+          layer.effect: MultiEffect { blurEnabled: true; blurMax: 8; blur: 1 }
+          Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+              strokeWidth: -1
+              fillColor: Qt.rgba(0, 0, 0, 0.4)
+              PathSvg { path: island.outline }
+            }
+          }
         }
-        RectangularShadow {
-          x: island.x
-          y: island.y
-          width: island.width
-          height: island.height
-          radius: island.radius
-          offset.y: 14
-          blur: 48
-          spread: -4
-          color: Qt.rgba(0, 0, 0, 0.6)
-          opacity: root.surfaceOpen ? 1 : 0
-          visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
-        }
+        IslandShadow { shape: island; offset.y: 14; blur: 48; spread: -4; color: Qt.rgba(0, 0, 0, 0.6) }
 
-        Canvas {
-          id: leftEar
-          readonly property real r: 10
-          visible: root.settings.notch && island.y > -r
-          x: island.x - r
-          y: island.y
-          width: r
-          height: r
-          onPaint: {
-            var ctx = getContext("2d")
-            ctx.reset()
-            ctx.fillStyle = root.theme.background
-            ctx.beginPath()
-            ctx.moveTo(r, 0)
-            ctx.lineTo(r, r)
-            ctx.arc(0, r, r, 0, -Math.PI / 2, true)
-            ctx.closePath()
-            ctx.fill()
-          }
-        }
-        Canvas {
-          id: rightEar
-          readonly property real r: 10
-          visible: root.settings.notch && island.y > -r
-          x: island.x + island.width
-          y: island.y
-          width: r
-          height: r
-          onPaint: {
-            var ctx = getContext("2d")
-            ctx.reset()
-            ctx.fillStyle = root.theme.background
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.lineTo(0, r)
-            ctx.arc(r, r, r, Math.PI, 1.5 * Math.PI, false)
-            ctx.closePath()
-            ctx.fill()
-          }
-        }
+        NotchEar { shape: island }
+        NotchEar { shape: island; mirrored: true }
 
         Rectangle {
           id: island
           x: (parent.width - width) / 2
-          y: window.islandHidden ? -height - 20 : root.settings.notch ? 0 : 8
-          Behavior on y { MotionAnimation { theme: root.theme; pace: "standard" } }
+          // On a spring like the shape, so hiding and showing again quickly
+          // turns around smoothly.
+          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.settings.notch ? 0 : 8 }
+          y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
+          readonly property Item activePill: pills.active
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockMetrics.advanceWidth) + 56 - 100)
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
-            : root.notificationPill ? 440
-            : root.volumePill ? 240
-            : root.osdPill ? (root.osdProgress ? 240 : (root.osdMessage.length > 26 ? 340 : 280))
-            : root.activityPill && root.activities.current.kind === "bluetooth" ? 360
-            : root.clipboardPill || root.activityPill ? 320
-            : root.workspacesPill ? root.workspaceIds.length * 24 + 42
-            : root.recordingPill ? 240 + clockExtra
-            : root.addonPill ? root.addonPill.pillWidth + (root.view === "feedback" || root.addonPill.pillAsks ? 0 : clockExtra)
+            : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
-            : root.downloadDone ? 380
-            : root.downloadActive ? (root.downloads.active ? 240 : 280) + clockExtra
-            : root.mediaPill ? 240 + clockExtra
             : 100 + clockExtra
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
-            : root.notificationPill ? 84
-            : root.activityPill && root.activities.current.kind === "bluetooth" ? 64
-            : root.clipboardPill || root.activityPill ? (root.settings.notch ? 40 : 44)
-            : root.addonPill ? root.addonPill.pillHeight
-            : root.workspacesPill ? (root.settings.notch ? 36 : 40)
-            : root.downloadDone ? 76
-            : root.mediaPill || root.downloadPill || root.recordingPill ? (root.settings.notch ? 40 : 44)
-            : root.volumePill ? (root.settings.notch ? 40 : 44)
-            : root.osdPill ? (root.settings.notch ? 40 : 44)
-            : root.view === "rest" ? (root.settings.notch ? 36 : 40) : 52
+            : activePill ? activePill.pillHeight
+            : root.view === "rest" ? root.clockHeight : 52
           readonly property real targetRadius: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
-            : root.addonPill && root.addonPill.pillRadius > 0 ? root.addonPill.pillRadius
+            : activePill && activePill.pillRadius > 0 ? activePill.pillRadius
             : root.surfaceOpen ? 30 : 38
           readonly property real radiusCap: radiusSpring.value
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
-          scale: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch ? 1.018 : 1
+          readonly property bool lifted: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch
+          scale: lifted ? 1.018 : 1
           Behavior on scale { MotionAnimation { theme: root.theme; pace: "quick" } }
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
           HoverHandler {
@@ -708,7 +665,9 @@ Item {
           }
           // Width, height and corners ride springs, so a change of mind
           // mid-morph keeps its momentum. Growing, the width leads and the
-          // height follows a beat later; shrinking, the height goes first.
+          // height follows a beat later, each swinging a touch past its size
+          // as the Dynamic Island does; shrinking, the height goes first and
+          // both land flat.
           readonly property string morphPace: root.surfaceOpen ? "morph" : "collapse"
           MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace }
           MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace }
@@ -716,11 +675,13 @@ Item {
           Timer { id: widthLag; interval: root.theme.morphLag; onTriggered: widthSpring.target = island.targetWidth }
           Timer { id: heightLag; interval: root.theme.morphLag; onTriggered: heightSpring.target = island.targetHeight }
           onTargetWidthChanged: {
+            widthSpring.bounce = targetWidth > widthSpring.value ? root.theme.morphBounce : 0
             if (targetWidth < widthSpring.value) { widthLag.restart(); return }
             widthLag.stop()
             widthSpring.target = targetWidth
           }
           onTargetHeightChanged: {
+            heightSpring.bounce = targetHeight > heightSpring.value ? root.theme.morphBounce : 0
             if (targetHeight > heightSpring.value) { heightLag.restart(); return }
             heightLag.stop()
             heightSpring.target = targetHeight
@@ -737,58 +698,49 @@ Item {
             enabled: root.view === "rest" || root.view === "feedback"
             onClicked: function(mouse) {
               feedbackTimer.stop()
-              if (root.notificationPill && root.notifications.last && root.notifications.last.islandUpdate) root.updateIsland()
-              else if (root.notificationPill && root.notifications.last && root.notifications.last.islandSetupRetry) { root.feedbackKind = ""; root.view = "rest"; root.setup.install() }
-              else if (root.notificationPill) root.dismissPillNotification()
-              else if (root.clipboardPill) root.view = "clipboard"
-              else if (root.activityPill) root.view = root.activities.current.kind === "bluetooth" ? "bluetooth"
-                : root.activities.current.kind === "network" && !root.activities.current.wired ? "wifi" : "controls"
-              else if (root.addonPill) root.addonPill.pillClicked()
-              else if (root.recordingPill) root.recorder.stop()
+              if (island.activePill) island.activePill.clicked(mouse)
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
-              else if (root.downloadDone || (root.downloadActive && (mouse.x < 56 || mouse.x > width - 90))) root.openDownloads()
-              else if (root.mediaPill && (mouse.x < 56 || mouse.x > width - 72)) root.view = "player"
-              else if (root.osdPill) { root.feedbackTimer.stop(); root.feedbackKind = ""; root.view = "rest" }
               else root.view = "controls"
             }
           }
 
-          NotificationPill { host: root; shape: island; anchors.fill: parent }
+          // The live activities (see IslandPill); at most one is shown at a time.
+          Item {
+            id: pills
+            anchors.fill: parent
+            readonly property Item active: {
+              for (var i = 0; i < children.length; i++) if (children[i].shown) return children[i]
+              return null
+            }
+            NotificationPill { host: root; shape: island; anchors.fill: parent }
+            VolumeSlider { host: root; anchors.fill: parent }
+            OsdPill { host: root; anchors.fill: parent }
+            ClipboardPill { host: root; anchors.fill: parent }
+            DevicePill { host: root; anchors.fill: parent }
+            WorkspacePill { host: root; anchors.fill: parent }
+            AddonPills { host: root; anchors.fill: parent }
+            RecordingPill { host: root; anchors.fill: parent }
+            MediaPill { host: root; anchors.fill: parent }
+            DownloadPill { host: root; anchors.fill: parent }
+          }
 
-          VolumeSlider { host: root; anchors.fill: parent }
-
-          OsdPill { host: root; anchors.fill: parent }
-
-          ClipboardPill { host: root; anchors.fill: parent }
-
-          DevicePill { host: root; anchors.fill: parent }
-
-          WorkspacePill { host: root; anchors.fill: parent }
-
-          AddonPills { host: root; anchors.fill: parent }
-
-          RecordingPill { host: root; anchors.fill: parent }
-
-          MediaPill { host: root; anchors.fill: parent }
-
-          DownloadPill { host: root; anchors.fill: parent }
-
-          IslandLabel { id: clockLabel; host: root; anchors.centerIn: parent }
+          IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
           TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockText }
 
           Views { id: views; host: root; anchors.fill: parent }
         }
         // A faint light edge around the open island, so its black still
-        // reads against a dark wallpaper.
+        // reads against a dark wallpaper; fainter on the resting pill while
+        // it's lifted under the pointer.
         Item {
           x: island.x
           y: island.y
           width: island.width
           height: island.height
           scale: island.scale
-          opacity: root.surfaceOpen ? 1 : 0
+          opacity: root.surfaceOpen ? 1 : island.lifted ? 0.6 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
@@ -801,6 +753,44 @@ Item {
             }
           }
         }
+      }
+    }
+  }
+
+  // A shadow under the island, there while a view is open.
+  component IslandShadow: RectangularShadow {
+    required property Item shape
+    x: shape.x
+    y: shape.y
+    width: shape.width
+    height: shape.height
+    radius: shape.radius
+    opacity: root.surfaceOpen ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+  }
+
+  // With the notch, a concave corner either side of the island where it
+  // meets the top edge; `mirrored` is the right one.
+  component NotchEar: Shape {
+    id: ear
+    required property Item shape
+    property bool mirrored: false
+    readonly property real r: 10
+    visible: root.settings.notch && shape.y > -r
+    x: mirrored ? shape.x + shape.width : shape.x - r
+    y: shape.y
+    width: r
+    height: r
+    // Drawn as the island is, so the two edges antialias alike where they meet.
+    preferredRendererType: Shape.CurveRenderer
+    ShapePath {
+      strokeWidth: -1
+      fillColor: root.theme.background
+      PathSvg {
+        readonly property real r: ear.r
+        path: ear.mirrored ? "M 0 0 L 0 " + r + " A " + r + " " + r + " 0 0 1 " + r + " 0 Z"
+          : "M " + r + " 0 L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z"
       }
     }
   }

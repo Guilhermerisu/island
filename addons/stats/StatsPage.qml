@@ -93,6 +93,7 @@ ColumnLayout {
         text: "Loading…"
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
         font.features: { "tnum": 1 }
         font.pixelSize: page.view.detailCaptionFontSize
       }
@@ -281,6 +282,7 @@ ColumnLayout {
                 Layout.maximumWidth: implicitWidth
                 color: page.view.text
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
                 font.features: { "tnum": 1 }
                 font.pixelSize: page.view.detailFontSize
                 font.weight: Font.Medium
@@ -292,6 +294,7 @@ ColumnLayout {
                 elide: Text.ElideMiddle
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
                 font.features: { "tnum": 1 }
                 font.pixelSize: page.view.detailCaptionFontSize
               }
@@ -300,6 +303,7 @@ ColumnLayout {
                 text: page.bytes(volume.modelData.used) + " of " + page.bytes(volume.modelData.size) + " used"
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))
                 font.pixelSize: page.view.host.theme.px(13)
                 font.features: { "tnum": 1 }
               }
@@ -371,6 +375,7 @@ ColumnLayout {
           text: "Search"
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))
           font.features: { "tnum": 1 }
           font.pixelSize: page.view.host.theme.px(13)
         }
@@ -384,6 +389,7 @@ ColumnLayout {
           clip: true
           color: page.view.text
           font.family: page.view.host.theme.textFontFamily
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))
           font.features: { "tnum": 1 }
           font.pixelSize: page.view.host.theme.px(13)
           Keys.onEscapePressed: function(event) {

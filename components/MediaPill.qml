@@ -4,24 +4,20 @@ import Quickshell.Widgets
 // Dynamic Island–style "now playing" on the resting pill: the album art in a
 // rounded square on the left and a sound wave on the right, tinted with the
 // art's own color (the theme accent when there's no art). The clock stays in
-// the middle.
-Item {
+// the middle. Clicking either side opens the player.
+IslandPill {
   id: media
-  required property var host
-  readonly property bool shown: host.mediaPill
-
-  opacity: shown ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: media.host.theme; pace: "fade"; curve: "fade" } }
+  shown: host.mediaPill
+  pillWidth: 240
+  keepsClock: true
+  function clicked(mouse) { host.view = mouse.x < 56 || mouse.x > width - 72 ? "player" : "controls" }
 
   PillReveal { id: reveal; theme: media.host.theme; shown: media.shown }
 
   ClippingRectangle {
     id: art
     opacity: reveal.leadingIn
-    scale: 0.9 + 0.1 * reveal.leadingIn
-    layer.enabled: reveal.leadingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
+    PillPart { target: art; progress: reveal.leadingIn }
     anchors.left: parent.left
     anchors.leftMargin: 8
     anchors.verticalCenter: parent.verticalCenter
@@ -49,9 +45,7 @@ Item {
 
   SoundWave {
     opacity: reveal.trailingIn
-    scale: 0.9 + 0.1 * reveal.trailingIn
-    layer.enabled: reveal.trailingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.trailingIn }
+    PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter

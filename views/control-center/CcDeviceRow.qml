@@ -45,6 +45,7 @@ Rectangle {
     elide: Text.ElideRight
     color: row.center.text
     font.family: row.center.host.theme.textFontFamily
+    font.letterSpacing: row.center.host.theme.tracking(row.center.host.theme.textFontFamily, row.center.host.theme.px(12))
     font.pixelSize: row.center.host.theme.px(12)
     font.weight: row.selected ? Font.Medium : Font.Normal
   }

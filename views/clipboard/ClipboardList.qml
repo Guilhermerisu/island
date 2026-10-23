@@ -152,6 +152,7 @@ ListPicker {
             elide: Text.ElideMiddle
             color: clipboard.host.theme.secondary
             font.family: clipboard.host.theme.textFontFamily
+            font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.px(11))
             font.pixelSize: clipboard.host.theme.px(11)
           }
         }
@@ -161,6 +162,7 @@ ListPicker {
           text: "Image unavailable"
           color: clipboard.host.theme.muted
           font.family: clipboard.host.theme.textFontFamily
+          font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.px(12))
           font.pixelSize: clipboard.host.theme.px(12)
         }
         Text {
@@ -173,6 +175,7 @@ ListPicker {
           clip: true
           color: clipboard.host.theme.text
           font.family: clipboard.host.theme.textFontFamily
+          font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.px(15))
           font.pixelSize: clipboard.host.theme.px(15)
           lineHeight: 1.3
         }
@@ -228,6 +231,7 @@ ListPicker {
         maximumLineCount: 1
         color: clipboard.host.theme.text
         font.family: clipboard.host.theme.textFontFamily
+        font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.px(13))
         font.pixelSize: clipboard.host.theme.px(13)
         font.weight: clipRow.selected ? Font.Medium : Font.Normal
       }

@@ -49,16 +49,19 @@ Item {
   Component.onCompleted: host.registerSurface(viewName)
   Component.onDestruction: host.unregisterSurface(viewName)
 
+  // How far the island has grown to this view's height, 0 → 1. The island
+  // (Views fills it) rides a spring, so the content below follows the shape
+  // frame by frame instead of on a clock of its own: it settles as the
+  // island does, and turns around with it.
+  readonly property real grown: parent && islandHeight > 0
+    ? Math.max(0, Math.min(1, parent.height / islandHeight)) : 0
+
   Item {
     id: holder
     anchors.fill: parent
     // Transform the content without disturbing the panel's measured size.
     transformOrigin: Item.Top
-    scale: surface.revealed ? 1 : 0.985
-    Behavior on scale { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? "expressive" : "exit" } }
-    transform: Translate {
-      y: surface.revealed ? 0 : -6
-      Behavior on y { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? "expressive" : "exit" } }
-    }
+    scale: 0.985 + 0.015 * surface.grown
+    transform: Translate { y: -6 * (1 - surface.grown) }
   }
 }

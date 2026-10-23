@@ -79,6 +79,7 @@ Rectangle {
       elide: Text.ElideRight
       color: center.textMuted
       font.family: center.host.theme.textFontFamily
+      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.px(11))
       font.features: { "tnum": 1 }
       font.pixelSize: center.host.theme.px(11)
     }

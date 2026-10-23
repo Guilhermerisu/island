@@ -30,6 +30,7 @@ Item {
     elide: Text.ElideRight
     color: shortcutRow.view.text
     font.family: shortcutRow.view.host.theme.textFontFamily
+    font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailFontSize)
     font.pixelSize: shortcutRow.view.detailFontSize
   }
   Rectangle {
@@ -41,6 +42,8 @@ Item {
     width: Math.max(shortcutRow.recording ? 150 : 0, (caps ? keycaps.implicitWidth : keysText.implicitWidth) + (caps ? 8 : 16))
     height: 28
     radius: 6
+    scale: keysMouse.pressed ? 0.98 : 1
+    Behavior on scale { MotionAnimation { theme: shortcutRow.view.host.theme; pace: keysMouse.pressed ? "press" : "standard" } }
     visible: !shortcutRow.asking
     color: shortcutRow.recording ? shortcutRow.view.host.theme.accentFill("soft")
       : keysMouse.containsMouse && !caps ? shortcutRow.view.well : shortcutRow.view.host.theme.withAlpha(shortcutRow.view.well, 0)
@@ -94,6 +97,7 @@ Item {
             text: cap.modelData
             color: shortcutRow.view.text
             font.family: shortcutRow.view.host.theme.textFontFamily
+            font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailCaptionFontSize)
             font.pixelSize: shortcutRow.view.detailCaptionFontSize
             font.weight: Font.Medium
           }
@@ -108,6 +112,7 @@ Item {
       color: shortcutRow.recording ? shortcutRow.view.accent
         : shortcutRow.entry.keys === "" ? shortcutRow.view.textMuted : shortcutRow.view.text
       font.family: shortcutRow.view.host.theme.textFontFamily
+      font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailFontSize)
       font.pixelSize: shortcutRow.view.detailFontSize
       Behavior on color { MotionColorAnimation { theme: shortcutRow.view.host.theme } }
     }
@@ -143,6 +148,7 @@ Item {
       text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict
       color: shortcutRow.view.textMuted
       font.family: shortcutRow.view.host.theme.textFontFamily
+      font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailCaptionFontSize)
       font.pixelSize: shortcutRow.view.detailCaptionFontSize
     }
   }

@@ -47,7 +47,9 @@ Item {
   property bool pillAsks: false
   readonly property bool pillShown: host.addonPill === addonRoot
   property real pillWidth: 280
-  property real pillHeight: host.settings.notch ? 40 : 44
+  // The island's live-activity height; a pill that grows starts from it.
+  readonly property real restHeight: host.pillHeight
+  property real pillHeight: restHeight
   property real pillRadius: 0
   function pillClicked() { host.view = "controls" }
 

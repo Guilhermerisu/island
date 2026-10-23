@@ -243,6 +243,7 @@ Item {
           text: "Copy"
           color: "#ffffff"
           font.family: answer.host.theme.textFontFamily
+          font.letterSpacing: answer.host.theme.tracking(answer.host.theme.textFontFamily, answer.host.theme.px(12))
           font.pixelSize: answer.host.theme.px(12)
           font.weight: Font.Medium
         }

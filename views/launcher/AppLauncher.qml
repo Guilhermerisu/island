@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
 import "../../components"
+import "../../components/IconSource.js" as IconSource
 // Omarchy's own launcher ranking, so results match its menu exactly.
 import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 
@@ -69,7 +70,7 @@ ListPicker {
           anchors.centerIn: parent
           width: 32; height: 32
           visible: !appRow.isAddon && status === Image.Ready
-          source: appRow.isAddon ? "" : launcher.iconSource(appRow.entry && appRow.entry.icon)
+          source: appRow.isAddon ? "" : IconSource.source(appRow.entry && appRow.entry.icon)
           sourceSize.width: 64
           sourceSize.height: 64
           fillMode: Image.PreserveAspectFit
@@ -95,6 +96,7 @@ ListPicker {
         elide: Text.ElideRight
         color: launcher.host.theme.text
         font.family: launcher.host.theme.textFontFamily
+        font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(15))
         font.pixelSize: launcher.host.theme.px(15)
         font.weight: Font.Medium
       }
@@ -112,6 +114,7 @@ ListPicker {
           text: appRow.isAddon ? appRow.entry.label || "" : ""
           color: launcher.host.theme.text
           font.family: launcher.host.theme.textFontFamily
+          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(15))
           font.pixelSize: launcher.host.theme.px(15)
           font.weight: Font.Medium
         }
@@ -122,6 +125,7 @@ ListPicker {
           elide: Text.ElideRight
           color: launcher.host.theme.muted
           font.family: launcher.host.theme.textFontFamily
+          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(15))
           font.pixelSize: launcher.host.theme.px(15)
         }
       }
@@ -172,13 +176,5 @@ ListPicker {
     // .desktop suffix so ids like org.telegram.desktop resolve.
     runner.command = ["uwsm-app", "--", "gtk-launch", String(entry.id) + ".desktop"]
     runner.startDetached()
-  }
-
-  function iconSource(icon) {
-    var value = String(icon || "")
-    if (!value) return ""
-    if (value.indexOf("file://") === 0 || value.indexOf("image://") === 0) return value
-    if (value.charAt(0) === "/") return "file://" + value
-    return Quickshell.iconPath(value, true)
   }
 }

@@ -91,6 +91,7 @@ ListPicker {
         elide: Text.ElideRight
         color: keybinds.host.theme.text
         font.family: keybinds.host.theme.textFontFamily
+        font.letterSpacing: keybinds.host.theme.tracking(keybinds.host.theme.textFontFamily, keybinds.host.theme.px(15))
         font.pixelSize: keybinds.host.theme.px(15)
         font.weight: Font.Medium
       }
@@ -118,6 +119,7 @@ ListPicker {
               textFormat: Text.PlainText
               color: keybinds.host.theme.text
               font.family: keybinds.host.theme.textFontFamily
+              font.letterSpacing: keybinds.host.theme.tracking(keybinds.host.theme.textFontFamily, keybinds.host.theme.px(11))
               font.pixelSize: keybinds.host.theme.px(11)
               font.weight: Font.DemiBold
             }

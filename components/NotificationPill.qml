@@ -5,9 +5,8 @@ import Quickshell.Widgets
 // icon in a rounded tile, with the title and one line of body beside it.
 // Styled like an iOS banner: the title with the time beside it, and the body
 // below.
-Item {
+IslandPill {
   id: pill
-  required property var host
   // The island rectangle; the app tile sizes itself from its height.
   required property Item shape
   readonly property var row: host.notifications.last || ({})
@@ -15,19 +14,23 @@ Item {
   onRowChanged: imageFailed = false
   readonly property string iconSource: host.notifications.iconSource(host.notifications.last, imageFailed)
   readonly property var brand: host.notifications.brand(row)
+  shown: host.notificationPill
+  pillWidth: 440
+  pillHeight: 84
+  // The island's own banners act on a click (see Island.qml's showBanner);
+  // any other notification is dismissed.
+  function clicked(mouse) {
+    if (row.islandUpdate) host.updateIsland()
+    else if (row.islandSetupRetry) { host.dismissFeedback(); host.setup.install() }
+    else host.dismissPillNotification()
+  }
 
-    opacity: host.notificationPill ? 1 : 0
-  visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
-
-  PillReveal { id: reveal; theme: host.theme; shown: host.notificationPill }
+  PillReveal { id: reveal; theme: host.theme; shown: pill.shown }
 
   ClippingRectangle {
     id: appTile
     opacity: reveal.leadingIn
-    scale: 0.9 + 0.1 * reveal.leadingIn
-    layer.enabled: reveal.leadingIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.leadingIn }
+    PillPart { target: appTile; progress: reveal.leadingIn }
     anchors.left: parent.left
     anchors.leftMargin: 15
     anchors.verticalCenter: parent.verticalCenter
@@ -67,9 +70,7 @@ Item {
 
   Column {
     opacity: reveal.middleIn
-    scale: 0.94 + 0.06 * reveal.middleIn
-    layer.enabled: reveal.middleIn < 1
-    layer.effect: PillBlur { blur: 1 - reveal.middleIn }
+    PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: appTile.right
     anchors.leftMargin: 12
     anchors.right: parent.right
@@ -103,6 +104,7 @@ Item {
         textFormat: Text.PlainText
         color: Qt.rgba(1, 1, 1, 0.45)
         font.family: host.theme.textFontFamily
+        font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.px(13))
         font.pixelSize: host.theme.px(13)
       }
     }

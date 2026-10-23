@@ -144,6 +144,7 @@ Item {
           text: screenBox.modelData.title
           color: "#ffffff"
           font.family: arrangement.view.host.theme.textFontFamily
+          font.letterSpacing: arrangement.view.host.theme.tracking(arrangement.view.host.theme.textFontFamily, arrangement.view.detailCaptionFontSize)
           font.pixelSize: arrangement.view.detailCaptionFontSize
           font.weight: Font.Medium
         }

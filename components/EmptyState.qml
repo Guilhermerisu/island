@@ -26,6 +26,7 @@ ColumnLayout {
     text: empty.text
     color: empty.host.theme.secondary
     font.family: empty.host.theme.textFontFamily
+    font.letterSpacing: empty.host.theme.tracking(empty.host.theme.textFontFamily, empty.host.theme.px(13))
     font.pixelSize: empty.host.theme.px(13)
   }
 }

@@ -97,6 +97,7 @@ Item {
           elide: Text.ElideRight
           color: view.inkMuted
           font.family: view.theme.textFontFamily
+          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(15))
           font.features: { "tnum": 1 }
           font.pixelSize: view.theme.px(15)
           font.weight: Font.Normal
@@ -135,6 +136,7 @@ Item {
             text: modelData.now ? "Now" : view.hourText(modelData.hour)
             color: view.inkMuted
             font.family: view.theme.textFontFamily
+            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
             font.features: { "tnum": 1 }
             font.pixelSize: view.theme.px(13)
             font.weight: Font.Medium
@@ -160,6 +162,7 @@ Item {
               text: modelData.rain + "%"
               color: "#5ac8fa"
               font.family: view.theme.textFontFamily
+              font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(10))
               font.features: { "tnum": 1 }
               font.pixelSize: view.theme.px(10)
               font.weight: Font.Bold
@@ -170,6 +173,7 @@ Item {
             text: Math.round(modelData.temperature)
             color: view.ink
             font.family: view.theme.textFontFamily
+            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(15))
             font.features: { "tnum": 1 }
             font.pixelSize: view.theme.px(15)
             font.weight: Font.Medium
@@ -205,6 +209,7 @@ Item {
         : "Couldn't reach Open-Meteo"
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily
+      font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(15))
       font.features: { "tnum": 1 }
       font.pixelSize: view.theme.px(15)
     }
@@ -224,6 +229,7 @@ Item {
         text: notice.needsCity ? "Open Settings" : "Try Again"
         color: view.theme.accentText
         font.family: view.theme.textFontFamily
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
         font.features: { "tnum": 1 }
         font.pixelSize: view.theme.px(13)
         font.weight: Font.Medium

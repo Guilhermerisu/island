@@ -58,6 +58,7 @@ Item {
     text: Math.round(volume.effectiveLevel * 100) + "%"
     color: "#ffffff"
     font.family: volume.theme.textFontFamily
+    font.letterSpacing: volume.theme.tracking(volume.theme.textFontFamily, volume.theme.px(12))
     font.pixelSize: volume.theme.px(12)
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }

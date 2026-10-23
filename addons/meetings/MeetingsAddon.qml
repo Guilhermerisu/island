@@ -5,6 +5,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import ".."
 import "apps.js" as Apps
+import "../../components/IconSource.js" as IconSource
 
 // A call on the island while a meeting app has the mic (see apps.js): the
 // call's length and a mic level meter on the resting pill (see CallPill),
@@ -28,7 +29,6 @@ Addon {
   readonly property real inset: 18
   // Ended, it draws in a little.
   pillWidth: expanded ? 304 : ended ? (elapsed >= 3600000 ? 240 : 224) : elapsed >= 3600000 ? 262 : 240
-  readonly property real restHeight: host.settings.notch ? 40 : 44
   pillHeight: expanded ? restHeight + 4 + buttonSize + inset : restHeight
   pillRadius: expanded ? buttonSize / 2 + inset : 0
 
@@ -358,8 +358,7 @@ Addon {
     var names = (callSite && callSite.icons || []).concat(classes, callApp.binaries)
     for (var i = 0; i < names.length; i++) {
       var entry = DesktopEntries.heuristicLookup(names[i])
-      var icon = entry && entry.icon ? String(entry.icon) : names[i]
-      var path = icon.charAt(0) === "/" ? "file://" + icon : Quickshell.iconPath(icon, true)
+      var path = IconSource.source(entry && entry.icon ? entry.icon : names[i])
       if (path) return path
     }
     return ""

@@ -45,6 +45,7 @@ Card {
         elide: Text.ElideRight
         color: card.view.text
         font.family: card.view.host.theme.textFontFamily
+        font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.host.theme.px(15))
         font.features: { "tnum": 1 }
         font.pixelSize: card.view.host.theme.px(15)
         font.weight: Font.DemiBold
@@ -61,6 +62,7 @@ Card {
           text: card.status
           color: card.statusColor
           font.family: card.view.host.theme.textFontFamily
+          font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.host.theme.px(12))
           font.features: { "tnum": 1 }
           font.pixelSize: card.view.host.theme.px(12)
           font.weight: Font.Medium
@@ -102,6 +104,7 @@ Card {
               text: figure.modelData.label
               color: card.flat ? card.view.text : card.view.textMuted
               font.family: card.view.host.theme.textFontFamily
+              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.flat ? card.view.detailFontSize : card.view.host.theme.px(13))
               font.features: { "tnum": 1 }
               font.pixelSize: card.flat ? card.view.detailFontSize : card.view.host.theme.px(13)
             }
@@ -111,6 +114,7 @@ Card {
               text: figure.modelData.value
               color: figure.modelData.color || (card.flat ? card.view.textMuted : card.view.text)
               font.family: card.view.host.theme.textFontFamily
+              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.flat ? card.view.detailFontSize : card.view.host.theme.px(13))
               font.pixelSize: card.flat ? card.view.detailFontSize : card.view.host.theme.px(13)
               font.weight: card.flat ? Font.Normal : Font.DemiBold
               font.features: { "tnum": 1 }

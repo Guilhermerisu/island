@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import "../../components"
+import "../../components/IconSource.js" as IconSource
 
 // Activity Monitor's process list: a header to sort by (click again to
 // flip), then the rows, scrolled inside a fixed height. An app's processes
@@ -36,9 +37,7 @@ Item {
     return appClass ? DesktopEntries.heuristicLookup(appClass) : null
   }
   function iconFor(entry) {
-    var icon = entry ? String(entry.icon || "") : ""
-    if (!icon) return ""
-    return icon.charAt(0) === "/" ? "file://" + icon : Quickshell.iconPath(icon, true)
+    return IconSource.source(entry && entry.icon)
   }
 
   function sortValue(row) {
@@ -164,6 +163,7 @@ Item {
               text: head.modelData.title
               color: head.sorted ? table.view.text : table.view.textMuted
               font.family: table.view.host.theme.textFontFamily
+              font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(12))
               font.features: { "tnum": 1 }
               font.pixelSize: table.view.host.theme.px(12)
               font.weight: Font.Medium
@@ -268,6 +268,7 @@ Item {
                   text: row.modelData.open ? "▾" : "▸"
                   color: row.inkMuted
                   font.family: table.view.host.theme.textFontFamily
+                  font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(11))
                   font.features: { "tnum": 1 }
                   font.pixelSize: table.view.host.theme.px(11)
                 }
@@ -307,6 +308,7 @@ Item {
                 elide: Text.ElideRight
                 color: row.ink
                 font.family: table.view.host.theme.textFontFamily
+                font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(13))
                 font.features: { "tnum": 1 }
                 font.pixelSize: table.view.host.theme.px(13)
                 // The full name, its PID (or its app's processes), and the
@@ -361,6 +363,7 @@ Item {
               text: cellItem.isName ? "" : table.cell(row.modelData, cellItem.modelData.key)
               color: row.ink
               font.family: table.view.host.theme.textFontFamily
+              font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(12))
               font.pixelSize: table.view.host.theme.px(12)
               font.features: { "tnum": 1 }
             }
@@ -376,6 +379,7 @@ Item {
     text: table.stats.latest ? "No Processes" : "Loading…"
     color: table.view.textMuted
     font.family: table.view.host.theme.textFontFamily
+    font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(13))
     font.features: { "tnum": 1 }
     font.pixelSize: table.view.host.theme.px(13)
   }

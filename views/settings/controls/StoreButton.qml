@@ -20,6 +20,7 @@ Rectangle {
     text: button.added ? "Remove" : "Add"
     color: button.added ? button.view.textMuted : button.view.accent
     font.family: button.view.host.theme.textFontFamily
+    font.letterSpacing: button.view.host.theme.tracking(button.view.host.theme.textFontFamily, button.view.host.theme.px(13))
     font.pixelSize: button.view.host.theme.px(13)
     font.weight: button.added ? Font.Medium : Font.DemiBold
   }

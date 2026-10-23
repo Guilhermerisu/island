@@ -52,6 +52,7 @@ Rectangle {
       lineHeight: 1.1
       color: header.view.textMuted
       font.family: header.view.host.theme.textFontFamily
+      font.letterSpacing: header.view.host.theme.tracking(header.view.host.theme.textFontFamily, header.view.detailCaptionFontSize)
       font.pixelSize: header.view.detailCaptionFontSize
     }
   }

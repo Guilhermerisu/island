@@ -15,8 +15,12 @@ Rectangle {
   radius: 9
   color: checked ? sw.view.accent : sw.view.well
   Behavior on color { MotionColorAnimation { theme: sw.view.host.theme } }
+  // The knob widens while held, as Apple's switches do; anchored by its
+  // side, it stretches toward the side it will go to.
   Rectangle {
-    width: 16; height: 16; radius: 8
+    width: switchMouse.pressed ? 20 : 16
+    Behavior on width { MotionAnimation { theme: sw.view.host.theme; pace: switchMouse.pressed ? "press" : "standard" } }
+    height: 16; radius: 8
     y: 1
     x: sw.checked ? sw.width - width - 1 : 1
     color: "#ffffff"
@@ -30,6 +34,7 @@ Rectangle {
     Behavior on x { MotionAnimation { theme: sw.view.host.theme; pace: "standard" } }
   }
   MouseArea {
+    id: switchMouse
     anchors.fill: parent
     cursorShape: Qt.PointingHandCursor
     onClicked: sw.toggled(!sw.checked)

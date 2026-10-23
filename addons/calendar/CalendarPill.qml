@@ -118,6 +118,7 @@ Item {
         text: pill.day.getDate()
         color: "#2c2c2e"
         font.family: pill.host.theme.textFontFamily
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(17))
         font.pixelSize: pill.host.theme.px(17)
         font.weight: Font.Normal
         font.features: { "tnum": 1 }
@@ -157,6 +158,7 @@ Item {
       // Apple's secondary label.
       color: Qt.rgba(235 / 255, 235 / 255, 245 / 255, 0.6)
       font.family: pill.host.theme.textFontFamily
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(12))
       font.pixelSize: pill.host.theme.px(12)
       font.features: { "tnum": 1 }
     }
@@ -175,6 +177,7 @@ Item {
     text: pill.calendar.reminderMs / 60000 + " min"
     color: "#ffffff"
     font.family: pill.host.theme.textFontFamily
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(15))
     font.pixelSize: pill.host.theme.px(15)
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }

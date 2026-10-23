@@ -44,6 +44,7 @@ Picker {
         text: themeCard.entry.name || ""
         color: themeCard.entry.foreground || ts.host.theme.text
         font.family: ts.host.theme.textFontFamily
+        font.letterSpacing: ts.host.theme.tracking(ts.host.theme.textFontFamily, ts.host.theme.px(13))
         font.pixelSize: ts.host.theme.px(13)
         font.weight: Font.Medium
       }
