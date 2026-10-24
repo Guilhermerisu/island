@@ -161,7 +161,7 @@ Item {
   }
   function controlIcon(key) {
     if (key === "microphoneMute") return microphoneMuted ? "󰍭" : "󰍬"
-    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"
+    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰌗"
     if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
     if (key === "focus") return "󰍶"
     if (key === "game") return "󰊗"

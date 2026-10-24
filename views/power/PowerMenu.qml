@@ -3,8 +3,9 @@ import "../../components"
 import Quickshell.Io
 
 // Power menu hosted by the island, styled after Apple's Control Center: a
-// row of squircle tiles (icon over label); the selected tile fills with the
-// theme accent and grows a touch. ←/→ (or Tab, or the wheel) to
+// row of squircle tiles (icon over label); the selected tile lifts to a
+// lighter grey inside a thin accent ring, so the accent marks the choice
+// without shouting before anything is picked. ←/→ (or Tab, or the wheel) to
 // move, Enter to run, Esc to close; clicking a tile runs it. Mirrors
 // Omarchy's System menu, including its suspend/hibernate availability rules.
 Item {
@@ -121,9 +122,12 @@ Item {
           width: power.tileWidth
           height: power.tileHeight
           radius: 23
-          color: slot.isSelected ? power.host.theme.accent : power.host.theme.fill("raised")
+          color: power.host.theme.fill(slot.isSelected ? "stronger" : "raised")
+          border.width: 2
+          border.color: power.host.theme.withAlpha(power.host.theme.accent, slot.isSelected ? 1 : 0)
           scale: tileMouse.pressed ? 0.97 : 1
           Behavior on color { MotionColorAnimation { theme: power.host.theme } }
+          Behavior on border.color { MotionColorAnimation { theme: power.host.theme } }
           Behavior on scale { MotionAnimation { theme: power.host.theme; pace: tileMouse.pressed ? "press" : "standard" } }
 
           Column {
@@ -132,21 +136,19 @@ Item {
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
               text: slot.modelData.icon
-              color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
+              color: power.host.theme.text
               font.family: power.host.theme.fontFamily
               font.pixelSize: power.host.theme.px(26)
-              Behavior on color { MotionColorAnimation { theme: power.host.theme } }
             }
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
               text: slot.modelData.label
-              color: slot.isSelected ? power.host.theme.accentText : power.host.theme.text
+              color: power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
               font.family: power.host.theme.textFontFamily
               font.letterSpacing: power.host.theme.tracking(power.host.theme.textFontFamily, power.host.theme.px(13))
               font.pixelSize: power.host.theme.px(13)
               font.weight: Font.Medium
-              Behavior on color { MotionColorAnimation { theme: power.host.theme } }
             }
           }
         }

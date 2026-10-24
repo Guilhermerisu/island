@@ -89,6 +89,17 @@ ListPicker {
     historyFile.reload(true)
   }
 
+  // A colour from text that is only a hex code (#rgb, #rgba, #rrggbb,
+  // #rrggbbaa, alpha last as in CSS), or null.
+  function hexColour(text) {
+    var m = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(text)
+    if (!m) return null
+    var h = m[1]
+    if (h.length <= 4) h = h.replace(/./g, "$&$&")
+    var channel = function(i) { return parseInt(h.substr(i * 2, 2), 16) / 255 }
+    return Qt.rgba(channel(0), channel(1), channel(2), h.length === 8 ? channel(3) : 1)
+  }
+
   // Preview pane: the selected picture, rounded, at its own proportions.
   sideWidth: 280
   // Only pictures get the pane; text rows already show their content.
@@ -189,8 +200,13 @@ ListPicker {
       property var entry: ({})
       property bool selected: false
       readonly property bool hasPreview: !!entry.previewImage
+      readonly property string body: String(entry.fullText || "").trim()
+      // A copied hex colour shows as its swatch; a link and plain text get
+      // their own glyphs, so the list reads by kind at a glance.
+      readonly property var swatch: clipboard.hexColour(body)
+      readonly property bool isLink: entry.entryType === "text" && /^(https?:\/\/|www\.)\S+$/i.test(body)
 
-      // Image thumbnail, or a plain glyph for text / file entries.
+      // Image thumbnail, colour swatch, or a glyph for the entry's kind.
       Item {
         id: badge
         anchors.left: parent.left
@@ -211,10 +227,19 @@ ListPicker {
             asynchronous: true
           }
         }
+        Rectangle {
+          anchors.centerIn: parent
+          width: 18; height: 18
+          radius: clipboard.host.theme.radii.small
+          visible: clipRow.swatch !== null
+          color: clipRow.swatch || "transparent"
+          border.width: 1
+          border.color: clipboard.host.theme.fill("strong")
+        }
         Text {
           anchors.centerIn: parent
-          visible: !(clipRow.hasPreview && thumb.status === Image.Ready)
-          text: clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : "󰆒"
+          visible: !(clipRow.hasPreview && thumb.status === Image.Ready) && clipRow.swatch === null
+          text: clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : clipRow.isLink ? "󰌷" : "󰦨"
           color: clipRow.selected ? clipboard.host.theme.text : clipboard.host.theme.muted
           font.family: clipboard.host.theme.fontFamily
           font.pixelSize: clipboard.host.theme.px(18)

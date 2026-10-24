@@ -22,7 +22,7 @@ IslandPill {
   // The leading glyph for the single-line kinds: Bluetooth's mark, or the
   // network's, on (solid) or off (slashed) and wired when it is.
   readonly property string leadingGlyph: activity.kind !== "network" ? "󰂯"
-    : activity.wired ? "󰈀"
+    : activity.wired ? "󰌗"
     : activity.connected ? "󰤨" : "󰤭"
 
   shown: host.activityPill

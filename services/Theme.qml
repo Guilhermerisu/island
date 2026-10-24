@@ -2,9 +2,9 @@ import QtQuick
 import Quickshell.Io
 import qs.Commons
 
-// The island's colours, font and motion speed. The island is always black;
-// text and accents come from the Omarchy theme, flipped when the theme's text
-// is dark so it stays readable on black.
+// The island's colours, font and motion speed. The island is always black
+// with neutral, macOS-like text and greys; only the accent comes from the
+// Omarchy theme.
 Item {
   id: theme
   required property var settings
@@ -33,9 +33,13 @@ Item {
     return size * (-0.0223 + 0.185 * Math.exp(-0.1745 * size))
   }
   readonly property color background: "#000000"
-  readonly property bool textIsLight: luminance(Color.foreground) > 0.5
-  readonly property color text: textIsLight ? Color.foreground : Color.background
-  readonly property color muted: textIsLight ? Color.muted : withAlpha(text, 0.6)
+  // A neutral near-white rather than the theme's foreground, which is often
+  // tinted (and dark on light themes); every grey below is derived from it.
+  readonly property color text: "#e6e6e6"
+  // Secondary text and glyphs: a neutral grey, as macOS's secondary label,
+  // not the theme's muted colour, which is often tinted and looks dirty
+  // next to the neutral cards. The accent alone carries the theme.
+  readonly property color muted: secondary
   readonly property color accent: Color.accent
   // Apple's dark-mode system colours, for what keeps its meaning whatever
   // the Omarchy theme: status, colourful live activities, charts.
