@@ -12,23 +12,12 @@ import ".."
 //
 // While Claude Code works, it's a live activity too (see AgentsPill): its
 // turn as it goes, read from its transcripts by live.py, with Clawd
-// (AgentsMascot) acting it out. It says when a turn's done, and grows by
-// itself when it's waiting on you.
+// (AgentsMascot) acting it out. It says when a turn's done.
 Addon {
   id: agentsAddon
   pill: Component { AgentsPill { agents: agentsAddon } }
   ongoing: working || finished
-  // Grown, it hides the clock and takes the island to itself.
-  pillAsks: expanded
-  readonly property real inset: 24
-  readonly property int rows: 3
-  readonly property real rowHeight: 27
-  // Grown, its height follows its steps, which can take two lines each
-  // (see AgentsPill).
-  property real grownHeight: 173
-  pillWidth: expanded ? 460 : 236
-  pillHeight: expanded ? grownHeight : restHeight
-  pillRadius: expanded ? 32 : 0
+  pillWidth: 236
   // Claude's orange, or the theme's accent when live activities aren't
   // colorful; amber while it waits on you.
   readonly property color ink: asking ? host.theme.system.orange
@@ -128,16 +117,8 @@ Addon {
   readonly property var session: sessions.length ? sessions[0] : null
   readonly property bool working: sessions.some(function(s) { return s.state !== "done" })
   readonly property var live: working ? sessions.filter(function(s) { return s.state !== "done" })[0] : session
-  // The step it's taking: with several asked at once, the first, as the
-  // others wait for it.
-  readonly property var current: {
-    var steps = live ? live.steps : []
-    for (var i = 0; i < steps.length; i++) if (steps[i].status === "running") return steps[i]
-    return null
-  }
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
-  onAskingChanged: if (asking) present()
 
   Process {
     id: liveWatch
@@ -175,22 +156,8 @@ Addon {
     onTriggered: if (agentsAddon.hovered) restart(); else agentsAddon.finished = false
   }
 
-  // As Apple's live activities alert: grown by itself for a few seconds
-  // when it starts waiting on you, unless the pointer's holding it open.
-  function present() {
-    openTimer.stop()
-    collapseTimer.stop()
-    expanded = true
-    presentTimer.restart()
-  }
-  Timer {
-    id: presentTimer
-    interval: 4500
-    onTriggered: if (!agentsAddon.hovered) agentsAddon.expanded = false
-  }
-
-  // The turn's time and the running step's, by the second while they're on
-  // screen; done, the turn's stops where it ended.
+  // The turn's time, by the second while it's on screen; done, it stops
+  // where it ended.
   property real now: Date.now()
   Timer {
     interval: 1000
@@ -199,13 +166,8 @@ Addon {
     triggeredOnStart: true
     onTriggered: agentsAddon.now = Date.now()
   }
-  readonly property real turnStart: live ? live.startedAt || (live.steps.length ? live.steps[0].startedAt : 0) : 0
-  readonly property real turnTime: !turnStart ? 0 : Math.max(0, (live.state === "done" ? live.doneAt : now) - turnStart)
-  // A step's length, shorter: <1s, 4s, 1:12.
-  function durationText(ms) {
-    var s = Math.floor(Math.max(0, ms) / 1000)
-    return s < 1 ? "<1s" : s < 60 ? s + "s" : timeText(ms)
-  }
+  readonly property real turnTime: !live || !live.startedAt ? 0
+    : Math.max(0, (live.state === "done" ? live.doneAt : now) - live.startedAt)
   // 0:04, 12:31, 1:02:10
   function timeText(ms) {
     var s = Math.max(0, Math.floor(ms / 1000))
@@ -214,24 +176,6 @@ Addon {
     return h > 0 ? h + ":" + ("0" + m).slice(-2) + ":" + ss : m + ":" + ss
   }
 
-  // As the call's: it opens once the pointer rests on it, and closes a
-  // moment after it leaves.
+  // Held by the pointer, a finished turn's "Done" stays (see finishedTimer).
   property bool hovered: false
-  property bool expanded: false
-  onHoveredChanged: {
-    if (hovered && ongoing) { collapseTimer.stop(); if (!expanded) openTimer.restart() }
-    else { openTimer.stop(); collapseTimer.restart() }
-  }
-  onOngoingChanged: if (!ongoing) expanded = false
-  onPillShownChanged: if (!pillShown) { openTimer.stop(); collapseTimer.stop(); expanded = false }
-  Timer {
-    id: openTimer
-    interval: 120
-    onTriggered: if (agentsAddon.hovered && agentsAddon.ongoing) agentsAddon.expanded = true
-  }
-  Timer {
-    id: collapseTimer
-    interval: 450
-    onTriggered: agentsAddon.expanded = false
-  }
 }

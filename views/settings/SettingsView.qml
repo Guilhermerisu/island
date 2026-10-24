@@ -102,6 +102,14 @@ Item {
   onCurrentPageChanged: {
     closePopups()
     scroller.contentY = 0
+    if (active) pageIn.restart()
+  }
+  // A new pane settles in: up a few pixels as it fades in, as System
+  // Settings' panes do, instead of the old one swapping out in place.
+  ParallelAnimation {
+    id: pageIn
+    MotionAnimation { theme: settingsView.host.theme; target: groups; property: "opacity"; from: 0; to: 1; pace: "fade"; curve: "fade" }
+    MotionAnimation { theme: settingsView.host.theme; target: groupsShift; property: "y"; from: 6; to: 0; pace: "standard" }
   }
   Keys.onEscapePressed: {
     if (menuButton || fontPickerButton) closePopups()
@@ -240,6 +248,7 @@ Item {
           x: 4
           width: scroller.width - 8
           spacing: 20
+          transform: Translate { id: groupsShift }
 
           PaneHeader { view: settingsView; page: settingsView.currentPage }
           GeneralPage { view: settingsView }
@@ -270,25 +279,25 @@ Item {
           KeybindsPage { id: keybindsPage; view: settingsView }
         }
       }
-      // Soft edges where the page runs on above or below.
+      // Soft edges where the page runs on above or below. A fixed model, so
+      // scrolling only changes the opacity (and the fade runs) instead of
+      // rebuilding the edges.
       Repeater {
-        model: [
-          { top: true, shown: scroller.contentY > 1 },
-          { top: false, shown: scroller.contentY < scroller.contentHeight - scroller.height - 1 }
-        ]
+        model: 2
         delegate: Rectangle {
-          required property var modelData
+          required property int index
+          readonly property bool upper: index === 0
           parent: scroller
           z: 1
           anchors.left: parent.left
           anchors.right: parent.right
-          y: modelData.top ? 0 : scroller.height - height
+          y: upper ? 0 : scroller.height - height
           height: 24
-          opacity: modelData.shown ? 1 : 0
+          opacity: (upper ? scroller.contentY > 1 : scroller.contentY < scroller.contentHeight - scroller.height - 1) ? 1 : 0
           Behavior on opacity { MotionAnimation { theme: settingsView.host.theme; pace: "fade"; curve: "fade" } }
           gradient: Gradient {
-            GradientStop { position: 0; color: modelData.top ? settingsView.panel : "transparent" }
-            GradientStop { position: 1; color: modelData.top ? "transparent" : settingsView.panel }
+            GradientStop { position: 0; color: upper ? settingsView.panel : "transparent" }
+            GradientStop { position: 1; color: upper ? "transparent" : settingsView.panel }
           }
         }
       }

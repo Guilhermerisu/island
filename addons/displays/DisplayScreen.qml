@@ -19,7 +19,7 @@ Item {
     anchors.fill: parent
     radius: screen.radius
     color: "#0b0b0c"
-    layer.enabled: screen.shadow
+    layer.enabled: screen.shadow && visible
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.55)
@@ -33,13 +33,13 @@ Item {
     anchors.fill: glass
     radius: Math.max(1, screen.radius - screen.bezel * 0.6)
     visible: false
-    layer.enabled: true
+    layer.enabled: glass.visible
   }
   Item {
     id: glass
     anchors.fill: parent
     anchors.margins: screen.bezel
-    layer.enabled: true
+    layer.enabled: visible
     layer.effect: MultiEffect {
       maskEnabled: true
       maskSource: glassMask

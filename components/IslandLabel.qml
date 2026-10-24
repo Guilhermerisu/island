@@ -7,7 +7,11 @@ Text {
   // The pill on the island (see IslandPill); the label hides behind it unless
   // it keeps the clock in its middle.
   property Item pill: null
-  opacity: (host.view === "rest" || host.view === "feedback") && (!pill || pill.keepsClock) ? 1 : 0
+  readonly property bool shown: (host.view === "rest" || host.view === "feedback") && (!pill || pill.keepsClock)
+  // Closing a view, it waits for the island to have nearly shrunk, so it
+  // doesn't fade in over the view's content in the middle of a big island.
+  readonly property bool fits: parent.height < parent.targetHeight + 24
+  opacity: shown && fits ? 1 : 0
   width: parent.width - 24
   horizontalAlignment: Text.AlignHCenter
   elide: Text.ElideRight
@@ -30,5 +34,5 @@ Text {
   font.features: { "tnum": 1, "case": 1 }
   font.letterSpacing: -0.4
   // Get out of the way fast, fade back in gently.
-  Behavior on opacity { MotionAnimation { theme: host.theme; pace: "fade"; curve: "fade" } }
+  Behavior on opacity { MotionAnimation { theme: host.theme; pace: shown && fits ? "fade" : "exit"; curve: "fade" } }
 }

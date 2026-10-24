@@ -40,7 +40,12 @@ ColumnLayout {
     cc.forceActiveFocus()
   }
   onActiveChanged: {
-    if (!active) { outputsOpen = false; inputsOpen = false; editMode = false; controlLayout.endDrag(); return }
+    // Reset on open, not on close, so the view keeps its shape while it
+    // fades out with the collapsing island.
+    if (!active) { controlLayout.endDrag(); return }
+    outputsOpen = false
+    inputsOpen = false
+    editMode = false
     Qt.callLater(function() { cc.forceActiveFocus() })
     controls.refresh()
   }
@@ -86,16 +91,34 @@ ColumnLayout {
       Layout.preferredWidth: cc.editMode ? 58 : 28
       Layout.preferredHeight: 28
       radius: 14
+      clip: true
       color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
+      // The pencil widens into Done, as Clear All does, cross-fading the two;
+      // not while opening, when edit mode is reset.
+      Behavior on Layout.preferredWidth { enabled: controlLayout.cardsSettled; MotionAnimation { theme: cc.host.theme; pace: "standard" } }
+      Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
       Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit Controls" }
       Text {
         anchors.centerIn: parent
-        text: cc.editMode ? "Done" : "󰏫"
+        opacity: cc.editMode ? 0 : 1
+        visible: opacity > 0.01
+        text: "󰏫"
         color: cc.text
-        font.family: cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont
-        font.letterSpacing: cc.host.theme.tracking(cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont, cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(15))
-        font.pixelSize: cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(15)
+        font.family: cc.iconFont
+        font.pixelSize: cc.host.theme.px(15)
+        Behavior on opacity { enabled: controlLayout.cardsSettled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
+      }
+      Text {
+        anchors.centerIn: parent
+        opacity: cc.editMode ? 1 : 0
+        visible: opacity > 0.01
+        text: "Done"
+        color: cc.text
+        font.family: cc.host.theme.textFontFamily
+        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(12))
+        font.pixelSize: cc.host.theme.px(12)
         font.weight: Font.Medium
+        Behavior on opacity { enabled: controlLayout.cardsSettled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
       }
       MouseArea {
         id: editMouse

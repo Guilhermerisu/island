@@ -649,8 +649,9 @@ Item {
           readonly property var cornerRadii: ({ topLeft: topLeftRadius, topRight: topRightRadius, bottomLeft: radius, bottomRight: radius })
           readonly property string outline: Squircle.path(width, height, cornerRadii, 0.6)
           // The same outline inset half a pixel, so a 1px edge stroke lands
-          // inside the shape.
-          readonly property string edgeOutline: Squircle.path(width - 1, height - 1, ({
+          // inside the shape. Only built while the edge shows, so a resting
+          // pill's morphs redraw one outline, not two.
+          readonly property string edgeOutline: !islandEdge.visible ? "" : Squircle.path(width - 1, height - 1, ({
             topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
             bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
           Shape {
@@ -733,6 +734,7 @@ Item {
         // reads against a dark wallpaper; fainter on the resting pill while
         // it's lifted under the pointer.
         Item {
+          id: islandEdge
           x: island.x
           y: island.y
           width: island.width

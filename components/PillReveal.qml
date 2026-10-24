@@ -4,7 +4,8 @@ import QtQuick
 // Island's: the leading part first, then the middle, then the trailing one.
 // Each `…In` runs 0 → 1 when `shown` turns on, and back to 0 when it turns
 // off, quicker and the other way round (trailing first), while the pill
-// fades out. Give a part, for example the leading one:
+// fades out; turned back on mid-exit, the parts carry on from where they
+// are. Give a part, for example the leading one:
 //
 //   opacity: reveal.leadingIn
 //   PillPart { progress: reveal.leadingIn }
@@ -19,14 +20,46 @@ Item {
   readonly property int exitDuration: theme.motionDuration("exit")
 
   visible: false
+  // The island this pill sits on (the nearest ancestor with a targetHeight).
+  // A pill shown while the island is still shrinking from an open view
+  // waits for it to have nearly shrunk, so its parts don't come in over
+  // the view's content. Once in, they stay in as the island changes size.
+  property Item island: null
+  Component.onCompleted: {
+    var p = parent
+    while (p && p.targetHeight === undefined) p = p.parent
+    island = p
+  }
+  readonly property bool fits: !island || island.height < island.targetHeight + 24
+  property bool held: false
+  readonly property bool wanted: shown && (fits || held)
+  // Each part waits its turn only if it's fully out; a pill shown again
+  // while still leaving carries on from where its parts are.
+  property int middleDelay: 0
+  property int trailingDelay: 0
+  // Shown before the island fits: never-revealed parts (at 1, for a pill
+  // created shown) drop out of sight until it does; leaving ones carry on.
   onShownChanged: {
-    if (shown) { leave.stop(); run.restart() }
-    else { run.stop(); leave.restart() }
+    if (shown && !wanted && leadingIn === 1 && middleIn === 1 && trailingIn === 1)
+      leadingIn = middleIn = trailingIn = 0
+  }
+  onWantedChanged: {
+    if (wanted) {
+      held = true
+      leave.stop()
+      if (leadingIn === 1 && middleIn === 1 && trailingIn === 1) leadingIn = middleIn = trailingIn = 0
+      middleDelay = middleIn > 0 ? 0 : duration / 5
+      trailingDelay = trailingIn > 0 ? 0 : duration * 2 / 5
+      run.restart()
+    } else {
+      held = false
+      run.stop()
+      leave.restart()
+    }
   }
 
   component Step: NumberAnimation {
     target: reveal
-    from: 0
     to: 1
     duration: reveal.duration
     easing.type: Easing.BezierSpline
@@ -55,13 +88,11 @@ Item {
     id: run
     Step { property: "leadingIn" }
     SequentialAnimation {
-      PropertyAction { target: reveal; property: "middleIn"; value: 0 }
-      PauseAnimation { duration: reveal.duration / 5 }
+      PauseAnimation { duration: reveal.middleDelay }
       Step { property: "middleIn" }
     }
     SequentialAnimation {
-      PropertyAction { target: reveal; property: "trailingIn"; value: 0 }
-      PauseAnimation { duration: reveal.duration * 2 / 5 }
+      PauseAnimation { duration: reveal.trailingDelay }
       Step { property: "trailingIn" }
     }
   }

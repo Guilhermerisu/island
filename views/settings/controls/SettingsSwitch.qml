@@ -22,16 +22,19 @@ Rectangle {
     Behavior on width { MotionAnimation { theme: sw.view.host.theme; pace: switchMouse.pressed ? "press" : "standard" } }
     height: 16; radius: 8
     y: 1
-    x: sw.checked ? sw.width - width - 1 : 1
+    // How far across the knob is (0 off, 1 on). Animating this rather than
+    // x keeps the knob inside the track while its width changes.
+    property real travel: sw.checked ? 1 : 0
+    Behavior on travel { MotionAnimation { theme: sw.view.host.theme; pace: "standard" } }
+    x: 1 + travel * (sw.width - width - 2)
     color: "#ffffff"
-    layer.enabled: true
+    layer.enabled: visible
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.4)
       shadowBlur: 0.25
       shadowVerticalOffset: 0.5
     }
-    Behavior on x { MotionAnimation { theme: sw.view.host.theme; pace: "standard" } }
   }
   MouseArea {
     id: switchMouse

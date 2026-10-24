@@ -54,12 +54,18 @@ ColumnLayout {
   // the groups, so nothing shows empty or jumps as it fills; then they all
   // fade in at once and the rings sweep up from zero.
   readonly property bool ready: !!latest
+  // The spinner fades out over the groups as they fade in: it gives up its
+  // height at once and stays drawn where it was until it's gone.
   Item {
-    visible: !page.ready
+    id: loading
+    opacity: page.ready ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: page.view.host.theme; pace: page.ready ? "exit" : "fade"; curve: "fade" } }
     Layout.fillWidth: true
-    Layout.preferredHeight: 240
+    Layout.preferredHeight: page.ready ? 0 : 240
     Column {
-      anchors.centerIn: parent
+      anchors.horizontalCenter: parent.horizontalCenter
+      y: 120 - height / 2
       spacing: 10
       Item {
         id: spinner
@@ -81,7 +87,7 @@ ColumnLayout {
           }
         }
         RotationAnimator on rotation {
-          running: !page.ready && page.shown
+          running: loading.visible && page.shown
           from: 0
           to: 360
           duration: 900
@@ -104,8 +110,10 @@ ColumnLayout {
   ColumnLayout {
     Layout.fillWidth: true
     spacing: 20
-    visible: page.ready
+    // Takes back the spacing after the collapsed spinner while it fades.
+    Layout.topMargin: loading.visible ? -page.spacing : 0
     opacity: page.ready ? 1 : 0
+    visible: opacity > 0.01
     Behavior on opacity { MotionAnimation { theme: page.view.host.theme; pace: "fade"; curve: "fade" } }
 
     // CPU and Memory ---------------------------------------------------------

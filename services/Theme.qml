@@ -87,6 +87,10 @@ Item {
   // trails the height as it shrinks), so it morphs as one shape.
   readonly property int morphLag: Math.round(28 * motionScale)
   readonly property real morphBounce: 0.2
+  // Any other timing (a stagger step, an offset after contentRevealDelay, a
+  // pulse) at the user's motion speed, given at Fast (1×) like the table
+  // above, so it keeps its rhythm with the rest at every speed.
+  function scaled(ms) { return Math.round(ms * motionScale) }
   function motionDuration(pace) {
     return Math.round((motionDurations[pace] || motionDurations.standard) * motionScale)
   }

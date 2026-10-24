@@ -40,7 +40,7 @@ Item {
     color: "#000000"
     border.width: 0
     clip: true
-    layer.enabled: true
+    layer.enabled: visible
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: "#000000"

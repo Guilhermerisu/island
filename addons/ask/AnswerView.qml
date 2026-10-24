@@ -175,10 +175,11 @@ Item {
     anchors.right: parent.right
     spacing: 14
 
-    // Thinking: Siri's glowing dots in a compact pill.
-    SiriDots {
+    // Room for the dots (drawn over the layout, below) while it thinks.
+    Item {
       visible: answer.thinking
-      running: answer.thinking && answer.active
+      Layout.preferredWidth: dots.implicitWidth
+      Layout.preferredHeight: dots.implicitHeight
       Layout.leftMargin: 2
     }
 
@@ -186,7 +187,9 @@ Item {
     Flickable {
       id: scroller
       OverlayScrollbar { flickable: scroller; parent: scroller; theme: answer.host.theme }
-      visible: !answer.thinking
+      opacity: answer.thinking ? 0 : 1
+      visible: opacity > 0.01
+      Behavior on opacity { MotionAnimation { theme: answer.host.theme; pace: answer.thinking ? "exit" : "fade"; curve: "fade" } }
       Layout.fillWidth: true
       Layout.preferredHeight: Math.min(body.implicitHeight, 460)
       contentHeight: body.implicitHeight
@@ -211,6 +214,20 @@ Item {
         lineHeight: 1.1
       }
     }
+  }
+
+  // Thinking: Siri's glowing dots in a compact pill. Over the layout rather
+  // than in it, so they fade out on top of the first words instead of pushing
+  // them down; they keep spinning until they're gone.
+  SiriDots {
+    id: dots
+    x: 2
+    width: implicitWidth
+    height: implicitHeight
+    opacity: answer.thinking ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: answer.host.theme; pace: answer.thinking ? "fade" : "exit"; curve: "fade" } }
+    running: visible && answer.active
   }
 
   // Copy: out of the way until you hover, floating over the bottom corner so

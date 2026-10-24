@@ -37,8 +37,10 @@ Row {
   property real retargetTime: 0
   property bool settling: true
   onPlayingChanged: settling = true
+  // 30 Hz: the bars ease toward their targets by elapsed time, so this looks
+  // the same as every frame at half the redraws.
   Timer {
-    interval: 16
+    interval: 33
     repeat: true
     running: wave.visible && (wave.playing || wave.settling)
     onRunningChanged: wave.lastTick = Date.now()

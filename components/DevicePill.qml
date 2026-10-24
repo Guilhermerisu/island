@@ -182,51 +182,64 @@ IslandPill {
     }
   }
   // Battery ring: a dim track, the level around it, the percentage inside.
+  // Some devices only report their battery a moment after connecting, so the
+  // ring opens its slot and fades in rather than shoving the name aside.
   Item {
     id: ring
     visible: pill.isDevice
+    readonly property bool reporting: pill.deviceBattery >= 0
+    property real present: reporting ? 1 : 0
+    Behavior on present { MotionAnimation { theme: pill.host.theme; pace: ring.reporting ? "fade" : "exit"; curve: "fade" } }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    width: pill.deviceBattery >= 0 ? 42 : 0
+    width: reporting ? 42 : 0
+    Behavior on width { MotionAnimation { theme: pill.host.theme; pace: "standard" } }
     height: 42
-    opacity: (pill.deviceBattery >= 0 ? 1 : 0) * reveal.trailingIn
+    opacity: present * reveal.trailingIn
     PillPart { progress: reveal.trailingIn }
-    Canvas {
-      id: ringCanvas
-      anchors.fill: parent
-      onPaint: {
-        var ctx = getContext("2d")
-        ctx.reset()
-        var r = width / 2 - 2.5, c = pill.ringColor
-        ctx.lineWidth = 3.5
-        ctx.lineCap = "round"
-        ctx.strokeStyle = Qt.rgba(c.r, c.g, c.b, 0.28)
-        ctx.beginPath()
-        ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2)
-        ctx.stroke()
-        var level = Math.max(0, Math.min(100, pill.deviceBattery)) / 100
-        if (level <= 0) return
-        ctx.strokeStyle = c
-        ctx.beginPath()
-        ctx.arc(width / 2, height / 2, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * level)
-        ctx.stroke()
+    // Drawn at full size against the right edge while the slot opens.
+    Item {
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      width: 42
+      height: 42
+      Canvas {
+        id: ringCanvas
+        anchors.fill: parent
+        onPaint: {
+          var ctx = getContext("2d")
+          ctx.reset()
+          var r = width / 2 - 2.5, c = pill.ringColor
+          ctx.lineWidth = 3.5
+          ctx.lineCap = "round"
+          ctx.strokeStyle = Qt.rgba(c.r, c.g, c.b, 0.28)
+          ctx.beginPath()
+          ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2)
+          ctx.stroke()
+          var level = Math.max(0, Math.min(100, pill.deviceBattery)) / 100
+          if (level <= 0) return
+          ctx.strokeStyle = c
+          ctx.beginPath()
+          ctx.arc(width / 2, height / 2, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * level)
+          ctx.stroke()
+        }
+        Connections {
+          target: pill
+          function onDeviceBatteryChanged() { ringCanvas.requestPaint() }
+          function onRingColorChanged() { ringCanvas.requestPaint() }
+        }
       }
-      Connections {
-        target: pill
-        function onDeviceBatteryChanged() { ringCanvas.requestPaint() }
-        function onRingColorChanged() { ringCanvas.requestPaint() }
+      Text {
+        anchors.centerIn: parent
+        text: ring.reporting ? pill.deviceBattery : ""
+        color: pill.ringColor
+        font.family: pill.host.theme.textFontFamily
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
+        font.pixelSize: pill.host.theme.px(13)
+        font.weight: Font.DemiBold
+        font.features: { "tnum": 1 }
       }
-    }
-    Text {
-      anchors.centerIn: parent
-      text: pill.deviceBattery
-      color: pill.ringColor
-      font.family: pill.host.theme.textFontFamily
-      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
-      font.pixelSize: pill.host.theme.px(13)
-      font.weight: Font.DemiBold
-      font.features: { "tnum": 1 }
     }
   }
 }

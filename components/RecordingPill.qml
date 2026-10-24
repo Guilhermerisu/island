@@ -26,10 +26,10 @@ IslandPill {
     opacity: (pill.recorder.recording ? pulse : 0.35) * reveal.leadingIn
     SequentialAnimation on pulse {
       running: pill.shown && pill.recorder.recording
+      // Stops with the pill rather than finishing its swing (up to 1.4 s on).
       loops: Animation.Infinite
-      alwaysRunToEnd: true
-      NumberAnimation { to: 0.35; duration: 700; easing.type: Easing.InOutSine }
-      NumberAnimation { to: 1; duration: 700; easing.type: Easing.InOutSine }
+      NumberAnimation { to: 0.35; duration: pill.host.theme.scaled(467); easing.type: Easing.InOutSine }
+      NumberAnimation { to: 1; duration: pill.host.theme.scaled(467); easing.type: Easing.InOutSine }
     }
   }
   Text {

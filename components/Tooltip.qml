@@ -39,7 +39,7 @@ Item {
     Behavior on opacity { MotionAnimation { theme: tip.theme; pace: tip.shown ? "fade" : "exit"; curve: "fade" } }
     scale: tip.shown ? 1 : 0.97
     transformOrigin: tip.above ? Item.Bottom : Item.Top
-    Behavior on scale { MotionAnimation { theme: tip.theme; pace: "quick" } }
+    Behavior on scale { MotionAnimation { theme: tip.theme; pace: tip.shown ? "quick" : "exit" } }
     width: label.width + 16
     height: label.height + 8
     radius: 6

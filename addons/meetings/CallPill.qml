@@ -25,6 +25,29 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.theme; pace: "fade"; curve: "fade" } }
 
+  // The phone and time, then the waveform, come in from a blur in turn, as
+  // the other pills.
+  PillReveal { id: reveal; theme: pill.theme; shown: pill.meetings.pillShown }
+
+  // How far the island has grown from the resting pill (0) to the controls
+  // (1), read off its live width, so the row's insets ride the island's
+  // spring, bounce and all, instead of drifting against its edge on a curve
+  // of their own. Both ends are taken as it starts to grow: the width it
+  // grows from (the clock's included) and the addon's grown pillWidth.
+  property real restWidth: 0
+  property real grownWidth: 0
+  readonly property real grow: grownWidth > restWidth
+    ? Math.max(0, Math.min(1, (width - restWidth) / (grownWidth - restWidth)))
+    : meetings.expanded ? 1 : 0
+  Connections {
+    target: pill.meetings
+    function onExpandedChanged() {
+      if (!pill.meetings.expanded) return
+      pill.restWidth = pill.width
+      pill.grownWidth = pill.meetings.pillWidth
+    }
+  }
+
   HoverHandler {
     enabled: pill.meetings.pillShown
     onHoveredChanged: pill.meetings.hovered = hovered
@@ -46,10 +69,11 @@ Item {
     // between them.
     Row {
       anchors.left: parent.left
-      anchors.leftMargin: pill.meetings.expanded ? pill.meetings.inset + 2 : 14
-      Behavior on anchors.leftMargin { MotionAnimation { theme: pill.theme; pace: "morph" } }
+      anchors.leftMargin: 14 + (pill.meetings.inset + 2 - 14) * pill.grow
       anchors.verticalCenter: parent.verticalCenter
       spacing: 3
+      opacity: reveal.leadingIn
+      PillPart { progress: reveal.leadingIn }
       // Ended, the phone hangs up: it turns red and tips down into
       // phone.down, the time stopped beside it in red.
       Item {
@@ -133,12 +157,15 @@ Item {
     // muted.
     Row {
       anchors.right: parent.right
-      anchors.rightMargin: pill.meetings.expanded ? pill.meetings.inset + 5 : 17
-      Behavior on anchors.rightMargin { MotionAnimation { theme: pill.theme; pace: "morph" } }
+      anchors.rightMargin: 17 + (pill.meetings.inset + 5 - 17) * pill.grow
       anchors.verticalCenter: parent.verticalCenter
       spacing: 2.5
-      opacity: pill.meetings.micMuted ? 0.4 : 1
-      Behavior on opacity { MotionAnimation { theme: pill.theme; pace: "fade"; curve: "fade" } }
+      // Dimmed apart from the reveal, so muting fades while the reveal
+      // drives the opacity frame by frame.
+      property real dim: pill.meetings.micMuted ? 0.4 : 1
+      Behavior on dim { MotionAnimation { theme: pill.theme; pace: "fade"; curve: "fade" } }
+      opacity: dim * reveal.trailingIn
+      PillPart { progress: reveal.trailingIn }
       Repeater {
         model: pill.meetings.meterBars
         delegate: Rectangle {
@@ -156,7 +183,7 @@ Item {
           property real shown: pill.meetings.ended ? 0 : 1
           Behavior on shown {
             SequentialAnimation {
-              PauseAnimation { duration: pill.meetings.ended ? bar.index * 30 : 0 }
+              PauseAnimation { duration: pill.meetings.ended ? pill.theme.scaled(bar.index * 20) : 0 }
               MotionAnimation { theme: pill.theme; pace: "fade"; curve: "exit" }
             }
           }
@@ -178,7 +205,7 @@ Item {
       property real shown: pill.meetings.ended ? 1 : 0
       Behavior on shown {
         SequentialAnimation {
-          PauseAnimation { duration: pill.meetings.ended ? pill.theme.contentRevealDelay + 90 : 0 }
+          PauseAnimation { duration: pill.meetings.ended ? pill.theme.contentRevealDelay + pill.theme.scaled(60) : 0 }
           MotionAnimation { theme: pill.theme; pace: "morph" }
         }
       }
@@ -264,7 +291,7 @@ Item {
     property real reveal: pill.meetings.expanded ? 1 : 0
     Behavior on reveal {
       SequentialAnimation {
-        PauseAnimation { duration: pill.meetings.expanded ? pill.theme.contentRevealDelay + button.order * 28 : 0 }
+        PauseAnimation { duration: pill.meetings.expanded ? pill.theme.contentRevealDelay + pill.theme.scaled(button.order * 19) : 0 }
         MotionAnimation { theme: pill.theme; pace: pill.meetings.expanded ? "morph" : "exit" }
       }
     }

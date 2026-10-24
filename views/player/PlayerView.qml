@@ -28,9 +28,12 @@ Item {
     position = mpris ? mpris.position : 0
     Qt.callLater(function() { player.forceActiveFocus() })
   }
-  // Mpris only reports position on seeks; re-read it every frame while open
-  // and playing so the bar and times glide.
-  FrameAnimation {
+  // Mpris only reports position on seeks; re-read it while open and playing
+  // so the bar and times glide. 30 Hz is smooth for a bar that moves a pixel
+  // or two a second, without redrawing the island every display frame.
+  Timer {
+    interval: 33
+    repeat: true
     running: player.active && player.playing && !player.dragging
     onTriggered: player.position = player.mpris ? player.mpris.position : 0
   }
@@ -77,22 +80,56 @@ Item {
         Layout.preferredHeight: 72
         radius: 16
         color: "transparent"
+        id: coverBox
+        // Two covers taking turns: a new track's art loads into the hidden
+        // one and fades in over the old, so changing tracks never flashes
+        // the fallback in between.
+        readonly property string art: player.host.nowPlaying.art
+        property Image front: coverA
+        readonly property Image back: front === coverA ? coverB : coverA
+        readonly property bool hasArt: art !== "" && (front.status === Image.Ready || back.status === Image.Ready)
+        onArtChanged: {
+          if (art === front.source.toString()) { back.source = ""; return }
+          back.source = art
+        }
+        Component.onCompleted: front.source = art
+        function arrived(cover) {
+          if (cover !== back || cover.status !== Image.Ready) return
+          cover.opacity = 0
+          front = cover
+          coverIn.target = cover
+          coverIn.restart()
+        }
         ArtFallback {
           anchors.fill: parent
           host: player.host
           glyphSize: 30
-          visible: cover.status !== Image.Ready
+          visible: !coverBox.hasArt
         }
-        Image {
-          id: cover
+        component Cover: Image {
+          id: c
           anchors.fill: parent
-          source: player.host.nowPlaying.art
           sourceSize.width: 144
           sourceSize.height: 144
           fillMode: Image.PreserveAspectCrop
           asynchronous: true
           cache: false
-          visible: status === Image.Ready
+          visible: status === Image.Ready && coverBox.art !== ""
+          z: c === coverBox.front ? 1 : 0
+          onStatusChanged: coverBox.arrived(c)
+        }
+        Cover { id: coverA }
+        Cover { id: coverB }
+        MotionAnimation {
+          id: coverIn
+          theme: player.host.theme
+          property: "opacity"
+          to: 1
+          pace: "fade"
+          curve: "fade"
+          // Once it's in, the old cover underneath is let go (unless it's
+          // already loading the next track's).
+          onFinished: if (coverBox.back.source.toString() !== coverBox.art) coverBox.back.source = ""
         }
       }
       ColumnLayout {

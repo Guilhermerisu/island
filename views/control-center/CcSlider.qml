@@ -53,7 +53,7 @@ Item {
       height: parent.height
       radius: height / 2
       color: "#ffffff"
-      layer.enabled: true
+      layer.enabled: visible
       layer.effect: MultiEffect {
         shadowEnabled: true
         shadowColor: Qt.rgba(0, 0, 0, 0.5)

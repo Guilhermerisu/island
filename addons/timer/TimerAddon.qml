@@ -42,14 +42,23 @@ Addon {
   // How much is left, 1 to 0.
   readonly property real progress: duration > 0 ? remaining / duration : 0
 
+  // Ticks smoothly while the countdown is on screen (the pill, the view,
+  // or the control center's tile), and only once a second otherwise.
+  readonly property bool onScreen: pillShown || host.view === "timer" || host.view === "controls"
   Timer {
-    interval: 100
+    interval: timerAddon.onScreen ? 100 : 1000
     repeat: true
     running: timerAddon.phase === "running"
     onTriggered: {
       timerAddon.now = Date.now()
       if (timerAddon.now >= timerAddon.endsAt) timerAddon.finish()
     }
+  }
+  // Ends right on time, whatever the tick.
+  Timer {
+    running: timerAddon.phase === "running"
+    interval: Math.max(1, timerAddon.endsAt - Date.now())
+    onTriggered: timerAddon.finish()
   }
 
   function start(ms) {
@@ -77,6 +86,8 @@ Addon {
   // NotificationClient).
   Process { id: notifier }
   function finish() {
+    // Both timers can see the end in the same moment; say so once.
+    if (phase !== "running") return
     phase = "idle"
     notifier.command = ["notify-send", "-a", "Island Timer", "Timer",
       "Your " + durationText(duration) + " timer is up"]

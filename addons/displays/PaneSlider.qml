@@ -26,6 +26,15 @@ Item {
   readonly property bool dragging: mouse.pressed || holding
   readonly property real shown: Math.max(0, Math.min(1, dragging ? dragged : value))
   onValueChanged: holding = false
+  // Where the knob and fill are drawn: gliding to a click on the track, a
+  // stop it snaps to, or a new value, but right under the pointer while
+  // it drags freely.
+  property bool tracking: false
+  property real glide: shown
+  Behavior on glide {
+    enabled: !slider.tracking || slider.stops > 1
+    MotionAnimation { theme: slider.view.host.theme; pace: "quick" }
+  }
   Timer { id: release; interval: 2500; onTriggered: slider.holding = false }
   function snap(v) {
     v = Math.max(0, Math.min(1, v))
@@ -91,7 +100,7 @@ Item {
       radius: 1.5
       color: slider.view.well
       Rectangle {
-        width: groove.width * slider.shown
+        width: groove.width * slider.glide
         height: parent.height
         radius: parent.radius
         color: slider.view.accent
@@ -111,7 +120,7 @@ Item {
     }
     Rectangle {
       id: knob
-      x: track.span * slider.shown
+      x: track.span * slider.glide
       anchors.verticalCenter: parent.verticalCenter
       width: 18
       height: 18
@@ -121,7 +130,7 @@ Item {
       border.color: Qt.rgba(0, 0, 0, 0.18)
       scale: mouse.pressed ? 1.06 : 1
       Behavior on scale { MotionAnimation { theme: slider.view.host.theme; pace: "press" } }
-      layer.enabled: true
+      layer.enabled: visible
       layer.effect: MultiEffect {
         shadowEnabled: true
         shadowColor: Qt.rgba(0, 0, 0, 0.45)
@@ -139,17 +148,20 @@ Item {
       enabled: slider.enabled
       function at(x) { return slider.snap((x - knob.width / 2) / Math.max(1, track.span)) }
       onPressed: function(e) {
+        slider.tracking = false
         slider.dragged = at(e.x)
         if (slider.live) slider.moved(slider.dragged)
       }
       onPositionChanged: function(e) {
         if (!pressed) return
+        slider.tracking = true
         var v = at(e.x)
         if (v === slider.dragged) return
         slider.dragged = v
         if (slider.live) slider.moved(v)
       }
       onReleased: {
+        slider.tracking = false
         slider.holding = true
         release.restart()
         if (!slider.live) slider.moved(slider.dragged)

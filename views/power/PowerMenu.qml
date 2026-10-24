@@ -125,7 +125,9 @@ Item {
           color: power.host.theme.fill(slot.isSelected ? "stronger" : "raised")
           border.width: 2
           border.color: power.host.theme.withAlpha(power.host.theme.accent, slot.isSelected ? 1 : 0)
-          scale: tileMouse.pressed ? 0.97 : 1
+          // The selected tile grows into the room left for it; pressed, any
+          // tile dips.
+          scale: tileMouse.pressed ? 0.97 : slot.isSelected ? 1.04 : 1
           Behavior on color { MotionColorAnimation { theme: power.host.theme } }
           Behavior on border.color { MotionColorAnimation { theme: power.host.theme } }
           Behavior on scale { MotionAnimation { theme: power.host.theme; pace: tileMouse.pressed ? "press" : "standard" } }
@@ -145,6 +147,7 @@ Item {
               text: slot.modelData.label
               color: power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
+              Behavior on opacity { MotionAnimation { theme: power.host.theme; pace: "fade"; curve: "fade" } }
               font.family: power.host.theme.textFontFamily
               font.letterSpacing: power.host.theme.tracking(power.host.theme.textFontFamily, power.host.theme.px(13))
               font.pixelSize: power.host.theme.px(13)

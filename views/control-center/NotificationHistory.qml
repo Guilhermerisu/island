@@ -14,6 +14,21 @@ ColumnLayout {
   Layout.fillWidth: true
   Layout.topMargin: 4
   spacing: 6
+  // Off for the first layout each time the control center opens (as the
+  // grid's cardsSettled), so only changes made while it's showing animate.
+  property bool settled: false
+  Connections {
+    target: history.center
+    function onActiveChanged() {
+      history.settled = false
+      if (history.center.active) historySettleTimer.restart()
+    }
+  }
+  Timer {
+    id: historySettleTimer
+    interval: history.center.host.theme.motionDuration("morph")
+    onTriggered: history.settled = history.center.active
+  }
 
   RowLayout {
     Layout.fillWidth: true
@@ -32,7 +47,13 @@ ColumnLayout {
     Rectangle {
       scale: clearMouse.pressed ? 0.94 : 1
       Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: clearMouse.pressed ? "press" : "standard" } }
-      visible: !history.empty
+      // Goes with the banners it clears.
+      opacity: history.empty ? 0 : 1
+      visible: opacity > 0.01
+      Behavior on opacity {
+        enabled: history.settled
+        MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+      }
       implicitWidth: clearMouse.containsMouse ? clearLabel.implicitWidth + 20 : 22
       implicitHeight: 22
       radius: height / 2
@@ -66,6 +87,7 @@ ColumnLayout {
       MouseArea {
         id: clearMouse
         anchors.fill: parent
+        enabled: !history.empty
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: history.center.host.notifications.clearAll()
@@ -73,8 +95,11 @@ ColumnLayout {
     }
   }
 
+  // Fades in as the last banners go out; it isn't in the way of new ones.
   Text {
     visible: history.empty
+    opacity: history.empty ? 1 : 0
+    Behavior on opacity { enabled: history.settled; MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
     Layout.fillWidth: true
     Layout.topMargin: 10
     Layout.bottomMargin: 12
@@ -89,15 +114,50 @@ ColumnLayout {
   ListView {
     id: notes
     OverlayScrollbar { flickable: notes; parent: notes; theme: history.center.host.theme }
-    visible: !history.empty
+    // Clear All (or dismissing the last banner) lets the rows fade out and
+    // the frame close before the list goes, rather than dropping it at once.
+    opacity: history.empty ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity {
+      enabled: history.settled
+      MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+    }
     Layout.fillWidth: true
     // Out by the × button's overhang, so the banners line up with the cards.
     Layout.leftMargin: -6
-    Layout.preferredHeight: Math.min(contentHeight, 320)
+    // Grows and shrinks with the rows as they come and go, instead of
+    // jumping to the new content height while they're still animating.
+    property real frameHeight: history.empty ? 0 : Math.min(contentHeight, 320)
+    Behavior on frameHeight { enabled: history.settled; MotionAnimation { theme: history.center.host.theme; pace: "standard" } }
+    Layout.preferredHeight: frameHeight
     clip: true
     spacing: 4
     boundsBehavior: Flickable.StopAtBounds
-    model: history.center.host.notifications.history
+    // Kept by key, so dismissing one slides the rest up instead of
+    // rebuilding every banner.
+    model: noteRows.model
+    KeyedListModel {
+      id: noteRows
+      values: history.center.host.notifications.history
+      keyOf: function(row) { return history.center.host.notifications.key(row) }
+    }
+    // A banner fades in where it lands and out where it was, and the rest
+    // slide over; the first fill (and anything while hidden) just appears.
+    add: Transition {
+      enabled: noteRows.primed && history.center.active
+      MotionAnimation { theme: history.center.host.theme; property: "opacity"; from: 0; to: 1; pace: "fade"; curve: "fade" }
+      MotionAnimation { theme: history.center.host.theme; property: "scale"; from: 0.96; to: 1; pace: "standard" }
+    }
+    remove: Transition {
+      enabled: history.center.active
+      MotionAnimation { theme: history.center.host.theme; property: "opacity"; to: 0; pace: "exit"; curve: "exit" }
+      MotionAnimation { theme: history.center.host.theme; property: "scale"; to: 0.96; pace: "exit"; curve: "exit" }
+    }
+    // Also settles opacity and scale, in case a banner was still fading in.
+    displaced: Transition {
+      MotionAnimation { theme: history.center.host.theme; property: "y"; pace: "standard" }
+      MotionAnimation { theme: history.center.host.theme; properties: "opacity,scale"; to: 1; pace: "fade"; curve: "fade" }
+    }
     // Soft edges where the list runs on above or below, as in Settings.
     Repeater {
       model: [
@@ -123,7 +183,8 @@ ColumnLayout {
     // Inset by the × button's overhang, which sits on the banner's corner.
     delegate: Item {
       id: note
-      required property var modelData
+      required property var entry
+      readonly property var modelData: entry
       readonly property string appName: String(modelData.app || modelData.summary || "?")
       readonly property bool hovered: noteMouse.containsMouse || closeMouse.containsMouse
       width: ListView.view.width

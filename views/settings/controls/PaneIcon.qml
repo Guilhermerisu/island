@@ -47,7 +47,8 @@ Item {
   Item {
     id: body
     anchors.fill: parent
-    layer.enabled: !paneIcon.neutral || paneIcon.onAccent
+    // Only while on screen, so the icons of a closed Settings hold no buffers.
+    layer.enabled: (!paneIcon.neutral || paneIcon.onAccent) && visible
     layer.samples: 4
     layer.effect: MultiEffect {
       shadowEnabled: true
@@ -111,7 +112,7 @@ Item {
       id: layerMask
       anchors.fill: parent
       visible: false
-      layer.enabled: paneIcon.layered
+      layer.enabled: paneIcon.layered && body.visible
       preferredRendererType: Shape.CurveRenderer
       ShapePath {
         strokeWidth: -1
@@ -122,7 +123,7 @@ Item {
     Item {
       anchors.fill: parent
       visible: paneIcon.layered
-      layer.enabled: paneIcon.layered
+      layer.enabled: paneIcon.layered && visible
       layer.samples: 4
       layer.effect: MultiEffect {
         maskEnabled: true

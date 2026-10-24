@@ -19,6 +19,9 @@ Item {
   Layout.fillWidth: true
   implicitHeight: asking ? 66 : 44
   Behavior on implicitHeight { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "standard" } }
+  // The warning line sits below the resting height; clipped, it rolls out
+  // with the row instead of spilling over the next one.
+  clip: true
 
   Text {
     anchors.left: parent.left
@@ -44,7 +47,10 @@ Item {
     radius: 6
     scale: keysMouse.pressed ? 0.98 : 1
     Behavior on scale { MotionAnimation { theme: shortcutRow.view.host.theme; pace: keysMouse.pressed ? "press" : "standard" } }
-    visible: !shortcutRow.asking
+    // Cross-fades with Cancel and Replace while a conflict is asked about.
+    opacity: shortcutRow.asking ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "exit" : "fade"; curve: "fade" } }
     color: shortcutRow.recording ? shortcutRow.view.host.theme.accentFill("soft")
       : keysMouse.containsMouse && !caps ? shortcutRow.view.well : shortcutRow.view.host.theme.withAlpha(shortcutRow.view.well, 0)
     Behavior on width { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "standard" } }
@@ -119,6 +125,8 @@ Item {
     MouseArea {
       id: keysMouse
       anchors.fill: parent
+      // Still drawn while it fades out under Cancel and Replace; not clickable.
+      enabled: !shortcutRow.asking
       hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
       onClicked: shortcutRow.recording ? shortcutRow.keybinds.stopRecording() : shortcutRow.keybinds.startRecording(shortcutRow.entry.id)
@@ -129,7 +137,9 @@ Item {
     anchors.rightMargin: 10
     y: 8
     spacing: 6
-    visible: shortcutRow.asking
+    opacity: shortcutRow.asking ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "fade" : "exit"; curve: "fade" } }
     SettingsButton { view: shortcutRow.view; label: "Cancel"; onClicked: shortcutRow.keybinds.cancelPending() }
     SettingsButton { view: shortcutRow.view; label: "Replace"; primary: true; onClicked: shortcutRow.keybinds.applyPending() }
   }
@@ -137,7 +147,9 @@ Item {
     x: 14 + shortcutRow.indent
     y: 42
     spacing: 5
-    visible: shortcutRow.asking
+    opacity: shortcutRow.asking ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "fade" : "exit"; curve: "fade" } }
     Text {
       text: "󰀪"
       color: "#febc2e"

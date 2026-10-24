@@ -137,8 +137,18 @@ Item {
     // rather than each row lighting up on its own.
     highlightFollowsCurrentItem: false
     highlight: Rectangle {
+      id: highlight
       readonly property Item at: list.currentItem
       readonly property bool atDisabled: !!at && at.itemDisabled
+      // Only glide from one row to another: when rows come back (say after a
+      // search with no results) it appears on its row instead of sliding in
+      // from the corner. Re-armed a tick later, once it has jumped there (if
+      // the list hasn't been torn down meanwhile).
+      property bool glides: false
+      onAtChanged: {
+        if (!at) glides = false
+        else if (!glides) Qt.callLater(function() { if (highlight && highlight.at) highlight.glides = true })
+      }
       visible: !!at && list.count > 0
       x: at ? at.x + (picker.grid ? 3 : 0) : 0
       y: at ? at.y + (picker.grid ? 3 : 0) : 0
@@ -147,8 +157,8 @@ Item {
       radius: 12
       color: picker.grid ? picker.host.theme.accentFill("medium") : picker.host.theme.fill("raised")
       opacity: atDisabled ? 0.4 : 1
-      Behavior on x { MotionAnimation { theme: picker.host.theme; pace: "quick" } }
-      Behavior on y { MotionAnimation { theme: picker.host.theme; pace: "quick" } }
+      Behavior on x { enabled: highlight.glides; MotionAnimation { theme: picker.host.theme; pace: "quick" } }
+      Behavior on y { enabled: highlight.glides; MotionAnimation { theme: picker.host.theme; pace: "quick" } }
     }
 
     delegate: Item {
@@ -182,24 +192,25 @@ Item {
     }
 
     // Soft edges where the list runs on above or below, as in Settings.
+    // A fixed model, so scrolling only changes the opacity (and the fade runs)
+    // instead of rebuilding the edges.
     Repeater {
-      model: [
-        { top: true, shown: list.contentY - list.originY > 1 },
-        { top: false, shown: list.contentY - list.originY < list.contentHeight - list.height - 1 }
-      ]
+      model: 2
       delegate: Rectangle {
-        required property var modelData
+        required property int index
+        readonly property bool upper: index === 0
+        readonly property real scrolled: list.contentY - list.originY
         parent: list
         z: 2
         anchors.left: parent.left
         anchors.right: parent.right
-        y: modelData.top ? 0 : list.height - height
+        y: upper ? 0 : list.height - height
         height: 24
-        opacity: modelData.shown ? 1 : 0
+        opacity: (upper ? scrolled > 1 : scrolled < list.contentHeight - list.height - 1) ? 1 : 0
         Behavior on opacity { MotionAnimation { theme: picker.host.theme; pace: "fade"; curve: "fade" } }
         gradient: Gradient {
-          GradientStop { position: 0; color: modelData.top ? picker.host.theme.background : "transparent" }
-          GradientStop { position: 1; color: modelData.top ? "transparent" : picker.host.theme.background }
+          GradientStop { position: 0; color: upper ? picker.host.theme.background : "transparent" }
+          GradientStop { position: 1; color: upper ? "transparent" : picker.host.theme.background }
         }
       }
     }

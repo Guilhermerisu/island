@@ -12,6 +12,22 @@ Item {
   required property var displays
   readonly property var host: displays.host
   readonly property var theme: host.theme
+  // The countdown ring, emptying in one steady sweep over the 10 seconds
+  // (a wall-clock time, so not at the motion speed), started with the
+  // countdown itself.
+  property real sweep: 360
+  NumberAnimation {
+    id: sweepDown
+    target: pill
+    property: "sweep"
+    from: 360
+    to: 0
+    duration: 10000
+  }
+  Connections {
+    target: pill.displays
+    function onConfirmingChanged() { if (pill.displays.confirming) sweepDown.restart(); else sweepDown.stop() }
+  }
 
   opacity: displays.pillShown ? 1 : 0
   visible: opacity > 0.01
@@ -86,8 +102,7 @@ Item {
             PathAngleArc {
               centerX: 14; centerY: 14; radiusX: 12.5; radiusY: 12.5
               startAngle: -90
-              sweepAngle: 360 * pill.displays.secondsLeft / 10
-              Behavior on sweepAngle { NumberAnimation { duration: 950; easing.type: Easing.Linear } }
+              sweepAngle: pill.sweep
             }
           }
         }

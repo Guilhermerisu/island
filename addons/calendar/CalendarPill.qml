@@ -19,30 +19,7 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.host.theme; pace: "fade"; curve: "fade" } }
 
-  // How far each part has come in, 0 to 1; kept at 1 while the pill fades.
-  property real leadingIn: 0
-  property real middleIn: 0
-  property real trailingIn: 0
-  onShownChanged: if (shown) reveal.restart()
-  readonly property int revealDuration: host.theme.motionDuration("expressive")
-  ParallelAnimation {
-    id: reveal
-    NumberAnimation { target: pill; property: "leadingIn"; from: 0; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
-    SequentialAnimation {
-      PropertyAction { target: pill; property: "middleIn"; value: 0 }
-      PauseAnimation { duration: pill.revealDuration / 5 }
-      NumberAnimation { target: pill; property: "middleIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
-    }
-    SequentialAnimation {
-      PropertyAction { target: pill; property: "trailingIn"; value: 0 }
-      PauseAnimation { duration: pill.revealDuration * 2 / 5 }
-      NumberAnimation { target: pill; property: "trailingIn"; to: 1; duration: pill.revealDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: pill.host.theme.motionCurve("settle") }
-    }
-  }
-  component Reveal: MultiEffect {
-    blurEnabled: true
-    blurMax: 12
-  }
+  PillReveal { id: reveal; theme: pill.host.theme; shown: pill.shown }
 
   // Leading: a calendar page with the event's month and day, as Apple's
   // icon, in its continuous-cornered shape.
@@ -54,16 +31,14 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 32
     height: 32
-    opacity: pill.leadingIn
-    scale: 0.9 + 0.1 * pill.leadingIn
-    layer.enabled: pill.leadingIn < 1
-    layer.effect: Reveal { blur: 1 - pill.leadingIn }
+    opacity: reveal.leadingIn
+    PillPart { progress: reveal.leadingIn }
 
     Shape {
       id: pageShape
       anchors.fill: parent
       visible: false
-      layer.enabled: true
+      layer.enabled: pill.visible
       preferredRendererType: Shape.CurveRenderer
       ShapePath {
         strokeWidth: -1
@@ -84,8 +59,10 @@ Item {
     }
     Item {
       anchors.fill: parent
-      layer.enabled: true
-      layer.samples: 4
+      // Only while the pill is up, so a hidden one holds no buffers.
+      // No multisampling: the mask's soft threshold already smooths the
+      // page's edge, and it saves a second offscreen pass.
+      layer.enabled: visible
       layer.effect: MultiEffect {
         maskEnabled: true
         maskSource: pageShape
@@ -128,11 +105,9 @@ Item {
 
   // Middle: the title over its times.
   Column {
-    opacity: pill.middleIn
-    scale: 0.94 + 0.06 * pill.middleIn
+    opacity: reveal.middleIn
     transformOrigin: Item.Left
-    layer.enabled: pill.middleIn < 1
-    layer.effect: Reveal { blur: 1 - pill.middleIn }
+    PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: leading.right
     anchors.leftMargin: 10
     anchors.right: trailing.left
@@ -167,10 +142,8 @@ Item {
   // Trailing: the reminder's lead time.
   Text {
     id: trailing
-    opacity: pill.trailingIn
-    scale: 0.9 + 0.1 * pill.trailingIn
-    layer.enabled: pill.trailingIn < 1
-    layer.effect: Reveal { blur: 1 - pill.trailingIn }
+    opacity: reveal.trailingIn
+    PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter

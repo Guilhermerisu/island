@@ -20,7 +20,8 @@ Item {
   visible: false
 
   Binding { target: part.target; property: "scale"; value: part.scaleFrom + (1 - part.scaleFrom) * part.progress }
-  Binding { target: part.target; property: "layer.enabled"; value: part.progress < 1 }
+  // Only mid-reveal: fully out (a hidden pill) or fully in needs no blur.
+  Binding { target: part.target; property: "layer.enabled"; value: part.progress > 0 && part.progress < 1 }
   Binding { target: part.target; property: "layer.effect"; value: blur }
   Component { id: blur; PillBlur { blur: 1 - part.progress } }
 }

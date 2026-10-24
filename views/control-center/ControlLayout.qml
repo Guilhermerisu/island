@@ -22,6 +22,30 @@ ColumnLayout {
   property var previewOrder: []
   // Room around the grid in edit mode for the − badges on the cards' corners.
   readonly property real inset: editMode ? 8 : 0
+  // Off for the first layout each time the control center opens, so cards
+  // appear and move only for changes made while it's showing.
+  property bool cardsSettled: false
+  Connections {
+    target: layout.center
+    function onActiveChanged() {
+      layout.cardsSettled = false
+      if (layout.center.active) cardsSettleTimer.restart()
+    }
+  }
+  Timer {
+    id: cardsSettleTimer
+    interval: layout.center.host.theme.motionDuration("morph")
+    onTriggered: layout.cardsSettled = layout.center.active
+  }
+  // The room the Sound and Microphone pickers add below their sliders,
+  // eased (after the first layout) so the card and the ones under it follow
+  // the rows in and out instead of snapping.
+  readonly property real outputsRoom: center.outputsOpen && !center.editMode ? controls.outputs.length * 40 : 0
+  readonly property real inputsRoom: center.inputsOpen && !center.editMode ? controls.inputs.length * 40 : 0
+  property real outputsExtra: outputsRoom
+  property real inputsExtra: inputsRoom
+  Behavior on outputsExtra { enabled: layout.cardsSettled; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+  Behavior on inputsExtra { enabled: layout.cardsSettled; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
   onEditModeChanged: {
     endDrag()
     controlLayoutScroll.contentY = 0
@@ -36,24 +60,30 @@ ColumnLayout {
         && (layout.center.editMode || layout.controls.controlPresent(key))
     })
   }
-  function endDrag() {
+  // `keepProxy` when finishDrag settles the proxy itself.
+  function endDrag(keepProxy) {
+    if (!keepProxy && dragProxy.lifted) dragProxy.release(null)
     draggedKey = ""
     dragFromGallery = false
     dropActive = false
     removeDropActive = false
     previewOrder = controls.keys.slice()
   }
-  function beginDrag(key, fromGallery, width, height) {
+  // `grabX`/`grabY`: where in the card the pointer went down, so the proxy
+  // lifts from where the card is instead of jumping to centre on the
+  // pointer. Without them (the gallery's small choices) it centres.
+  function beginDrag(key, fromGallery, width, height, grabX, grabY) {
     previewOrder = controls.keys.slice()
     dragFromGallery = fromGallery
     draggedKey = key
-    dragProxy.width = width
-    dragProxy.height = height
+    dragProxy.grabX = grabX === undefined ? width / 2 : grabX
+    dragProxy.grabY = grabY === undefined ? height / 2 : grabY
+    dragProxy.lift(key, fromGallery, width, height)
   }
   function moveDrag(source, x, y) {
     var point = source.mapToItem(dragLayer, x, y)
-    dragProxy.x = point.x - dragProxy.width / 2
-    dragProxy.y = point.y - dragProxy.height / 2
+    dragProxy.x = point.x - dragProxy.grabX
+    dragProxy.y = point.y - dragProxy.grabY
     dragPoint = source.mapToItem(controlLayoutScroll, x, y)
     var galleryPoint = source.mapToItem(controlGallery, x, y)
     removeDropActive = !dragFromGallery && controlGallery.visible
@@ -92,13 +122,29 @@ ColumnLayout {
     previewOrder = order
   }
   function finishDrag() {
-    if (draggedKey !== "" && removeDropActive) {
-      controls.setShown(draggedKey, false)
-    } else if (draggedKey !== "" && dropActive) {
+    var key = draggedKey
+    if (key !== "" && removeDropActive) {
+      controls.setShown(key, false)
+    } else if (key !== "" && dropActive) {
       controls.saveOrder(previewOrder)
-      if (dragFromGallery) controls.setShown(draggedKey, true)
+      if (dragFromGallery) controls.setShown(key, true)
     }
-    endDrag()
+    endDrag(true)
+    // The slot it lands in, read after endDrag so it's the saved order (or
+    // its old place, when dropped outside the grid); none once removed.
+    var slot = key !== "" ? cardArea.positions[key] : null
+    dragProxy.release(slot ? settleTarget(slot) : null)
+  }
+  // Where the proxy settles for a slot, in dragLayer. The grid clips while
+  // it scrolls, so a slot scrolled out of view is clamped to the visible
+  // grid's edge: the proxy eases to the edge it went under and fades there
+  // rather than settling somewhere the card itself can't be seen.
+  function settleTarget(slot) {
+    var target = cardArea.mapToItem(dragLayer, slot.x, slot.y)
+    var view = controlLayoutScroll.mapToItem(dragLayer, 0, 0)
+    var top = view.y
+    var bottom = view.y + controlLayoutScroll.height - slot.height
+    return Qt.point(target.x, Math.max(top, Math.min(Math.max(top, bottom), target.y)))
   }
   Timer {
     interval: 25
@@ -176,8 +222,8 @@ ColumnLayout {
           var key = layout.visibleControlKeys[i]
           var wide = layout.controls.controlWide(key)
           var cardHeight = wide ? layout.center.sectionHeight : tileHeight
-          if (key === "sound" && layout.center.outputsOpen && !layout.center.editMode) cardHeight += layout.controls.outputs.length * 40
-          if (key === "microphone" && layout.center.inputsOpen && !layout.center.editMode) cardHeight += layout.controls.inputs.length * 40
+          if (key === "sound") cardHeight += layout.outputsExtra
+          if (key === "microphone") cardHeight += layout.inputsExtra
           if (wide) {
             if (halfUsed) { rowY += tileHeight + gap; halfUsed = false }
             result[key] = { x: inset, y: rowY, width: fullWidth, height: cardHeight }
@@ -203,15 +249,33 @@ ColumnLayout {
           id: controlCard
           required property string modelData
           readonly property var slot: cardArea.positions[modelData] || null
-          visible: !!slot
-          x: slot ? slot.x : 0
-          y: slot ? slot.y : 0
-          width: slot ? slot.width : 0
-          height: slot ? slot.height : 0
+          readonly property bool shown: !!slot
+          // Where it last was, so a card leaving the grid fades out in place.
+          property var lastSlot: null
+          onSlotChanged: if (slot) lastSlot = slot
+          Component.onCompleted: lastSlot = slot
+          x: lastSlot ? lastSlot.x : 0
+          y: lastSlot ? lastSlot.y : 0
+          width: lastSlot ? lastSlot.width : 0
+          height: lastSlot ? lastSlot.height : 0
           readonly property bool dragged: layout.draggedKey === modelData
           readonly property real cornerRadius: layout.center.cardRadius
-          Behavior on x { enabled: layout.center.editMode; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-          Behavior on y { enabled: layout.center.editMode; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          // Added and removed cards scale in and out while the others slide.
+          opacity: shown ? 1 : 0
+          scale: shown ? 1 : 0.9
+          visible: opacity > 0.01
+          Behavior on opacity {
+            enabled: layout.cardsSettled
+            MotionAnimation { theme: layout.center.host.theme; pace: controlCard.shown ? "fade" : "exit"; curve: controlCard.shown ? "fade" : "exit" }
+          }
+          Behavior on scale {
+            enabled: layout.cardsSettled
+            MotionAnimation { theme: layout.center.host.theme; pace: controlCard.shown ? "standard" : "exit"; curve: controlCard.shown ? "settle" : "exit" }
+          }
+          // A card that was hidden appears in its new place rather than
+          // sliding there from where it was last shown.
+          Behavior on x { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on y { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
 
           // While it's dragged, an empty slot holds its place.
           Rectangle {
@@ -237,7 +301,7 @@ ColumnLayout {
             id: editDragMouse
             anchors.fill: parent
             visible: layout.center.editMode
-            enabled: layout.center.editMode
+            enabled: layout.center.editMode && controlCard.shown
             cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
             preventStealing: true
             property real pressX: 0
@@ -246,7 +310,7 @@ ColumnLayout {
             onPositionChanged: function(mouse) {
               if (!pressed) return
               if (layout.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
-              if (layout.draggedKey === "") layout.beginDrag(controlCard.modelData, false, controlCard.width, controlCard.height)
+              if (layout.draggedKey === "") layout.beginDrag(controlCard.modelData, false, controlCard.width, controlCard.height, pressX, pressY)
               layout.moveDrag(editDragMouse, mouse.x, mouse.y)
             }
             onReleased: function(mouse) {
@@ -259,7 +323,7 @@ ColumnLayout {
           }
           CcEditBadge {
             center: layout.center
-            shown: layout.center.editMode && !controlCard.dragged
+            shown: layout.center.editMode && !controlCard.dragged && controlCard.shown
             cornerRadius: controlCard.cornerRadius
             tip: "Remove"
             onClicked: { layout.controls.setShown(controlCard.modelData, false); layout.endDrag() }
@@ -306,16 +370,72 @@ ColumnLayout {
     width: layout.center.width
     height: layout.center.height
     z: 100
+    // The dragged card, lifted off the grid on pickup. On drop it settles
+    // into its slot before going, or sinks away where it was let go when
+    // it has no slot (removed, or a gallery control dropped outside).
     Rectangle {
       id: dragProxy
-      visible: layout.draggedKey !== ""
+      // Kept past the drag, so it still shows its control while it settles.
+      property string key: ""
+      property bool fromGallery: false
+      property bool held: false
+      property bool lifted: false
+      property bool sinking: false
+      property bool settling: false
+      // Where in the card it's held, from beginDrag.
+      property real grabX: 0
+      property real grabY: 0
+      function lift(key, fromGallery, width, height) {
+        proxySettleTimer.stop()
+        settling = false
+        // Reset while hidden, so the lift always starts from the card's size.
+        sinking = false
+        dragProxy.key = key
+        dragProxy.fromGallery = fromGallery
+        dragProxy.width = width
+        dragProxy.height = height
+        held = true
+        lifted = true
+      }
+      function release(target) {
+        lifted = false
+        if (target) {
+          settling = true
+          x = target.x
+          y = target.y
+          proxySettleTimer.restart()
+        } else {
+          sinking = true
+          held = false
+        }
+      }
+      opacity: held ? 1 : 0
+      visible: opacity > 0.01
+      scale: lifted ? 1.05 : sinking ? 0.9 : 1
       radius: layout.center.cardRadius
       color: layout.center.card
-      scale: 1.05
+      // Appears at once over the card it lifts; only fades on the way out.
+      Behavior on opacity { enabled: dragProxy.sinking || dragProxy.settling; MotionAnimation { theme: layout.center.host.theme; pace: "exit"; curve: "exit" } }
+      Behavior on scale {
+        enabled: dragProxy.visible
+        MotionAnimation { theme: layout.center.host.theme; pace: dragProxy.sinking ? "exit" : "standard"; curve: dragProxy.sinking ? "exit" : "settle" }
+      }
+      // Follows the pointer directly while dragged, and eases only to settle.
+      Behavior on x { enabled: dragProxy.settling; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+      Behavior on y { enabled: dragProxy.settling; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+      Timer {
+        id: proxySettleTimer
+        interval: layout.center.host.theme.motionDuration("standard")
+        onTriggered: dragProxy.held = false
+      }
+      // The shadow deepens as it lifts and fades as it settles.
+      property real shadowStrength: lifted ? 1 : 0
+      Behavior on shadowStrength { MotionAnimation { theme: layout.center.host.theme; pace: dragProxy.lifted ? "standard" : "exit"; curve: dragProxy.lifted ? "settle" : "exit" } }
       layer.enabled: visible
       layer.effect: MultiEffect {
         shadowEnabled: true
         shadowColor: Qt.rgba(0, 0, 0, 0.6)
+        shadowOpacity: dragProxy.shadowStrength
         shadowBlur: 0.8
         shadowVerticalOffset: 6
       }
@@ -323,9 +443,9 @@ ColumnLayout {
         anchors.fill: parent
         enabled: false
         property var center: layout.center
-        property string controlKey: layout.draggedKey
-        property bool galleryPreview: layout.dragFromGallery
-        sourceComponent: layout.center.controlComponent(layout.draggedKey)
+        property string controlKey: dragProxy.key
+        property bool galleryPreview: dragProxy.fromGallery
+        sourceComponent: layout.center.controlComponent(dragProxy.key)
       }
     }
   }

@@ -8,7 +8,9 @@ Item {
   id: pill
   required property var timer
   readonly property var host: timer.host
-  readonly property color ink: timer.phase === "paused" ? timer.tintDim : timer.tint
+  // Dims and brightens with a short fade on pause and resume.
+  property color ink: timer.phase === "paused" ? timer.tintDim : timer.tint
+  Behavior on ink { MotionColorAnimation { theme: pill.host.theme } }
 
   opacity: timer.pillShown ? 1 : 0
   visible: opacity > 0.01

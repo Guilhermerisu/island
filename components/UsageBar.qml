@@ -28,11 +28,12 @@ ColumnLayout {
       anchors.fill: parent
       radius: track.radius
       visible: false
-      layer.enabled: true
+      // Only while the bar is on screen, so a hidden one holds no buffers.
+      layer.enabled: track.visible
     }
     Row {
       anchors.fill: parent
-      layer.enabled: true
+      layer.enabled: track.visible
       layer.effect: MultiEffect {
         maskEnabled: true
         maskSource: trackMask
@@ -46,10 +47,13 @@ ColumnLayout {
         delegate: Rectangle {
           required property int index
           readonly property var modelData: usage.segments[index] || ({})
-          width: Math.max(0, track.width * Math.min(1, (modelData.value || 0) / Math.max(1, usage.total)) - 1)
+          // The share eases, not the width, so the segment follows the track
+          // at once while the island resizes.
+          property real share: Math.min(1, (modelData.value || 0) / Math.max(1, usage.total))
+          Behavior on share { MotionAnimation { theme: usage.view.host.theme; pace: "expressive" } }
+          width: Math.max(0, track.width * share - 1)
           height: track.height
           color: modelData.color
-          Behavior on width { MotionAnimation { theme: usage.view.host.theme; pace: "expressive" } }
         }
       }
     }

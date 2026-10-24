@@ -48,7 +48,7 @@ ColumnLayout {
   property string failedReason: ""
   // Name of the network whose password field is open.
   property string passwordFor: ""
-  // Kept here, not in the field: delegates are rebuilt whenever rows change.
+  // Kept here, not in the field: a row's delegate goes when it leaves the list.
   property string passwordText: ""
 
   // Rows hold plain values only, as in the Bluetooth view: networks come and
@@ -267,15 +267,59 @@ ColumnLayout {
         OverlayScrollbar { flickable: list; parent: list; theme: wf.host.theme }
         visible: wf.displayRows.length > 0
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(contentHeight, 460)
+        // Grows and shrinks with the rows as they fade in and out, instead
+        // of jumping to the new content height. Off until the list has been
+        // showing for a moment, so opening the view or its first rows don't
+        // grow it from nothing.
+        property bool heightSettled: false
+        readonly property bool settleWanted: wf.active && wf.displayRows.length > 0
+        onSettleWantedChanged: {
+          heightSettled = false
+          if (settleWanted) heightSettleTimer.restart()
+        }
+        Timer {
+          id: heightSettleTimer
+          interval: wf.host.theme.motionDuration("morph")
+          onTriggered: list.heightSettled = list.settleWanted
+        }
+        property real frameHeight: Math.min(contentHeight, 460)
+        Behavior on frameHeight { enabled: list.heightSettled; MotionAnimation { theme: wf.host.theme; pace: "standard" } }
+        Layout.preferredHeight: frameHeight
         clip: true
         interactive: contentHeight > height
         boundsBehavior: Flickable.StopAtBounds
-        model: wf.displayRows
+        model: rowModel.model
+        // Kept by key, so a scan or opening Other Networks fades rows in
+        // and out and slides the rest, instead of rebuilding the list; the
+        // first fill just appears.
+        KeyedListModel {
+          id: rowModel
+          values: wf.displayRows
+          keyOf: function(r) { return r.header !== undefined ? "header:" + r.header : r.address }
+        }
+        add: Transition {
+          enabled: rowModel.primed && wf.active
+          MotionAnimation { theme: wf.host.theme; property: "opacity"; from: 0; to: 1; pace: "fade"; curve: "fade" }
+        }
+        remove: Transition {
+          enabled: wf.active
+          MotionAnimation { theme: wf.host.theme; property: "opacity"; to: 0; pace: "exit"; curve: "exit" }
+        }
+        move: Transition {
+          enabled: wf.active
+          MotionAnimation { theme: wf.host.theme; property: "y"; pace: "standard" }
+        }
+        // Also settles opacity, in case a row was still fading in.
+        displaced: Transition {
+          enabled: wf.active
+          MotionAnimation { theme: wf.host.theme; property: "y"; pace: "standard" }
+          MotionAnimation { theme: wf.host.theme; property: "opacity"; to: 1; pace: "fade"; curve: "fade" }
+        }
         delegate: Item {
           id: row
-          required property var modelData
+          required property var entry
           required property int index
+          readonly property var modelData: entry
           readonly property bool isHeader: modelData.header !== undefined
           readonly property bool isSelected: wf.usingKeys && (isHeader ? (!!modelData.toggle && wf.cursor === "other") : modelData.address === wf.cursor)
           readonly property bool askingPassword: !isHeader && modelData.address === wf.passwordFor
@@ -287,11 +331,13 @@ ColumnLayout {
           Rectangle {
             visible: row.isHeader
             anchors.fill: parent
-            anchors.topMargin: row.index > 0 ? 4 : 0
+            // index is -1 while a removed header fades out; it keeps its gap.
+            anchors.topMargin: row.index !== 0 ? 4 : 0
             radius: 8
             color: row.modelData.toggle && (headerMouse.containsMouse || row.isSelected) ? wf.tile : "transparent"
+            Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
             Rectangle {
-              visible: row.index > 0
+              visible: row.index !== 0
               anchors.left: parent.left
               anchors.right: parent.right
               anchors.leftMargin: 10
@@ -359,6 +405,7 @@ ColumnLayout {
             anchors.fill: parent
             radius: 8
             color: rowMouse.pressed ? wf.well : rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected || row.askingPassword ? wf.tile : "transparent"
+            Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
 
             Rectangle {
               id: badge
@@ -474,10 +521,16 @@ ColumnLayout {
               anchors.verticalCenter: parent.verticalCenter
               spacing: 6
               Rectangle {
+                id: forgetButton
                 scale: forgetMouse.pressed ? 0.9 : 1
                 Behavior on scale { MotionAnimation { theme: wf.host.theme; pace: forgetMouse.pressed ? "press" : "standard" } }
-                visible: row.modelData.section !== "nearby" && !row.modelData.pending
+                // Fades in on hover and out quicker, and takes no clicks
+                // while it fades out.
+                readonly property bool shown: row.modelData.section !== "nearby" && !row.modelData.pending
                   && (rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected)
+                opacity: shown ? 1 : 0
+                visible: opacity > 0.01
+                Behavior on opacity { MotionAnimation { theme: wf.host.theme; pace: forgetButton.shown ? "fade" : "exit"; curve: forgetButton.shown ? "fade" : "exit" } }
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
@@ -492,6 +545,7 @@ ColumnLayout {
                 MouseArea {
                   id: forgetMouse
                   anchors.fill: parent
+                  enabled: forgetButton.shown
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onClicked: wf.forget(row.modelData)

@@ -31,7 +31,7 @@ Item {
     radius: width / 2
     color: Qt.tint(b.center.well, b.center.host.theme.withAlpha(b.center.text, badgeMouse.containsMouse ? 0.9 : 0.72))
     Behavior on color { MotionColorAnimation { theme: b.center.host.theme } }
-    layer.enabled: true
+    layer.enabled: visible
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.55)

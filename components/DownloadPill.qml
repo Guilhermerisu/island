@@ -91,7 +91,22 @@ IslandPill {
         AmbientRotation {
           target: progressArc
           running: pill.downloading && !badge.measured && pill.visible
-          onRunningChanged: if (!running) progressArc.rotation = 0
+          // Once there's a size, carry on round to 12 o'clock rather than
+          // snapping back there.
+          onRunningChanged: {
+            if (running) unwind.stop()
+            else if (pill.visible) unwind.start()
+            else progressArc.rotation = 0
+          }
+        }
+        MotionAnimation {
+          id: unwind
+          target: progressArc
+          property: "rotation"
+          to: 360
+          theme: pill.host.theme
+          pace: "standard"
+          onFinished: progressArc.rotation = 0
         }
       }
       Text {
