@@ -15,18 +15,19 @@ Item {
   readonly property color positiveColor: colorfulActivities ? preview.view.host.theme.system.green : accent
   readonly property color recordingColor: colorfulActivities ? preview.view.host.theme.system.red : accent
   // Each kind's sample: the leading glyph (in glyphColor, accent by default),
-  // the label after it, and the status trailing (in statusColor). Kinds with
+  // the label after it (centred and bold, as the pill's clock, with
+  // `clock`), and the status trailing (in statusColor). Kinds with
   // their own layout (bluetooth, media, workspace, volume) draw the rest below.
   readonly property var sample: ({
     media: { glyph: "󰝚", glyphColor: "#ffffff" },
     bluetooth: { glyph: "󰋋", glyphColor: "#ffffff" },
     playback: { glyph: "󰏤", glyphColor: "#ffffff", label: "Song Title - Artist" },
     clipboard: { glyph: "󰆏", label: "Hello, world!", status: "Copied", statusColor: accent },
-    downloads: { glyph: "󰁅", glyphColor: positiveColor, label: "12:34", status: "2 MB/s", statusColor: positiveColor },
-    updates: { glyph: "󰏗", glyphColor: positiveColor, label: "12:34", status: "Updating", statusColor: positiveColor },
+    downloads: { glyph: "󰁅", glyphColor: positiveColor, label: "12:34", clock: true, status: "2 MB/s", statusColor: positiveColor },
+    updates: { glyph: "󰏗", glyphColor: positiveColor, label: "12:34", clock: true, status: "Updating", statusColor: positiveColor },
     network: { glyph: "󰤨", label: "Home", status: "Connected", statusColor: accent },
     battery: { label: "Charging", status: "64%", statusColor: positiveColor },
-    recording: { label: "12:34", status: "01:23", statusColor: recordingColor }
+    recording: { label: "12:34", clock: true, status: "01:23", statusColor: recordingColor }
   })[kind] || ({})
   readonly property string glyph: sample.glyph || ""
 
@@ -126,15 +127,16 @@ Item {
       lowColor: preview.colorfulActivities ? preview.view.host.theme.system.red : preview.accent
     }
     Text {
-      x: preview.kind === "battery" ? 47 : preview.transfer ? 57 : 43
+      readonly property bool clock: !!preview.sample.clock
+      x: clock ? (parent.width - width) / 2 : preview.kind === "battery" ? 47 : 43
       anchors.verticalCenter: parent.verticalCenter
       visible: !!preview.sample.label
       text: preview.sample.label || ""
       color: "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
-      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.transfer ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10))
-      font.pixelSize: preview.transfer ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10)
-      font.weight: preview.transfer ? Font.DemiBold : Font.Normal
+      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, clock ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10))
+      font.pixelSize: clock ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10)
+      font.weight: clock ? Font.DemiBold : Font.Normal
     }
     Text {
       anchors.right: parent.right

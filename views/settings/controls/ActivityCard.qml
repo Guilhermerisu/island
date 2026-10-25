@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import "../../../components"
 
-// A checkable activity preview. Its checked state belongs to IslandSettings.
+// A checkable activity preview card. Its checked state belongs to
+// IslandSettings.
 FocusScope {
   id: card
   required property var view
@@ -41,17 +42,39 @@ FocusScope {
     if (!event.isAutoRepeat) card.toggled(!card.checked)
   }
 
+  // The card: the pill's preview in a darker well, then the name and what
+  // it shows beside a switch. A click anywhere on it flips the switch.
+  Rectangle {
+    id: backdrop
+    anchors.fill: parent
+    radius: card.view.host.theme.radii.card
+    color: mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
+    Behavior on color { MotionColorAnimation { theme: card.view.host.theme } }
+    border.width: 1
+    border.color: card.view.edge
+    Rectangle {
+      anchors.fill: parent
+      anchors.margins: -3
+      radius: backdrop.radius + 3
+      color: "transparent"
+      border.width: 2
+      border.color: card.view.host.theme.withAlpha(card.view.accent, 0.8)
+      visible: card.activeFocus && !card.pointerFocus
+    }
+  }
   ColumnLayout {
     id: content
     width: parent.width
-    spacing: 6
+    spacing: 0
     Rectangle {
-      id: backdrop
       Layout.fillWidth: true
-      Layout.preferredHeight: 104
-      radius: card.view.host.theme.radii.card
-      color: mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
-      Behavior on color { MotionColorAnimation { theme: card.view.host.theme } }
+      Layout.margins: 8
+      Layout.preferredHeight: 96
+      // Concentric with the card: its radius less the 8 around the well.
+      radius: card.view.host.theme.radii.card - 6
+      // Only a slightly darker fill, no edge of its own, so the card
+      // doesn't read as a box in a box.
+      color: card.view.host.theme.solid("quiet")
       ActivityPreview {
         anchors.centerIn: parent
         width: parent.width - 26
@@ -59,52 +82,42 @@ FocusScope {
         view: card.view
         kind: card.kind
       }
-      Rectangle {
-        anchors.fill: parent
-        anchors.margins: -3
-        radius: backdrop.radius + 3
-        color: "transparent"
-        border.width: 2
-        border.color: card.view.host.theme.withAlpha(card.view.accent, 0.8)
-        visible: card.activeFocus && !card.pointerFocus
-      }
-      Rectangle {
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.margins: 9
-        width: 16; height: 16; radius: 8
-        visible: card.checked
-        color: card.view.accent
+    }
+    RowLayout {
+      Layout.fillWidth: true
+      Layout.leftMargin: 14
+      Layout.rightMargin: 14
+      Layout.topMargin: 2
+      Layout.bottomMargin: 12
+      spacing: 12
+      Column {
+        Layout.fillWidth: true
+        spacing: 2
         Text {
-          anchors.centerIn: parent
-          text: "󰄬"
-          color: card.view.accentInk
-          font.family: card.view.host.theme.fontFamily
-          font.pixelSize: card.view.host.theme.px(11)
+          width: parent.width
+          text: card.title
+          elide: Text.ElideRight
+          color: card.view.text
+          font.family: card.view.host.theme.textFontFamily
+          font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
+          font.pixelSize: card.view.detailFontSize
+          font.weight: Font.Medium
+        }
+        Text {
+          width: parent.width
+          text: card.description
+          elide: Text.ElideRight
+          color: card.view.textMuted
+          font.family: card.view.host.theme.textFontFamily
+          font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailCaptionFontSize)
+          font.pixelSize: card.view.detailCaptionFontSize
         }
       }
-    }
-    Text {
-      Layout.fillWidth: true
-      Layout.topMargin: 6
-      text: card.title
-      horizontalAlignment: Text.AlignHCenter
-      color: card.view.text
-      font.family: card.view.host.theme.textFontFamily
-      font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
-      font.pixelSize: card.view.detailFontSize
-      font.weight: Font.Normal
-    }
-    Text {
-      Layout.fillWidth: true
-      text: card.description
-      horizontalAlignment: Text.AlignHCenter
-      wrapMode: Text.NoWrap
-      elide: Text.ElideRight
-      color: card.view.textMuted
-      font.family: card.view.host.theme.textFontFamily
-      font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailCaptionFontSize)
-      font.pixelSize: card.view.detailCaptionFontSize
+      // Shows the state; the card's own click (over it) does the toggling.
+      SettingsSwitch {
+        view: card.view
+        checked: card.checked
+      }
     }
   }
   MouseArea {
