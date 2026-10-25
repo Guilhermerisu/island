@@ -96,21 +96,24 @@ ColumnLayout {
     var p = String(date).split("-")
     return Qt.formatDate(new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])), full ? "dddd" : "ddd")
   }
-  // Today against the daily average: "2.6× your daily average",
-  // "42% below your daily average".
+  // Today against the daily average, under it: "Today is 2.6× your
+  // average", "Today is 42% below average"; `vsDirection` is up, down or
+  // even, for its arrow.
+  readonly property real vsChange: record && average > 0 ? Math.round((today / average - 1) * 100) : 0
+  readonly property string vsDirection: today / Math.max(1, average) >= 1.95 || vsChange > 0 ? "up" : vsChange < 0 ? "down" : "even"
   function vsAverage() {
     if (!record || average <= 0) return ""
     var ratio = today / average
-    if (ratio >= 1.95) return ratio.toFixed(1).replace(".0", "") + "× your daily average"
-    var change = Math.round((ratio - 1) * 100)
-    if (change === 0) return "About your daily average"
-    return Math.abs(change) + "% " + (change > 0 ? "above" : "below") + " your daily average"
+    if (ratio >= 1.95) return "Today is " + ratio.toFixed(1).replace(".0", "") + "× your average"
+    if (vsChange === 0) return "Today is about average"
+    return "Today is " + Math.abs(vsChange) + "% " + (vsChange > 0 ? "above" : "below") + " average"
   }
-  // The week's busiest day: "Busiest on Thursday".
+  // The week's busiest day and its total: "Friday · about 338M".
   readonly property string busiestText: {
     if (busiest <= 0 || days.length < 2) return ""
     for (var i = 0; i < days.length; i++)
-      if ((days[i].messageCount || 0) === busiest) return "Busiest " + (i === days.length - 1 ? "today" : "on " + dayName(days[i].date, false, true))
+      if ((days[i].messageCount || 0) === busiest)
+        return dayName(days[i].date, i === days.length - 1, true) + " · about " + scaleLabel(Math.round(busiest / 1e6) * 1e6 || busiest)
     return ""
   }
   function updatedText() {
@@ -368,11 +371,12 @@ ColumnLayout {
     }
   }
 
-  // Tokens, as Screen Time's week: the daily average large, then the chart,
-  // then today and the week as rows ---------------------------------------------
+  // Tokens, as Screen Time's week: the daily average large with today
+  // against it, then the chart, then the week and its busiest day as rows ---------------------------------------------
   SettingsGroup {
     view: page.view
     title: "Tokens"
+    footer: "Point at a day to see its total."
     Item {
       Layout.fillWidth: true
       implicitHeight: chartBody.implicitHeight + 28
@@ -383,24 +387,48 @@ ColumnLayout {
         anchors.top: parent.top
         anchors.margins: 14
         spacing: 12
+        // The daily average large, and today against it under it.
         Column {
-          spacing: 1
+          spacing: 2
           Text {
             text: "Daily Average"
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
-            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
             font.features: { "tnum": 1 }
-            font.pixelSize: page.view.detailCaptionFontSize
+            font.pixelSize: page.view.detailFontSize
           }
           Text {
             text: page.record ? page.tokens(page.average) : "—"
             color: page.view.text
             font.family: page.view.host.theme.textFontFamily
-            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(22))
-            font.pixelSize: page.view.host.theme.px(22)
-            font.weight: Font.DemiBold
+            font.letterSpacing: -0.8
+            font.pixelSize: page.view.host.theme.px(32)
+            // Regular, set on Adwaita Sans's weight axis.
+            font.weight: Font.Bold
+            font.variableAxes: ({ "wght": 400 })
             font.features: { "tnum": 1 }
+          }
+          Row {
+            visible: page.vsAverage() !== ""
+            spacing: 4
+            Text {
+              visible: page.vsDirection !== "even"
+              anchors.verticalCenter: parent.verticalCenter
+              text: page.vsDirection === "up" ? "󰁝" : "󰁅"
+              color: page.view.textMuted
+              font.family: page.view.host.theme.fontFamily
+              font.pixelSize: page.view.host.theme.px(12)
+            }
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: page.vsAverage()
+              color: page.view.textMuted
+              font.family: page.view.host.theme.textFontFamily
+              font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
+              font.features: { "tnum": 1 }
+              font.pixelSize: page.view.detailCaptionFontSize
+            }
           }
         }
 
@@ -578,10 +606,10 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      label: "Today"
-      detail: page.vsAverage()
+      label: "Last 7 Days"
+      last: !busiestRow.visible
       Text {
-        text: page.tokens(page.today)
+        text: page.tokens(page.week)
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
         font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -590,12 +618,13 @@ ColumnLayout {
       }
     }
     SettingsRow {
+      id: busiestRow
       view: page.view
-      label: "Last 7 Days"
-      detail: page.busiestText
+      visible: page.busiestText !== ""
+      label: "Busiest Day"
       last: true
       Text {
-        text: page.tokens(page.week)
+        text: page.busiestText
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
         font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
