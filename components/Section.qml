@@ -9,6 +9,8 @@ ColumnLayout {
   id: section
   required property var view
   property string title: ""
+  // A number after the title, quieter (the processes listed).
+  property string count: ""
   property string status: ""
   property color statusColor: "#30d158"
   default property alias content: box.data
@@ -23,7 +25,6 @@ ColumnLayout {
     Layout.minimumHeight: 20
     spacing: 6
     Text {
-      Layout.fillWidth: true
       text: section.title
       elide: Text.ElideRight
       color: section.view.text
@@ -32,6 +33,17 @@ ColumnLayout {
       font.pixelSize: section.view.detailFontSize
       font.weight: Font.DemiBold
     }
+    Text {
+      visible: section.count !== ""
+      Layout.leftMargin: 1
+      text: section.count
+      color: section.view.textMuted
+      font.family: section.view.host.theme.textFontFamily
+      font.features: { "tnum": 1 }
+      font.letterSpacing: section.view.host.theme.tracking(section.view.host.theme.textFontFamily, section.view.detailCaptionFontSize)
+      font.pixelSize: section.view.detailCaptionFontSize
+    }
+    Item { Layout.fillWidth: true }
     Rectangle {
       visible: section.status !== ""
       Layout.alignment: Qt.AlignVCenter

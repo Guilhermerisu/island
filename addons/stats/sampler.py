@@ -494,7 +494,8 @@ def main():
             print(json.dumps({
                 "uid": ME,
                 "cpu": {"user": round(overall[0], 1), "system": round(overall[1], 1),
-                        "idle": round(max(0.0, 100 - overall[0] - overall[1]), 1), "temp": cpu_temp(temp_path)},
+                        "idle": round(max(0.0, 100 - overall[0] - overall[1]), 1), "temp": cpu_temp(temp_path),
+                        "cores": os.cpu_count() or 1},
                 "memory": memory(),
                 "gpus": gpus,
                 "volumes": vols, "ssdTemps": ssd,

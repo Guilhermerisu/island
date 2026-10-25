@@ -5,8 +5,10 @@ import "../../components"
 import "../../components/IconSource.js" as IconSource
 
 // Activity Monitor's process list: a header to sort by (click again to
-// flip), then the rows, scrolled inside a fixed height. An app's processes
-// fold under its window's process, its row adding them up.
+// flip), then the rows, scrolled inside a fixed height. Each row has a
+// lettered tile, its name, a small CPU bar with the share (bold once it's
+// noticeable, orange when heavy) and its memory. An app's processes fold
+// under its window's process, its row adding them up.
 Item {
   id: table
   required property var view
@@ -19,20 +21,35 @@ Item {
   property var expanded: ({})
   // A row's ⓧ was clicked: Quit or Force Quit it (see QuitSheet).
   signal quitRequested(var row)
-  readonly property int rowHeight: 24
+  readonly property int rowHeight: 29
   readonly property int limit: 50
   implicitHeight: 30 + rowHeight * 12
 
   readonly property var columns: [
-    { key: "name", title: "Process Name", width: 0 },
-    { key: "cpu", title: "% CPU", width: 54 },
+    { key: "name", title: "Process", width: 0 },
+    { key: "cpu", title: "% CPU", width: 116 },
     { key: "mem", title: "Memory", width: 84 }
   ]
+  // How many processes match, before the list is cut at `limit`.
+  readonly property int total: rows.matched || 0
+  // The tile of a process without an app icon (or whose icon fails to
+  // load): its first letter on a colour picked from its name, so the same
+  // program keeps its colour.
+  readonly property var tileColors: ["#bf5af2", "#ff9f0a", "#3a82f7", "#30d158", "#5e5ce6", "#8e8e93", "#ff6b5e", "#30b0c7"]
+  function tileColor(name) {
+    var hash = 0
+    for (var i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) % 9973
+    return tileColors[hash % tileColors.length]
+  }
+  // A process's CPU as a share of the whole machine (the sampler counts one
+  // core as 100%), so every row stays within 0–100%.
+  readonly property int cores: stats.latest && stats.latest.cpu.cores ? stats.latest.cpu.cores : 1
+  function share(row) { return (row.cpu || 0) / cores }
+  // Past 10% a share is worth reading (bold); past 50% it's heavy (orange).
+  function cpuColor(cpu) { return cpu >= 50 ? view.host.theme.system.orange : cpu >= 10 ? view.text : view.textMuted }
   readonly property int fixedWidth: columns.reduce(function(sum, c) { return sum + c.width }, 0)
   readonly property int myUid: stats.latest ? stats.latest.uid : -1
 
-  // The program icon processes without an app of their own show.
-  readonly property string defaultIcon: Quickshell.iconPath("application-x-executable", true)
   function appEntry(appClass) {
     return appClass ? DesktopEntries.heuristicLookup(appClass) : null
   }
@@ -56,7 +73,7 @@ Item {
   }
 
   // The rows as drawn: [{ pid, name, cpu, mem, uid, depth, icon, children
-  // (count), open }].
+  // (count), open }], with `matched`, how many matched before the cut.
   readonly property var rows: {
     var latest = stats.latest
     if (!latest) return []
@@ -96,6 +113,7 @@ Item {
       childRows[row.pid] = group.members.filter(function(p) { return p.pid !== lead.pid })
     }
     top.sort(compare)
+    result.matched = top.length
     top = top.slice(0, limit)
     for (var t = 0; t < top.length; t++) {
       var r = top[t]
@@ -127,17 +145,18 @@ Item {
     else { sortKey = key; ascending = key === "name" }
   }
   function cell(row, key) {
-    if (key === "cpu") return (row.cpu || 0).toFixed(1)
-    if (key === "mem") return format.bytes(row.mem)
+    if (key === "cpu") return share(row).toFixed(1)
+    // One decimal throughout ("7.0 GB" beside "2.9 GB").
+    if (key === "mem") return format.bytes(row.mem, true)
     return String(row[key])
   }
 
-  // Header: small titles, the sorted one darker with its chevron after it,
-  // hairlines between columns and under the header, as in Activity Monitor.
+  // Header: small quiet titles, the sorted one in the text colour with its
+  // chevron after it.
   Item {
     id: header
     width: parent.width
-    height: 26
+    height: 30
     Row {
       x: 8
       width: parent.width - 16
@@ -155,7 +174,7 @@ Item {
           Row {
             anchors.verticalCenter: parent.verticalCenter
             anchors.left: head.isName ? parent.left : undefined
-            anchors.leftMargin: head.isName ? 36 : 0
+            anchors.leftMargin: head.isName ? 18 : 0
             anchors.right: head.isName ? undefined : parent.right
             anchors.rightMargin: 6
             spacing: 3
@@ -163,27 +182,19 @@ Item {
               text: head.modelData.title
               color: head.sorted ? table.view.text : table.view.textMuted
               font.family: table.view.host.theme.textFontFamily
-              font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(12))
+              font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.detailCaptionFontSize)
               font.features: { "tnum": 1 }
-              font.pixelSize: table.view.host.theme.px(12)
-              font.weight: Font.Medium
+              font.pixelSize: table.view.detailCaptionFontSize
+              font.weight: head.sorted ? Font.DemiBold : Font.Medium
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
               visible: head.sorted
               text: table.ascending ? "󰅃" : "󰅀"
-              color: table.view.textMuted
+              color: table.view.text
               font.family: table.view.host.theme.fontFamily
-              font.pixelSize: table.view.host.theme.px(9)
+              font.pixelSize: table.view.host.theme.px(10)
             }
-          }
-          Rectangle {
-            visible: head.index > 0
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            width: 1
-            height: 12
-            color: table.view.divider
           }
           MouseArea {
             anchors.fill: parent
@@ -193,12 +204,6 @@ Item {
         }
       }
     }
-    Rectangle {
-      anchors.bottom: parent.bottom
-      width: parent.width
-      height: 1
-      color: table.view.divider
-    }
   }
 
   // Rows: faint stripes and an inset, rounded selection in the accent,
@@ -207,7 +212,6 @@ Item {
     id: list
     OverlayScrollbar { flickable: list; parent: list; theme: table.view.host.theme }
     anchors.top: header.bottom
-    anchors.topMargin: 4
     anchors.bottom: parent.bottom
     width: parent.width
     clip: true
@@ -252,65 +256,78 @@ Item {
             readonly property bool isName: modelData.key === "name"
             width: modelData.width || (list.width - 16 - table.fixedWidth)
             height: row.height
-            // Disclosure triangle, icon slot, name.
+            // A disclosure triangle (for an app with more processes), then
+            // the tile and name. Every top-level row keeps the triangle's
+            // room, so the tiles line up.
             Row {
               visible: cellItem.isName
               x: row.modelData.depth * 16
               width: parent.width - x
               height: parent.height
-              spacing: 5
+              spacing: 6
               Item {
-                width: 10
+                width: 12
                 height: parent.height
                 Text {
                   anchors.centerIn: parent
                   visible: row.modelData.children > 0
-                  text: row.modelData.open ? "▾" : "▸"
+                  text: "󰅂"
+                  rotation: row.modelData.open ? 90 : 0
+                  Behavior on rotation { MotionAnimation { theme: table.view.host.theme; pace: "standard" } }
                   color: row.inkMuted
-                  font.family: table.view.host.theme.textFontFamily
-                  font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(11))
-                  font.features: { "tnum": 1 }
-                  font.pixelSize: table.view.host.theme.px(11)
+                  font.family: table.view.host.theme.fontFamily
+                  font.pixelSize: table.view.host.theme.px(12)
                 }
                 MouseArea {
                   anchors.fill: parent
-                  anchors.margins: -3
+                  anchors.margins: -4
                   enabled: row.modelData.children > 0
                   cursorShape: Qt.PointingHandCursor
                   onClicked: table.toggle(row.modelData.pid)
                 }
               }
               Item {
-                width: 16
+                width: 18
                 height: parent.height
-                // Its app's icon, or the generic program icon when it has
-                // none (or the app's fails to load).
+                // Its app's icon when it has one.
                 Image {
                   id: appIcon
                   anchors.centerIn: parent
                   visible: status === Image.Ready
-                  width: 16
-                  height: 16
-                  sourceSize.width: 32
-                  sourceSize.height: 32
-                  readonly property string wanted: row.modelData.icon || ""
-                  property bool failed: false
-                  onWantedChanged: failed = false
-                  source: wanted !== "" && !failed ? wanted : table.defaultIcon
+                  width: 18
+                  height: 18
+                  sourceSize.width: 36
+                  sourceSize.height: 36
+                  source: row.modelData.icon || ""
                   asynchronous: true
-                  onStatusChanged: if (status === Image.Error && wanted !== "") failed = true
+                }
+                Rectangle {
+                  anchors.centerIn: parent
+                  visible: !appIcon.visible
+                  width: 18
+                  height: 18
+                  radius: 5
+                  color: table.tileColor(row.modelData.name)
+                  Text {
+                    anchors.centerIn: parent
+                    text: row.modelData.name.charAt(0).toUpperCase()
+                    color: "#ffffff"
+                    font.family: table.view.host.theme.textFontFamily
+                    font.pixelSize: table.view.host.theme.px(10)
+                    font.weight: Font.Bold
+                  }
                 }
               }
               Text {
                 anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - 36 - (row.showQuit ? 24 : 0)
+                width: parent.width - 42 - (row.showQuit ? 24 : 0)
                 text: row.modelData.name
                 elide: Text.ElideRight
                 color: row.ink
                 font.family: table.view.host.theme.textFontFamily
-                font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(13))
+                font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.detailFontSize)
                 font.features: { "tnum": 1 }
-                font.pixelSize: table.view.host.theme.px(13)
+                font.pixelSize: table.view.detailFontSize
                 // The full name, its PID (or its app's processes), and the
                 // command that started it.
                 Tooltip {
@@ -355,16 +372,37 @@ Item {
               }
               Tooltip { theme: table.view.host.theme; text: "Quit Process" }
             }
+            readonly property bool isCpu: modelData.key === "cpu"
+            // CPU: a small bar of the share before it.
+            // Only for a process doing work (1% or more), so idle rows
+            // show no sliver.
+            Rectangle {
+              visible: cellItem.isCpu && table.share(row.modelData) >= 1
+              x: 6
+              anchors.verticalCenter: parent.verticalCenter
+              width: 48
+              height: 3
+              radius: 1.5
+              color: table.view.host.theme.fill(row.selected ? "strong" : "raised")
+              Rectangle {
+                width: Math.max(2, parent.width * Math.min(1, table.share(row.modelData) / 100))
+                height: parent.height
+                radius: parent.radius
+                color: row.selected ? table.view.accentInk : table.share(row.modelData) >= 50 ? table.view.host.theme.system.orange : table.view.host.theme.system.blue
+              }
+            }
             Text {
               visible: !cellItem.isName
               anchors.right: parent.right
               anchors.rightMargin: 6
               anchors.verticalCenter: parent.verticalCenter
+              readonly property real cpu: table.share(row.modelData)
               text: cellItem.isName ? "" : table.cell(row.modelData, cellItem.modelData.key)
-              color: row.ink
+              color: row.selected ? row.ink : cellItem.isCpu ? table.cpuColor(cpu) : table.view.text
               font.family: table.view.host.theme.textFontFamily
               font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(12))
               font.pixelSize: table.view.host.theme.px(12)
+              font.weight: cellItem.isCpu && cpu >= 10 ? Font.Bold : Font.Normal
               font.features: { "tnum": 1 }
             }
           }

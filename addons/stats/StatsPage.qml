@@ -26,17 +26,19 @@ ColumnLayout {
   readonly property color yellow: page.view.host.theme.system.yellow
   readonly property color orange: page.view.host.theme.system.orange
   readonly property color teal: page.view.host.theme.system.cyan
+  readonly property color purple: page.view.host.theme.system.purple
   readonly property color gray: page.view.host.theme.system.gray
 
   // Formatting, shared with the table.
-  function bytes(b) {
+  // `fixed` keeps one decimal ("7.0 GB"), for a column of figures.
+  function bytes(b, fixed) {
     if (b === null || b === undefined) return "—"
     var units = ["bytes", "KB", "MB", "GB", "TB"]
     var i = 0
     while (Math.abs(b) >= 1000 && i < units.length - 1) { b /= 1000; i++ }
     if (i === 0) return Math.round(b) + " bytes"
     // Whole numbers without ".0", as macOS writes them ("1 TB").
-    return (b >= 100 || i === 1 ? Math.round(b) : Number(b.toFixed(1))) + " " + units[i]
+    return (b >= 100 || i === 1 ? Math.round(b) : fixed ? b.toFixed(1) : Number(b.toFixed(1))) + " " + units[i]
   }
   function temperature(v) { return v === null || v === undefined ? "—" : Math.round(v) + " °C" }
   // Memory pressure, from the share of the last 10 s some task waited on
@@ -116,12 +118,16 @@ ColumnLayout {
     visible: opacity > 0.01
     Behavior on opacity { MotionAnimation { theme: page.view.host.theme; pace: "fade"; curve: "fade" } }
 
-    // CPU and Memory ---------------------------------------------------------
-    RowLayout {
+    // CPU and Memory, then the GPUs and how hot it all runs, two to a row;
+    // Thermal takes a whole row when it would be alone. Each card carries
+    // its own title and status.
+    GridLayout {
       Layout.fillWidth: true
-      spacing: 10
-      Section {
-        id: cpuSection
+      columns: 2
+      columnSpacing: 12
+      rowSpacing: 12
+      StatCard {
+        id: cpuCard
         readonly property real busy: page.cpu ? page.cpu.user + page.cpu.system : 0
         view: page.view
         Layout.fillWidth: true
@@ -130,22 +136,16 @@ ColumnLayout {
         title: "CPU"
         status: page.cpu ? page.loadName(busy) : ""
         statusColor: page.loadColor(busy)
-        StatCard {
-          view: page.view
-          flat: true
-          header: false
-          padding: 14
-          Layout.fillWidth: true
-          Layout.fillHeight: true
-          value: cpuSection.busy
-          rows: [
-            { label: "User", value: page.round(page.cpu && page.cpu.user) },
-            { label: "System", value: page.round(page.cpu && page.cpu.system) },
-            { label: "Idle", value: page.round(page.cpu && page.cpu.idle) }
-          ]
-        }
+        value: busy
+        caption: "in use"
+        ringColor: page.blue
+        rows: [
+          { label: "User", value: page.round(page.cpu && page.cpu.user) },
+          { label: "System", value: page.round(page.cpu && page.cpu.system) },
+          { label: "Idle", value: page.round(page.cpu && page.cpu.idle) }
+        ]
       }
-      Section {
+      StatCard {
         view: page.view
         Layout.fillWidth: true
         Layout.preferredWidth: 1
@@ -153,37 +153,21 @@ ColumnLayout {
         title: "Memory"
         status: page.memory ? page.pressureName(page.memory.pressure) : ""
         statusColor: page.memory ? page.pressureColor(page.memory.pressure) : page.green
-        StatCard {
-          view: page.view
-          flat: true
-          header: false
-          padding: 14
-          Layout.fillWidth: true
-          Layout.fillHeight: true
-          ringColor: page.green
-          value: page.memory ? page.memory.used / page.memory.total * 100 : 0
-          rows: page.memory ? [
-            { label: "Used", value: page.bytes(page.memory.used) },
-            { label: "Free", value: page.bytes(page.memory.total - page.memory.used) },
-            { label: "Swap", value: page.memory.swapUsed ? page.bytes(page.memory.swapUsed) : "None" }
-          ] : []
-        }
+        ringColor: page.purple
+        caption: "in use"
+        value: page.memory ? page.memory.used / page.memory.total * 100 : 0
+        rows: page.memory ? [
+          { label: "Used", value: page.bytes(page.memory.used) },
+          { label: "Free", value: page.bytes(page.memory.total - page.memory.used) },
+          { label: "Swap", value: page.memory.swapUsed ? page.bytes(page.memory.swapUsed) : "None" }
+        ] : []
       }
-    }
-
-    // The GPUs, then how hot it all runs, two to a row; Thermal takes a whole
-    // row when it would be alone ----------------------------------------------
-    GridLayout {
-      Layout.fillWidth: true
-      columns: 2
-      columnSpacing: 10
-      rowSpacing: 20
       Repeater {
         // By count: each reading's new array would otherwise rebuild the
         // cards (and replay their rings) every second.
         model: page.gpus.length
-        delegate: Section {
-          id: gpuSection
+        delegate: StatCard {
+          id: gpuCard
           required property int index
           readonly property var gpu: page.gpus[index] || ({})
           view: page.view
@@ -193,45 +177,28 @@ ColumnLayout {
           title: page.gpus.length > 1 ? "GPU " + (index + 1) : "GPU"
           status: gpu.usage != null ? page.loadName(gpu.usage) : ""
           statusColor: page.loadColor(gpu.usage || 0)
-          StatCard {
-            view: page.view
-            flat: true
-            header: false
-            padding: 14
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            ringColor: page.teal
-            value: gpuSection.gpu.usage || 0
-            rows: (gpuSection.gpu.temp != null ? [{ label: "Temp", value: page.temperature(gpuSection.gpu.temp) }] : [])
-              .concat(gpuSection.gpu.vramTotal ? [{ label: "VRAM", value: page.bytes(gpuSection.gpu.vramUsed) }] : [])
-              .concat(gpuSection.gpu.power != null ? [{ label: "Power", value: gpuSection.gpu.power.toFixed(0) + " W" }] : [])
-          }
+          ringColor: page.teal
+          caption: "in use"
+          value: gpuCard.gpu.usage || 0
+          rows: (gpuCard.gpu.temp != null ? [{ label: "Temp", value: page.temperature(gpuCard.gpu.temp) }] : [])
+            .concat(gpuCard.gpu.vramTotal ? [{ label: "VRAM", value: page.bytes(gpuCard.gpu.vramUsed) }] : [])
+            .concat(gpuCard.gpu.power != null ? [{ label: "Power", value: gpuCard.gpu.power.toFixed(0) + " W" }] : [])
         }
       }
-      Section {
+      ThermalCard {
         view: page.view
         Layout.fillWidth: true
         Layout.preferredWidth: 1
         Layout.fillHeight: true
         Layout.columnSpan: page.gpus.length % 2 === 0 ? 2 : 1
-        title: "Thermal"
-        status: thermal.levelName
-        statusColor: thermal.levelColor
-        ThermalCard {
-          id: thermal
-          view: page.view
-          flat: true
-          Layout.fillWidth: true
-          Layout.fillHeight: true
-          // Each GPU named as its card is.
-          temps: (page.cpu && page.cpu.temp !== null && page.cpu.temp !== undefined ? [{ label: "CPU", value: page.cpu.temp }] : [])
-            .concat(page.gpus.map(function(g, i) {
-              return { label: page.gpus.length > 1 ? "GPU " + (i + 1) : "GPU", value: g.temp }
-            }).filter(function(t) { return t.value !== null && t.value !== undefined }))
-            // The hottest drive stands for them all.
-            .concat(page.latest && page.latest.ssdTemps && page.latest.ssdTemps.length
-              ? [{ label: "SSD", value: Math.max.apply(null, page.latest.ssdTemps), ssd: true }] : [])
-        }
+        // Each GPU named as its card is.
+        temps: (page.cpu && page.cpu.temp !== null && page.cpu.temp !== undefined ? [{ label: "CPU", value: page.cpu.temp }] : [])
+          .concat(page.gpus.map(function(g, i) {
+            return { label: page.gpus.length > 1 ? "GPU " + (i + 1) : "GPU", value: g.temp }
+          }).filter(function(t) { return t.value !== null && t.value !== undefined }))
+          // The hottest drive stands for them all.
+          .concat(page.latest && page.latest.ssdTemps && page.latest.ssdTemps.length
+            ? [{ label: "SSD", value: Math.max.apply(null, page.latest.ssdTemps), ssd: true }] : [])
       }
     }
 
@@ -272,16 +239,27 @@ ColumnLayout {
             readonly property bool full: modelData.used / modelData.size > 0.9
             Layout.fillWidth: true
             spacing: 8
+            // The rule between volumes runs the card's full width.
             Rectangle {
               visible: volume.index > 0
               Layout.fillWidth: true
+              Layout.leftMargin: -14
+              Layout.rightMargin: -14
               Layout.preferredHeight: 1
               Layout.bottomMargin: 6
               color: page.view.divider
             }
             RowLayout {
               Layout.fillWidth: true
-              spacing: 6
+              spacing: 10
+              PaneIcon {
+                view: page.view
+                Layout.preferredWidth: 24
+                Layout.preferredHeight: 24
+                // A drive for the startup disk, a server for the rest.
+                glyph: volume.modelData.mount === "/" ? "󰣳" : "󰒋"
+                tint: page.gray
+              }
               // The volume's name as the file manager shows it (its label,
               // else its folder's), then where it's mounted.
               Text {
@@ -293,12 +271,13 @@ ColumnLayout {
                 font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
                 font.features: { "tnum": 1 }
                 font.pixelSize: page.view.detailFontSize
-                font.weight: Font.Medium
+                font.weight: Font.DemiBold
               }
+              // Where it's mounted; not for the startup disk, whose "/"
+              // alone reads as a stray mark.
               Text {
-                visible: volume.modelData.mount !== "/"
                 Layout.fillWidth: true
-                text: volume.modelData.mount
+                text: volume.modelData.mount === "/" ? "" : volume.modelData.mount
                 elide: Text.ElideMiddle
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
@@ -306,26 +285,25 @@ ColumnLayout {
                 font.features: { "tnum": 1 }
                 font.pixelSize: page.view.detailCaptionFontSize
               }
-              Item { visible: volume.modelData.mount === "/"; Layout.fillWidth: true }
               Text {
                 text: page.bytes(volume.modelData.used) + " of " + page.bytes(volume.modelData.size) + " used"
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))
-                font.pixelSize: page.view.host.theme.px(13)
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
+                font.pixelSize: page.view.detailCaptionFontSize
                 font.features: { "tnum": 1 }
               }
             }
             UsageBar {
               view: page.view
               Layout.fillWidth: true
-              barHeight: 12
-              barRadius: 4
+              barHeight: 10
+              squareLegend: true
               total: volume.modelData.size
               segments: [
                 { label: "Used", value: volume.modelData.used, color: volume.full ? page.red : page.blue,
                   text: page.bytes(volume.modelData.used) },
-                { label: "Available", value: 0, color: page.view.host.theme.withAlpha(page.view.text, 0.45),
+                { label: "Available", value: 0, color: page.view.host.theme.fill("stronger"),
                   text: page.bytes(volume.free) }
               ]
             }
@@ -345,13 +323,14 @@ ColumnLayout {
     Behavior on opacity { MotionAnimation { theme: page.view.host.theme; pace: "fade"; curve: "fade" } }
     view: page.view
     title: "Processes"
+    count: page.ready ? String(table.total) : ""
     accessory: [
       // Search, filtering as you type; inset as the Settings text fields,
       // with their focus ring.
       Rectangle {
-        width: 150
-        height: 24
-        radius: 6
+        width: 170
+        height: 28
+        radius: 8
         color: page.view.host.theme.solid("quiet")
         border.width: 1
         border.color: page.view.host.theme.fill(filter.activeFocus ? "strong" : "raised")
@@ -380,7 +359,7 @@ ColumnLayout {
           x: 26
           anchors.verticalCenter: parent.verticalCenter
           visible: filter.text === ""
-          text: "Search"
+          text: "Filter processes"
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
           font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))

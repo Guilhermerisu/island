@@ -2,23 +2,23 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 
-// A widget card in the style of iOS: a coloured icon and title
-// with the reading's meaning in a tinted capsule, then a usage ring beside
-// a short list of figures.
+// A System Stats card: its title with the reading's meaning in a tinted
+// capsule (a dot and a word), then a usage ring beside a short list of
+// figures.
 //   rows  [{ label, value, color }] (color optional, for a status word)
 Card {
   id: card
-  property string icon: ""
-  property color iconColor: "#0a84ff"
   property string title: ""
   property real value: 0
   property color ringColor: "#0a84ff"
+  // The ring's middle: the percentage by default, and a word under it.
+  property string ringText: Math.round(Math.max(0, Math.min(100, value))) + "%"
+  property string caption: ""
   property var rows: []
   property string status: ""
   property color statusColor: "#30d158"
-  // Off when the title sits outside the card (see the System Stats pane).
-  property bool header: true
-  property int padding: 16
+  property int padding: 14
+  flat: true
   implicitHeight: body.implicitHeight + 2 * padding
 
   ColumnLayout {
@@ -27,63 +27,66 @@ Card {
     anchors.right: parent.right
     anchors.top: parent.top
     anchors.margins: card.padding
-    spacing: 14
+    spacing: 12
 
     RowLayout {
-      visible: card.header
       Layout.fillWidth: true
+      Layout.minimumHeight: 22
       spacing: 8
-      Text {
-        text: card.icon
-        color: card.iconColor
-        font.family: card.view.host.theme.fontFamily
-        font.pixelSize: card.view.host.theme.px(16)
-      }
       Text {
         Layout.fillWidth: true
         text: card.title
         elide: Text.ElideRight
         color: card.view.text
         font.family: card.view.host.theme.textFontFamily
-        font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.host.theme.px(15))
-        font.features: { "tnum": 1 }
-        font.pixelSize: card.view.host.theme.px(15)
+        font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
+        font.pixelSize: card.view.detailFontSize
         font.weight: Font.DemiBold
       }
       Rectangle {
         visible: card.status !== ""
         Layout.preferredHeight: 20
-        Layout.preferredWidth: statusText.implicitWidth + 16
+        Layout.preferredWidth: statusRow.implicitWidth + 16
         radius: 10
         color: card.view.host.theme.withAlpha(card.statusColor, 0.16)
-        Text {
-          id: statusText
+        Row {
+          id: statusRow
           anchors.centerIn: parent
-          text: card.status
-          color: card.statusColor
-          font.family: card.view.host.theme.textFontFamily
-          font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.host.theme.px(12))
-          font.features: { "tnum": 1 }
-          font.pixelSize: card.view.host.theme.px(12)
-          font.weight: Font.Medium
+          spacing: 5
+          Rectangle {
+            anchors.verticalCenter: parent.verticalCenter
+            width: 6
+            height: 6
+            radius: 3
+            color: card.statusColor
+          }
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: card.status
+            color: card.statusColor
+            font.family: card.view.host.theme.textFontFamily
+            font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailCaptionFontSize)
+            font.pixelSize: card.view.detailCaptionFontSize
+            font.weight: Font.DemiBold
+          }
         }
       }
     }
 
     RowLayout {
       Layout.fillWidth: true
-      spacing: 14
+      spacing: 16
       Ring {
         view: card.view
         value: card.value
         color: card.ringColor
-        thickness: 9
+        thickness: 8
+        text: card.ringText
+        caption: card.caption
         Layout.preferredWidth: 78
         Layout.preferredHeight: 78
       }
-      // Figures as an inset list: label left, value right, hairlines between;
-      // on a flat card, as System Settings' rows: the label in the text
-      // colour and the value secondary.
+      // The figures: label left, value right, no rules between.
       ColumnLayout {
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignVCenter
@@ -97,34 +100,26 @@ Card {
             required property int index
             readonly property var modelData: card.rows[index] || ({})
             Layout.fillWidth: true
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: 24
             Text {
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
               text: figure.modelData.label
-              color: card.flat ? card.view.text : card.view.textMuted
+              color: card.view.host.theme.withAlpha(card.view.text, 0.85)
               font.family: card.view.host.theme.textFontFamily
-              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.flat ? card.view.detailFontSize : card.view.host.theme.px(13))
+              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
               font.features: { "tnum": 1 }
-              font.pixelSize: card.flat ? card.view.detailFontSize : card.view.host.theme.px(13)
+              font.pixelSize: card.view.detailFontSize
             }
             Text {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               text: figure.modelData.value
-              color: figure.modelData.color || (card.flat ? card.view.textMuted : card.view.text)
+              color: figure.modelData.color || card.view.text
               font.family: card.view.host.theme.textFontFamily
-              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.flat ? card.view.detailFontSize : card.view.host.theme.px(13))
-              font.pixelSize: card.flat ? card.view.detailFontSize : card.view.host.theme.px(13)
-              font.weight: card.flat ? Font.Normal : Font.DemiBold
+              font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
+              font.pixelSize: card.view.detailFontSize
               font.features: { "tnum": 1 }
-            }
-            Rectangle {
-              visible: figure.index < card.rows.length - 1
-              anchors.bottom: parent.bottom
-              width: parent.width
-              height: 1
-              color: card.view.divider
             }
           }
         }

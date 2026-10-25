@@ -14,6 +14,9 @@ ColumnLayout {
   property bool legend: true
   property int barHeight: 10
   property real barRadius: barHeight / 2
+  // The legend as Storage's: small square swatches, the name quiet and the
+  // amount in the text colour (else round dots, the name in the text colour).
+  property bool squareLegend: false
   spacing: 8
 
   Rectangle {
@@ -71,15 +74,15 @@ ColumnLayout {
         spacing: 5
         Rectangle {
           anchors.verticalCenter: parent.verticalCenter
-          width: 8
-          height: 8
-          radius: 4
+          width: usage.squareLegend ? 7 : 8
+          height: width
+          radius: usage.squareLegend ? 2 : 4
           color: parent.modelData.color
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: parent.modelData.label
-          color: usage.view.text
+          color: usage.squareLegend ? usage.view.textMuted : usage.view.text
           font.family: usage.view.host.theme.textFontFamily
           font.letterSpacing: usage.view.host.theme.tracking(usage.view.host.theme.textFontFamily, usage.view.detailCaptionFontSize)
           font.features: { "tnum": 1 }
@@ -88,7 +91,7 @@ ColumnLayout {
         Text {
           anchors.verticalCenter: parent.verticalCenter
           text: parent.modelData.text || ""
-          color: usage.view.textMuted
+          color: usage.squareLegend ? usage.view.text : usage.view.textMuted
           font.family: usage.view.host.theme.textFontFamily
           font.letterSpacing: usage.view.host.theme.tracking(usage.view.host.theme.textFontFamily, usage.view.detailCaptionFontSize)
           font.features: { "tnum": 1 }
