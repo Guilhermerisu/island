@@ -185,7 +185,6 @@ ColumnLayout {
       id: note
       required property var entry
       readonly property var modelData: entry
-      readonly property string appName: String(modelData.app || modelData.summary || "?")
       readonly property bool hovered: noteMouse.containsMouse || closeMouse.containsMouse
       width: ListView.view.width
       height: banner.height + 6
@@ -210,12 +209,12 @@ ColumnLayout {
           cursorShape: note.modelData.isActive ? Qt.PointingHandCursor : Qt.ArrowCursor
           onClicked: if (note.modelData.isActive) history.center.host.notifications.command("invokeKey", note.modelData)
         }
-        // The notification's image or app icon; a letter avatar when
-        // there's none (or it fails to load).
+        // The notification's image or app icon; the banner's accent bell
+        // tile when there's none (or it fails to load).
         ClippingRectangle {
           id: avatar
           // A live image handle dies with the shell; fall back to the app
-          // icon (then the letter) when it no longer loads.
+          // icon (then the bell) when it no longer loads.
           property bool imageFailed: false
           readonly property string source: history.center.host.notifications.iconSource(note.modelData, imageFailed)
           readonly property var brand: history.center.host.notifications.brand(note.modelData)
@@ -224,16 +223,16 @@ ColumnLayout {
           anchors.top: parent.top
           anchors.topMargin: 12
           width: 36; height: 36; radius: history.center.host.theme.radii.large
-          readonly property bool lettered: !brand && noteIcon.status !== Image.Ready
+          readonly property bool generic: !brand && noteIcon.status !== Image.Ready
           color: brand ? brand.tile : "transparent"
-          // A letter avatar sits on a soft grey tile, as macOS's generic
-          // app icon, rather than a coloured square.
+          // Same tile as the banner (NotificationPill), so a notification
+          // looks the same on the pill and here.
           Rectangle {
             anchors.fill: parent
-            visible: avatar.lettered
+            visible: avatar.generic
             gradient: Gradient {
-              GradientStop { position: 0; color: history.center.host.theme.solid("stronger") }
-              GradientStop { position: 1; color: history.center.host.theme.solid("raised") }
+              GradientStop { position: 0; color: Qt.lighter(history.center.host.theme.accent, 1.25) }
+              GradientStop { position: 1; color: history.center.host.theme.accent }
             }
           }
           Image {
@@ -250,12 +249,10 @@ ColumnLayout {
           Text {
             anchors.centerIn: parent
             visible: noteIcon.status !== Image.Ready
-            text: avatar.brand ? avatar.brand.glyph : note.appName.charAt(0).toUpperCase()
-            color: avatar.brand ? avatar.brand.ink : history.center.text
-            font.family: avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily
-            font.letterSpacing: history.center.host.theme.tracking(avatar.brand ? "JetBrainsMono Nerd Font" : history.center.host.theme.textFontFamily, avatar.brand ? history.center.host.theme.px(20) : history.center.host.theme.px(16))
-            font.pixelSize: avatar.brand ? history.center.host.theme.px(20) : history.center.host.theme.px(16)
-            font.weight: Font.DemiBold
+            text: avatar.brand ? avatar.brand.glyph : "󰂚"
+            color: avatar.brand ? avatar.brand.ink : history.center.host.theme.accentText
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: history.center.host.theme.px(20)
           }
         }
         Column {

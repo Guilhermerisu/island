@@ -124,13 +124,25 @@ ColumnLayout {
               anchors.rightMargin: 14
               anchors.verticalCenter: parent.verticalCenter
               spacing: 10
-              StoreButton {
+              // Remove waits for the row to be hovered (or opened), as in
+              // System Settings, so the Added list isn't a column of
+              // buttons; it keeps its room so the text doesn't reflow.
+              Item {
+                readonly property bool shown: !addon.on || rowHover.hovered || addon.open
                 anchors.verticalCenter: parent.verticalCenter
-                view: page.view
-                added: addon.on
-                onClicked: {
-                  if (addon.on && page.expanded === addon.modelData.id) page.expanded = ""
-                  page.addons.setEnabled(addon.modelData.id, !addon.on)
+                implicitWidth: storeButton.implicitWidth
+                implicitHeight: storeButton.implicitHeight
+                enabled: shown
+                opacity: shown ? 1 : 0
+                Behavior on opacity { MotionAnimation { theme: page.view.host.theme; pace: "fade"; curve: "fade" } }
+                StoreButton {
+                  id: storeButton
+                  view: page.view
+                  added: addon.on
+                  onClicked: {
+                    if (addon.on && page.expanded === addon.modelData.id) page.expanded = ""
+                    page.addons.setEnabled(addon.modelData.id, !addon.on)
+                  }
                 }
               }
               // Only added addons have options, so only their group keeps a

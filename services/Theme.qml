@@ -70,23 +70,25 @@ Item {
   // Corner radii, so a corner is the same size everywhere. A box sitting
   // directly in an open view (a card, a group, a list) is concentric with
   // the island: its 30 radius minus the usual 16 padding.
-  readonly property var radii: ({ tiny: 4, small: 6, medium: 8, large: 10, card: 14 })
+  readonly property var radii: ({ small: 6, medium: 8, large: 10, card: 14 })
   readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
   // Motion roles share one cadence at every user-selected speed. Curves end
   // with a soft landing; geometry stays inside its bounds, except the
   // island itself, which swings a touch past its size as it grows
-  // (morphBounce) and lands flat as it shrinks.
+  // (morphBounce) and dips a touch under it as a pill shrinks back
+  // (shrugBounce).
   readonly property var motionDurations: ({
     press: 65, quick: 110, standard: 170, expressive: 220,
     morph: 240, collapse: 190, fade: 110, exit: 90,
     data: 330
   })
-  readonly property int feedbackFadeDuration: motionDuration("fade")
   readonly property int contentRevealDelay: Math.round(45 * motionScale)
   // How far the island's height trails its width as it grows (and the width
   // trails the height as it shrinks), so it morphs as one shape.
   readonly property int morphLag: Math.round(28 * motionScale)
   readonly property real morphBounce: 0.2
+  // How far a pill dips under its resting size as it shrinks back.
+  readonly property real shrugBounce: 0.3
   // Any other timing (a stagger step, an offset after contentRevealDelay, a
   // pulse) at the user's motion speed, given at Fast (1×) like the table
   // above, so it keeps its rhythm with the rest at every speed.

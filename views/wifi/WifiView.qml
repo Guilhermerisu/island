@@ -74,17 +74,10 @@ ColumnLayout {
         pending: pending
       })
     }
-    var titles = { connected: "Connected", known: "Saved Networks", nearby: "Available" }
-    var list = []
-    for (var key in titles) {
-      var group = groups[key].sort(key === "nearby"
-        ? function(a, b) { return b.strength - a.strength }
-        : function(a, b) { return a.name.localeCompare(b.name) })
-      if (!group.length) continue
-      list.push({ header: titles[key] })
-      list = list.concat(group)
-    }
-    return list
+    var byName = function(a, b) { return a.name.localeCompare(b.name) }
+    return groups.connected.sort(byName)
+      .concat(groups.known.sort(byName))
+      .concat(groups.nearby.sort(function(a, b) { return b.strength - a.strength }))
   }
 
   // What the list shows: Known Networks (connected first, then saved) and

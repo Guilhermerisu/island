@@ -61,16 +61,10 @@ ColumnLayout {
         pending: action
       })
     }
-    var titles = { connected: "Connected", known: "My Devices", nearby: "Nearby" }
-    var list = []
-    for (var key in titles) {
-      if (key === "nearby" && !scanning) continue
-      var group = groups[key].sort(function(a, b) { return a.name.localeCompare(b.name) })
-      if (!group.length) continue
-      list.push({ header: titles[key] })
-      list = list.concat(group)
-    }
-    return list
+    var byName = function(a, b) { return a.name.localeCompare(b.name) }
+    return groups.connected.sort(byName)
+      .concat(groups.known.sort(byName))
+      .concat(scanning ? groups.nearby.sort(byName) : [])
   }
 
   // What the list shows: My Devices (connected first, then remembered) and

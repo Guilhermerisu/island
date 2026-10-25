@@ -1,10 +1,8 @@
 // Notification service for the omarchy shell.
 
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import qs.Commons
 
@@ -36,19 +34,6 @@ Item {
   // originals don't outlive the notification (see persistablePopup). Each
   // copy lives and dies with the JSON file whose stem it carries.
   readonly property string imagesDir: popupStateDir + "images/"
-  // Corner radius is shared with the menu and shell panels.
-  // It mirrors Hyprland's current decoration:rounding value.
-  readonly property int cornerRadius: Style.cornerRadius
-  // Toasts are fixed to the top-right corner. They only clear the omarchy bar
-  // when the bar occupies the top or right edge, so left/bottom bars do not
-  // pull notification popups away from the expected top-right location.
-  // Falls back to the bar's default size (26 horizontal / 28 vertical) when
-  // shell.bar isn't reachable so the popup never lands on top of the bar.
-  readonly property string barPosition: shell && shell.barConfig ? String(shell.barConfig.position || "top") : "top"
-  readonly property bool barVertical: barPosition === "left" || barPosition === "right"
-  readonly property int defaultBarSize: barVertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal
-  readonly property int liveBarSize: shell && shell.bar && !shell.bar.barHidden ? Math.max(0, shell.bar.barSize) : defaultBarSize
-  readonly property int barClearance: liveBarSize + Style.gapsOut
 
   // Live Notification objects by originalId, kept OUT of the ListModels: a
   // QObject stored in a model role becomes a dangling C++ pointer when the
@@ -1013,21 +998,14 @@ Item {
       required property string summary
       required property string body
       readonly property real lifetime: service.durationFor(urgency, expireTimeout)
-      property real remainingLifetime: 1.0
-      onSummaryChanged: remainingLifetime = 1.0
-      onBodyChanged: remainingLifetime = 1.0
+      // A replaced toast (same id, new text) gets a fresh lifetime.
+      onSummaryChanged: if (expiry.running) expiry.restart()
+      onBodyChanged: if (expiry.running) expiry.restart()
       Timer {
-        interval: 50
-        repeat: true
+        id: expiry
+        interval: lifetime
         running: lifetime > 0
-        onTriggered: {
-          if (lifetime <= 0) return
-          remainingLifetime -= 50.0 / lifetime
-          if (remainingLifetime <= 0) {
-            remainingLifetime = 0
-            service.expirePopup(index)
-          }
-        }
+        onTriggered: service.expirePopup(index)
       }
     }
   }

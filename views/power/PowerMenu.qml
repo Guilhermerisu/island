@@ -27,8 +27,8 @@ Item {
   readonly property var actions: {
     var list = [{ label: "Power Off", icon: "󰐥", command: ["omarchy-system-shutdown"] }]
     list.push({ label: "Reboot", icon: "󰜉", command: ["omarchy-system-reboot"] })
-    list.push({ label: "Lock", icon: "", command: ["omarchy-system-lock"] })
-    if (hibernateAvailable) list.push({ label: "Hibernate", icon: "󰤁", command: ["systemctl", "hibernate"] })
+    list.push({ label: "Lock", icon: "󰍁", command: ["omarchy-system-lock"] })
+    if (hibernateAvailable) list.push({ label: "Hibernate", icon: "󰜗", command: ["systemctl", "hibernate"] })
     if (suspendAvailable) list.push({ label: "Suspend", icon: "󰖔", command: ["systemctl", "suspend"] })
     return list
   }

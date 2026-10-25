@@ -1,120 +1,3 @@
-function isChromiumDerived(app, appIcon) {
-  var source = (String(app || "") + "\n" + String(appIcon || "")).toLowerCase()
-  return source.indexOf("chrom") >= 0 || source.indexOf("brave") >= 0 ||
-         source.indexOf("vivaldi") >= 0 || source.indexOf("microsoft-edge") >= 0 ||
-         source.indexOf("opera") >= 0
-}
-
-// True when a `<...>` run is an image tag, so the name is read the way Qt's
-// parser reads it: after the `<`, the leading run of letters and digits.
-//
-// Skip everything up to that run rather than matching the separator, because
-// there is no JavaScript expression for what Qt skips. QQuickStyledText calls
-// skipSpace(), which is QChar::isSpace(), and that set is not `\s`: Qt counts
-// U+0085 NEL and `\s` does not, while `\s` counts U+FEFF and Qt does not. A
-// name read with `\s` therefore misses a tag written as `<`, U+0085, `img`:
-// Qt skips the NEL, reads `img` and issues the GET, while the regex finds no
-// name at all and the tag is kept. Measured against Qt 6.11.2.
-//
-// Over-skipping is the safe direction. It can only classify more runs as
-// images, and dropping a run never manufactures a tag: a dropped run joins two
-// stretches of text that each contain no `<`.
-function isImageTag(tag) {
-  var name = /^<[^A-Za-z0-9]*([A-Za-z0-9]+)/.exec(tag)
-  return !!name && name[1].toLowerCase() === "img"
-}
-
-// The body renders as StyledText so notifications can use the markup the
-// body-markup capability advertises (see Service.qml). StyledText honours
-// <img src>, and a remote src makes the shell issue an unauthenticated GET
-// with no user action, so image tags go before the renderer sees them.
-//
-// Work in whole tags, never in substrings of one. A `<` opens a tag that runs
-// to the next `>`, nested `<` and all, and only a tag whose own name is `img`
-// is dropped.
-//
-// That is the conservative bound, not Qt's exact one: Qt lets a `>` inside a
-// quoted attribute value pass without closing the tag, so a Qt tag can be
-// longer than the run taken here. Do not "correct" this to match Qt. Taking
-// the shorter run only ever splits one Qt tag into several, and a split can
-// only expose an `<img` to be dropped, never hide one — whereas honouring
-// quotes would let `<b title="a>b"><img src="http://host/x.png">` through.
-//
-// Deleting a substring is what makes a naive `/<img[^>]*>/g` unsafe. Given
-//
-//   <im<img src="http://a/decoy.png">g src="http://a/beacon.png">
-//
-// Qt reads ONE malformed tag named `im` and renders nothing, but removing the
-// inner match closes the surviving halves up into `<img src=".../beacon.png">`
-// — a live tag the input never contained. The stripper would be manufacturing
-// the very thing it exists to remove.
-//
-// Because every `<` opens a tag, the text between tags never contains one, so
-// dropping a tag cannot splice its neighbours into a new one. That makes a
-// single pass sufficient, with no re-scanning and no input bound to police.
-function stripImageTags(text) {
-  var out = ""
-  var i = 0
-
-  while (i < text.length) {
-    var open = text.indexOf("<", i)
-    if (open === -1) {
-      out += text.slice(i)
-      break
-    }
-
-    out += text.slice(i, open)
-
-    // An unterminated tag at the end of the string still reaches the renderer,
-    // which closes it itself, so treat the remainder as one tag.
-    var close = text.indexOf(">", open)
-    var tag = close === -1 ? text.slice(open) : text.slice(open, close + 1)
-
-    if (!isImageTag(tag)) out += tag
-    i = close === -1 ? text.length : close + 1
-  }
-
-  return out
-}
-
-// What the card renders, and the last thing to touch the string before Qt parses
-// it. The newline rewrite belongs here rather than in the card because it inserts
-// `<br/>` into text stripImageTags chose to KEEP, and a kept tag may hold a `<` of
-// its own: `<x`, newline, `<img src="http://…">` is one tag named `x` to both the
-// stripper and Qt, until the rewrite splits it into `<x<br/>` and a live image tag
-// the input never contained. Measured against Qt 6.11.2 — the rewritten form
-// fetches, the original does not. So strip again after, and what Qt parses is what
-// was checked last.
-function styledBody(body, app, appIcon) {
-  return stripImageTags(sanitizeBody(body, app, appIcon).replace(/\r\n|\r|\n/g, "<br/>"))
-}
-
-function sanitizeBody(body, app, appIcon) {
-  var text = stripImageTags(String(body || ""))
-  if (!isChromiumDerived(app, appIcon)) return text
-
-  return text
-    .replace(/^\s*<a\b[^>]*>\s*(?:https?:\/\/|www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/[^<\s]*)?\s*<\/a>\s*/i, "")
-    .replace(/^\s*(?:https?:\/\/|www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/\S*)?\s+/i, "")
-}
-
-function summaryStartsWithGlyph(summary) {
-  var text = String(summary || "").replace(/^\s+/, "")
-  if (!text) return false
-
-  var offset = 1
-  var first = text.charCodeAt(0)
-  if (first >= 0xd800 && first <= 0xdbff && text.length > 1) offset = 2
-
-  var spaces = 0
-  while (offset < text.length && text.charAt(offset) === " ") {
-    spaces++
-    offset++
-  }
-
-  return spaces >= 2
-}
-
 function shouldBypassDnd(notification, criticalUrgency) {
   var appName = String((notification && notification.appName) || "")
   if (appName === "omarchy-action") return true
@@ -174,10 +57,6 @@ function parseExecArgv(value) {
   }
   if (!parsed[0] || parsed[0].charAt(0) === "-") return null
   return parsed
-}
-
-function shouldRenderCompactGlyph(glyph, iconSource, singleLineToast) {
-  return String(glyph || "").length > 0 && String(iconSource || "").length === 0 && !!singleLineToast
 }
 
 function snapshotOf(notification, timestamp) {
@@ -395,24 +274,6 @@ function popupExpired(entry, duration, now) {
   return (Number(now) - Number((entry || {}).timestamp || 0)) >= lifetime
 }
 
-function popupPlacement(barPosition, barClearance, gapsOut) {
-  var position = String(barPosition || "top")
-  var clearance = Number(barClearance)
-  var gap = Number(gapsOut)
-  if (!isFinite(clearance)) clearance = 0
-  if (!isFinite(gap)) gap = 0
-
-  return {
-    anchors: { top: true, bottom: false, left: false, right: true },
-    margins: {
-      top: position === "top" ? clearance : gap,
-      bottom: gap,
-      left: gap,
-      right: position === "right" ? clearance : gap
-    }
-  }
-}
-
 // The archived files are the history. They are read back exactly like the
 // live popup files, then normalized into history rows: replaying a toast
 // must not inherit the original's expire timeout or restore deadline, so it
@@ -444,36 +305,4 @@ function historyRows(raw, liveRows, normalUrgency, limit) {
   collect(parsePopupFiles(raw, normalUrgency))
   out.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0) })
   return out.slice(0, max)
-}
-
-if (typeof module !== "undefined") {
-  module.exports = {
-    isChromiumDerived: isChromiumDerived,
-    sanitizeBody: sanitizeBody,
-    styledBody: styledBody,
-    summaryStartsWithGlyph: summaryStartsWithGlyph,
-    shouldBypassDnd: shouldBypassDnd,
-    isEphemeralApp: isEphemeralApp,
-    stringHint: stringHint,
-    glyphFromHints: glyphFromHints,
-    execArgvFromHints: execArgvFromHints,
-    parseExecArgv: parseExecArgv,
-    shouldRenderCompactGlyph: shouldRenderCompactGlyph,
-    snapshotOf: snapshotOf,
-    popupRoles: popupRoles,
-    popupRowChanged: popupRowChanged,
-    replacementSnapshot: replacementSnapshot,
-    historyEntry: historyEntry,
-    parseSettings: parseSettings,
-    historyRows: historyRows,
-    popupEntry: popupEntry,
-    popupFileName: popupFileName,
-    imageStem: imageStem,
-    localImageFile: localImageFile,
-    persistablePopup: persistablePopup,
-    serializePopup: serializePopup,
-    parsePopupFiles: parsePopupFiles,
-    popupExpired: popupExpired,
-    popupPlacement: popupPlacement
-  }
 }

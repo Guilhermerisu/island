@@ -189,8 +189,6 @@ Item {
     showDirs: false
     showHidden: true
   }
-  readonly property int barSize: 0
-  readonly property string position: "top"
 
   // Auto-hide. The screensaver and fullscreen come live from Wayland and
   // Quickshell's own tracking; only "floating" lives in Hyprland's client
@@ -581,6 +579,7 @@ Item {
           width: island.width
           height: island.height
           scale: island.scale
+          transformOrigin: island.transformOrigin
           opacity: root.surfaceOpen ? 1 : 0
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
@@ -629,8 +628,22 @@ Item {
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
           readonly property bool lifted: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch
-          scale: lifted ? 1.018 : 1
-          Behavior on scale { MotionAnimation { theme: root.theme; pace: "quick" } }
+          // Lifts a touch under the pointer and squishes while pressed, then
+          // springs back past its size on release, like the iPhone's island.
+          // The springs run in hundredths, as they settle to a tenth of a unit.
+          readonly property bool squished: islandTap.pressed || squishHold.running
+          Timer { id: squishHold; interval: root.theme.motionDuration("press") }
+          MotionSpring { id: liftSpring; theme: root.theme; pace: "quick"; target: island.lifted ? 100 : 0 }
+          MotionSpring {
+            id: pressSpring
+            theme: root.theme
+            pace: island.squished ? "press" : "standard"
+            bounce: island.squished ? 0 : 0.35
+            target: island.squished ? 100 : 0
+          }
+          scale: 1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003
+          // With the notch the island hangs from the top edge, so it scales from there.
+          transformOrigin: root.settings.notch ? Item.Top : Item.Center
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
           HoverHandler {
             id: islandPointerHover
@@ -667,22 +680,24 @@ Item {
           // Width, height and corners ride springs, so a change of mind
           // mid-morph keeps its momentum. Growing, the width leads and the
           // height follows a beat later, each swinging a touch past its size
-          // as the Dynamic Island does; shrinking, the height goes first and
-          // both land flat.
+          // as the Dynamic Island does; shrinking, the height goes first. A
+          // pill shrinking back (an activity ending) dips a little under its
+          // size before it settles, a shrug; closing a view lands flat.
           readonly property string morphPace: root.surfaceOpen ? "morph" : "collapse"
           MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace }
           MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace }
           MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; target: island.targetRadius }
           Timer { id: widthLag; interval: root.theme.morphLag; onTriggered: widthSpring.target = island.targetWidth }
           Timer { id: heightLag; interval: root.theme.morphLag; onTriggered: heightSpring.target = island.targetHeight }
+          readonly property bool shrugs: !root.surfaceOpen && heightSpring.value <= 120
           onTargetWidthChanged: {
-            widthSpring.bounce = targetWidth > widthSpring.value ? root.theme.morphBounce : 0
+            widthSpring.bounce = targetWidth > widthSpring.value ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
             if (targetWidth < widthSpring.value) { widthLag.restart(); return }
             widthLag.stop()
             widthSpring.target = targetWidth
           }
           onTargetHeightChanged: {
-            heightSpring.bounce = targetHeight > heightSpring.value ? root.theme.morphBounce : 0
+            heightSpring.bounce = targetHeight > heightSpring.value ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
             if (targetHeight > heightSpring.value) { heightLag.restart(); return }
             heightLag.stop()
             heightSpring.target = targetHeight
@@ -695,8 +710,10 @@ Item {
           height: Math.max(28, heightSpring.value)
 
           MouseArea {
+            id: islandTap
             anchors.fill: parent
             enabled: root.view === "rest" || root.view === "feedback"
+            onPressed: squishHold.restart()
             onClicked: function(mouse) {
               feedbackTimer.stop()
               if (island.activePill) island.activePill.clicked(mouse)
@@ -740,6 +757,7 @@ Item {
           width: island.width
           height: island.height
           scale: island.scale
+          transformOrigin: island.transformOrigin
           opacity: root.surfaceOpen ? 1 : island.lifted ? 0.6 : 0
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted ? "morph" : "exit"; curve: "fade" } }
