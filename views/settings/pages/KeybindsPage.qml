@@ -173,12 +173,17 @@ ColumnLayout {
     }).join(" + ")
   }
 
+  // Each section's shortcuts share its tile colour; each has its own glyph.
   readonly property var shortcutSections: [
-    { title: "Menus", ids: ["menu", "apps", "power"] },
-    { title: "Search", ids: ["keybinds", "emoji", "clipboard"] },
-    { title: "Appearance", ids: ["themes", "wallpapers"] },
-    { title: "Island", ids: ["controls", "player", "settings"] }
+    { title: "Menus", ids: ["menu", "apps", "power"], color: "#5e5ce6" },
+    { title: "Search", ids: ["keybinds", "emoji", "clipboard"], color: "#0a84ff" },
+    { title: "Appearance", ids: ["themes", "wallpapers"], color: "#ff375f" },
+    { title: "Island", ids: ["controls", "player", "settings"], color: "#30d158" }
   ]
+  readonly property var shortcutIcons: ({
+    menu: "󱇙", apps: "󰦨", power: "󰐥", keybinds: "󰥻", emoji: "󰇲", clipboard: "󰅌",
+    themes: "󰸌", wallpapers: "󰥶", controls: "󰘮", player: "󰝚", settings: "󰢻"
+  })
   function addonEntries(addonId) {
     return page.shortcuts.filter(function(e) { return e.addon === addonId })
   }
@@ -203,6 +208,8 @@ ColumnLayout {
           required property var modelData
           required property int index
           entry: modelData
+          icon: page.shortcutIcons[modelData.id] || ""
+          iconTint: section.modelData.color
           last: index === section.entries.length - 1
         }
       }
