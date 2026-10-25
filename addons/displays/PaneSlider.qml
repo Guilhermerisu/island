@@ -4,7 +4,8 @@ import "../../components"
 
 // macOS's System Settings slider: a thin track filled in the accent colour
 // up to a round white knob, a small glyph at each end. With `stops`, it
-// snaps to them (and ticks mark them). `live` sends each move while
+// snaps to them (and grey ticks mark them; the track alone shows the
+// value). `live` sends each move while
 // dragging; otherwise only where it's let go.
 // `view` is the SettingsView; `value` runs from 0 to 1.
 Item {
@@ -111,9 +112,10 @@ Item {
       delegate: Rectangle {
         required property int index
         x: knob.width / 2 + track.span * index / (slider.stops - 1) - width / 2
-        y: groove.y + groove.height + 4
-        width: 1
-        height: 3
+        y: groove.y + groove.height + 5
+        width: 1.5
+        height: 4
+        radius: 1
         color: slider.view.textMuted
         opacity: 0.45
       }

@@ -8,8 +8,10 @@ import "../../components"
 // (turned with it) and sized by its physical size against the others, its
 // name and size under it; with a second one that's off (faded), clicking
 // one picks it, ringed with its name lit, and hovering lifts the other.
+// All of it in a card, as the groups below; a lone monitor is drawn
+// large, with a window of text on it, its name and "27-inch · 2560 × 1440 · 360 Hz" under it.
 // `view` is the SettingsView, `displays` the DisplaysAddon.
-Item {
+Rectangle {
   id: hero
   required property var view
   required property var displays
@@ -20,12 +22,17 @@ Item {
   // With two monitors on or more, they're shown as arranged and dragged
   // into place here (see Arrangement); otherwise side by side.
   readonly property bool arranged: displays.enabledCount >= 2
-  implicitHeight: arranged ? 240 : screens.implicitHeight + 8
-
+  // One monitor alone: drawn large.
+  readonly property bool single: !several
+  implicitHeight: arranged ? 196 : screens.implicitHeight + 32
+  radius: theme.radii.card
+  border.width: 1
+  border.color: view.edge
+  color: view.card
   Arrangement {
     visible: hero.arranged
     anchors.fill: parent
-    anchors.margins: 6
+    anchors.margins: 14
     view: hero.view
     displays: hero.displays
   }
@@ -48,13 +55,13 @@ Item {
         // Smaller monitors drawn smaller, but never under 70% of the largest.
         readonly property real size: hero.diagonal(modelData) > 0 ? Math.max(0.7, hero.diagonal(modelData) / hero.largest) : 1
         readonly property real inches: hero.diagonal(modelData) / 25.4
-        spacing: 10
+        spacing: hero.single ? 0 : 10
         opacity: modelData.disabled ? 0.45 : 1
 
         Item {
           anchors.horizontalCenter: parent.horizontalCenter
-          width: 172
-          height: 108
+          width: hero.single ? 260 : 172
+          height: hero.single ? 146 : 108
           Item {
             id: lift
             anchors.fill: parent
@@ -66,7 +73,44 @@ Item {
               width: Math.min(parent.width, parent.height * screen.ratio) * screen.size
               height: width / screen.ratio
               view: hero.view
-              radius: 7
+              radius: hero.single ? 10 : 7
+              bezel: hero.single ? 6 : 3
+              sourceWidth: hero.single ? 600 : 360
+              // A window of text on it, as the scale cards draw.
+              Rectangle {
+                visible: hero.single
+                anchors.centerIn: parent
+                width: 62
+                height: 40
+                radius: 6
+                color: hero.view.card
+                border.width: 1
+                border.color: Qt.rgba(1, 1, 1, 0.12)
+                Row {
+                  x: 7
+                  y: 7
+                  spacing: 4
+                  Repeater {
+                    model: ["#ff5f57", "#febc2e", "#28c840"]
+                    delegate: Rectangle {
+                      required property string modelData
+                      width: 5
+                      height: 5
+                      radius: 2.5
+                      color: modelData
+                    }
+                  }
+                }
+                Text {
+                  anchors.centerIn: parent
+                  anchors.verticalCenterOffset: 4
+                  text: "Aa"
+                  color: hero.view.text
+                  font.family: hero.theme.textFontFamily
+                  font.pixelSize: hero.theme.px(14)
+                  font.weight: Font.Bold
+                }
+              }
             }
             Rectangle {
               anchors.centerIn: bezel
@@ -91,23 +135,27 @@ Item {
             onClicked: hero.displays.selected = screen.modelData.name
           }
         }
+        Item { visible: hero.single; width: 1; height: 12 }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: screen.modelData.title
           color: screen.picked || !hero.several ? hero.view.text : hero.view.textMuted
           Behavior on color { MotionColorAnimation { theme: hero.theme } }
+          readonly property int size: hero.single ? hero.theme.px(15) : hero.view.detailFontSize
           font.family: hero.theme.textFontFamily
-          font.letterSpacing: hero.theme.tracking(hero.theme.textFontFamily, hero.view.detailFontSize)
-          font.pixelSize: hero.view.detailFontSize
-          font.weight: Font.Medium
+          font.letterSpacing: hero.theme.tracking(hero.theme.textFontFamily, size)
+          font.pixelSize: size
+          font.weight: hero.single ? Font.DemiBold : Font.Medium
         }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          // "27-inch (2560 × 1440)", as macOS writes it.
+          // "27-inch · 2560 × 1440 · 360 Hz".
           text: screen.modelData.disabled ? "Off"
-            : (screen.inches > 0 ? Math.round(screen.inches) + "-inch " : "")
-              + "(" + (screen.turned ? screen.modelData.height + " × " + screen.modelData.width
-                                     : screen.modelData.width + " × " + screen.modelData.height) + ")"
+            : [screen.inches > 0 ? Math.round(screen.inches) + "-inch" : "",
+               screen.turned ? screen.modelData.height + " × " + screen.modelData.width
+                             : screen.modelData.width + " × " + screen.modelData.height,
+               screen.modelData.rate ? Math.round(Number(screen.modelData.rate)) + " Hz" : ""]
+              .filter(function(part) { return part !== "" }).join(" · ")
           color: hero.view.textMuted
           font.family: hero.theme.textFontFamily
           font.letterSpacing: hero.theme.tracking(hero.theme.textFontFamily, hero.view.detailCaptionFontSize)

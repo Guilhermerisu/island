@@ -6,8 +6,8 @@ import "../../views/settings/controls"
 // The Displays pane, as macOS's: the monitors at the top, arranged as
 // they are (drag one to move it, click to pick it), then the picked
 // monitor's scale cards, brightness (when it has one), resolution,
-// refresh rate, rotation, and colour (HDR, profile, 10-bit), and the text
-// size everywhere. Edits stay pending until Apply (see DisplaysAddon),
+// refresh rate, rotation and the text size everywhere, then colour (HDR,
+// profile, 10-bit). Edits stay pending until Apply (see DisplaysAddon),
 // except brightness and text size, set at once.
 ColumnLayout {
   id: page
@@ -32,14 +32,30 @@ ColumnLayout {
     { label: "Wide Gamut (BT.2020)", value: "wide" },
     { label: "From Display (EDID)", value: "edid" }
   ]
-  // "60 Hertz", as macOS writes it: whole while it's within 0.1 of one and
-  // no other rate on offer rounds to it too ("59.94 Hertz" beside "60 Hertz").
+  // "60 Hz": whole while it's within 0.1 of one and no other rate on offer
+  // rounds to it too ("59.94 Hz" beside "60 Hz").
   function hz(rate, rates) {
     var n = Number(rate), r = Math.round(n)
     var clash = rates.some(function(o) { return Number(o) !== n && Math.round(Number(o)) === r })
-    return (Math.abs(n - r) < 0.1 && !clash ? r : n) + " Hertz"
+    return (Math.abs(n - r) < 0.1 && !clash ? r : n) + " Hz"
   }
   readonly property var rates: entry ? displays.ratesOf(entry.modes, entry.width, entry.height) : []
+  // The panel's own resolution: the largest it offers.
+  readonly property var nativeSize: entry ? displays.resolutionsOf(entry.modes)[0] : null
+  // What each profile is for, under its row.
+  readonly property var profileDetails: ({
+    auto: "Picked by Hyprland for this display",
+    srgb: "Accurate color for the web and most apps",
+    dp3: "Wider color, as on Apple's displays",
+    dcip3: "Cinema color, for video work",
+    adobe: "Wide color for photo editing",
+    wide: "The widest range, made for HDR",
+    edid: "The range the display reports",
+    hdr: "The widest range, made for HDR",
+    hdredid: "The range the display reports"
+  })
+  // Each text size's name, under its row.
+  readonly property var textNames: ({ 9: "Smallest", 10: "Smaller", 11: "Small", 12: "Default", 14: "Large", 16: "Larger", 20: "Largest" })
 
   Text {
     visible: page.displays.loaded && page.displays.draft.length === 0
@@ -78,25 +94,30 @@ ColumnLayout {
   }
 
   // ---------- Its scale, resolution, refresh rate, and rotation ----------
+  // Text size is for every display, so the group (with only it) stays for
+  // one that's off.
   SettingsGroup {
     view: page.view
-    visible: page.on
+    visible: page.displays.draft.length > 0
+    title: "Display"
     ScaleCards {
+      visible: page.on
       Layout.fillWidth: true
       view: page.view
       displays: page.displays
       entry: page.entry
     }
     Rectangle {
+      visible: page.on
       Layout.fillWidth: true
-      Layout.leftMargin: 14
-      Layout.rightMargin: 14
       Layout.preferredHeight: 1
       color: page.view.divider
     }
     SettingsRow {
       view: page.view
+      visible: page.on
       label: "Resolution"
+      detail: page.nativeSize ? "Panel native is " + (page.entry.transform % 2 === 1 ? page.nativeSize.height + " × " + page.nativeSize.width : page.nativeSize.width + " × " + page.nativeSize.height) : ""
       SettingsPopUp {
         view: page.view
         enabled: !page.busy
@@ -114,7 +135,9 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      visible: page.on
       label: "Refresh rate"
+      detail: "Higher is smoother; uses more power"
       SettingsPopUp {
         view: page.view
         enabled: !page.busy
@@ -125,8 +148,9 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      visible: page.on
       label: "Rotation"
-      last: true
+      detail: "Turn the picture for a vertical monitor"
       SettingsPopUp {
         view: page.view
         enabled: !page.busy
@@ -135,13 +159,6 @@ ColumnLayout {
         onPicked: function(value) { page.displays.setRotation(page.entry.name, Number(value)) }
       }
     }
-  }
-
-  // ---------- Brightness and text size, set at once ----------
-  // Text size is for every display, so the group stays for one that's off.
-  SettingsGroup {
-    view: page.view
-    visible: page.displays.draft.length > 0
     // Brightness only when the monitor's on and its brightness can be set.
     SettingsRow {
       view: page.view
@@ -149,6 +166,7 @@ ColumnLayout {
       label: "Brightness"
       PaneSlider {
         view: page.view
+        implicitWidth: 330
         value: (page.displays.brightness - 1) / 99
         // sun.min and sun.max, as macOS's.
         leading: "󰃠"
@@ -158,12 +176,15 @@ ColumnLayout {
         onMoved: function(v) { page.displays.setBrightness(1 + v * 99) }
       }
     }
+    // Text size, set at once, last.
     SettingsRow {
       view: page.view
       label: "Text size"
+      detail: page.textNames[page.displays.textSize] || page.displays.textSize + " px"
       last: true
       PaneSlider {
         view: page.view
+        implicitWidth: 330
         readonly property var stopsList: page.displays.textStops
         stops: stopsList.length
         live: false
@@ -182,9 +203,7 @@ ColumnLayout {
     view: page.view
     visible: page.on
     title: "Color"
-    footer: page.hdr ? "HDR is experimental in Hyprland, and Night Shift is off while it's on. SDR brightness and saturation set how everything that isn't HDR looks."
-      : page.entry && page.entry.bitdepth === 10 ? "Some apps can't capture the screen in 10-bit."
-      : ""
+    footer: page.hdr ? "HDR is experimental in Hyprland, and Night Shift is off while it's on. SDR brightness and saturation set how everything that isn't HDR looks." : ""
     SettingsRow {
       view: page.view
       label: "High Dynamic Range"
@@ -225,6 +244,7 @@ ColumnLayout {
     SettingsRow {
       view: page.view
       label: "Color profile"
+      detail: page.entry ? page.profileDetails[page.entry.cm] || "" : ""
       SettingsPopUp {
         view: page.view
         enabled: !page.busy
@@ -238,6 +258,7 @@ ColumnLayout {
     SettingsRow {
       view: page.view
       label: "10-bit color"
+      detail: "Smoother gradients. Some apps can't capture the screen in 10-bit."
       last: true
       SettingsSwitch {
         view: page.view
