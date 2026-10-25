@@ -19,7 +19,10 @@ Item {
   // the icon's size, width of its width), or filled with `fill: true`. A glyph can instead be today's { date: "month" } ("OCT") or
   // { date: "day" } ("2"), in Adwaita Sans of `weight`.
   property var layers: []
-  readonly property bool layered: layers.length > 0 && !neutral
+  // Flat, as the icons in macOS's newer settings lists: one colour on a
+  // rounded square with a white line glyph, no gloss, shadow or layers.
+  property bool flat: false
+  readonly property bool layered: layers.length > 0 && !neutral && !flat
   implicitWidth: 20
   implicitHeight: 20
 
@@ -44,8 +47,25 @@ Item {
   readonly property var outline: squircle(width, height, 0)
   readonly property var rim: squircle(width, height, 0.5)
 
+  Rectangle {
+    visible: paneIcon.flat
+    anchors.fill: parent
+    radius: Math.round(width * 0.26)
+    gradient: Gradient {
+      GradientStop { position: 0; color: Qt.lighter(paneIcon.base, paneIcon.neutral ? 1.04 : 1.1) }
+      GradientStop { position: 1; color: paneIcon.base }
+    }
+    Text {
+      anchors.centerIn: parent
+      text: paneIcon.glyph
+      color: paneIcon.ink
+      font.family: paneIcon.view.host.theme.fontFamily
+      font.pixelSize: Math.round(paneIcon.width * 0.62)
+    }
+  }
   Item {
     id: body
+    visible: !paneIcon.flat
     anchors.fill: parent
     // Only while on screen, so the icons of a closed Settings hold no buffers.
     layer.enabled: (!paneIcon.neutral || paneIcon.onAccent) && visible

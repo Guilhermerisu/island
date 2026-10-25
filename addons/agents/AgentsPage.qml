@@ -194,6 +194,7 @@ ColumnLayout {
         font.features: { "tnum": 1 }
         font.pixelSize: page.view.detailTitleFontSize
         font.weight: Font.Bold
+        font.variableAxes: page.view.titleFontAxes
         font.letterSpacing: -0.3
       }
       Text {

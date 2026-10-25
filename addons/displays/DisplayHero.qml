@@ -58,7 +58,7 @@ Item {
           Item {
             id: lift
             anchors.fill: parent
-            scale: pick.pressed ? 0.97 : pick.containsMouse && !screen.picked && hero.view.settings.hoverLift ? 1.035 : 1
+            scale: pick.pressed ? 0.97 : pick.containsMouse && !screen.picked ? 1.035 : 1
             Behavior on scale { MotionAnimation { theme: hero.theme; pace: pick.pressed ? "press" : "standard" } }
             DisplayScreen {
               id: bezel

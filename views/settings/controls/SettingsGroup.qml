@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 
-// A group of rows under a bold section title, with an optional footnote.
+// A group of rows under a grey section title, with an optional footnote.
 // `view` is the SettingsView, for its colours.
 ColumnLayout {
   id: group
@@ -10,16 +10,16 @@ ColumnLayout {
   property string footer: ""
   default property alias rows: groupBody.data
   Layout.fillWidth: true
-  spacing: 7
+  spacing: 8
   Text {
     visible: group.title !== ""
     Layout.leftMargin: 14
     text: group.title
-    color: group.view.text
+    color: group.view.textMuted
     font.family: group.view.host.theme.textFontFamily
     font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, group.view.detailFontSize)
     font.pixelSize: group.view.detailFontSize
-    font.weight: Font.DemiBold
+    font.weight: Font.Medium
   }
   Rectangle {
     Layout.fillWidth: true

@@ -21,22 +21,30 @@ Item {
   onPagesChanged: if (pages.indexOf(currentPage) === -1) currentPage = "General"
   readonly property var pageInfo: {
     var info = Object.assign({}, corePageInfo)
-    for (var i = 0; i < addonPages.length; i++)
-      info[addonPages[i].title] = { icon: addonPages[i].icon, color: addonPages[i].color, layers: addonPages[i].iconLayers || [], about: addonPages[i].about || "", header: addonPages[i].header !== false }
+    for (var i = 0; i < addonPages.length; i++) {
+      var flat = flatAddonIcons[addonPages[i].title] || {}
+      info[addonPages[i].title] = { icon: flat.icon || addonPages[i].icon, color: flat.color || addonPages[i].color, layers: addonPages[i].iconLayers || [], about: addonPages[i].about || "", header: addonPages[i].header !== false }
+    }
     return info
   }
+  // Settings draws its pane icons flat (see PaneIcon); an addon pane whose
+  // own icon only reads drawn in layers gets a line glyph and colour here.
+  readonly property var flatAddonIcons: ({
+    "System Stats": { icon: "󰺢", color: "#8b5cf6" },
+    "Displays": { icon: "󰍹", color: "#0ea5e9" }
+  })
   readonly property var corePageInfo: ({
-    "General": { icon: "󰒓", color: settingsView.host.theme.system.gray, about: "Appearance, motion, and how the pill looks at rest." },
+    "General": { icon: "󰢻", color: settingsView.host.theme.system.gray, about: "Appearance, motion, and how the pill looks at rest." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
-    "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
-    "Addons": { icon: "󰄐", color: settingsView.host.theme.system.blue, about: "Extras that stay unloaded until you add them." },
-    "Keybinds": { icon: "󰌌", color: settingsView.host.theme.system.gray, about: "Keyboard shortcuts that open each part of the island." }
+    "Notifications": { icon: "󰂜", color: "#ff3b30", about: "How notification banners appear on the island." },
+    "Addons": { icon: "󰐕", color: settingsView.host.theme.system.blue, about: "Extras that stay unloaded until you add them." },
+    "Keybinds": { icon: "󰥻", color: settingsView.host.theme.system.gray, about: "Keyboard shortcuts that open each part of the island." }
   })
   function pageMatches(page) {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile",
+      "General": "general time format 12-hour clock style hide automatically appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile",
       "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads screen recording record system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration",
       "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
@@ -58,7 +66,6 @@ Item {
   readonly property color panel: host.theme.background
   readonly property color text: host.theme.text
   readonly property color textMuted: host.theme.secondary
-  readonly property color sidebar: host.theme.card
   readonly property color card: host.theme.card
   readonly property color well: host.theme.well
   readonly property color wellHover: host.theme.wellHover
@@ -70,6 +77,12 @@ Item {
   readonly property int detailFontSize: host.theme.px(13)
   readonly property int detailCaptionFontSize: host.theme.px(11)
   readonly property int detailTitleFontSize: host.theme.px(22)
+  // A pane title's exact weight on Adwaita Sans's weight axis, set with
+  // font.weight: Font.Bold (the fallback for fonts without the axis).
+  readonly property var titleFontAxes: ({ "wght": 500 })
+  // The narrowest a row's pop-up or segmented control gets, so the controls
+  // down the right of a group line up on both edges.
+  readonly property int controlWidth: 156
 
   function revealSettingsItem(item) {
     var top = item.mapToItem(groups, 0, 0).y
@@ -79,7 +92,7 @@ Item {
       scroller.contentY = Math.min(bottom - scroller.height, Math.max(0, scroller.contentHeight - scroller.height))
   }
 
-  implicitHeight: 640
+  implicitHeight: 672
   onActiveChanged: {
     if (active && host.settingsPage !== "") {
       currentPage = host.settingsPage
@@ -123,15 +136,17 @@ Item {
 
   RowLayout {
     anchors.fill: parent
-    spacing: 10
+    spacing: 0
 
+    // The sidebar runs to the island's edge in a lighter grey of its own.
+    // Its outer corners follow the open island's (30, square on top in
+    // notch style).
     Rectangle {
-      Layout.preferredWidth: 212
+      Layout.preferredWidth: 220
       Layout.fillHeight: true
-      radius: 14
-      color: settingsView.sidebar
-      border.width: 1
-      border.color: settingsView.edge
+      color: settingsView.host.theme.fill("subtle")
+      topLeftRadius: settingsView.settings.notch ? 0 : 30
+      bottomLeftRadius: 30
       // One highlight for the open pane that glides between the rows.
       Rectangle {
         readonly property Item at: sidebarItems.itemAt(settingsView.pages.indexOf(settingsView.currentPage))
@@ -147,16 +162,16 @@ Item {
       ColumnLayout {
         id: sidebarColumn
         anchors.fill: parent
-        anchors.leftMargin: 10
-        anchors.rightMargin: 10
-        anchors.topMargin: 12
-        anchors.bottomMargin: 12
-        spacing: 1
+        anchors.leftMargin: 12
+        anchors.rightMargin: 13
+        anchors.topMargin: 16
+        anchors.bottomMargin: 16
+        spacing: 2
         Rectangle {
           Layout.fillWidth: true
-          Layout.preferredHeight: 28
-          Layout.bottomMargin: 10
-          radius: height / 2
+          Layout.preferredHeight: 30
+          Layout.bottomMargin: 12
+          radius: settingsView.host.theme.radii.medium
           color: settingsView.host.theme.fill("subtle")
           border.width: searchInput.activeFocus ? 2 : 0
           border.color: settingsView.host.theme.accentFill("ring")
@@ -233,10 +248,13 @@ Item {
     ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
+      Layout.leftMargin: 12
+      Layout.rightMargin: 12
+      Layout.topMargin: 12
+      Layout.bottomMargin: 4
       spacing: 6
       Flickable {
         id: scroller
-        OverlayScrollbar { flickable: scroller; parent: scroller; theme: settingsView.host.theme }
         Layout.fillWidth: true
         Layout.fillHeight: true
         contentHeight: groups.implicitHeight + 28

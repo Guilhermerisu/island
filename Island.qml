@@ -627,7 +627,7 @@ Item {
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
-          readonly property bool lifted: root.view === "rest" && clockHover.hovered && root.settings.hoverLift && !root.settings.notch
+          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
           // The springs run in hundredths, as they settle to a tenth of a unit.
@@ -689,16 +689,19 @@ Item {
           MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; target: island.targetRadius }
           Timer { id: widthLag; interval: root.theme.morphLag; onTriggered: widthSpring.target = island.targetWidth }
           Timer { id: heightLag; interval: root.theme.morphLag; onTriggered: heightSpring.target = island.targetHeight }
+          // A view settles its height over a few frames as it lays out; a
+          // lag already counting keeps counting and lands on the latest
+          // size, so the height still trails the width by one beat.
           readonly property bool shrugs: !root.surfaceOpen && heightSpring.value <= 120
           onTargetWidthChanged: {
             widthSpring.bounce = targetWidth > widthSpring.value ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
-            if (targetWidth < widthSpring.value) { widthLag.restart(); return }
+            if (targetWidth < widthSpring.value) { if (!widthLag.running) widthLag.start(); return }
             widthLag.stop()
             widthSpring.target = targetWidth
           }
           onTargetHeightChanged: {
             heightSpring.bounce = targetHeight > heightSpring.value ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
-            if (targetHeight > heightSpring.value) { heightLag.restart(); return }
+            if (targetHeight > heightSpring.value) { if (!heightLag.running) heightLag.start(); return }
             heightLag.stop()
             heightSpring.target = targetHeight
           }

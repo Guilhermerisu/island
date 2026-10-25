@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 
 // One row of a group: an optional icon, label (and optional detail) on the
-// left, a control on the right, and a hairline under every row but the last.
+// left, a control on the right, and a full-width hairline under every row
+// but the last.
 // `indent` sets a row in under the one it belongs to.
 // `view` is the SettingsView, for its colours.
 Item {
@@ -16,28 +17,29 @@ Item {
   property int indent: 0
   default property alias control: slot.data
   Layout.fillWidth: true
-  // 44 as macOS's rows, detail line or not; grows with the text size so a
-  // larger label and detail keep their margins.
-  implicitHeight: Math.max(44, labels.implicitHeight + 12)
+  // 44 as macOS's rows, 52 with a detail line; grows with the text size so
+  // a larger label and detail keep their margins.
+  implicitHeight: Math.max(row.detail !== "" ? 52 : 44, labels.implicitHeight + 18)
   PaneIcon {
     id: rowIcon
     visible: row.icon !== ""
     view: row.view
     x: 14 + row.indent
     anchors.verticalCenter: parent.verticalCenter
-    width: 24
-    height: 24
+    width: 26
+    height: 26
+    flat: true
     glyph: row.icon
     tint: row.iconTint
   }
   Column {
     id: labels
     anchors.left: parent.left
-    anchors.leftMargin: 14 + row.indent + (row.icon !== "" ? rowIcon.width + 10 : 0)
+    anchors.leftMargin: 14 + row.indent + (row.icon !== "" ? rowIcon.width + 12 : 0)
     anchors.right: slot.left
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
-    spacing: 1
+    spacing: 2
     Text {
       width: parent.width
       text: row.label
@@ -69,9 +71,8 @@ Item {
   Rectangle {
     visible: !row.last
     anchors.left: parent.left
-    anchors.leftMargin: 14 + row.indent
+    anchors.leftMargin: row.indent
     anchors.right: parent.right
-    anchors.rightMargin: 14
     anchors.bottom: parent.bottom
     height: 1
     color: row.view.divider

@@ -59,7 +59,7 @@ Item {
             height: cards.turned ? 92 : 56
             Item {
               anchors.fill: parent
-              scale: press.pressed ? 0.96 : press.containsMouse && !card.current && cards.view.settings.hoverLift ? 1.05 : 1
+              scale: press.pressed ? 0.96 : press.containsMouse && !card.current ? 1.05 : 1
               Behavior on scale { MotionAnimation { theme: cards.view.host.theme; pace: press.pressed ? "press" : "standard" } }
               DisplayScreen {
                 id: desk

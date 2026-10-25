@@ -22,13 +22,14 @@ Rectangle {
     id: headerColumn
     anchors.centerIn: parent
     width: header.compact ? parent.width - 4 : Math.min(parent.width - 48, 380)
-    spacing: header.compact ? 6 : 6
+    spacing: header.compact ? 6 : 8
     PaneIcon {
       visible: !header.compact
       view: header.view
       anchors.horizontalCenter: parent.horizontalCenter
-      width: 44
-      height: 44
+      width: 48
+      height: 48
+      flat: true
       glyph: header.info.icon || ""
       tint: header.info.color || header.view.accent
       layers: header.info.layers || []
@@ -41,6 +42,7 @@ Rectangle {
       font.family: header.view.host.theme.textFontFamily
       font.pixelSize: header.compact ? header.view.host.theme.px(22) : header.view.detailTitleFontSize
       font.weight: Font.Bold
+      font.variableAxes: header.view.titleFontAxes
       font.letterSpacing: -0.3
     }
     Text {
@@ -52,8 +54,8 @@ Rectangle {
       lineHeight: 1.1
       color: header.view.textMuted
       font.family: header.view.host.theme.textFontFamily
-      font.letterSpacing: header.view.host.theme.tracking(header.view.host.theme.textFontFamily, header.view.detailCaptionFontSize)
-      font.pixelSize: header.view.detailCaptionFontSize
+      font.letterSpacing: header.view.host.theme.tracking(header.view.host.theme.textFontFamily, header.view.detailFontSize)
+      font.pixelSize: header.view.detailFontSize
     }
   }
 }

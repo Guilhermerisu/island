@@ -23,7 +23,6 @@ Item {
     JsonAdapter {
       id: settingsData
       property real motionScale: 1.5
-      property bool hoverLift: true
       property bool clock24h: true
       property bool clockAmPm: false
       property string clockFormat: "time"

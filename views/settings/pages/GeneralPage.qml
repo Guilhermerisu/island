@@ -2,10 +2,11 @@ import QtQuick
 import QtQuick.Layouts
 import "../controls"
 
-// Settings → General: the pill, appearance and motion.
+// Settings → General: the pill, when it hides, appearance and motion.
 ColumnLayout {
   id: page
   required property var view
+  readonly property var system: view.host.theme.system
   visible: view.currentPage === "General"
   Layout.fillWidth: true
   spacing: 20
@@ -15,7 +16,36 @@ ColumnLayout {
     title: "Pill"
     SettingsRow {
       view: page.view
-      label: "Clock Format"
+      icon: "󰅐"
+      iconTint: page.system.orange
+      label: "Time format"
+      detail: "Shown when the island is idle"
+      SettingsSegmented {
+        view: page.view
+        options: [{ label: "24-hour", value: true }, { label: "12-hour", value: false }]
+        value: page.view.settings.clock24h
+        onPicked: function(v) { page.view.settings.clock24h = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰖙"
+      iconTint: page.system.yellow
+      label: "Show AM/PM"
+      detail: "After the time, as in 4:22 PM"
+      visible: !page.view.settings.clock24h
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.clockAmPm
+        onToggled: function(on) { page.view.settings.clockAmPm = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰃰"
+      iconTint: page.system.red
+      label: "Clock style"
+      detail: "The time alone, or with the day or date"
       // Each choice shows the current time in that format.
       SettingsPopUp {
         view: page.view
@@ -28,37 +58,28 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      label: "24-Hour Clock"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.clock24h
-        onToggled: function(on) { page.view.settings.clock24h = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      label: "Show AM/PM"
-      visible: !page.view.settings.clock24h
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.clockAmPm
-        onToggled: function(on) { page.view.settings.clockAmPm = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      label: "Notch Style"
+      icon: "󰌢"
+      iconTint: page.system.indigo
+      label: "Notch style"
       detail: "Attach the island to the top edge, like a MacBook notch"
+      last: true
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.notch
         onToggled: function(on) { page.view.settings.notch = on }
       }
     }
+  }
+
+  SettingsGroup {
+    view: page.view
+    title: "Hide automatically"
     SettingsRow {
       view: page.view
-      label: "Hide on Fullscreen"
-      detail: "Automatically hide the island when a window is fullscreen"
+      icon: "󰊓"
+      iconTint: page.system.blue
+      label: "When a window is fullscreen"
+      detail: "Slides the island away during fullscreen apps and video"
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.autoHideFullscreen
@@ -67,8 +88,10 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      label: "Hide on Tiling"
-      detail: "Hide the island when tiled windows are present on the workspace"
+      icon: "󱇙"
+      iconTint: page.system.green
+      label: "When windows are tiled"
+      detail: "Hides the island while tiled windows fill the workspace"
       last: true
       SettingsSwitch {
         view: page.view
@@ -83,8 +106,10 @@ ColumnLayout {
     title: "Appearance"
     SettingsRow {
       view: page.view
-      label: "Colorful Live Activities"
-      detail: "Use custom colors in live activities"
+      icon: "󰸌"
+      iconTint: "#ff375f"
+      label: "Colorful live activities"
+      detail: "Use each activity's own accent color"
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.colorfulLiveActivities
@@ -93,8 +118,10 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      label: "Colorful Sidebar Icons"
-      detail: "Use macOS-style colors in the sidebar"
+      icon: "󱂫"
+      iconTint: page.system.cyan
+      label: "Colorful sidebar icons"
+      detail: "macOS-style colored icons throughout settings"
       last: true
       SettingsSwitch {
         view: page.view
@@ -109,6 +136,8 @@ ColumnLayout {
     title: "Typography"
     SettingsRow {
       view: page.view
+      icon: "󰛖"
+      iconTint: page.system.purple
       label: "Font"
       detail: "Island default, Omarchy's menu font, or your own"
       SettingsPopUp {
@@ -124,29 +153,28 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      label: "Text Size"
-      last: page.view.settings.textFontMode !== "custom"
-      SettingsPopUp {
+      icon: "󰬈"
+      iconTint: page.system.purple
+      label: "Custom font"
+      detail: "Search the installed fonts"
+      visible: page.view.settings.textFontMode === "custom"
+      SettingsFontPicker {
         view: page.view
-        options: [
-          { label: "Small", value: 0.9 },
-          { label: "Default", value: 1 },
-          { label: "Large", value: 1.15 },
-          { label: "Extra Large", value: 1.3 }
-        ]
-        value: page.view.settings.textScale
-        onPicked: function(v) { page.view.settings.textScale = v }
+        value: page.view.settings.customFont
       }
     }
     SettingsRow {
       view: page.view
-      label: "Custom Font"
-      detail: "Search the installed fonts"
-      visible: page.view.settings.textFontMode === "custom"
+      icon: "󰊄"
+      iconTint: page.system.gray
+      label: "Text size"
+      detail: "Scales text inside the pill and expanded views"
       last: true
-      SettingsFontPicker {
+      SettingsSegmented {
         view: page.view
-        value: page.view.settings.customFont
+        options: [{ label: "S", value: 0.9 }, { label: "M", value: 1 }, { label: "L", value: 1.15 }, { label: "XL", value: 1.3 }]
+        value: page.view.settings.textScale
+        onPicked: function(v) { page.view.settings.textScale = v }
       }
     }
   }
@@ -156,23 +184,16 @@ ColumnLayout {
     title: "Motion"
     SettingsRow {
       view: page.view
-      label: "Animation Speed"
-      SettingsPopUp {
+      icon: "󰓅"
+      iconTint: page.system.green
+      label: "Animation speed"
+      detail: "How quickly the island morphs and settles"
+      last: true
+      SettingsSegmented {
         view: page.view
         options: [{ label: "Fast", value: 1 }, { label: "Normal", value: 1.5 }, { label: "Relaxed", value: 2 }]
         value: page.view.settings.motionScale
         onPicked: function(v) { page.view.settings.motionScale = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      label: "Hover Lift"
-      detail: "The clock pill lifts slightly under the pointer"
-      last: true
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.hoverLift
-        onToggled: function(on) { page.view.settings.hoverLift = on }
       }
     }
   }

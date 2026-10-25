@@ -129,8 +129,9 @@ Item {
     id: settingsSurface
     host: views.host
     viewName: "settings"
-    fixedWidth: 760
-    padding: 16
+    fixedWidth: 780
+    // SettingsView pads itself, so its sidebar can run to the island's edge.
+    padding: 0
     SettingsView { host: views.host; active: settingsSurface.active; anchors.fill: parent }
   }
 
