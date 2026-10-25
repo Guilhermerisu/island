@@ -12,6 +12,9 @@ Rectangle {
   required property var view
   property var options: []   // [{ label, value }]
   property var value
+  // The narrowest it gets; the rows of an addon's options line their
+  // controls up wider than the General pane's.
+  property real minWidth: view.controlWidth
   signal picked(var value)
   readonly property int currentIndex: {
     for (var i = 0; i < options.length; i++) if (options[i].value === value) return i
@@ -26,30 +29,44 @@ Rectangle {
   readonly property real chipWidth: {
     var widest = 0
     for (var i = 0; i < options.length; i++) widest = Math.max(widest, segFont.advanceWidth(options[i].label))
-    return Math.max(30, Math.ceil(widest) + 22, options.length ? (seg.view.controlWidth - 4) / options.length : 0)
+    return Math.max(30, Math.ceil(widest) + 22, options.length ? (seg.minWidth - 4) / options.length : 0)
   }
   implicitWidth: choices.implicitWidth + 4
   implicitHeight: 28
   radius: 8
   color: seg.view.host.theme.fill("subtle")
-  Rectangle {
-    readonly property Item at: segItems.itemAt(seg.currentIndex)
-    visible: !!at
-    x: 2 + (at ? at.x : 0)
+  // The chip: clearly lighter, with a faint shadow a pixel under it, as
+  // macOS's selected segment, so the choice doesn't rest on the bold label.
+  // Placed by index, since every chip is chipWidth wide: looking the item
+  // up with itemAt() found none while the Repeater was still building, so
+  // a control opened with its value set showed no chip at all.
+  Item {
+    id: chip
+    visible: seg.currentIndex >= 0
+    x: 2 + Math.max(0, seg.currentIndex) * seg.chipWidth
     y: 2
-    width: at ? at.width : 0
+    width: seg.chipWidth
     height: seg.height - 4
-    radius: 6
-    color: seg.view.host.theme.fill("stronger")
     Behavior on x { MotionAnimation { theme: seg.view.host.theme; pace: "quick" } }
     Behavior on width { MotionAnimation { theme: seg.view.host.theme; pace: "quick" } }
+    Rectangle {
+      anchors.fill: parent
+      anchors.topMargin: 1
+      anchors.bottomMargin: -1
+      radius: 6
+      color: Qt.rgba(0, 0, 0, 0.35)
+    }
+    Rectangle {
+      anchors.fill: parent
+      radius: 6
+      color: Qt.tint(seg.view.host.theme.background, seg.view.host.theme.withAlpha(seg.view.text, 0.31))
+    }
   }
   Row {
     id: choices
     x: 2
     anchors.verticalCenter: parent.verticalCenter
     Repeater {
-      id: segItems
       model: seg.options
       delegate: Item {
         id: choice

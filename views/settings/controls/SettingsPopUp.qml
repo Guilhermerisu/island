@@ -9,15 +9,18 @@ import QtQuick.Layouts
 Rectangle {
   id: pop
   required property var view
-  property var options: []   // [{ label, value }]
+  // [{ label, value, short }]: the menu lists each label; the button shows
+  // the current choice's short label when it has one.
+  property var options: []
   property var value
+  property real minWidth: view.controlWidth
   signal picked(var value)
   readonly property string currentLabel: {
-    for (var i = 0; i < options.length; i++) if (options[i].value === value) return options[i].label
+    for (var i = 0; i < options.length; i++) if (options[i].value === value) return options[i].short || options[i].label
     return ""
   }
   readonly property bool open: pop.view.menuButton === pop
-  implicitWidth: Math.max(pop.view.controlWidth, popLabel.implicitWidth + 44)
+  implicitWidth: Math.max(pop.minWidth, popLabel.implicitWidth + 44)
   implicitHeight: 28
   radius: 8
   color: pop.view.host.theme.fill(open || popMouse.containsMouse ? "subtle" : "quiet")

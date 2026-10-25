@@ -13,7 +13,9 @@ Rectangle {
   implicitWidth: 38
   implicitHeight: 22
   radius: 11
-  color: checked ? sw.view.accent : sw.view.well
+  // Off is a clearly lighter grey than the card, so an off switch still
+  // reads as a switch rather than a lone knob.
+  color: checked ? sw.view.accent : sw.view.host.theme.solid("stronger")
   Behavior on color { MotionColorAnimation { theme: sw.view.host.theme } }
   // The knob widens while held, as Apple's switches do; anchored by its
   // side, it stretches toward the side it will go to.

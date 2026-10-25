@@ -43,14 +43,16 @@ ColumnLayout {
     SettingsRow {
       view: page.view
       icon: "󰃰"
-      iconTint: page.system.red
+      iconTint: "#30b0c7"
       label: "Clock style"
       detail: "The time alone, or with the day or date"
-      // Each choice shows the current time in that format.
+      // The button names the style; the menu adds how each one looks now.
       SettingsPopUp {
+        readonly property var names: ({ time: "Time only", day: "Day", date: "Date", short: "Day and date", weekday: "Full weekday" })
         view: page.view
         options: page.view.host.clockFormats.map(function(format) {
-          return { label: page.view.host.formatClock(page.view.host.clockDate, format), value: format }
+          var name = names[format] || format
+          return { label: name + " · " + page.view.host.formatClock(page.view.host.clockDate, format), short: name, value: format }
         })
         value: page.view.settings.clockFormat
         onPicked: function(v) { page.view.settings.clockFormat = v }
@@ -119,7 +121,7 @@ ColumnLayout {
     SettingsRow {
       view: page.view
       icon: "󱂫"
-      iconTint: page.system.cyan
+      iconTint: "#2f6fed"
       label: "Colorful sidebar icons"
       detail: "macOS-style colored icons throughout settings"
       last: true
