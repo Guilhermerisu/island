@@ -13,6 +13,8 @@ ColumnLayout {
   spacing: 20
 
   property string expanded: ""
+  // An addon option's control, whatever kind, so they line up in its card.
+  readonly property int optionWidth: 200
   // An addon asked to be shown (host.openSettings("Addons", id)) opens with
   // its options out.
   Connections {
@@ -36,6 +38,7 @@ ColumnLayout {
       readonly property var items: page.addons.entries.filter(function(entry) { return page.addons.isEnabled(entry.id) === group.modelData.on })
       view: page.view
       title: modelData.title
+      count: String(items.length)
       visible: items.length > 0
       Repeater {
         model: group.items
@@ -59,16 +62,6 @@ ColumnLayout {
             implicitHeight: Math.max(54, entryText.implicitHeight + 20)
 
             HoverHandler { id: rowHover }
-            // The hairline between rows, from the text on.
-            Rectangle {
-              visible: !addon.last || addon.open
-              anchors.left: entryText.left
-              anchors.right: parent.right
-              anchors.rightMargin: 14
-              anchors.bottom: parent.bottom
-              height: 1
-              color: page.view.divider
-            }
             MouseArea {
               anchors.fill: parent
               enabled: addon.hasOptions
@@ -108,7 +101,9 @@ ColumnLayout {
               Text {
                 width: parent.width
                 visible: text !== ""
-                text: addon.modelData.description || ""
+                readonly property var describedWith: addon.modelData.describedWith
+                readonly property string shown: describedWith ? String(page.addons.option(addon.modelData.id, describedWith.key) || "") : ""
+                text: shown !== "" ? describedWith.text.arg(shown) : addon.modelData.description || ""
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
@@ -163,11 +158,16 @@ ColumnLayout {
             }
           }
 
-          // Its options, set in under the addon's name.
-          Item {
+          // Its options, in an inset card under the addon's name.
+          Rectangle {
             visible: addon.open
             Layout.fillWidth: true
+            Layout.leftMargin: entryText.x
+            Layout.rightMargin: 16
+            Layout.bottomMargin: 16
             Layout.preferredHeight: optionList.implicitHeight
+            radius: page.view.host.theme.radii.large
+            color: page.view.host.theme.solid("quiet")
             ColumnLayout {
               id: optionList
               anchors.left: parent.left
@@ -186,10 +186,10 @@ ColumnLayout {
                   view: page.view
                   label: modelData.label || modelData.key
                   detail: modelData.detail || ""
-                  indent: entryText.x - 14
-                  last: addon.last && index === addon.options.length - 1 && addon.shortcuts.length === 0
+                  last: index === addon.options.length - 1 && addon.shortcuts.length === 0
                   Loader {
                     sourceComponent: optionRow.modelData.type === "popup" ? popUpOption
+                      : optionRow.modelData.type === "segmented" ? segmentedOption
                       : optionRow.modelData.type === "text" ? textOption : switchOption
                     Component {
                       id: switchOption
@@ -205,6 +205,8 @@ ColumnLayout {
                         view: page.view
                         value: optionRow.value === undefined ? "" : String(optionRow.value)
                         placeholder: optionRow.modelData.placeholder || ""
+                        icon: optionRow.modelData.icon || ""
+                        implicitWidth: page.optionWidth
                         onCommitted: function(v) { optionRow.pick(v) }
                       }
                     }
@@ -212,6 +214,17 @@ ColumnLayout {
                       id: popUpOption
                       SettingsPopUp {
                         view: page.view
+                        minWidth: page.optionWidth
+                        options: optionRow.modelData.choices || []
+                        value: optionRow.value
+                        onPicked: function(v) { optionRow.pick(v) }
+                      }
+                    }
+                    Component {
+                      id: segmentedOption
+                      SettingsSegmented {
+                        view: page.view
+                        minWidth: page.optionWidth
                         options: optionRow.modelData.choices || []
                         value: optionRow.value
                         onPicked: function(v) { optionRow.pick(v) }
@@ -228,12 +241,22 @@ ColumnLayout {
                   required property int index
                   view: page.view
                   keybinds: page.view.keybinds
-                  entry: addon.shortcuts.length === 1 ? Object.assign({}, modelData, { label: "Keyboard Shortcut" }) : modelData
-                  indent: entryText.x - 14
-                  last: addon.last && index === addon.shortcuts.length - 1
+                  entry: addon.shortcuts.length === 1 ? Object.assign({}, modelData, { label: "Keyboard shortcut" }) : modelData
+                  // What it opens; the boxed keys show they can be clicked to change.
+                  detail: (modelData.command.indexOf("addonSettings") !== -1 ? "Opens its Settings pane" : "Opens the " + addon.modelData.name.toLowerCase() + " view")
+                  boxed: true
+                  fieldWidth: page.optionWidth
+                  last: index === addon.shortcuts.length - 1
                 }
               }
             }
+          }
+          // The hairline between addons, across the whole group.
+          Rectangle {
+            visible: !addon.last
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: page.view.divider
           }
         }
       }

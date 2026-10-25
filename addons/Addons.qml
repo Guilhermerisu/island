@@ -13,8 +13,10 @@ Item {
   // Each addon: id, name, icon (and its color, and optionally iconLayers drawn
   // in its place, see PaneIcon), description, whether it starts enabled, its
   // root file (relative to this folder), and its options
-  // ({ key, label, detail, type: "switch" | "popup" | "text", default, choices,
-  // placeholder }). Its views' keybindings are tagged with its id in
+  // ({ key, label, detail, type: "switch" | "popup" | "segmented" | "text",
+  // default, choices, placeholder, icon (a text field's leading glyph) }).
+  // `describedWith` ({ key, text }) shows that option in the description
+  // once it's set, `text`'s %1 standing for its value. Its views' keybindings are tagged with its id in
   // companion/bindings.sh.
   readonly property var entries: [
     { id: "weather", name: "Weather", icon: "󰖐", color: "#1f8ef1", default: false, source: "weather/WeatherAddon.qml",
@@ -23,9 +25,11 @@ Item {
         { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
       ],
       description: "Current conditions for your city",
+      describedWith: { key: "city", text: "Current conditions in %1" },
       options: [
-        { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon" },
-        { key: "fahrenheit", label: "Fahrenheit", detail: "Show °F instead of °C", type: "switch", default: false }
+        { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon", icon: "󰟙" },
+        { key: "fahrenheit", label: "Temperature", detail: "Unit shown on the pill", type: "segmented", default: false,
+          choices: [{ label: "°C", value: false }, { label: "°F", value: true }] }
       ] },
     { id: "calendar", name: "Calendar", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
       iconLayers: [
@@ -39,7 +43,7 @@ Item {
       ] },
     // Before the timer, so a call holds the island over a countdown.
     { id: "meetings", name: "Meetings", icon: "󰏲", color: "#30d158", default: false, source: "meetings/MeetingsAddon.qml",
-      description: "Your calls on the island, with mute and hang up",
+      description: "Calls on the island, with mute and hang up",
       options: [
         { key: "teams", label: "Teams", detail: "Calls and meetings, in the app or a browser", type: "switch", default: true },
         { key: "zoom", label: "Zoom", detail: "Meetings, in the app or a browser", type: "switch", default: true },
@@ -78,7 +82,7 @@ Item {
           var a = i * Math.PI / 4, c = Math.cos(a), s = Math.sin(a)
           return { line: [[0.5 + 0.25 * c, 0.5 + 0.25 * s], [0.5 + 0.33 * c, 0.5 + 0.33 * s]], color: "#ffffff", width: 0.075 }
         })),
-      description: "Arrange your monitors and set their modes" },
+      description: "Arrange monitors and set their modes" },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
       iconLayers: [
         { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
@@ -112,7 +116,7 @@ Item {
       description: "Show the layout on the pill when it changes" },
     // All Models' robot; its Settings pane takes the picked agent's logo.
     { id: "agents", name: "Agents", icon: "󰚩", color: "#5e5ce6", default: false, source: "agents/AgentsAddon.qml",
-      description: "Your coding agents' limits and tokens by day, and Claude Code at work on the island",
+      description: "Agent limits, daily tokens, and Claude Code at work",
       options: [
         { key: "live", label: "Live Activity", detail: "Claude Code's steps on the island while it works", type: "switch", default: true },
         { key: "agent", label: "Agent", detail: "Usage read by Omarchy's agent collectors", type: "popup", default: "claude",

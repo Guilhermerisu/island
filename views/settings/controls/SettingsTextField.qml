@@ -9,6 +9,8 @@ Rectangle {
   required property var view
   property string value: ""
   property string placeholder: ""
+  // A glyph before the text (a pin for a place), or none.
+  property string icon: ""
   signal committed(string value)
   implicitWidth: 200
   implicitHeight: 28
@@ -56,10 +58,21 @@ Rectangle {
     color: field.view.textMuted
     font: input.font
   }
+  Text {
+    id: fieldIcon
+    visible: field.icon !== ""
+    anchors.left: parent.left
+    anchors.leftMargin: 9
+    anchors.verticalCenter: parent.verticalCenter
+    text: field.icon
+    color: field.view.textMuted
+    font.family: field.view.host.theme.fontFamily
+    font.pixelSize: field.view.host.theme.px(14)
+  }
   TextInput {
     id: input
     anchors.left: parent.left
-    anchors.leftMargin: 10
+    anchors.leftMargin: field.icon !== "" ? 30 : 10
     anchors.right: parent.right
     anchors.rightMargin: 10
     anchors.verticalCenter: parent.verticalCenter
