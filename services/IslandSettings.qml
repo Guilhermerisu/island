@@ -26,6 +26,7 @@ Item {
       property bool clock24h: true
       property bool clockAmPm: false
       property string clockFormat: "time"
+      property bool hoverExpand: true
       property bool mediaPill: true
       property bool volumeHud: true
       property bool brightnessHud: true

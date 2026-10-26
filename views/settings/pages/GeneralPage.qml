@@ -48,14 +48,40 @@ ColumnLayout {
       detail: "The time alone, or with the day or date"
       // The button names the style; the menu adds how each one looks now.
       SettingsPopUp {
-        readonly property var names: ({ time: "Time only", day: "Day", date: "Date", short: "Day and date", weekday: "Full weekday" })
+        readonly property var names: ({
+          time: "Time only",
+          stackedDay: "Stacked: Time & Day",
+          stackedDate: "Stacked: Time & Date",
+          stackedFull: "Stacked: Time & Full Date",
+          day: "Day and time",
+          date: "Date and time",
+          short: "Day, date and time",
+          weekday: "Full weekday and time",
+          full: "Full date & year",
+          numeric: "Numeric date"
+        })
         view: page.view
         options: page.view.host.clockFormats.map(function(format) {
           var name = names[format] || format
-          return { label: name + " · " + page.view.host.formatClock(page.view.host.clockDate, format), short: name, value: format }
+          var preview = page.view.host.isStackedClock(format)
+            ? page.view.host.formatClockTime(page.view.host.clockDate) + " / " + page.view.host.formatClockSub(page.view.host.clockDate, format)
+            : page.view.host.formatClock(page.view.host.clockDate, format)
+          return { label: name + " · " + preview, short: name, value: format }
         })
         value: page.view.settings.clockFormat
         onPicked: function(v) { page.view.settings.clockFormat = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰁌"
+      iconTint: page.system.blue
+      label: "Expand on hover"
+      detail: "Reveal workspace, battery, weather and media when hovering over the idle pill"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.hoverExpand
+        onToggled: function(on) { page.view.settings.hoverExpand = on }
       }
     }
     SettingsRow {
