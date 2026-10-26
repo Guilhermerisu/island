@@ -848,6 +848,7 @@ Item {
           hasMediaInGlance: glanceBar.left1Kind === "media" || glanceBar.left2Kind === "media"
             || glanceBar.right1Kind === "media" || glanceBar.right2Kind === "media"
         }
+      }
     }
   }
 
