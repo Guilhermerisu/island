@@ -7,7 +7,8 @@ import Quickshell.Widgets
 // the middle. Clicking either side opens the player.
 IslandPill {
   id: media
-  shown: host.mediaPill
+  property Item shape: null
+  shown: host.mediaPill && (!shape || !shape.isGlanceExpanded)
   pillWidth: 240
   keepsClock: true
   function clicked(mouse) { host.view = mouse.x < 56 || mouse.x > width - 72 ? "player" : "controls" }
