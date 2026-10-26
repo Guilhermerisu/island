@@ -40,9 +40,9 @@ Rectangle {
 
   color: host.theme.background
   readonly property bool hasBorder: host.settings.glanceMediaSatelliteBorder !== false
-  border.width: hasBorder ? 1 : 0
+  border.width: 1
   border.color: hasBorder
-    ? (mouseArea.containsMouse ? (nowPlaying.tint || host.theme.accent) : Qt.rgba(1, 1, 1, 0.16))
+    ? (mouseArea.containsMouse ? (nowPlaying.tint || host.theme.accent) : Qt.rgba(1, 1, 1, 0.25))
     : "transparent"
   Behavior on border.color {
     ColorAnimation { duration: 150 }
@@ -57,6 +57,22 @@ Rectangle {
   visible: opacity > 0.01
   Behavior on opacity {
     MotionAnimation { theme: satellite.host.theme; pace: satellite.shown ? "standard" : "exit"; curve: "fade" }
+  }
+
+  // Subtle halo / frame around the satellite pill
+  Item {
+    id: haloFrame
+    z: -1
+    anchors.fill: parent
+    anchors.margins: -3
+    opacity: satellite.shown && satellite.hasBorder ? 0.45 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { NumberAnimation { duration: 180 } }
+    Rectangle {
+      anchors.fill: parent
+      radius: satellite.radius + 3
+      color: "black"
+    }
   }
 
   Row {
