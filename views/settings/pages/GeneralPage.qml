@@ -100,6 +100,77 @@ ColumnLayout {
   }
 
   SettingsGroup {
+    id: glanceGroup
+    view: page.view
+    title: "Glance on hover"
+    visible: page.view.settings.hoverExpand
+
+    readonly property var moduleChoices: [
+      { label: "Workspace (󱂬)", short: "Workspace", value: "workspace" },
+      { label: "Battery (󰁹)", short: "Battery", value: "battery" },
+      { label: "Network (󰤨)", short: "Network", value: "network" },
+      { label: "Weather (󰖐)", short: "Weather", value: "weather" },
+      { label: "Now Playing (󰝚)", short: "Media", value: "media" },
+      { label: "Volume (󰕾)", short: "Volume", value: "volume" },
+      { label: "None", short: "None", value: "none" }
+    ]
+
+    SettingsRow {
+      view: page.view
+      icon: "󱂬"
+      iconTint: page.system.blue
+      label: "Left slot 1"
+      detail: "First item on the left side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceLeft1 || "workspace"
+        onPicked: function(v) { page.view.settings.glanceLeft1 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰁹"
+      iconTint: page.system.green
+      label: "Left slot 2"
+      detail: "Second item on the left side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceLeft2 || "battery"
+        onPicked: function(v) { page.view.settings.glanceLeft2 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰖐"
+      iconTint: page.system.yellow
+      label: "Right slot 1"
+      detail: "First item on the right side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceRight1 || "weather"
+        onPicked: function(v) { page.view.settings.glanceRight1 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰕾"
+      iconTint: page.system.orange
+      label: "Right slot 2"
+      detail: "Second item on the right side"
+      last: true
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceRight2 || "volume"
+        onPicked: function(v) { page.view.settings.glanceRight2 = v }
+      }
+    }
+  }
+
+  SettingsGroup {
     view: page.view
     title: "Hide automatically"
     SettingsRow {

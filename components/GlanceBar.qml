@@ -2,9 +2,8 @@ import QtQuick
 import "../addons/weather"
 
 // The left and right accessory slots revealed when hovering over the resting island.
-// Both sides are symmetrically balanced with two items separated by a subtle divider dot:
-// - Left slot: Active workspace and battery status (or network on desktop).
-// - Right slot: Weather (or media) and audio volume level.
+// Both sides are modular and customizable from Settings (Left 1, Left 2, Right 1, Right 2).
+// Available modules: workspace, battery, network, weather, media, volume, none.
 Item {
   id: glanceBar
   required property var host
@@ -16,15 +15,28 @@ Item {
     MotionAnimation { theme: glanceBar.host.theme; pace: glanceBar.shown ? "fade" : "exit"; curve: "fade" }
   }
 
-  // Left Slot: Workspace + Divider + Battery (or Network)
-  Row {
-    id: leftSlot
-    anchors.left: parent.left
-    anchors.leftMargin: glanceBar.host.settings.notch ? 18 : 16
-    anchors.verticalCenter: parent.verticalCenter
-    spacing: 7
+  readonly property var settings: glanceBar.host.settings
+  readonly property string left1Kind: settings.glanceLeft1 || "workspace"
+  readonly property string left2Kind: settings.glanceLeft2 || "battery"
+  readonly property string right1Kind: settings.glanceRight1 || "weather"
+  readonly property string right2Kind: settings.glanceRight2 || "volume"
 
-    // Active Hyprland Workspace badge
+  function componentFor(kind) {
+    switch (kind) {
+    case "workspace": return compWorkspace
+    case "battery": return compBattery
+    case "network": return compNetwork
+    case "weather": return compWeather
+    case "media": return compMedia
+    case "volume": return compVolume
+    default: return null
+    }
+  }
+
+  // --- Module Component Definitions ---
+
+  Component {
+    id: compWorkspace
     Row {
       spacing: 4
       anchors.verticalCenter: parent.verticalCenter
@@ -44,31 +56,27 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
       }
     }
+  }
 
-    // Divider dot
-    Rectangle {
-      width: 3
-      height: 3
-      radius: 1.5
-      color: Qt.rgba(1, 1, 1, 0.25)
-      anchors.verticalCenter: parent.verticalCenter
-    }
-
-    // Battery (if device has battery)
+  Component {
+    id: compBattery
     Row {
-      visible: glanceBar.host.activities.hasBattery
       spacing: 4
       anchors.verticalCenter: parent.verticalCenter
+      readonly property bool hasBattery: glanceBar.host.activities.hasBattery
+      readonly property int level: glanceBar.host.activities.batteryLevel
+      readonly property bool onPower: glanceBar.host.activities.onPower
       BatteryIcon {
-        level: glanceBar.host.activities.batteryLevel
-        charging: glanceBar.host.activities.onPower
+        visible: parent.hasBattery
+        level: parent.level
+        charging: parent.onPower
         color: "#e2e6de"
         implicitWidth: 20
         implicitHeight: 11
         anchors.verticalCenter: parent.verticalCenter
       }
       Text {
-        text: glanceBar.host.activities.batteryLevel + "%"
+        text: parent.hasBattery ? parent.level + "%" : "AC"
         color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
         font.family: glanceBar.host.theme.textFontFamily
         font.pixelSize: glanceBar.host.theme.px(11)
@@ -76,10 +84,11 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
       }
     }
+  }
 
-    // Network status (if desktop PC / no battery)
+  Component {
+    id: compNetwork
     Row {
-      visible: !glanceBar.host.activities.hasBattery
       spacing: 4
       anchors.verticalCenter: parent.verticalCenter
       readonly property var net: glanceBar.host.activities.netConnected
@@ -105,35 +114,23 @@ Item {
     }
   }
 
-  // Right Slot: Weather (or Media/Sound) + Divider + Volume
-  Row {
-    id: rightSlot
-    anchors.right: parent.right
-    anchors.rightMargin: glanceBar.host.settings.notch ? 18 : 16
-    anchors.verticalCenter: parent.verticalCenter
-    spacing: 7
-
-    readonly property var weatherAddon: glanceBar.host.addons.root("weather")
-    readonly property bool hasWeather: !!(weatherAddon && weatherAddon.status === "ready" && weatherAddon.current)
-    readonly property var nowPlaying: glanceBar.host.nowPlaying
-    readonly property bool hasMedia: !!(nowPlaying && nowPlaying.playing)
-
-    // Weather condition and temperature
+  Component {
+    id: compWeather
     Row {
-      visible: rightSlot.hasWeather
       spacing: 5
       anchors.verticalCenter: parent.verticalCenter
+      readonly property var weatherAddon: glanceBar.host.addons.root("weather")
+      readonly property bool ready: !!(weatherAddon && weatherAddon.status === "ready" && weatherAddon.current)
       WeatherIcon {
-        visible: rightSlot.hasWeather
-        code: rightSlot.weatherAddon && rightSlot.weatherAddon.current ? rightSlot.weatherAddon.current.code : 0
-        day: rightSlot.weatherAddon && rightSlot.weatherAddon.current ? rightSlot.weatherAddon.current.day : true
+        visible: parent.ready
+        code: parent.ready ? parent.weatherAddon.current.code : 0
+        day: parent.ready ? parent.weatherAddon.current.day : true
         fontFamily: glanceBar.host.theme.fontFamily
         size: 16
         anchors.verticalCenter: parent.verticalCenter
       }
       Text {
-        text: rightSlot.weatherAddon && rightSlot.weatherAddon.current
-          ? Math.round(rightSlot.weatherAddon.current.temperature) + "°" : ""
+        text: parent.ready ? Math.round(parent.weatherAddon.current.temperature) + "°" : "󰖐 --°"
         color: "#e2e6de"
         font.family: glanceBar.host.theme.textFontFamily
         font.pixelSize: glanceBar.host.theme.px(12)
@@ -141,12 +138,15 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
       }
     }
+  }
 
-    // Now Playing Media fallback if no weather
+  Component {
+    id: compMedia
     Row {
-      visible: !rightSlot.hasWeather && rightSlot.hasMedia
-      spacing: 5
+      spacing: 4
       anchors.verticalCenter: parent.verticalCenter
+      readonly property var nowPlaying: glanceBar.host.nowPlaying
+      readonly property bool playing: !!(nowPlaying && nowPlaying.playing)
       Text {
         text: "󰝚"
         color: glanceBar.host.theme.accent
@@ -155,7 +155,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
       }
       Text {
-        text: rightSlot.nowPlaying ? rightSlot.nowPlaying.trackTitle : ""
+        text: parent.playing ? parent.nowPlaying.trackTitle : "No Media"
         color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
         font.family: glanceBar.host.theme.textFontFamily
         font.pixelSize: glanceBar.host.theme.px(11)
@@ -165,39 +165,10 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
       }
     }
+  }
 
-    // Audio fallback if no weather and no media
-    Row {
-      visible: !rightSlot.hasWeather && !rightSlot.hasMedia
-      spacing: 4
-      anchors.verticalCenter: parent.verticalCenter
-      Text {
-        text: "󰓃"
-        color: glanceBar.host.theme.accent
-        font.family: glanceBar.host.theme.fontFamily
-        font.pixelSize: glanceBar.host.theme.px(13)
-        anchors.verticalCenter: parent.verticalCenter
-      }
-      Text {
-        text: "Audio"
-        color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
-        font.family: glanceBar.host.theme.textFontFamily
-        font.pixelSize: glanceBar.host.theme.px(11)
-        font.weight: Font.Medium
-        anchors.verticalCenter: parent.verticalCenter
-      }
-    }
-
-    // Divider dot
-    Rectangle {
-      width: 3
-      height: 3
-      radius: 1.5
-      color: Qt.rgba(1, 1, 1, 0.25)
-      anchors.verticalCenter: parent.verticalCenter
-    }
-
-    // Audio Volume level
+  Component {
+    id: compVolume
     Row {
       spacing: 4
       anchors.verticalCenter: parent.verticalCenter
@@ -216,6 +187,66 @@ Item {
         font.weight: Font.Medium
         anchors.verticalCenter: parent.verticalCenter
       }
+    }
+  }
+
+  // --- Left Slot: Slot 1 + Divider + Slot 2 ---
+  Row {
+    id: leftSlot
+    anchors.left: parent.left
+    anchors.leftMargin: glanceBar.host.settings.notch ? 18 : 16
+    anchors.verticalCenter: parent.verticalCenter
+    spacing: 7
+
+    Loader {
+      id: leftL1
+      anchors.verticalCenter: parent.verticalCenter
+      sourceComponent: glanceBar.componentFor(glanceBar.left1Kind)
+    }
+
+    Rectangle {
+      width: 3
+      height: 3
+      radius: 1.5
+      color: Qt.rgba(1, 1, 1, 0.25)
+      anchors.verticalCenter: parent.verticalCenter
+      visible: !!leftL1.item && !!leftL2.item
+    }
+
+    Loader {
+      id: leftL2
+      anchors.verticalCenter: parent.verticalCenter
+      sourceComponent: glanceBar.componentFor(glanceBar.left2Kind)
+    }
+  }
+
+  // --- Right Slot: Slot 1 + Divider + Slot 2 ---
+  Row {
+    id: rightSlot
+    anchors.right: parent.right
+    anchors.rightMargin: glanceBar.host.settings.notch ? 18 : 16
+    anchors.verticalCenter: parent.verticalCenter
+    spacing: 7
+
+    Loader {
+      id: rightL1
+      anchors.verticalCenter: parent.verticalCenter
+      sourceComponent: glanceBar.componentFor(glanceBar.right1Kind)
+    }
+
+    Rectangle {
+      width: 3
+      height: 3
+      radius: 1.5
+      color: Qt.rgba(1, 1, 1, 0.25)
+      anchors.verticalCenter: parent.verticalCenter
+      visible: !!rightL1.item && !!rightL2.item
+    }
+
+    Loader {
+      id: rightL2
+      anchors.verticalCenter: parent.verticalCenter
+      sourceComponent: glanceBar.componentFor(glanceBar.right2Kind)
     }
   }
 }

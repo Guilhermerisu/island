@@ -27,6 +27,10 @@ Item {
       property bool clockAmPm: false
       property string clockFormat: "time"
       property bool hoverExpand: true
+      property string glanceLeft1: "workspace"
+      property string glanceLeft2: "battery"
+      property string glanceRight1: "weather"
+      property string glanceRight2: "volume"
       property bool mediaPill: true
       property bool volumeHud: true
       property bool brightnessHud: true
