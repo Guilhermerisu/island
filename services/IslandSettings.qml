@@ -31,6 +31,7 @@ Item {
       property string glanceLeft2: "battery"
       property string glanceRight1: "weather"
       property string glanceRight2: "volume"
+      property bool glanceMediaSatellite: true
       property bool mediaPill: true
       property bool volumeHud: true
       property bool brightnessHud: true

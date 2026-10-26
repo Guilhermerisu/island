@@ -640,6 +640,7 @@ Item {
           readonly property Item activePill: pills.active
           readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
           property bool glanceActive: false
+          readonly property bool hasGlanceItems: glanceBar ? glanceBar.hasItems : false
           Timer {
             id: glanceLeaveTimer
             interval: 180
@@ -648,7 +649,7 @@ Item {
           onGlanceHoveredChanged: {
             if (glanceHovered) {
               glanceLeaveTimer.stop()
-              if (root.settings.hoverExpand && root.restingFree && !root.downloadPill) island.glanceActive = true
+              if (root.settings.hoverExpand && island.hasGlanceItems && root.restingFree && !root.downloadPill) island.glanceActive = true
             } else {
               glanceLeaveTimer.restart()
             }
@@ -662,12 +663,14 @@ Item {
               }
             }
           }
-          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree && !root.downloadPill
+          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && island.hasGlanceItems && root.restingFree && !root.downloadPill
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
           readonly property real baseGlanceWidth: root.settings.notch ? 420 : 440
-          readonly property real glanceWidth: baseGlanceWidth + clockExtra
+          readonly property real glanceWidth: glanceBar && glanceBar.neededWidth > 0
+            ? Math.min(baseGlanceWidth + clockExtra, Math.max(180, glanceBar.neededWidth))
+            : baseGlanceWidth + clockExtra
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)

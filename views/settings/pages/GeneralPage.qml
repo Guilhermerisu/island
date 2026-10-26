@@ -186,12 +186,24 @@ ColumnLayout {
       iconTint: glanceGroup.tintFor(page.view.settings.glanceRight2 || "volume")
       label: "Right slot 2"
       detail: "Second item on the right side"
-      last: true
       SettingsPopUp {
         view: page.view
         options: glanceGroup.moduleChoices
         value: page.view.settings.glanceRight2 || "volume"
         onPicked: function(v) { page.view.settings.glanceRight2 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰝚"
+      iconTint: page.system.purple
+      label: "Floating music pill"
+      detail: "Show a satellite player pill under the island when music is playing"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.glanceMediaSatellite !== false
+        onToggled: function(on) { page.view.settings.glanceMediaSatellite = on }
       }
     }
   }

@@ -19,7 +19,7 @@ Rectangle {
   readonly property string artist: nowPlaying && nowPlaying.artist ? nowPlaying.artist : (player && player.trackArtist ? String(player.trackArtist) : "")
   readonly property string artUrl: nowPlaying && nowPlaying.art ? nowPlaying.art : ""
 
-  readonly property bool shown: shape && shape.isGlanceExpanded && !hasMediaInGlance && isPlaying && host.view === "rest"
+  readonly property bool shown: shape && shape.isGlanceExpanded && !hasMediaInGlance && isPlaying && host.view === "rest" && (host.settings.glanceMediaSatellite !== false)
   readonly property bool isHovered: mouseArea.containsMouse
 
   x: shape ? shape.x + (shape.width - width) / 2 : 0

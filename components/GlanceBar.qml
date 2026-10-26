@@ -32,6 +32,57 @@ Item {
   readonly property string right1Kind: settings.glanceRight1 || "weather"
   readonly property string right2Kind: settings.glanceRight2 || "volume"
 
+  readonly property bool hasLeftItems: (left1Kind !== "none" && left1Kind !== "") || (left2Kind !== "none" && left2Kind !== "")
+  readonly property bool hasRightItems: (right1Kind !== "none" && right1Kind !== "") || (right2Kind !== "none" && right2Kind !== "")
+  readonly property bool hasItems: hasLeftItems || hasRightItems
+
+  function slotNaturalWidth(kind) {
+    switch (kind) {
+    case "workspace": return 26
+    case "battery": return 50
+    case "volume": return 48
+    case "weather": return 48
+    case "network": {
+      var net = glanceBar.host.activities.netConnected
+      if (net && net.length > 0 && net[0].name) {
+        return Math.min(85, Math.max(45, net[0].name.length * 7 + 22))
+      }
+      return 55
+    }
+    case "media": {
+      var title = (glanceBar.host.nowPlaying && glanceBar.host.nowPlaying.title) ? glanceBar.host.nowPlaying.title : ""
+      if (!title) return 55
+      return Math.min(130, Math.max(55, title.length * 7 + 26))
+    }
+    default: return 0
+    }
+  }
+
+  readonly property real leftSideWidth: {
+    var w = 0
+    var c1 = left1Kind !== "none" && left1Kind !== ""
+    var c2 = left2Kind !== "none" && left2Kind !== ""
+    if (c1) w += slotNaturalWidth(left1Kind)
+    if (c2) w += slotNaturalWidth(left2Kind)
+    if (c1 && c2) w += 17
+    return w
+  }
+
+  readonly property real rightSideWidth: {
+    var w = 0
+    var c1 = right1Kind !== "none" && right1Kind !== ""
+    var c2 = right2Kind !== "none" && right2Kind !== ""
+    if (c1) w += slotNaturalWidth(right1Kind)
+    if (c2) w += slotNaturalWidth(right2Kind)
+    if (c1 && c2) w += 17
+    return w
+  }
+
+  readonly property real maxSideWidth: Math.max(leftSideWidth, rightSideWidth)
+  readonly property real neededWidth: hasItems
+    ? (sideMargin * 2 + Math.max(30, maxSideWidth) * 2 + Math.max(clockWidth, 60) + 40)
+    : 0
+
   readonly property real sideMargin: glanceBar.host.settings.notch ? 18 : 16
 
   function componentFor(kind) {
@@ -375,6 +426,7 @@ Item {
   // --- Left Container: Strictly bounded between parent.left and centerReserve.left ---
   Item {
     id: leftContainer
+    visible: glanceBar.hasLeftItems
     anchors.left: parent.left
     anchors.leftMargin: glanceBar.sideMargin
     anchors.right: centerReserve.left
@@ -415,6 +467,7 @@ Item {
   // --- Right Container: Strictly bounded between centerReserve.right and parent.right ---
   Item {
     id: rightContainer
+    visible: glanceBar.hasRightItems
     anchors.right: parent.right
     anchors.rightMargin: glanceBar.sideMargin
     anchors.left: centerReserve.right
