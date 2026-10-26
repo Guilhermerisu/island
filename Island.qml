@@ -429,6 +429,10 @@ Item {
     return view
   }
 
+  // A tray app whose own menu the tray view opens straight to (see
+  // TrayList), set by a right click on it in the hover capsules.
+  property var trayMenuFor: null
+
   IpcHandler {
     target: "guilhermerisu.island"
     function show(name: string): string {
@@ -559,7 +563,8 @@ Item {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
             Region { item: window.revealArmed ? revealStrip : null },
-            Region { item: satellitePill && satellitePill.shown ? satellitePill : null }
+            Region { item: hoverCapsules.shown ? hoverCapsules.leftGroup : null },
+            Region { item: hoverCapsules.shown ? hoverCapsules.rightGroup : null }
           ]
         }
         MouseArea {
@@ -626,6 +631,18 @@ Item {
         }
         IslandShadow { shape: island; offset.y: 14; blur: 48; spread: -4; color: Qt.rgba(0, 0, 0, 0.6) }
 
+        // Hovering the resting island splits the bar's items into capsules
+        // beside it (see HoverCapsules).
+        HoverCapsules {
+          id: hoverCapsules
+          host: root
+          island: island
+          shown: island.capsulesShown && !window.islandHidden
+          anchors.fill: parent
+          // Under the island, so the capsules can start tucked beneath it.
+          z: -1
+        }
+
         NotchEar { shape: island }
         NotchEar { shape: island; mirrored: true }
 
@@ -638,41 +655,43 @@ Item {
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
-          readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
-          property bool glanceActive: false
-          readonly property bool hasGlanceItems: glanceBar ? glanceBar.hasItems : false
+          readonly property bool capsulesHovered: clockHover.hovered || islandPointerHover.hovered || hoverCapsules.hovered
+          property bool capsulesActive: false
           Timer {
-            id: glanceLeaveTimer
+            id: capsulesLeaveTimer
             interval: 180
-            onTriggered: island.glanceActive = false
+            onTriggered: island.capsulesActive = false
           }
-          onGlanceHoveredChanged: {
-            if (glanceHovered) {
-              glanceLeaveTimer.stop()
-              if (root.settings.hoverExpand && island.hasGlanceItems && root.restingFree && !root.downloadPill) island.glanceActive = true
+          // A moment's pause before showing, like macOS's hover reveals, so
+          // passing over the island doesn't flash the capsules.
+          Timer {
+            id: capsulesEnterTimer
+            interval: root.theme.scaled(80)
+            onTriggered: if (root.settings.hoverCapsules && root.resting) island.capsulesActive = true
+          }
+          onCapsulesHoveredChanged: {
+            if (capsulesHovered) {
+              capsulesLeaveTimer.stop()
+              if (!island.capsulesActive) capsulesEnterTimer.restart()
             } else {
-              glanceLeaveTimer.restart()
+              capsulesEnterTimer.stop()
+              capsulesLeaveTimer.restart()
             }
           }
           Connections {
             target: root
             function onViewChanged() {
               if (root.view !== "rest") {
-                island.glanceActive = false
-                glanceLeaveTimer.stop()
+                island.capsulesActive = false
+                capsulesLeaveTimer.stop()
               }
             }
           }
-          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && island.hasGlanceItems && root.restingFree && !root.downloadPill
+          readonly property bool capsulesShown: island.capsulesActive && root.settings.hoverCapsules && root.resting
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
-          readonly property real baseGlanceWidth: root.settings.notch ? 420 : 440
-          readonly property real glanceWidth: glanceBar && glanceBar.neededWidth > 0
-            ? Math.min(baseGlanceWidth + clockExtra, Math.max(180, glanceBar.neededWidth))
-            : baseGlanceWidth + clockExtra
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
-            : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
@@ -687,7 +706,7 @@ Item {
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
-          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.isGlanceExpanded
+          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.capsulesShown
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
           // The springs run in hundredths, as they settle to a tenth of a unit.
@@ -801,17 +820,10 @@ Item {
             WorkspacePill { host: root; anchors.fill: parent }
             AddonPills { host: root; anchors.fill: parent }
             RecordingPill { host: root; anchors.fill: parent }
-            MediaPill { host: root; shape: island; anchors.fill: parent }
+            MediaPill { host: root; anchors.fill: parent }
             DownloadPill { host: root; anchors.fill: parent }
           }
 
-          GlanceBar {
-            id: glanceBar
-            host: root
-            shown: island.isGlanceExpanded
-            clockWidth: Math.max(clockLabel.width, clockLabel.advanceWidth || clockMetrics.advanceWidth)
-            anchors.fill: parent
-          }
           IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
           TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockStacked ? root.clockWidestText : root.clockText }
 
@@ -828,9 +840,9 @@ Item {
           height: island.height
           scale: island.scale
           transformOrigin: island.transformOrigin
-          opacity: root.surfaceOpen ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
+          opacity: root.surfaceOpen ? 1 : island.lifted ? 0.6 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
@@ -842,14 +854,6 @@ Item {
               PathSvg { path: island.edgeOutline }
             }
           }
-        }
-
-        MediaSatellitePill {
-          id: satellitePill
-          host: root
-          shape: island
-          hasMediaInGlance: glanceBar.left1Kind === "media" || glanceBar.left2Kind === "media"
-            || glanceBar.right1Kind === "media" || glanceBar.right2Kind === "media"
         }
       }
     }

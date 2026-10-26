@@ -24,7 +24,16 @@ ListPicker {
       goBack(); event.accepted = true
     }
   }
-  onActiveChanged: if (!active) closeMenu()
+  onActiveChanged: {
+    if (!active) { closeMenu(); return }
+    // Opened for one app's menu (a right click on it in the hover capsules).
+    var item = host.trayMenuFor
+    host.trayMenuFor = null
+    if (item && item.hasMenu && item.menu) {
+      menuItem = item
+      push(item.menu, appTitle(item))
+    }
+  }
 
   function matches(text) {
     var q = query.trim().toLowerCase()

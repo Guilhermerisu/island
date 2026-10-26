@@ -13,6 +13,7 @@ import "clipboard"
 import "menu"
 import "player"
 import "settings"
+import "../addons/tray"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -114,6 +115,16 @@ Item {
     viewName: "menu"
     fixedWidth: 520
     OmarchyMenu { host: views.host; active: menuSurface.active; anchors.fill: parent }
+  }
+
+  // A tray app's menu, opened from the hover capsules (see HoverCapsules)
+  // whether or not the tray addon is on.
+  Surface {
+    id: trayMenuSurface
+    host: views.host
+    viewName: "trayMenu"
+    fixedWidth: 440
+    TrayList { host: views.host; active: trayMenuSurface.active; anchors.fill: parent }
   }
 
   Surface {

@@ -74,150 +74,110 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      icon: "󰁌"
-      iconTint: page.system.blue
-      label: "Expand on hover"
-      detail: "Reveal workspace, battery, weather and media when hovering over the idle pill"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.hoverExpand
-        onToggled: function(on) { page.view.settings.hoverExpand = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
       icon: "󰌢"
       iconTint: page.system.indigo
       label: "Notch style"
       detail: "Attach the island to the top edge, like a MacBook notch"
-      last: true
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.notch
         onToggled: function(on) { page.view.settings.notch = on }
       }
     }
-  }
-
-  SettingsGroup {
-    id: glanceGroup
-    view: page.view
-    title: "Glance on hover"
-    visible: page.view.settings.hoverExpand
-
-    function iconFor(kind) {
-      switch (kind) {
-      case "workspace": return "󱂬"
-      case "battery": return "󰁹"
-      case "network": return "󰤨"
-      case "weather": return "󰖐"
-      case "media": return "󰝚"
-      case "volume": return "󰕾"
-      case "none": return "󰅖"
-      default: return "󰜔"
-      }
-    }
-
-    function tintFor(kind) {
-      switch (kind) {
-      case "workspace": return page.system.blue
-      case "battery": return page.system.green
-      case "network": return page.system.cyan
-      case "weather": return page.system.yellow
-      case "media": return page.system.purple
-      case "volume": return page.system.orange
-      case "none": return page.system.gray
-      default: return page.system.blue
-      }
-    }
-
-    readonly property var moduleChoices: [
-      { label: "󱂬  Workspace", short: "Workspace", value: "workspace" },
-      { label: "󰁹  Battery", short: "Battery", value: "battery" },
-      { label: "󰤨  Network", short: "Network", value: "network" },
-      { label: "󰖐  Weather", short: "Weather", value: "weather" },
-      { label: "󰝚  Now Playing", short: "Now Playing", value: "media" },
-      { label: "󰕾  Volume", short: "Volume", value: "volume" },
-      { label: "󰅖  None", short: "None", value: "none" }
-    ]
-
     SettingsRow {
       view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceLeft1 || "workspace")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft1 || "workspace")
-      label: "Left slot 1"
-      detail: "First item on the left side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceLeft1 || "workspace"
-        onPicked: function(v) { page.view.settings.glanceLeft1 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceLeft2 || "battery")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft2 || "battery")
-      label: "Left slot 2"
-      detail: "Second item on the left side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceLeft2 || "battery"
-        onPicked: function(v) { page.view.settings.glanceLeft2 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceRight1 || "weather")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight1 || "weather")
-      label: "Right slot 1"
-      detail: "First item on the right side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceRight1 || "weather"
-        onPicked: function(v) { page.view.settings.glanceRight1 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceRight2 || "volume")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight2 || "volume")
-      label: "Right slot 2"
-      detail: "Second item on the right side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceRight2 || "volume"
-        onPicked: function(v) { page.view.settings.glanceRight2 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰝚"
-      iconTint: page.system.purple
-      label: "Floating music pill"
-      detail: "Show a satellite player pill under the island when music is playing"
-      last: page.view.settings.glanceMediaSatellite === false
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.glanceMediaSatellite !== false
-        onToggled: function(on) { page.view.settings.glanceMediaSatellite = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      visible: page.view.settings.glanceMediaSatellite !== false
-      icon: "󰃚"
-      iconTint: page.system.purple
-      label: "Music pill border"
-      detail: "Draw a thin subtle outline around the floating music pill"
+      icon: "󰁌"
+      iconTint: page.system.blue
+      label: "Capsules on hover"
+      detail: "Show workspaces, weather and status beside the island"
       last: true
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.glanceMediaSatelliteBorder !== false
-        onToggled: function(on) { page.view.settings.glanceMediaSatelliteBorder = on }
+        checked: page.view.settings.hoverCapsules
+        onToggled: function(on) { page.view.settings.hoverCapsules = on }
+      }
+    }
+  }
+
+  SettingsGroup {
+    view: page.view
+    title: "Capsules"
+    visible: page.view.settings.hoverCapsules
+    SettingsRow {
+      view: page.view
+      icon: "󰀻"
+      iconTint: page.system.purple
+      label: "Tray apps"
+      detail: "Tray icons and Omarchy updates"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleTray
+        onToggled: function(on) { page.view.settings.capsuleTray = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰂚"
+      iconTint: page.system.orange
+      label: "Notifications"
+      detail: "How many are in the history"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleNotifications
+        onToggled: function(on) { page.view.settings.capsuleNotifications = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰒓"
+      iconTint: page.system.gray
+      label: "System"
+      detail: "Bluetooth, network, volume and battery"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleSystem
+        onToggled: function(on) { page.view.settings.capsuleSystem = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      last: !page.view.host.addons.isEnabled("calendar") && !page.view.host.addons.isEnabled("weather")
+      icon: "󱂬"
+      iconTint: page.system.blue
+      label: "Workspaces"
+      detail: "Tiles to switch between them"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleWorkspaces
+        onToggled: function(on) { page.view.settings.capsuleWorkspaces = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      visible: page.view.host.addons.isEnabled("calendar")
+      last: !page.view.host.addons.isEnabled("weather")
+      icon: "󰃭"
+      iconTint: page.system.red
+      label: "Next event"
+      detail: "When one starts within the hour"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleEvent
+        onToggled: function(on) { page.view.settings.capsuleEvent = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      visible: page.view.host.addons.isEnabled("weather")
+      last: true
+      icon: "󰖐"
+      iconTint: page.system.yellow
+      label: "Weather"
+      detail: "Current conditions and temperature"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleWeather
+        onToggled: function(on) { page.view.settings.capsuleWeather = on }
       }
     }
   }
