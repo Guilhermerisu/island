@@ -647,12 +647,11 @@ Item {
           onGlanceHoveredChanged: {
             if (glanceHovered) {
               glanceLeaveTimer.stop()
-              if (root.settings.hoverExpand && root.restingFree && !activePill) island.glanceActive = true
+              if (root.settings.hoverExpand && root.restingFree && !root.downloadPill) island.glanceActive = true
             } else {
               glanceLeaveTimer.restart()
             }
           }
-          onActivePillChanged: if (activePill) { island.glanceActive = false; glanceLeaveTimer.stop() }
           Connections {
             target: root
             function onViewChanged() {
@@ -662,16 +661,16 @@ Item {
               }
             }
           }
-          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree && !activePill
+          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree && !root.downloadPill
           readonly property real glanceWidth: root.settings.notch ? 380 : 400
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
+            : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
-            : island.isGlanceExpanded ? island.glanceWidth
             : 100 + clockExtra
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
             : activePill ? activePill.pillHeight
@@ -797,7 +796,7 @@ Item {
             WorkspacePill { host: root; anchors.fill: parent }
             AddonPills { host: root; anchors.fill: parent }
             RecordingPill { host: root; anchors.fill: parent }
-            MediaPill { host: root; anchors.fill: parent }
+            MediaPill { host: root; shape: island; anchors.fill: parent }
             DownloadPill { host: root; anchors.fill: parent }
           }
 

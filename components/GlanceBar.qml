@@ -149,19 +149,19 @@ Item {
       readonly property bool playing: !!(nowPlaying && nowPlaying.playing)
       Text {
         text: "󰝚"
-        color: glanceBar.host.theme.accent
+        color: parent.playing && parent.nowPlaying.tint ? parent.nowPlaying.tint : glanceBar.host.theme.accent
         font.family: glanceBar.host.theme.fontFamily
         font.pixelSize: glanceBar.host.theme.px(13)
         anchors.verticalCenter: parent.verticalCenter
       }
       Text {
-        text: parent.playing ? parent.nowPlaying.trackTitle : "No Media"
-        color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
+        text: parent.playing ? parent.nowPlaying.trackTitle : "No music"
+        color: parent.playing ? Qt.rgba(0.88, 0.90, 0.87, 0.8) : Qt.rgba(0.88, 0.90, 0.87, 0.45)
         font.family: glanceBar.host.theme.textFontFamily
         font.pixelSize: glanceBar.host.theme.px(11)
         font.weight: Font.Medium
         elide: Text.ElideRight
-        width: Math.min(implicitWidth, 70)
+        width: Math.min(implicitWidth, 80)
         anchors.verticalCenter: parent.verticalCenter
       }
     }

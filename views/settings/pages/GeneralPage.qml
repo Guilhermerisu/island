@@ -106,12 +106,12 @@ ColumnLayout {
     visible: page.view.settings.hoverExpand
 
     readonly property var moduleChoices: [
-      { label: "Workspace (󱂬)", short: "Workspace", value: "workspace" },
-      { label: "Battery (󰁹)", short: "Battery", value: "battery" },
-      { label: "Network (󰤨)", short: "Network", value: "network" },
-      { label: "Weather (󰖐)", short: "Weather", value: "weather" },
-      { label: "Now Playing (󰝚)", short: "Media", value: "media" },
-      { label: "Volume (󰕾)", short: "Volume", value: "volume" },
+      { label: "Workspace", short: "Workspace", value: "workspace" },
+      { label: "Battery", short: "Battery", value: "battery" },
+      { label: "Network", short: "Network", value: "network" },
+      { label: "Weather", short: "Weather", value: "weather" },
+      { label: "Now Playing", short: "Now Playing", value: "media" },
+      { label: "Volume", short: "Volume", value: "volume" },
       { label: "None", short: "None", value: "none" }
     ]
 
