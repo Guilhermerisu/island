@@ -438,8 +438,7 @@ Item {
 
     Row {
       id: leftSlot
-      anchors.left: parent.left
-      anchors.verticalCenter: parent.verticalCenter
+      anchors.centerIn: parent
       spacing: 7
 
       Loader {
@@ -481,8 +480,7 @@ Item {
 
     Row {
       id: rightSlot
-      anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
+      anchors.centerIn: parent
       spacing: 7
 
       Loader {
