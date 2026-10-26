@@ -105,20 +105,46 @@ ColumnLayout {
     title: "Glance on hover"
     visible: page.view.settings.hoverExpand
 
+    function iconFor(kind) {
+      switch (kind) {
+      case "workspace": return "󱂬"
+      case "battery": return "󰁹"
+      case "network": return "󰤨"
+      case "weather": return "󰖐"
+      case "media": return "󰝚"
+      case "volume": return "󰕾"
+      case "none": return "󰅖"
+      default: return "󰜔"
+      }
+    }
+
+    function tintFor(kind) {
+      switch (kind) {
+      case "workspace": return page.system.blue
+      case "battery": return page.system.green
+      case "network": return page.system.cyan
+      case "weather": return page.system.yellow
+      case "media": return page.system.purple
+      case "volume": return page.system.orange
+      case "none": return page.system.gray
+      default: return page.system.blue
+      }
+    }
+
     readonly property var moduleChoices: [
-      { label: "Workspace", short: "Workspace", value: "workspace" },
-      { label: "Battery", short: "Battery", value: "battery" },
-      { label: "Network", short: "Network", value: "network" },
-      { label: "Weather", short: "Weather", value: "weather" },
-      { label: "Now Playing", short: "Now Playing", value: "media" },
-      { label: "Volume", short: "Volume", value: "volume" },
-      { label: "None", short: "None", value: "none" }
+      { label: "󱂬  Workspace", short: "Workspace", value: "workspace" },
+      { label: "󰁹  Battery", short: "Battery", value: "battery" },
+      { label: "󰤨  Network", short: "Network", value: "network" },
+      { label: "󰖐  Weather", short: "Weather", value: "weather" },
+      { label: "󰝚  Now Playing", short: "Now Playing", value: "media" },
+      { label: "󰕾  Volume", short: "Volume", value: "volume" },
+      { label: "󰅖  None", short: "None", value: "none" }
     ]
 
     SettingsRow {
       view: page.view
-      icon: "󱂬"
-      iconTint: page.system.blue
+      icon: glanceGroup.iconFor(page.view.settings.glanceLeft1 || "workspace")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft1 || "workspace")
       label: "Left slot 1"
       detail: "First item on the left side"
       SettingsPopUp {
@@ -130,8 +156,8 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      icon: "󰁹"
-      iconTint: page.system.green
+      icon: glanceGroup.iconFor(page.view.settings.glanceLeft2 || "battery")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft2 || "battery")
       label: "Left slot 2"
       detail: "Second item on the left side"
       SettingsPopUp {
@@ -143,8 +169,8 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      icon: "󰖐"
-      iconTint: page.system.yellow
+      icon: glanceGroup.iconFor(page.view.settings.glanceRight1 || "weather")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight1 || "weather")
       label: "Right slot 1"
       detail: "First item on the right side"
       SettingsPopUp {
@@ -156,8 +182,8 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      icon: "󰕾"
-      iconTint: page.system.orange
+      icon: glanceGroup.iconFor(page.view.settings.glanceRight2 || "volume")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight2 || "volume")
       label: "Right slot 2"
       detail: "Second item on the right side"
       last: true
