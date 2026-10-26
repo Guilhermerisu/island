@@ -710,7 +710,7 @@ Item {
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
           // The springs run in hundredths, as they settle to a tenth of a unit.
-          readonly property bool squished: islandTap.pressed || squishHold.running
+          readonly property bool squished: !root.settings.notch && (islandTap.pressed || squishHold.running)
           Timer { id: squishHold; interval: root.theme.motionDuration("press") }
           MotionSpring { id: liftSpring; theme: root.theme; pace: "quick"; target: island.lifted ? 100 : 0 }
           MotionSpring {
@@ -720,7 +720,7 @@ Item {
             bounce: island.squished ? 0 : 0.35
             target: island.squished ? 100 : 0
           }
-          scale: 1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003
+          scale: root.settings.notch ? 1.0 : (1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003)
           // With the notch the island hangs from the top edge, so it scales from there.
           transformOrigin: root.settings.notch ? Item.Top : Item.Center
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
@@ -743,9 +743,11 @@ Item {
           // The same outline inset half a pixel, so a 1px edge stroke lands
           // inside the shape. Only built while the edge shows, so a resting
           // pill's morphs redraw one outline, not two.
-          readonly property string edgeOutline: !islandEdge.visible ? "" : Squircle.path(width - 1, height - 1, ({
-            topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
-            bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
+          readonly property string edgeOutline: !islandEdge.visible ? ""
+            : root.settings.notch ? Squircle.notchPath(width - 1, height - 1, Math.max(0, radius - 0.5), 10, 0.6)
+            : Squircle.path(width - 1, height - 1, ({
+                topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
+                bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
           Shape {
             anchors.fill: parent
             preferredRendererType: Shape.CurveRenderer
@@ -880,10 +882,12 @@ Item {
     property bool mirrored: false
     readonly property real r: 10
     visible: root.settings.notch && shape.y > -r
-    x: mirrored ? shape.x + shape.width : shape.x - r
+    x: mirrored ? shape.x + shape.width - 0.5 : shape.x - r
     y: shape.y
-    width: r
+    width: r + 0.5
     height: r
+    property real edgeOpacity: root.surfaceOpen ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
+    Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer
     ShapePath {
@@ -891,8 +895,26 @@ Item {
       fillColor: root.theme.background
       PathSvg {
         readonly property real r: ear.r
-        path: ear.mirrored ? "M 0 0 L 0 " + r + " A " + r + " " + r + " 0 0 1 " + r + " 0 Z"
-          : "M " + r + " 0 L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z"
+        path: ear.mirrored
+          ? "M 0 0 L 0 " + r + " L 0.5 " + r + " A " + r + " " + r + " 0 0 1 " + (r + 0.5) + " 0 Z"
+          : "M " + (r + 0.5) + " 0 L " + (r + 0.5) + " " + r + " L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z"
+      }
+    }
+    Shape {
+      anchors.fill: parent
+      preferredRendererType: Shape.CurveRenderer
+      opacity: ear.edgeOpacity
+      visible: opacity > 0.01
+      ShapePath {
+        strokeWidth: 1
+        strokeColor: root.theme.fill("raised")
+        fillColor: "transparent"
+        PathSvg {
+          readonly property real r: ear.r
+          path: ear.mirrored
+            ? "M 0.5 " + r + " A " + r + " " + r + " 0 0 1 " + (r + 0.5) + " 0"
+            : "M " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0"
+        }
       }
     }
   }
