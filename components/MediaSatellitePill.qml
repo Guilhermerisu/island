@@ -39,7 +39,8 @@ Rectangle {
   radius: height / 2
 
   color: host.theme.background
-  border.width: 1
+  readonly property bool hasBorder: host.settings.glanceMediaSatelliteBorder !== false
+  border.width: hasBorder ? 1 : 0
   border.color: mouseArea.containsMouse
     ? (nowPlaying.tint || host.theme.accent)
     : Qt.rgba(1, 1, 1, 0.16)

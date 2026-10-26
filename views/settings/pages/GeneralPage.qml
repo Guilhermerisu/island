@@ -199,11 +199,25 @@ ColumnLayout {
       iconTint: page.system.purple
       label: "Floating music pill"
       detail: "Show a satellite player pill under the island when music is playing"
-      last: true
+      last: page.view.settings.glanceMediaSatellite === false
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.glanceMediaSatellite !== false
         onToggled: function(on) { page.view.settings.glanceMediaSatellite = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      visible: page.view.settings.glanceMediaSatellite !== false
+      icon: "󰃚"
+      iconTint: page.system.purple
+      label: "Music pill border"
+      detail: "Draw a thin subtle outline around the floating music pill"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.glanceMediaSatelliteBorder !== false
+        onToggled: function(on) { page.view.settings.glanceMediaSatelliteBorder = on }
       }
     }
   }
