@@ -27,19 +27,10 @@ Item {
   }
 
   readonly property var settings: glanceBar.host.settings
-  readonly property string rawLeft1Kind: settings.glanceLeft1 || "workspace"
-  readonly property string rawLeft2Kind: settings.glanceLeft2 || "battery"
-  readonly property string rawRight1Kind: settings.glanceRight1 || "weather"
-  readonly property string rawRight2Kind: settings.glanceRight2 || "volume"
-
-  readonly property bool hasConfiguredMedia: rawLeft1Kind === "media" || rawLeft2Kind === "media"
-    || rawRight1Kind === "media" || rawRight2Kind === "media"
-  readonly property bool isMediaPlaying: !!(glanceBar.host.nowPlaying && glanceBar.host.nowPlaying.playing)
-  // When music is actively playing and media is not in any slot, dynamically show media in right1 slot
-  readonly property string left1Kind: rawLeft1Kind
-  readonly property string left2Kind: rawLeft2Kind
-  readonly property string right1Kind: (!hasConfiguredMedia && isMediaPlaying) ? "media" : rawRight1Kind
-  readonly property string right2Kind: rawRight2Kind
+  readonly property string left1Kind: settings.glanceLeft1 || "workspace"
+  readonly property string left2Kind: settings.glanceLeft2 || "battery"
+  readonly property string right1Kind: settings.glanceRight1 || "weather"
+  readonly property string right2Kind: settings.glanceRight2 || "volume"
 
   readonly property real sideMargin: glanceBar.host.settings.notch ? 18 : 16
 
