@@ -9,7 +9,7 @@ import "../addons/weather"
 
 // Hovering the resting island splits what a bar shows into black capsules
 // beside it. Out from the island, the next event, tray apps with pending
-// Omarchy updates, and workspaces on the left; the weather, notifications,
+// Omarchy updates, workspaces and what's playing on the left; the weather, notifications,
 // and Bluetooth, network, sound and battery on the right. Each can be turned
 // off in Settings, and one with nothing to show stays away. The connections,
 // sound and battery come from the control center's Controls, so both agree.
@@ -43,6 +43,10 @@ Item {
   Controls { id: controls; host: capsules.host }
   // The history is only read while it's on screen; the count needs it fresh.
   onShownChanged: if (shown) host.notifications.refreshHistory()
+
+  // --- Now playing: while a player has a track, playing or paused ---
+  readonly property var media: host.nowPlaying
+  readonly property bool showMedia: settings.capsuleMedia && !!media.player && media.title !== ""
 
   // --- Next event: today's, from an hour before it starts until it ends ---
   readonly property var calendar: host.addons.isEnabled("calendar") ? host.addons.root("calendar") : null
@@ -207,7 +211,7 @@ Item {
     font.features: { "tnum": 1 }
   }
 
-  // ---------- Left: next event, tray apps and updates, workspaces ----------
+  // ---------- Left: next event, tray apps and updates, workspaces, now playing ----------
 
   Row {
     id: leftRow
@@ -288,6 +292,7 @@ Item {
     }
 
     Capsule {
+      id: workspaceCapsule
       present: capsules.showWorkspaces
       side: -1
       before: [eventCapsule, trayCapsule]
@@ -324,6 +329,75 @@ Item {
         }
       }
     }
+
+    Capsule {
+      id: mediaCapsule
+      present: capsules.showMedia
+      side: -1
+      before: [eventCapsule, trayCapsule, workspaceCapsule]
+      padding: 8
+      spacing: 8
+      // Like macOS's Now Playing: the cover, the title over the artist, and
+      // play or pause.
+      ClippingRectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        width: capsules.capsuleHeight - 18
+        height: width
+        radius: 5
+        color: "#2a2a2c"
+        Glyph {
+          anchors.horizontalCenter: parent.horizontalCenter
+          visible: cover.status !== Image.Ready
+          text: "󰝚"
+          font.pixelSize: capsules.textSize
+        }
+        Image {
+          id: cover
+          anchors.fill: parent
+          source: capsules.media.art
+          sourceSize.width: 64
+          sourceSize.height: 64
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+      }
+      Column {
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: -1
+        Label {
+          anchors.verticalCenter: undefined
+          width: Math.min(implicitWidth, 140)
+          elide: Text.ElideRight
+          text: capsules.media.title
+          font.pixelSize: capsules.theme.px(12)
+        }
+        Label {
+          anchors.verticalCenter: undefined
+          visible: capsules.media.artist !== ""
+          width: Math.min(implicitWidth, 140)
+          elide: Text.ElideRight
+          text: capsules.media.artist
+          color: capsules.faint
+          font.pixelSize: capsules.theme.px(11)
+          font.weight: Font.Medium
+        }
+      }
+      // Play or pause, set off from the text and in from the edge.
+      Item {
+        anchors.verticalCenter: parent.verticalCenter
+        width: playPause.implicitWidth + 10
+        height: playPause.implicitHeight
+        Glyph {
+          id: playPause
+          anchors.centerIn: parent
+          anchors.verticalCenter: undefined
+          text: capsules.media.playing ? "󰏤" : "󰐊"
+          onClicked: capsules.media.player.togglePlaying()
+        }
+      }
+      TapHandler { onTapped: capsules.host.view = "player" }
+    }
+
   }
 
   // ---------- Right: weather, notifications, connections and power ----------

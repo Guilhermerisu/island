@@ -141,7 +141,6 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      last: !page.view.host.addons.isEnabled("calendar") && !page.view.host.addons.isEnabled("weather")
       icon: "󱂬"
       iconTint: page.system.blue
       label: "Workspaces"
@@ -150,6 +149,19 @@ ColumnLayout {
         view: page.view
         checked: page.view.settings.capsuleWorkspaces
         onToggled: function(on) { page.view.settings.capsuleWorkspaces = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      last: !page.view.host.addons.isEnabled("calendar") && !page.view.host.addons.isEnabled("weather")
+      icon: "󰝚"
+      iconTint: page.system.cyan
+      label: "Now playing"
+      detail: "The track, with play and pause"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.capsuleMedia
+        onToggled: function(on) { page.view.settings.capsuleMedia = on }
       }
     }
     SettingsRow {

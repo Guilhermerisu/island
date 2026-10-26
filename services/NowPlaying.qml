@@ -13,7 +13,6 @@ Item {
   readonly property bool playing: !!(player && player.isPlaying)
   readonly property string title: player ? String(player.trackTitle || "") : ""
   readonly property string artist: player ? String(player.trackArtist || "") : ""
-  readonly property string album: player ? String(player.trackAlbum || "") : ""
   // If the art URL goes empty while the title stays the same, the last art
   // keeps showing.
   readonly property string reportedArt: player && player.trackArtUrl ? String(player.trackArtUrl) : ""

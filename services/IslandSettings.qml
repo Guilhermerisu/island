@@ -34,6 +34,7 @@ Item {
       property bool capsuleEvent: false
       property bool capsuleWeather: false
       property bool capsuleNotifications: true
+      property bool capsuleMedia: false
       property bool mediaPill: true
       property bool volumeHud: true
       property bool brightnessHud: true
