@@ -647,11 +647,12 @@ Item {
           onGlanceHoveredChanged: {
             if (glanceHovered) {
               glanceLeaveTimer.stop()
-              if (root.settings.hoverExpand && root.restingFree) island.glanceActive = true
+              if (root.settings.hoverExpand && root.restingFree && !activePill) island.glanceActive = true
             } else {
               glanceLeaveTimer.restart()
             }
           }
+          onActivePillChanged: if (activePill) { island.glanceActive = false; glanceLeaveTimer.stop() }
           Connections {
             target: root
             function onViewChanged() {
@@ -661,7 +662,7 @@ Item {
               }
             }
           }
-          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree
+          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree && !activePill
           readonly property real glanceWidth: root.settings.notch ? 360 : 380
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
