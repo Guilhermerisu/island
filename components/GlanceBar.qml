@@ -37,22 +37,23 @@ Item {
   readonly property bool hasItems: hasLeftItems || hasRightItems
 
   function slotNaturalWidth(kind) {
+    var scale = (glanceBar.host.settings && glanceBar.host.settings.textScale) ? glanceBar.host.settings.textScale : 1.0
     switch (kind) {
-    case "workspace": return 26
-    case "battery": return 50
-    case "volume": return 48
-    case "weather": return 48
+    case "workspace": return Math.round(28 * scale)
+    case "battery": return Math.round(64 * scale)
+    case "volume": return Math.round(58 * scale)
+    case "weather": return Math.round(58 * scale)
     case "network": {
       var net = glanceBar.host.activities.netConnected
       if (net && net.length > 0 && net[0].name) {
-        return Math.min(85, Math.max(45, net[0].name.length * 7 + 22))
+        return Math.min(Math.round(95 * scale), Math.max(Math.round(50 * scale), Math.round((net[0].name.length * 7 + 22) * scale)))
       }
-      return 55
+      return Math.round(60 * scale)
     }
     case "media": {
       var title = (glanceBar.host.nowPlaying && glanceBar.host.nowPlaying.title) ? glanceBar.host.nowPlaying.title : ""
-      if (!title) return 55
-      return Math.min(130, Math.max(55, title.length * 7 + 26))
+      if (!title) return Math.round(60 * scale)
+      return Math.min(Math.round(140 * scale), Math.max(Math.round(60 * scale), Math.round((title.length * 7 + 26) * scale)))
     }
     default: return 0
     }
@@ -80,7 +81,7 @@ Item {
 
   readonly property real maxSideWidth: Math.max(leftSideWidth, rightSideWidth)
   readonly property real neededWidth: hasItems
-    ? (sideMargin * 2 + Math.max(30, maxSideWidth) * 2 + Math.max(clockWidth, 60) + 40)
+    ? (sideMargin * 2 + Math.max(30, maxSideWidth) * 2 + Math.max(clockWidth, 60) + 48)
     : 0
 
   readonly property real sideMargin: glanceBar.host.settings.notch ? 18 : 16
@@ -443,6 +444,7 @@ Item {
 
       Loader {
         id: leftL1
+        visible: !!item
         anchors.verticalCenter: parent.verticalCenter
         sourceComponent: glanceBar.componentFor(glanceBar.left1Kind)
       }
@@ -458,6 +460,7 @@ Item {
 
       Loader {
         id: leftL2
+        visible: !!item
         anchors.verticalCenter: parent.verticalCenter
         sourceComponent: glanceBar.componentFor(glanceBar.left2Kind)
       }
@@ -484,6 +487,7 @@ Item {
 
       Loader {
         id: rightL1
+        visible: !!item
         anchors.verticalCenter: parent.verticalCenter
         sourceComponent: glanceBar.componentFor(glanceBar.right1Kind)
       }
@@ -499,6 +503,7 @@ Item {
 
       Loader {
         id: rightL2
+        visible: !!item
         anchors.verticalCenter: parent.verticalCenter
         sourceComponent: glanceBar.componentFor(glanceBar.right2Kind)
       }
