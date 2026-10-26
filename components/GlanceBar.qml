@@ -2,8 +2,9 @@ import QtQuick
 import "../addons/weather"
 
 // The left and right accessory slots revealed when hovering over the resting island.
-// Left slot: Active workspace and battery status (or network on desktop).
-// Right slot: Weather (if enabled/ready), now playing media, or audio volume.
+// Both sides are symmetrically balanced with two items separated by a subtle divider dot:
+// - Left slot: Active workspace and battery status (or network on desktop).
+// - Right slot: Weather (or media) and audio volume level.
 Item {
   id: glanceBar
   required property var host
@@ -15,7 +16,7 @@ Item {
     MotionAnimation { theme: glanceBar.host.theme; pace: glanceBar.shown ? "fade" : "exit"; curve: "fade" }
   }
 
-  // Left Slot: Workspace + Battery (or Network)
+  // Left Slot: Workspace + Divider + Battery (or Network)
   Row {
     id: leftSlot
     anchors.left: parent.left
@@ -104,7 +105,7 @@ Item {
     }
   }
 
-  // Right Slot: Weather, or Now Playing, or Volume
+  // Right Slot: Weather (or Media/Sound) + Divider + Volume
   Row {
     id: rightSlot
     anchors.right: parent.right
@@ -141,7 +142,7 @@ Item {
       }
     }
 
-    // Now Playing Media
+    // Now Playing Media fallback if no weather
     Row {
       visible: !rightSlot.hasWeather && rightSlot.hasMedia
       spacing: 5
@@ -160,14 +161,44 @@ Item {
         font.pixelSize: glanceBar.host.theme.px(11)
         font.weight: Font.Medium
         elide: Text.ElideRight
-        width: Math.min(implicitWidth, 80)
+        width: Math.min(implicitWidth, 70)
         anchors.verticalCenter: parent.verticalCenter
       }
     }
 
-    // Volume Fallback
+    // Audio fallback if no weather and no media
     Row {
       visible: !rightSlot.hasWeather && !rightSlot.hasMedia
+      spacing: 4
+      anchors.verticalCenter: parent.verticalCenter
+      Text {
+        text: "󰓃"
+        color: glanceBar.host.theme.accent
+        font.family: glanceBar.host.theme.fontFamily
+        font.pixelSize: glanceBar.host.theme.px(13)
+        anchors.verticalCenter: parent.verticalCenter
+      }
+      Text {
+        text: "Audio"
+        color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
+        font.family: glanceBar.host.theme.textFontFamily
+        font.pixelSize: glanceBar.host.theme.px(11)
+        font.weight: Font.Medium
+        anchors.verticalCenter: parent.verticalCenter
+      }
+    }
+
+    // Divider dot
+    Rectangle {
+      width: 3
+      height: 3
+      radius: 1.5
+      color: Qt.rgba(1, 1, 1, 0.25)
+      anchors.verticalCenter: parent.verticalCenter
+    }
+
+    // Audio Volume level
+    Row {
       spacing: 4
       anchors.verticalCenter: parent.verticalCenter
       Text {
