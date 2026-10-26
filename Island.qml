@@ -558,7 +558,8 @@ Item {
         mask: Region {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
-            Region { item: window.revealArmed ? revealStrip : null }
+            Region { item: window.revealArmed ? revealStrip : null },
+            Region { item: satellitePill && satellitePill.shown ? satellitePill : null }
           ]
         }
         MouseArea {
@@ -637,7 +638,7 @@ Item {
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
-          readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered
+          readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
           property bool glanceActive: false
           Timer {
             id: glanceLeaveTimer
@@ -839,7 +840,14 @@ Item {
             }
           }
         }
-      }
+
+        MediaSatellitePill {
+          id: satellitePill
+          host: root
+          shape: island
+          hasMediaInGlance: glanceBar.left1Kind === "media" || glanceBar.left2Kind === "media"
+            || glanceBar.right1Kind === "media" || glanceBar.right2Kind === "media"
+        }
     }
   }
 
