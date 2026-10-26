@@ -48,14 +48,40 @@ ColumnLayout {
       detail: "The time alone, or with the day or date"
       // The button names the style; the menu adds how each one looks now.
       SettingsPopUp {
-        readonly property var names: ({ time: "Time only", day: "Day", date: "Date", short: "Day and date", weekday: "Full weekday" })
+        readonly property var names: ({
+          time: "Time only",
+          stackedDay: "Stacked: Time & Day",
+          stackedDate: "Stacked: Time & Date",
+          stackedFull: "Stacked: Time & Full Date",
+          day: "Day and time",
+          date: "Date and time",
+          short: "Day, date and time",
+          weekday: "Full weekday and time",
+          full: "Full date & year",
+          numeric: "Numeric date"
+        })
         view: page.view
         options: page.view.host.clockFormats.map(function(format) {
           var name = names[format] || format
-          return { label: name + " · " + page.view.host.formatClock(page.view.host.clockDate, format), short: name, value: format }
+          var preview = page.view.host.isStackedClock(format)
+            ? page.view.host.formatClockTime(page.view.host.clockDate) + " / " + page.view.host.formatClockSub(page.view.host.clockDate, format)
+            : page.view.host.formatClock(page.view.host.clockDate, format)
+          return { label: name + " · " + preview, short: name, value: format }
         })
         value: page.view.settings.clockFormat
         onPicked: function(v) { page.view.settings.clockFormat = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰁌"
+      iconTint: page.system.blue
+      label: "Expand on hover"
+      detail: "Reveal workspace, battery, weather and media when hovering over the idle pill"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.hoverExpand
+        onToggled: function(on) { page.view.settings.hoverExpand = on }
       }
     }
     SettingsRow {
@@ -69,6 +95,129 @@ ColumnLayout {
         view: page.view
         checked: page.view.settings.notch
         onToggled: function(on) { page.view.settings.notch = on }
+      }
+    }
+  }
+
+  SettingsGroup {
+    id: glanceGroup
+    view: page.view
+    title: "Glance on hover"
+    visible: page.view.settings.hoverExpand
+
+    function iconFor(kind) {
+      switch (kind) {
+      case "workspace": return "󱂬"
+      case "battery": return "󰁹"
+      case "network": return "󰤨"
+      case "weather": return "󰖐"
+      case "media": return "󰝚"
+      case "volume": return "󰕾"
+      case "none": return "󰅖"
+      default: return "󰜔"
+      }
+    }
+
+    function tintFor(kind) {
+      switch (kind) {
+      case "workspace": return page.system.blue
+      case "battery": return page.system.green
+      case "network": return page.system.cyan
+      case "weather": return page.system.yellow
+      case "media": return page.system.purple
+      case "volume": return page.system.orange
+      case "none": return page.system.gray
+      default: return page.system.blue
+      }
+    }
+
+    readonly property var moduleChoices: [
+      { label: "󱂬  Workspace", short: "Workspace", value: "workspace" },
+      { label: "󰁹  Battery", short: "Battery", value: "battery" },
+      { label: "󰤨  Network", short: "Network", value: "network" },
+      { label: "󰖐  Weather", short: "Weather", value: "weather" },
+      { label: "󰝚  Now Playing", short: "Now Playing", value: "media" },
+      { label: "󰕾  Volume", short: "Volume", value: "volume" },
+      { label: "󰅖  None", short: "None", value: "none" }
+    ]
+
+    SettingsRow {
+      view: page.view
+      icon: glanceGroup.iconFor(page.view.settings.glanceLeft1 || "workspace")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft1 || "workspace")
+      label: "Left slot 1"
+      detail: "First item on the left side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceLeft1 || "workspace"
+        onPicked: function(v) { page.view.settings.glanceLeft1 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: glanceGroup.iconFor(page.view.settings.glanceLeft2 || "battery")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft2 || "battery")
+      label: "Left slot 2"
+      detail: "Second item on the left side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceLeft2 || "battery"
+        onPicked: function(v) { page.view.settings.glanceLeft2 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: glanceGroup.iconFor(page.view.settings.glanceRight1 || "weather")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight1 || "weather")
+      label: "Right slot 1"
+      detail: "First item on the right side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceRight1 || "weather"
+        onPicked: function(v) { page.view.settings.glanceRight1 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: glanceGroup.iconFor(page.view.settings.glanceRight2 || "volume")
+      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight2 || "volume")
+      label: "Right slot 2"
+      detail: "Second item on the right side"
+      SettingsPopUp {
+        view: page.view
+        options: glanceGroup.moduleChoices
+        value: page.view.settings.glanceRight2 || "volume"
+        onPicked: function(v) { page.view.settings.glanceRight2 = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰝚"
+      iconTint: page.system.purple
+      label: "Floating music pill"
+      detail: "Show a satellite player pill under the island when music is playing"
+      last: page.view.settings.glanceMediaSatellite === false
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.glanceMediaSatellite !== false
+        onToggled: function(on) { page.view.settings.glanceMediaSatellite = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      visible: page.view.settings.glanceMediaSatellite !== false
+      icon: "󰃚"
+      iconTint: page.system.purple
+      label: "Music pill border"
+      detail: "Draw a thin subtle outline around the floating music pill"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.glanceMediaSatelliteBorder !== false
+        onToggled: function(on) { page.view.settings.glanceMediaSatelliteBorder = on }
       }
     }
   }

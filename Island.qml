@@ -38,7 +38,7 @@ Item {
   readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
   // The live-activity pills' height, and the resting clock's.
   readonly property real pillHeight: settings.notch ? 40 : 44
-  readonly property real clockHeight: settings.notch ? 36 : 40
+  readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
 
   readonly property var nowPlaying: nowPlayingData
   NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
@@ -83,19 +83,47 @@ Item {
   readonly property var clockDate: clock.date
   // The resting pill's text in the chosen Settings → Clock Format (one of
   // clockFormats), following the 24-hour and AM/PM switches.
-  readonly property var clockFormats: ["time", "day", "date", "short", "weekday"]
+  readonly property var clockFormats: [
+    "time", "stackedDay", "stackedDate", "stackedFull",
+    "day", "date", "short", "weekday", "full", "numeric"
+  ]
+  function isStackedClock(format) {
+    return format === "stackedDay" || format === "stackedDate" || format === "stackedFull"
+  }
+  readonly property bool clockStacked: isStackedClock(settings.clockFormat)
+  function formatClockTime(date) {
+    var en = Qt.locale("en_US")
+    return settings.clock24h ? en.toString(date, "HH:mm")
+      : settings.clockAmPm ? en.toString(date, "h:mm AP")
+      : en.toString(date, "h:mm AP").replace(/\s*[AP]M$/i, "")
+  }
+  function formatClockSub(date, format) {
+    var en = Qt.locale("en_US")
+    switch (format) {
+    case "stackedDay": return en.toString(date, "dddd")
+    case "stackedDate": return en.toString(date, "d MMM")
+    case "stackedFull": return en.toString(date, "ddd d MMM")
+    default: return ""
+    }
+  }
+  readonly property string clockTimeText: formatClockTime(clockDate)
+  readonly property string clockSubText: formatClockSub(clockDate, settings.clockFormat)
+  readonly property string clockWidestText: clockTimeText.length > clockSubText.length ? clockTimeText : clockSubText
   readonly property string clockText: formatClock(clockDate, settings.clockFormat)
   function formatClock(date, format) {
     var en = Qt.locale("en_US")
-    // Qt only counts hours to 12 when there's an AM/PM marker; iOS drops it.
-    var time = settings.clock24h ? en.toString(date, "HH:mm")
-      : settings.clockAmPm ? en.toString(date, "h:mm AP")
-      : en.toString(date, "h:mm AP").replace(/\s*[AP]M$/i, "")
+    var time = formatClockTime(date)
     switch (format) {
+    case "stackedDay":
+    case "stackedDate":
+    case "stackedFull":
+      return time + "\n" + formatClockSub(date, format)
     case "day": return en.toString(date, "ddd") + " " + time
     case "date": return en.toString(date, "d MMM") + " " + time
     case "short": return en.toString(date, "ddd d MMM") + " " + time
     case "weekday": return en.toString(date, "dddd") + " " + time
+    case "full": return en.toString(date, "ddd d MMM yyyy") + " " + time
+    case "numeric": return en.toString(date, "dd/MM/yyyy") + " " + time
     default: return time
     }
   }
@@ -530,7 +558,8 @@ Item {
         mask: Region {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
-            Region { item: window.revealArmed ? revealStrip : null }
+            Region { item: window.revealArmed ? revealStrip : null },
+            Region { item: satellitePill && satellitePill.shown ? satellitePill : null }
           ]
         }
         MouseArea {
@@ -609,10 +638,41 @@ Item {
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
+          readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
+          property bool glanceActive: false
+          readonly property bool hasGlanceItems: glanceBar ? glanceBar.hasItems : false
+          Timer {
+            id: glanceLeaveTimer
+            interval: 180
+            onTriggered: island.glanceActive = false
+          }
+          onGlanceHoveredChanged: {
+            if (glanceHovered) {
+              glanceLeaveTimer.stop()
+              if (root.settings.hoverExpand && island.hasGlanceItems && root.restingFree && !root.downloadPill) island.glanceActive = true
+            } else {
+              glanceLeaveTimer.restart()
+            }
+          }
+          Connections {
+            target: root
+            function onViewChanged() {
+              if (root.view !== "rest") {
+                island.glanceActive = false
+                glanceLeaveTimer.stop()
+              }
+            }
+          }
+          readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && island.hasGlanceItems && root.restingFree && !root.downloadPill
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
-          readonly property real clockExtra: Math.max(0, Math.ceil(clockMetrics.advanceWidth) + 56 - 100)
+          readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
+          readonly property real baseGlanceWidth: root.settings.notch ? 420 : 440
+          readonly property real glanceWidth: glanceBar && glanceBar.neededWidth > 0
+            ? Math.min(baseGlanceWidth + clockExtra, Math.max(180, glanceBar.neededWidth))
+            : baseGlanceWidth + clockExtra
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
+            : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
@@ -627,7 +687,7 @@ Item {
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
-          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch
+          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.isGlanceExpanded
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
           // The springs run in hundredths, as they settle to a tenth of a unit.
@@ -741,12 +801,19 @@ Item {
             WorkspacePill { host: root; anchors.fill: parent }
             AddonPills { host: root; anchors.fill: parent }
             RecordingPill { host: root; anchors.fill: parent }
-            MediaPill { host: root; anchors.fill: parent }
+            MediaPill { host: root; shape: island; anchors.fill: parent }
             DownloadPill { host: root; anchors.fill: parent }
           }
 
+          GlanceBar {
+            id: glanceBar
+            host: root
+            shown: island.isGlanceExpanded
+            clockWidth: Math.max(clockLabel.width, clockLabel.advanceWidth || clockMetrics.advanceWidth)
+            anchors.fill: parent
+          }
           IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
-          TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockText }
+          TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockStacked ? root.clockWidestText : root.clockText }
 
           Views { id: views; host: root; anchors.fill: parent }
         }
@@ -761,9 +828,9 @@ Item {
           height: island.height
           scale: island.scale
           transformOrigin: island.transformOrigin
-          opacity: root.surfaceOpen ? 1 : island.lifted ? 0.6 : 0
+          opacity: root.surfaceOpen ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
@@ -775,6 +842,14 @@ Item {
               PathSvg { path: island.edgeOutline }
             }
           }
+        }
+
+        MediaSatellitePill {
+          id: satellitePill
+          host: root
+          shape: island
+          hasMediaInGlance: glanceBar.left1Kind === "media" || glanceBar.left2Kind === "media"
+            || glanceBar.right1Kind === "media" || glanceBar.right2Kind === "media"
         }
       }
     }
