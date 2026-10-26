@@ -9,10 +9,16 @@ import "../addons/weather"
 // - Clicking Network opens Wi-Fi settings.
 // - Clicking Volume or Battery opens Control Center.
 // - Clicking Workspace switches or shows workspace HUD.
+//
+// Guaranteed clock clearance: Left and right containers are strictly bounded
+// against a central exclusion reserve around the clock label, and variable-length
+// items (media title, network SSID) dynamically compute their max text width
+// to elide cleanly with ellipsis instead of colliding with the clock.
 Item {
   id: glanceBar
   required property var host
   property bool shown: false
+  property real clockWidth: 70
 
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
@@ -35,6 +41,8 @@ Item {
   readonly property string right1Kind: (!hasConfiguredMedia && isMediaPlaying) ? "media" : rawRight1Kind
   readonly property string right2Kind: rawRight2Kind
 
+  readonly property real sideMargin: glanceBar.host.settings.notch ? 18 : 16
+
   function componentFor(kind) {
     switch (kind) {
     case "workspace": return compWorkspace
@@ -45,6 +53,14 @@ Item {
     case "volume": return compVolume
     default: return null
     }
+  }
+
+  // --- Center Clock Exclusion Zone ---
+  Item {
+    id: centerReserve
+    anchors.centerIn: parent
+    width: Math.max(glanceBar.clockWidth, 60) + 24
+    height: parent.height
   }
 
   // --- Module Component Definitions ---
@@ -149,6 +165,17 @@ Item {
       readonly property bool online: net && net.length > 0
       readonly property bool wired: online && net[0].wired
 
+      readonly property real containerWidth: netItem.parent && (netItem.parent === leftL1 || netItem.parent === leftL2)
+        ? leftContainer.width : rightContainer.width
+      readonly property real otherWidth: {
+        if (netItem.parent === rightL1) return rightL2.item ? (rightL2.item.implicitWidth + 17) : 0
+        if (netItem.parent === rightL2) return rightL1.item ? (rightL1.item.implicitWidth + 17) : 0
+        if (netItem.parent === leftL1) return leftL2.item ? (leftL2.item.implicitWidth + 17) : 0
+        if (netItem.parent === leftL2) return leftL1.item ? (leftL1.item.implicitWidth + 17) : 0
+        return 45
+      }
+      readonly property real maxNetTextWidth: Math.max(30, Math.min(80, containerWidth - otherWidth - 20))
+
       Row {
         id: netRow
         spacing: 4
@@ -167,7 +194,7 @@ Item {
           font.pixelSize: glanceBar.host.theme.px(11)
           font.weight: Font.Medium
           elide: Text.ElideRight
-          width: Math.min(implicitWidth, 65)
+          width: Math.min(implicitWidth, netItem.maxNetTextWidth)
           anchors.verticalCenter: parent.verticalCenter
         }
       }
@@ -244,6 +271,17 @@ Item {
       readonly property string artist: nowPlaying && nowPlaying.artist ? nowPlaying.artist : (player && player.trackArtist ? String(player.trackArtist) : "")
       readonly property string artUrl: nowPlaying && nowPlaying.art ? nowPlaying.art : ""
 
+      readonly property real containerWidth: mediaItem.parent && (mediaItem.parent === leftL1 || mediaItem.parent === leftL2)
+        ? leftContainer.width : rightContainer.width
+      readonly property real otherWidth: {
+        if (mediaItem.parent === rightL1) return rightL2.item ? (rightL2.item.implicitWidth + 17) : 0
+        if (mediaItem.parent === rightL2) return rightL1.item ? (rightL1.item.implicitWidth + 17) : 0
+        if (mediaItem.parent === leftL1) return leftL2.item ? (leftL2.item.implicitWidth + 17) : 0
+        if (mediaItem.parent === leftL2) return leftL1.item ? (leftL1.item.implicitWidth + 17) : 0
+        return 45
+      }
+      readonly property real maxTextWidth: Math.max(30, containerWidth - otherWidth - 21)
+
       Row {
         id: mediaRow
         spacing: 5
@@ -286,7 +324,7 @@ Item {
           font.pixelSize: glanceBar.host.theme.px(11)
           font.weight: Font.Medium
           elide: Text.ElideRight
-          width: Math.min(implicitWidth, 105)
+          width: Math.min(implicitWidth, mediaItem.maxTextWidth)
           anchors.verticalCenter: parent.verticalCenter
         }
       }
@@ -343,63 +381,83 @@ Item {
     }
   }
 
-  // --- Left Slot: Slot 1 + Divider + Slot 2 ---
-  Row {
-    id: leftSlot
+  // --- Left Container: Strictly bounded between parent.left and centerReserve.left ---
+  Item {
+    id: leftContainer
     anchors.left: parent.left
-    anchors.leftMargin: glanceBar.host.settings.notch ? 18 : 16
+    anchors.leftMargin: glanceBar.sideMargin
+    anchors.right: centerReserve.left
+    anchors.rightMargin: 8
     anchors.verticalCenter: parent.verticalCenter
-    spacing: 7
+    height: parent.height
+    clip: true
 
-    Loader {
-      id: leftL1
+    Row {
+      id: leftSlot
+      anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
-      sourceComponent: glanceBar.componentFor(glanceBar.left1Kind)
-    }
+      spacing: 7
 
-    Rectangle {
-      width: 3
-      height: 3
-      radius: 1.5
-      color: Qt.rgba(1, 1, 1, 0.25)
-      anchors.verticalCenter: parent.verticalCenter
-      visible: !!leftL1.item && !!leftL2.item
-    }
+      Loader {
+        id: leftL1
+        anchors.verticalCenter: parent.verticalCenter
+        sourceComponent: glanceBar.componentFor(glanceBar.left1Kind)
+      }
 
-    Loader {
-      id: leftL2
-      anchors.verticalCenter: parent.verticalCenter
-      sourceComponent: glanceBar.componentFor(glanceBar.left2Kind)
+      Rectangle {
+        width: 3
+        height: 3
+        radius: 1.5
+        color: Qt.rgba(1, 1, 1, 0.25)
+        anchors.verticalCenter: parent.verticalCenter
+        visible: !!leftL1.item && !!leftL2.item
+      }
+
+      Loader {
+        id: leftL2
+        anchors.verticalCenter: parent.verticalCenter
+        sourceComponent: glanceBar.componentFor(glanceBar.left2Kind)
+      }
     }
   }
 
-  // --- Right Slot: Slot 1 + Divider + Slot 2 ---
-  Row {
-    id: rightSlot
+  // --- Right Container: Strictly bounded between centerReserve.right and parent.right ---
+  Item {
+    id: rightContainer
     anchors.right: parent.right
-    anchors.rightMargin: glanceBar.host.settings.notch ? 18 : 16
+    anchors.rightMargin: glanceBar.sideMargin
+    anchors.left: centerReserve.right
+    anchors.leftMargin: 8
     anchors.verticalCenter: parent.verticalCenter
-    spacing: 7
+    height: parent.height
+    clip: true
 
-    Loader {
-      id: rightL1
+    Row {
+      id: rightSlot
+      anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
-      sourceComponent: glanceBar.componentFor(glanceBar.right1Kind)
-    }
+      spacing: 7
 
-    Rectangle {
-      width: 3
-      height: 3
-      radius: 1.5
-      color: Qt.rgba(1, 1, 1, 0.25)
-      anchors.verticalCenter: parent.verticalCenter
-      visible: !!rightL1.item && !!rightL2.item
-    }
+      Loader {
+        id: rightL1
+        anchors.verticalCenter: parent.verticalCenter
+        sourceComponent: glanceBar.componentFor(glanceBar.right1Kind)
+      }
 
-    Loader {
-      id: rightL2
-      anchors.verticalCenter: parent.verticalCenter
-      sourceComponent: glanceBar.componentFor(glanceBar.right2Kind)
+      Rectangle {
+        width: 3
+        height: 3
+        radius: 1.5
+        color: Qt.rgba(1, 1, 1, 0.25)
+        anchors.verticalCenter: parent.verticalCenter
+        visible: !!rightL1.item && !!rightL2.item
+      }
+
+      Loader {
+        id: rightL2
+        anchors.verticalCenter: parent.verticalCenter
+        sourceComponent: glanceBar.componentFor(glanceBar.right2Kind)
+      }
     }
   }
 }

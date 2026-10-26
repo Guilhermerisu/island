@@ -662,10 +662,11 @@ Item {
             }
           }
           readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree && !root.downloadPill
-          readonly property real glanceWidth: root.settings.notch ? 400 : 420
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
+          readonly property real baseGlanceWidth: root.settings.notch ? 420 : 440
+          readonly property real glanceWidth: baseGlanceWidth + clockExtra
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
@@ -800,7 +801,13 @@ Item {
             DownloadPill { host: root; anchors.fill: parent }
           }
 
-          GlanceBar { id: glanceBar; host: root; shown: island.isGlanceExpanded; anchors.fill: parent }
+          GlanceBar {
+            id: glanceBar
+            host: root
+            shown: island.isGlanceExpanded
+            clockWidth: Math.max(clockLabel.width, clockLabel.advanceWidth || clockMetrics.advanceWidth)
+            anchors.fill: parent
+          }
           IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
           TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockStacked ? root.clockWidestText : root.clockText }
 
