@@ -662,7 +662,7 @@ Item {
             }
           }
           readonly property bool isGlanceExpanded: island.glanceActive && root.settings.hoverExpand && root.restingFree && !root.downloadPill
-          readonly property real glanceWidth: root.settings.notch ? 380 : 400
+          readonly property real glanceWidth: root.settings.notch ? 400 : 420
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
