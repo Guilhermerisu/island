@@ -44,7 +44,7 @@ Item {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general time format 12-hour clock style hide automatically appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile",
+      "General": "general time format 12-hour clock style hide automatically appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile omarchy menu search apps applications",
       "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads screen recording record system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration",
       "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
