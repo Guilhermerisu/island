@@ -701,7 +701,7 @@ Item {
           Connections {
             target: root
             function onViewChanged() {
-              if (root.view !== "rest") {
+              if (root.view !== "rest" && !(root.volumePill && island.capsulesActive)) {
                 island.glanceActive = false
                 island.capsulesActive = false
                 glanceLeaveTimer.stop()
@@ -712,7 +712,7 @@ Item {
           }
           readonly property bool hasNonMediaActivePill: pills.active !== null && pills.active !== mediaPillItem
           readonly property bool isGlanceExpanded: island.glanceActive && (root.hoverMode === "expand") && island.hasGlanceItems && root.restingFree && !root.downloadPill && !island.hasNonMediaActivePill
-          readonly property bool capsulesShown: island.capsulesActive && (root.hoverMode === "capsules") && root.resting
+          readonly property bool capsulesShown: island.capsulesActive && (root.hoverMode === "capsules") && (root.resting || root.volumePill)
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
