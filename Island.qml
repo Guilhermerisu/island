@@ -427,7 +427,7 @@ Item {
   // A tray app whose own menu the tray view opens straight to (see
   // TrayList), set by a right click on it in the hover capsules.
   property var trayMenuFor: null
-  readonly property string hoverMode: settings.hoverStyle ? settings.hoverStyle : settings.hoverCapsules ? "capsules" : settings.hoverExpand ? "expand" : "expand"
+  readonly property string hoverMode: settings.hoverStyle ? settings.hoverStyle : settings.hoverCapsules ? "capsules" : settings.hoverExpand ? "expand" : "none"
 
   function toggleView(name) {
     view = view === name ? "rest" : name

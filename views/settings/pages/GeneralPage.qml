@@ -98,7 +98,7 @@ ColumnLayout {
           { label: "󰂚  Flanking capsules", short: "Capsules", value: "capsules" },
           { label: "󰅖  Disabled", short: "Disabled", value: "none" }
         ]
-        value: page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "expand")
+        value: page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")
         onPicked: function(v) {
           page.view.settings.hoverStyle = v
           page.view.settings.hoverExpand = (v === "expand")
@@ -112,7 +112,7 @@ ColumnLayout {
     id: glanceGroup
     view: page.view
     title: "Glance on hover"
-    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : "expand")) === "expand"
+    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")) === "expand"
 
     function iconFor(kind) {
       switch (kind) {
@@ -234,7 +234,7 @@ ColumnLayout {
   SettingsGroup {
     view: page.view
     title: "Capsules on hover"
-    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : "expand")) === "capsules"
+    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")) === "capsules"
     SettingsRow {
       view: page.view
       icon: "󰀻"

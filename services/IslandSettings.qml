@@ -26,7 +26,7 @@ Item {
       property bool clock24h: true
       property bool clockAmPm: false
       property string clockFormat: "time"
-      property string hoverStyle: "expand"
+      property string hoverStyle: "none"
       property bool hoverExpand: hoverStyle === "expand"
       property bool hoverCapsules: hoverStyle === "capsules"
       property string glanceLeft1: "workspace"
