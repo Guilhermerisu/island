@@ -424,14 +424,15 @@ Item {
 
   property string menuRoute: "root"
 
+  // A tray app whose own menu the tray view opens straight to (see
+  // TrayList), set by a right click on it in the hover capsules.
+  property var trayMenuFor: null
+  readonly property string hoverMode: settings.hoverStyle ? settings.hoverStyle : settings.hoverCapsules ? "capsules" : settings.hoverExpand ? "expand" : "expand"
+
   function toggleView(name) {
     view = view === name ? "rest" : name
     return view
   }
-
-  // A tray app whose own menu the tray view opens straight to (see
-  // TrayList), set by a right click on it in the hover capsules.
-  property var trayMenuFor: null
 
   IpcHandler {
     target: "guilhermerisu.island"
@@ -563,8 +564,9 @@ Item {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
             Region { item: window.revealArmed ? revealStrip : null },
-            Region { item: hoverCapsules.shown ? hoverCapsules.leftGroup : null },
-            Region { item: hoverCapsules.shown ? hoverCapsules.rightGroup : null }
+            Region { item: satellitePill && satellitePill.shown ? satellitePill : null },
+            Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.leftGroup : null },
+            Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.rightGroup : null }
           ]
         }
         MouseArea {
@@ -637,7 +639,7 @@ Item {
           id: hoverCapsules
           host: root
           island: island
-          shown: island.capsulesShown && !window.islandHidden
+          shown: (root.hoverMode === "capsules") && island.capsulesShown && !window.islandHidden
           anchors.fill: parent
           // Under the island, so the capsules can start tucked beneath it.
           z: -1
@@ -655,7 +657,24 @@ Item {
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
-          readonly property bool capsulesHovered: clockHover.hovered || islandPointerHover.hovered || hoverCapsules.hovered
+          readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
+          property bool glanceActive: false
+          readonly property bool hasGlanceItems: glanceBar ? glanceBar.hasItems : false
+          Timer {
+            id: glanceLeaveTimer
+            interval: 180
+            onTriggered: island.glanceActive = false
+          }
+          onGlanceHoveredChanged: {
+            if (glanceHovered) {
+              glanceLeaveTimer.stop()
+              if (root.hoverMode === "expand" && island.hasGlanceItems && root.restingFree && !root.downloadPill && !island.hasNonMediaActivePill) island.glanceActive = true
+            } else {
+              glanceLeaveTimer.restart()
+            }
+          }
+
+          readonly property bool capsulesHovered: clockHover.hovered || islandPointerHover.hovered || (hoverCapsules && hoverCapsules.hovered)
           property bool capsulesActive: false
           Timer {
             id: capsulesLeaveTimer
@@ -667,7 +686,7 @@ Item {
           Timer {
             id: capsulesEnterTimer
             interval: root.theme.scaled(80)
-            onTriggered: if (root.settings.hoverCapsules && root.resting) island.capsulesActive = true
+            onTriggered: if (root.hoverMode === "capsules" && root.resting) island.capsulesActive = true
           }
           onCapsulesHoveredChanged: {
             if (capsulesHovered) {
@@ -678,25 +697,37 @@ Item {
               capsulesLeaveTimer.restart()
             }
           }
+
           Connections {
             target: root
             function onViewChanged() {
               if (root.view !== "rest") {
+                island.glanceActive = false
                 island.capsulesActive = false
+                glanceLeaveTimer.stop()
                 capsulesLeaveTimer.stop()
+                capsulesEnterTimer.stop()
               }
             }
           }
-          readonly property bool capsulesShown: island.capsulesActive && root.settings.hoverCapsules && root.resting
+          readonly property bool hasNonMediaActivePill: pills.active !== null && pills.active !== mediaPillItem
+          readonly property bool isGlanceExpanded: island.glanceActive && (root.hoverMode === "expand") && island.hasGlanceItems && root.restingFree && !root.downloadPill && !island.hasNonMediaActivePill
+          readonly property bool capsulesShown: island.capsulesActive && (root.hoverMode === "capsules") && root.resting
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
+          readonly property real baseGlanceWidth: root.settings.notch ? 420 : 440
+          readonly property real glanceWidth: glanceBar && glanceBar.neededWidth > 0
+            ? Math.min(baseGlanceWidth + clockExtra, Math.max(180, glanceBar.neededWidth))
+            : baseGlanceWidth + clockExtra
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
+            : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
             : 100 + clockExtra
           readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
+            : island.isGlanceExpanded ? (root.mediaPill ? root.pillHeight : root.clockHeight)
             : activePill ? activePill.pillHeight
             : root.view === "rest" ? root.clockHeight : 52
           readonly property real targetRadius: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
@@ -706,11 +737,11 @@ Item {
           radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
           topLeftRadius: root.settings.notch ? 0 : radius
           topRightRadius: root.settings.notch ? 0 : radius
-          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.capsulesShown
+          readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.isGlanceExpanded && !island.capsulesShown
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
           // The springs run in hundredths, as they settle to a tenth of a unit.
-          readonly property bool squished: islandTap.pressed || squishHold.running
+          readonly property bool squished: !root.settings.notch && (islandTap.pressed || squishHold.running)
           Timer { id: squishHold; interval: root.theme.motionDuration("press") }
           MotionSpring { id: liftSpring; theme: root.theme; pace: "quick"; target: island.lifted ? 100 : 0 }
           MotionSpring {
@@ -720,7 +751,7 @@ Item {
             bounce: island.squished ? 0 : 0.35
             target: island.squished ? 100 : 0
           }
-          scale: 1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003
+          scale: root.settings.notch ? 1.0 : (1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003)
           // With the notch the island hangs from the top edge, so it scales from there.
           transformOrigin: root.settings.notch ? Item.Top : Item.Center
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
@@ -743,9 +774,11 @@ Item {
           // The same outline inset half a pixel, so a 1px edge stroke lands
           // inside the shape. Only built while the edge shows, so a resting
           // pill's morphs redraw one outline, not two.
-          readonly property string edgeOutline: !islandEdge.visible ? "" : Squircle.path(width - 1, height - 1, ({
-            topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
-            bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
+          readonly property string edgeOutline: !islandEdge.visible ? ""
+            : root.settings.notch ? Squircle.notchPath(width - 1, height - 1, Math.max(0, radius - 0.5), 10, 0.6)
+            : Squircle.path(width - 1, height - 1, ({
+                topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
+                bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
           Shape {
             anchors.fill: parent
             preferredRendererType: Shape.CurveRenderer
@@ -820,8 +853,16 @@ Item {
             WorkspacePill { host: root; anchors.fill: parent }
             AddonPills { host: root; anchors.fill: parent }
             RecordingPill { host: root; anchors.fill: parent }
-            MediaPill { host: root; anchors.fill: parent }
+            MediaPill { id: mediaPillItem; host: root; shape: island; anchors.fill: parent }
             DownloadPill { host: root; anchors.fill: parent }
+          }
+
+          GlanceBar {
+            id: glanceBar
+            host: root
+            shown: island.isGlanceExpanded
+            clockWidth: Math.max(clockLabel.width, clockLabel.advanceWidth || clockMetrics.advanceWidth)
+            anchors.fill: parent
           }
 
           IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
@@ -840,9 +881,9 @@ Item {
           height: island.height
           scale: island.scale
           transformOrigin: island.transformOrigin
-          opacity: root.surfaceOpen ? 1 : island.lifted ? 0.6 : 0
+          opacity: root.surfaceOpen ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
@@ -854,6 +895,14 @@ Item {
               PathSvg { path: island.edgeOutline }
             }
           }
+        }
+
+        MediaSatellitePill {
+          id: satellitePill
+          host: root
+          shape: island
+          hasMediaInGlance: glanceBar ? (glanceBar.left1Kind === "media" || glanceBar.left2Kind === "media"
+            || glanceBar.right1Kind === "media" || glanceBar.right2Kind === "media") : false
         }
       }
     }
@@ -880,10 +929,12 @@ Item {
     property bool mirrored: false
     readonly property real r: 10
     visible: root.settings.notch && shape.y > -r
-    x: mirrored ? shape.x + shape.width : shape.x - r
+    x: mirrored ? shape.x + shape.width - 0.5 : shape.x - r
     y: shape.y
-    width: r
+    width: r + 0.5
     height: r
+    property real edgeOpacity: root.surfaceOpen ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
+    Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer
     ShapePath {
@@ -891,8 +942,26 @@ Item {
       fillColor: root.theme.background
       PathSvg {
         readonly property real r: ear.r
-        path: ear.mirrored ? "M 0 0 L 0 " + r + " A " + r + " " + r + " 0 0 1 " + r + " 0 Z"
-          : "M " + r + " 0 L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z"
+        path: ear.mirrored
+          ? "M 0 0 L 0 " + r + " L 0.5 " + r + " A " + r + " " + r + " 0 0 1 " + (r + 0.5) + " 0 Z"
+          : "M " + (r + 0.5) + " 0 L " + (r + 0.5) + " " + r + " L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z"
+      }
+    }
+    Shape {
+      anchors.fill: parent
+      preferredRendererType: Shape.CurveRenderer
+      opacity: ear.edgeOpacity
+      visible: opacity > 0.01
+      ShapePath {
+        strokeWidth: 1
+        strokeColor: root.theme.fill("raised")
+        fillColor: "transparent"
+        PathSvg {
+          readonly property real r: ear.r
+          path: ear.mirrored
+            ? "M 0.5 " + r + " A " + r + " " + r + " 0 0 1 " + (r + 0.5) + " 0"
+            : "M " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0"
+        }
       }
     }
   }

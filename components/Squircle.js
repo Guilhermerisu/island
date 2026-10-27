@@ -50,3 +50,28 @@ function path(width, height, radii, smoothing) {
     + " c " + f(tl.c) + " " + f(-tl.d) + " " + f(tl.b + tl.c) + " " + f(-tl.d) + " " + f(tl.a + tl.b + tl.c) + " " + f(-tl.d) + " "
   return s + "Z"
 }
+
+function notchPath(width, height, radius, earRadius, smoothing) {
+  var w = Math.max(0, width), h = Math.max(0, height)
+  var budget = Math.min(w, h) / 2
+  var br = corner(radius, smoothing, budget)
+  var bl = corner(radius, smoothing, budget)
+  function f(n) { return n.toFixed(2) }
+  var er = earRadius || 10
+  var s = "M " + f(w) + " " + f(er) + " "
+  s += "L " + f(w) + " " + f(h - br.p) + " "
+  if (br.r > 0) {
+    s += "c 0 " + f(br.a) + " 0 " + f(br.a + br.b) + " " + f(-br.d) + " " + f(br.a + br.b + br.c)
+      + " a " + f(br.r) + " " + f(br.r) + " 0 0 1 " + f(-br.arc) + " " + f(br.arc)
+      + " c " + f(-br.c) + " " + f(br.d) + " " + f(-(br.b + br.c)) + " " + f(br.d) + " " + f(-(br.a + br.b + br.c)) + " " + f(br.d) + " "
+  }
+  s += "L " + f(bl.p) + " " + f(h) + " "
+  if (bl.r > 0) {
+    s += "c " + f(-bl.a) + " 0 " + f(-(bl.a + bl.b)) + " 0 " + f(-(bl.a + bl.b + bl.c)) + " " + f(-bl.d)
+      + " a " + f(bl.r) + " " + f(bl.r) + " 0 0 1 " + f(-bl.arc) + " " + f(-bl.arc)
+      + " c " + f(-bl.d) + " " + f(-bl.c) + " " + f(-bl.d) + " " + f(-(bl.b + bl.c)) + " " + f(-bl.d) + " " + f(-(bl.a + bl.b + bl.c)) + " "
+  }
+  s += "L 0 " + f(er)
+  return s
+}
+
