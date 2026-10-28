@@ -269,7 +269,7 @@ Item {
       function load() {
         if (!wanted) { source = ""; return }
         var e = modelData
-        slot.setSource(Qt.resolvedUrl(e.source), {
+        slot.setSource(String(Qt.resolvedUrl(e.source)).replace(/^qs:/, "file:"), {
           host: addons.host,
           addon: {
             id: e.id, name: e.name,
