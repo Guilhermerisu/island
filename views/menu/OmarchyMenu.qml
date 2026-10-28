@@ -2,9 +2,11 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../../components"
+import "../../components/IconSource.js" as IconSource
 // Omarchy's own menu model: parsing, merging your overrides, conditions,
 // labels, and search ranking all behave exactly like its menu.
 import "file:///usr/share/omarchy/shell/plugins/menu/MenuModel.js" as MenuModel
+import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 
 // The Omarchy menu in the island: Omarchy's default menu merged with your
 // ~/.config/omarchy/extensions/omarchy-menu.jsonc. Enter (or →) opens a
@@ -36,6 +38,7 @@ ListPicker {
   }
 
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
+  property var launcher: null
 
   // ---------- Menu data ----------
 
@@ -68,7 +71,42 @@ ListPicker {
     var merged = MenuModel.mergeMenuSources(defaultItems, userItems)
     items_ = merged.items
     itemOrder = merged.itemOrder
+    mergeApps()
     evaluateGuards()
+  }
+
+  readonly property bool searchApps: !!host.settings.menuApps && !!launcher && typeof MenuModel.mergeAppRows === "function"
+  readonly property var hiddenApps: launcher ? launcher.hiddenIds : ({})
+  onSearchAppsChanged: mergeApps()
+  onHiddenAppsChanged: mergeApps()
+  Connections {
+    target: DesktopEntries.applications
+    function onValuesChanged() { menu.mergeApps() }
+  }
+  function mergeApps() {
+    if (typeof MenuModel.mergeAppRows !== "function") return
+    var rows = []
+    if (searchApps) {
+      var hidden = hiddenApps
+      AppSearch.sortedEntries(DesktopEntries.applications.values || [], "", function(entry) {
+        return !!hidden[String(entry.id || "")]
+      }).forEach(function(row) {
+        var app = row.entry
+        var appId = String(app.id || "")
+        if (!appId) return
+        var subtext = AppSearch.entrySubtext(app)
+        var aliases = subtext ? [subtext] : []
+        try {
+          if (app.keywords && typeof app.keywords.join === "function") aliases = aliases.concat(app.keywords)
+        } catch (e) { }
+        rows.push({ id: "apps." + appId, parent: "apps", kind: "app", icon: "", appIcon: String(app.icon || ""),
+          appId: appId, label: AppSearch.entryName(app), title: "", target: "", description: subtext,
+          action: "", provider: "", aliases: aliases, when: "", checked: "", order: 0 })
+      })
+    }
+    var merged = MenuModel.mergeAppRows(items_, itemOrder, rows)
+    items_ = merged.items
+    itemOrder = merged.itemOrder
   }
 
   // `when` (show/hide) and `checked` (✓) conditions, run as one batch the
@@ -252,6 +290,7 @@ ListPicker {
     // The Apps submenu is a native list in Omarchy's menu; the island's
     // launcher covers it.
     if (row.provider === "apps") { host.view = "apps"; return }
+    if (row.kind === "app") { if (launcher) launcher.launch({ id: row.appId }); return }
     if (row.kind === "menu" || row.kind === "link") openMenu(row.target || row.itemId, true)
     else if (row.action) run(row.action)
   }
@@ -263,6 +302,7 @@ ListPicker {
       property bool selected: false
       readonly property bool isMenu: entry.kind === "menu" || entry.kind === "link"
       readonly property bool isAddon: !!(entry && entry.addonRow)
+      readonly property bool isApp: entry.kind === "app"
 
       Rectangle {
         id: addonTile
@@ -280,6 +320,17 @@ ListPicker {
           font.pixelSize: menu.host.theme.px(15)
         }
       }
+      Image {
+        id: appIcon
+        anchors.centerIn: icon
+        width: 24; height: 24
+        visible: menuRow.isApp && status === Image.Ready
+        source: menuRow.isApp ? IconSource.source(menuRow.entry.appIcon) : ""
+        sourceSize.width: 48
+        sourceSize.height: 48
+        fillMode: Image.PreserveAspectFit
+        asynchronous: true
+      }
       Text {
         id: icon
         visible: !menuRow.isAddon
@@ -287,7 +338,8 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         width: 24
         horizontalAlignment: Text.AlignHCenter
-        text: String(menuRow.entry.icon || "")
+        text: menuRow.isApp ? "󰀻" : String(menuRow.entry.icon || "")
+        opacity: appIcon.visible ? 0 : 1
         color: menu.host.theme.muted
         font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
         font.pixelSize: menu.host.theme.px(17)

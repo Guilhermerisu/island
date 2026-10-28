@@ -72,6 +72,7 @@ Item {
       property bool reminderControl: false
       property bool autoHideFullscreen: false
       property bool autoHideTiling: false
+      property bool menuApps: false
       // Before Ask AI was an addon; carried over and cleared (see Addons.qml).
       property string askAi: ""
       // Addon id → enabled, and addon id → its options (see addons/Addons.qml).

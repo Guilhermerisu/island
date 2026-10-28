@@ -82,7 +82,7 @@ Item {
     host: views.host
     viewName: "apps"
     fixedWidth: 600
-    AppLauncher { host: views.host; active: appsSurface.active; anchors.fill: parent }
+    AppLauncher { id: appLauncher; host: views.host; active: appsSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -114,7 +114,7 @@ Item {
     host: views.host
     viewName: "menu"
     fixedWidth: 520
-    OmarchyMenu { host: views.host; active: menuSurface.active; anchors.fill: parent }
+    OmarchyMenu { host: views.host; launcher: appLauncher; active: menuSurface.active; anchors.fill: parent }
   }
 
   // A tray app's menu, opened from the hover capsules (see HoverCapsules)

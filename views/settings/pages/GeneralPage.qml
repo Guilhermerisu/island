@@ -358,6 +358,24 @@ ColumnLayout {
 
   SettingsGroup {
     view: page.view
+    title: "Omarchy Menu"
+    SettingsRow {
+      view: page.view
+      icon: "󰀻"
+      iconTint: page.system.blue
+      label: "Search apps"
+      detail: "Lists matching apps when searching the menu"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.menuApps
+        onToggled: function(on) { page.view.settings.menuApps = on }
+      }
+    }
+  }
+
+  SettingsGroup {
+    view: page.view
     title: "Appearance"
     SettingsRow {
       view: page.view
