@@ -185,6 +185,7 @@ Item {
     property color tint: capsules.ink
     signal clicked()
     signal rightClicked()
+    signal scrolled(int delta)
     anchors.verticalCenter: parent ? parent.verticalCenter : undefined
     color: on ? tint : capsules.faint
     font.family: capsules.theme.fontFamily
@@ -198,6 +199,7 @@ Item {
         if (mouse.button === Qt.RightButton) glyph.rightClicked()
         else glyph.clicked()
       }
+      onWheel: function(wheel) { glyph.scrolled(wheel.angleDelta.y) }
     }
   }
 
@@ -458,12 +460,9 @@ Item {
         tint: controls.muted ? capsules.theme.system.orange : capsules.ink
         onClicked: capsules.host.view = "controls"
         onRightClicked: if (controls.sink && controls.sink.audio) controls.sink.audio.muted = !controls.muted
-        WheelHandler {
-          onWheel: function(event) {
-            if (!controls.sink || !controls.sink.audio) return
-            var step = event.angleDelta.y > 0 ? 0.05 : -0.05
-            controls.sink.audio.volume = Math.max(0, Math.min(1, controls.volume + step))
-          }
+        onScrolled: function(delta) {
+          if (!controls.sink || !controls.sink.audio) return
+          controls.sink.audio.volume = Math.max(0, Math.min(1, controls.volume + (delta > 0 ? 0.05 : -0.05)))
         }
       }
       Row {
