@@ -85,6 +85,13 @@ ColumnLayout {
       font.pixelSize: cc.host.theme.px(15)
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
+      // The date opens the calendar, when its addon's on.
+      MouseArea {
+        anchors.fill: parent
+        enabled: !cc.editMode && cc.host.addons.isEnabled("calendar")
+        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        onClicked: cc.host.view = "calendar"
+      }
     }
     Item { Layout.fillWidth: true }
     Rectangle {
