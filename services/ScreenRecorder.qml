@@ -6,19 +6,19 @@ import Quickshell.Io
 // Omarchy's screen recording (omarchy-capture-screenrecording), for the
 // recording live activity and the control center's Screen Recording control.
 // Once gpu-screen-recorder is capturing, Omarchy's script writes the video's
-// path to /tmp/omarchy-screenrecord-filename, and removes it once the video
-// is saved, however the recording was started or stopped. While that file is
-// there, the recorder's process tells recording from saving (the script trims
-// and normalizes the video after it stops); nothing is polled otherwise.
+// path to a marker file, and removes it once the video is saved, however the
+// recording was started or stopped. While that file is there, the recorder's
+// process tells recording from saving (the script trims and normalizes the
+// video after it stops); nothing is polled otherwise.
 Item {
   id: recorder
-  // Omarchy now keeps the marker in the session runtime dir (it used /tmp),
-  // with the same fallback its script uses.
+  // Omarchy 4.5 keeps the marker in the session runtime dir, with the same
+  // fallback its script uses; 4.0 keeps it in /tmp.
   readonly property string runtimeDir: Quickshell.env("XDG_RUNTIME_DIR")
     || ((Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy")
-  readonly property string stateFile: runtimeDir + "/omarchy-screenrecord-filename"
+  readonly property string stateFile: (marker.count > 0 ? runtimeDir : "/tmp") + "/omarchy-screenrecord-filename"
 
-  readonly property bool present: marker.count > 0
+  readonly property bool present: marker.count > 0 || legacyMarker.count > 0
   // "idle", "recording", or "saving"
   property string phase: "idle"
   readonly property bool active: phase !== "idle"
@@ -31,6 +31,14 @@ Item {
   FolderListModel {
     id: marker
     folder: "file://" + recorder.runtimeDir
+    nameFilters: ["omarchy-screenrecord-filename"]
+    showDirs: false
+    onCountChanged: recorder.check()
+  }
+
+  FolderListModel {
+    id: legacyMarker
+    folder: "file:///tmp"
     nameFilters: ["omarchy-screenrecord-filename"]
     showDirs: false
     onCountChanged: recorder.check()
