@@ -21,6 +21,8 @@ Rectangle {
   // The round icon badge's size; addon tiles that draw their own badge
   // (Calendar) line up with it.
   readonly property real badgeSize: 38
+  // Laid out as Android's quick settings (icon over label) when a quarter row.
+  readonly property bool small: width > 0 && width < 160
   signal clicked()
   signal opened()
 
@@ -39,9 +41,9 @@ Rectangle {
 
   Rectangle {
     id: badge
-    anchors.left: parent.left
-    anchors.leftMargin: (t.height - height) / 2
-    anchors.verticalCenter: parent.verticalCenter
+    // Small: centred over the label, as Android's quick settings.
+    x: t.small ? (t.width - width) / 2 : (t.height - height) / 2
+    y: t.small ? 9 : (t.height - height) / 2
     width: t.badgeSize; height: t.badgeSize; radius: t.badgeSize / 2
     color: t.checked ? center.accent : center.well
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
@@ -54,7 +56,22 @@ Rectangle {
       font.pixelSize: center.host.theme.px(18)
     }
   }
+  Text {
+    visible: t.small
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.bottom: parent.bottom
+    anchors.bottomMargin: 8
+    width: parent.width - 10
+    horizontalAlignment: Text.AlignHCenter
+    text: t.title
+    elide: Text.ElideRight
+    color: center.text
+    font.family: center.host.theme.textFontFamily
+    font.pixelSize: center.host.theme.px(11)
+    font.weight: Font.Medium
+  }
   Column {
+    visible: !t.small
     anchors.left: badge.right
     anchors.leftMargin: 9
     anchors.right: parent.right
@@ -90,11 +107,17 @@ Rectangle {
     enabled: t.available && t.clickable
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: t.opens ? t.opened() : t.clicked()
+    // A small tile that opens details (Bluetooth, Wi-Fi) opens them on a
+    // click anywhere, its icon included; a right click switches it.
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    onClicked: function(mouse) {
+      if (mouse.button === Qt.RightButton) { if (t.opens) t.clicked(); return }
+      t.opens ? t.opened() : t.clicked()
+    }
   }
   MouseArea {
     id: badgeMouse
-    visible: t.opens
+    visible: t.opens && !t.small
     anchors.fill: badge
     enabled: t.available
     cursorShape: Qt.PointingHandCursor

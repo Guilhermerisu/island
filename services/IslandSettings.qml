@@ -63,6 +63,8 @@ Item {
       property real textScale: 1
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
+      // Controls drawn a quarter wide (icon over label); the rest are half.
+      property string controlCenterSmall: ""
       property bool microphoneMuteControl: false
       property bool stayAwakeControl: false
       property bool screensaverControl: false

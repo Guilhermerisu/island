@@ -58,6 +58,13 @@ Item {
     if (!shown) hidden.push(key)
     settings.controlCenterHidden = hidden.join(",")
   }
+  // Size, set per control in Edit Controls: small is a quarter row, else half.
+  function isSmall(key) { return String(settings.controlCenterSmall || "").split(",").indexOf(key) !== -1 }
+  function setSmall(key, small) {
+    var list = String(settings.controlCenterSmall || "").split(",").filter(function(item) { return item !== "" && item !== key })
+    if (small) list.push(key)
+    settings.controlCenterSmall = list.join(",")
+  }
   // Reads what Quickshell doesn't report on its own, each time the control
   // center opens.
   function refresh() {

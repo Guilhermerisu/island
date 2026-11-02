@@ -26,6 +26,8 @@ ColumnLayout {
   readonly property real cardRadius: host.theme.radii.card
   // macOS's module sizes: a tile, a slider card, and the gap between them.
   readonly property real tileHeight: 64
+  // A small control's (a quarter row, icon over label); a row holding one is this tall.
+  readonly property real smallTileHeight: 76
   readonly property real sectionHeight: 86
   readonly property real gap: 8
   // The icon on a switched-on (accent) badge: white, as macOS's on blue,
@@ -83,6 +85,13 @@ ColumnLayout {
       font.pixelSize: cc.host.theme.px(15)
       font.weight: Font.DemiBold
       font.letterSpacing: -0.2
+      // The date opens the calendar, when its addon's on.
+      MouseArea {
+        anchors.fill: parent
+        enabled: !cc.editMode && cc.host.addons.isEnabled("calendar")
+        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        onClicked: cc.host.view = "calendar"
+      }
     }
     Item { Layout.fillWidth: true }
     Rectangle {

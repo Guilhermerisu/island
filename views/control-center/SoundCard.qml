@@ -15,6 +15,11 @@ CcSection {
   showChevron: !galleryPreview && !card.center.editMode && card.controls.outputs.length > 1
   chevronOpen: card.center.outputsOpen
   onChevronClicked: { card.center.outputsOpen = !card.center.outputsOpen; card.center.inputsOpen = false }
+  // Silence the output, keeping its volume for when it's back.
+  toggleIcon: galleryPreview || !card.controls.controlPresent("sound") ? "" : card.controls.muted ? "󰖁" : "󰕾"
+  toggleOn: card.controls.muted
+  toggleTip: card.controls.muted ? "Unmute" : "Mute"
+  onToggleClicked: if (card.controls.sink && card.controls.sink.audio) card.controls.sink.audio.muted = !card.controls.muted
 
   CcSlider {
     center: card.center
