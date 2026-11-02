@@ -15,6 +15,18 @@ ColumnLayout {
     title: "Banners"
     SettingsRow {
       view: page.view
+      label: "Preview"
+      detail: "Shows the banner above Settings, in your banner style"
+      SettingsButton {
+        view: page.view
+        label: "Send Test Notification"
+        // Settings stays; it lowers under a stand-in of the banner as your
+        // style draws it.
+        onClicked: page.view.host.preview("banner", 5000)
+      }
+    }
+    SettingsRow {
+      view: page.view
       label: "Banner Style"
       detail: "A one-line banner as tall as the pill, or the full card"
       SettingsSegmented {
