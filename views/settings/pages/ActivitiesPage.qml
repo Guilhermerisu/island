@@ -73,4 +73,23 @@ ColumnLayout {
       }
     }
   }
+  SettingsGroup {
+    view: page.view
+    title: "Now Playing"
+    SettingsRow {
+      view: page.view
+      icon: "󰝚"
+      iconTint: page.view.host.theme.system.red
+      label: "Players"
+      detail: "Only these apps (names, separated by commas) show; empty means every player"
+      last: true
+      SettingsTextField {
+        view: page.view
+        value: page.view.settings.mediaApps
+        placeholder: "spotify, feishin"
+        icon: "󰎆"
+        onCommitted: function(v) { page.view.settings.mediaApps = v }
+      }
+    }
+  }
 }

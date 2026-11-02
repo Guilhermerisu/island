@@ -43,6 +43,7 @@ Item {
       property bool capsuleNotifications: true
       property bool capsuleMedia: false
       property bool mediaPill: true
+      property string mediaApps: ""
       property bool volumeHud: true
       property bool brightnessHud: true
       property int bannerSeconds: 5
