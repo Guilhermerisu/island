@@ -50,6 +50,9 @@ Item {
       property int bannerSeconds: 5
       property bool notch: false
       property bool reserveTop: false
+      // What a click on the resting island does, per button (see Island.qml).
+      property string leftClick: "activity"
+      property string rightClick: "none"
       property real pillScale: 1
       property real topGap: 8
       property real barGap: 4

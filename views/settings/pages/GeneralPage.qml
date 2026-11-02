@@ -143,6 +143,50 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰍽"
+      iconTint: page.system.indigo
+      label: "Left click"
+      detail: "What clicking the resting island opens"
+      SettingsPopUp {
+        view: page.view
+        options: [
+          { label: "󰐊  What the activity does", short: "Activity", value: "activity" },
+          { label: "󰕮  Control center", short: "Controls", value: "controls" },
+          { label: "󰝚  Now Playing", short: "Player", value: "player" },
+          { label: "󰍜  Omarchy menu", short: "Menu", value: "menu" },
+          { label: "󰃭  Calendar", short: "Calendar", value: "calendar" },
+          { label: "󰀻  System tray", short: "Tray", value: "tray" },
+          { label: "󰀻  App launcher", short: "Apps", value: "apps" },
+          { label: "󰅖  Nothing", short: "Nothing", value: "none" }
+        ]
+        value: page.view.settings.leftClick
+        onPicked: function(v) { page.view.settings.leftClick = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰍽"
+      iconTint: page.system.purple
+      label: "Right click"
+      detail: "What right-clicking the resting island opens"
+      SettingsPopUp {
+        view: page.view
+        options: [
+          { label: "󰐊  What the activity does", short: "Activity", value: "activity" },
+          { label: "󰕮  Control center", short: "Controls", value: "controls" },
+          { label: "󰝚  Now Playing", short: "Player", value: "player" },
+          { label: "󰍜  Omarchy menu", short: "Menu", value: "menu" },
+          { label: "󰃭  Calendar", short: "Calendar", value: "calendar" },
+          { label: "󰀻  System tray", short: "Tray", value: "tray" },
+          { label: "󰀻  App launcher", short: "Apps", value: "apps" },
+          { label: "󰅖  Nothing", short: "Nothing", value: "none" }
+        ]
+        value: page.view.settings.rightClick
+        onPicked: function(v) { page.view.settings.rightClick = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰁌"
       iconTint: page.system.blue
       label: "Hover style"
