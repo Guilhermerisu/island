@@ -46,6 +46,8 @@ Item {
       property bool volumeHud: true
       property bool brightnessHud: true
       property int bannerSeconds: 5
+      property string notificationStyle: "expanded"
+      property string mutedApps: ""
       property bool notch: false
       property bool downloads: true
       property bool clipboard: true

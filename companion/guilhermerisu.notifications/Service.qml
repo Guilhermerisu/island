@@ -100,13 +100,37 @@ Item {
           glyph: row.glyph,
           summary: row.summary,
           body: row.body,
-          urgency: row.urgency
+          urgency: row.urgency,
+          actions: service.actionsOf(row)
         })
       }
       islandFeedFile.setText(JSON.stringify({ version: 1, active: active }) + "\n")
     }
   }
   function publishIslandFeed() { islandFeedWrite.restart() }
+  // The sender's own buttons (not the click, "default"), while it's live.
+  function actionsOf(row) {
+    var ref = row && !isRestoredRow(row) ? liveRefs[row.originalId] : null
+    var out = []
+    try {
+      for (var i = 0; ref && ref.actions && i < ref.actions.length; i++) {
+        var a = ref.actions[i]
+        if (a && a.identifier !== "default" && a.text) out.push({ id: String(a.identifier), text: String(a.text) })
+      }
+    } catch (e) {}
+    return out
+  }
+  // One of those buttons, then the popup goes.
+  function invokePopupAction(index, identifier) {
+    if (index < 0 || index >= popupModel.count) return
+    var entry = popupModel.get(index)
+    var ref = entry && !isRestoredRow(entry) ? liveRefs[entry.originalId] : null
+    try {
+      for (var i = 0; ref && ref.actions && i < ref.actions.length; i++)
+        if (ref.actions[i] && String(ref.actions[i].identifier) === identifier) { ref.actions[i].invoke(); break }
+    } catch (e) { console.warn("invoke action failed:", e) }
+    dismissPopup(index)
+  }
   Connections {
     target: popupModel
     function onCountChanged() { service.publishIslandFeed() }
@@ -939,6 +963,17 @@ Item {
         var row = popupModel.get(i)
         if (row && String(row.timestamp) + ":" + String(row.originalId) === key) {
           service.invokePopupDefault(i)
+          return "ok"
+        }
+      }
+      return "none"
+    }
+
+    function invokeActionKey(key: string, action: string): string {
+      for (var i = 0; i < popupModel.count; i++) {
+        var row = popupModel.get(i)
+        if (row && String(row.timestamp) + ":" + String(row.originalId) === key) {
+          service.invokePopupAction(i, action)
           return "ok"
         }
       }

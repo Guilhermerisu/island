@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import "../components"
 import "control-center"
 import "bluetooth"
@@ -39,7 +40,8 @@ Item {
     host: views.host
     viewName: "controls"
     fixedWidth: 540
-    maxHeight: 780
+    // As tall as the screen allows, so the notifications under the controls fit.
+    maxHeight: Math.max(780, Screen.height - 120)
     ControlCenter { host: views.host; active: controlsSurface.active; anchors.fill: parent }
   }
 

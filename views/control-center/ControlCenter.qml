@@ -182,13 +182,28 @@ ColumnLayout {
     }
   }
 
-  ControlLayout {
-    id: controlLayout
+  // Show More gives the whole view to the notifications: the controls fold
+  // up and fade, and unfold again with Show Less.
+  Item {
+    id: controlsFold
     Layout.fillWidth: true
-    center: cc
+    property real shown: notificationHistory.showAll ? 0 : 1
+    Behavior on shown { MotionAnimation { theme: cc.host.theme; pace: "standard" } }
+    Layout.preferredHeight: controlLayout.implicitHeight * shown
+    visible: shown > 0.001
+    clip: true
+    ControlLayout {
+      id: controlLayout
+      width: parent.width
+      height: implicitHeight
+      center: cc
+      opacity: controlsFold.shown
+      scale: 0.96 + 0.04 * controlsFold.shown
+      transformOrigin: Item.Top
+    }
   }
 
-  NotificationHistory { center: cc }
+  NotificationHistory { id: notificationHistory; center: cc }
 
   // ---------- Cards, loaded by the grid and the gallery ----------
 

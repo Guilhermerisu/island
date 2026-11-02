@@ -133,6 +133,18 @@ Item {
     proc.running = true
   }
   Process { id: proc; running: false; onExited: client.refreshHistory() }
+  // One of the sender's own buttons.
+  function invokeAction(row, action) {
+    proc.command = ["omarchy-shell", "notifications", "invokeActionKey", key(row), String(action)]
+    proc.running = true
+  }
+  // An old notification has no live action left; its app's window is the thing to open.
+  function focusApp(row) {
+    if (!row || !row.app) return
+    focusProc.command = ["omarchy-hyprland-focus-app", String(row.app)]
+    focusProc.running = true
+  }
+  Process { id: focusProc; running: false }
 
   function clearAll() {
     history = []

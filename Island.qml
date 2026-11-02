@@ -132,6 +132,17 @@ Item {
   // options out) the next time it's shown; both are cleared once taken.
   property string settingsPage: ""
   property string settingsAddon: ""
+  // Settings, open, lowered under a stand-in of the pill it's previewing (a
+  // test banner, "banner"): the island itself is the Settings panel then, so
+  // the stand-in shows what it would look like.
+  property string previewKind: ""
+  readonly property bool previewing: previewKind !== "" && view === "settings"
+  function preview(kind, ms) {
+    previewKind = kind
+    previewTimer.interval = ms || 3000
+    previewTimer.restart()
+  }
+  Timer { id: previewTimer; onTriggered: root.previewKind = "" }
   function openSettings(page, addonId) {
     settingsPage = page || ""
     settingsAddon = addonId || ""
@@ -244,6 +255,7 @@ Item {
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   onViewChanged: {
+    if (view !== "settings") previewKind = ""
     if (view === "rest" && updateAnnouncePending) Qt.callLater(announceUpdate)
     surfaceContentReady = false
     if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
@@ -402,7 +414,12 @@ Item {
     home: root.home
     historyVisible: root.view === "controls"
     onArrived: function(row) {
-      if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"), root.settings.bannerSeconds * 1000, "notification")
+      // Messages from the same app and chat while its banner is up stack
+      // into it: the newest shows, with how many came.
+      var group = String(row.app || "") + "|" + String(row.summary || "")
+      root.notificationRun = root.notificationPill && group === root.notificationGroup ? root.notificationRun + 1 : 1
+      root.notificationGroup = group
+      if (!root.surfaceOpen && !root.notificationSilenced(row)) root.showFeedback(String(row.summary || row.app || "Notification"), root.settings.bannerSeconds * 1000, "notification")
     }
   }
   // The island's own banners (setup, updates) in the notification pill.
@@ -415,6 +432,63 @@ Item {
     feedbackTimer.stop()
     feedbackKind = ""
     view = "rest"
+  }
+  // A hovered banner stays until the pointer leaves it.
+  property int notificationRun: 1
+  property string notificationGroup: ""
+  function holdFeedback(hold) {
+    if (hold) feedbackTimer.stop()
+    else if (view === "feedback") feedbackTimer.restart()
+  }
+  // Apps whose banners don't show (Settings → Notifications); they still
+  // reach the history.
+  function notificationSilenced(row) {
+    var app = String(row && row.app || "").toLowerCase()
+    return app !== "" && String(settings.mutedApps || "").toLowerCase().split(",")
+      .map(function(a) { return a.trim() }).indexOf(app) >= 0
+  }
+  function silenceApp(row) {
+    var app = String(row && row.app || "").trim()
+    if (app !== "" && !notificationSilenced(row))
+      settings.mutedApps = String(settings.mutedApps || "").split(",").map(function(a) { return a.trim() })
+        .filter(function(a) { return a !== "" }).concat([app]).join(", ")
+    dismissPillNotification()
+  }
+  // Snoozed banners come back once their time's up, kept on disk so a
+  // shell restart doesn't lose them.
+  property var snoozed: []
+  property bool snoozedLoaded: false
+  onSnoozedChanged: if (snoozedLoaded) snoozedFile.setText(JSON.stringify(snoozed) + "\n")
+  FileView {
+    id: snoozedFile
+    path: root.home + "/.local/state/omarchy/island-snoozed.json"
+    printErrors: false
+    onLoaded: {
+      try { root.snoozed = JSON.parse(text() || "[]") } catch (e) { root.snoozed = [] }
+      root.snoozedLoaded = true
+    }
+    onLoadFailed: root.snoozedLoaded = true
+  }
+  function snoozeNotification(row, minutes) {
+    var copy = Object.assign({}, row, { snoozed: true, actions: [] })
+    snoozed = snoozed.concat([{ row: copy, at: Date.now() + minutes * 60000 }])
+    dismissPillNotification()
+  }
+  Timer {
+    interval: 15000
+    repeat: true
+    running: root.snoozed.length > 0
+    onTriggered: {
+      if (root.surfaceOpen || root.view === "feedback") return
+      var now = Date.now()
+      for (var k = 0; k < root.snoozed.length; k++) {
+        if (root.snoozed[k].at > now) continue
+        var due = root.snoozed[k].row
+        root.snoozed = root.snoozed.filter(function(_, j) { return j !== k })
+        root.showBanner(due, root.settings.bannerSeconds * 1000)
+        return
+      }
+    }
   }
   function dismissPillNotification() {
     var row = notifications.last
@@ -459,6 +533,8 @@ Item {
       return root.view
     }
     function toggle(): string { return root.toggleView("controls") }
+    // Settings' stand-in pill ("banner"), for a few seconds.
+    function preview(kind: string): string { root.preview(kind, 4000); return root.previewKind }
     function themes(): string { return root.toggleView("themes") }
     function wallpapers(): string { return root.toggleView("wallpapers") }
     function apps(): string { return root.toggleView("apps") }
@@ -633,6 +709,54 @@ Item {
         }
         IslandShadow { shape: island; offset.y: 14; blur: 48; spread: -4; color: Qt.rgba(0, 0, 0, 0.6) }
 
+        // The stand-in banner above lowered Settings (see previewKind).
+        Rectangle {
+          id: previewPill
+          readonly property bool compactBanner: root.settings.notificationStyle === "compact"
+          visible: root.previewing
+          width: compactBanner ? 400 : 440
+          height: compactBanner ? root.pillHeight : 84
+          x: (parent.width - width) / 2
+          y: root.settings.notch ? 0 : 8
+          radius: height / 2
+          color: "#000000"
+          border.width: 1
+          border.color: root.theme.fill("raised")
+          Row {
+            anchors.left: parent.left
+            anchors.leftMargin: previewPill.compactBanner ? 7 : 16
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 10
+            Rectangle {
+              width: previewPill.compactBanner ? previewPill.height - 12 : 40
+              height: width
+              radius: previewPill.compactBanner ? width / 2 : 11
+              color: root.theme.accent
+              anchors.verticalCenter: parent.verticalCenter
+              Text { anchors.centerIn: parent; text: "󰂚"; color: root.theme.accentText; font.family: root.theme.fontFamily; font.pixelSize: 18 }
+            }
+            Column {
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: 2
+              Text {
+                text: previewPill.compactBanner ? "<b>Test notification</b>&nbsp;&nbsp;<font color=\"#b8ffffff\">How a banner looks</font>" : "Test notification"
+                textFormat: previewPill.compactBanner ? Text.StyledText : Text.PlainText
+                color: "#ffffff"
+                font.family: root.theme.textFontFamily
+                font.pixelSize: root.theme.px(previewPill.compactBanner ? 13 : 15)
+                font.weight: previewPill.compactBanner ? Font.Normal : Font.DemiBold
+              }
+              Text {
+                visible: !previewPill.compactBanner
+                text: "This is how a banner looks with your settings"
+                color: Qt.rgba(1, 1, 1, 0.72)
+                font.family: root.theme.textFontFamily
+                font.pixelSize: root.theme.px(13)
+              }
+            }
+          }
+        }
+
         // Hovering the resting island splits the bar's items into capsules
         // beside it (see HoverCapsules).
         HoverCapsules {
@@ -653,7 +777,7 @@ Item {
           x: (parent.width - width) / 2
           // On a spring like the shape, so hiding and showing again quickly
           // turns around smoothly.
-          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.settings.notch ? 0 : 8 }
+          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : (root.settings.notch ? 0 : 8) + (root.previewing ? previewPill.height + 10 : 0) }
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
