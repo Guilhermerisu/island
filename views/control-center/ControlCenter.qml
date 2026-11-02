@@ -26,6 +26,8 @@ ColumnLayout {
   readonly property real cardRadius: host.theme.radii.card
   // macOS's module sizes: a tile, a slider card, and the gap between them.
   readonly property real tileHeight: 64
+  // A small control's (a quarter row, icon over label); a row holding one is this tall.
+  readonly property real smallTileHeight: 76
   readonly property real sectionHeight: 86
   readonly property real gap: 8
   // The icon on a switched-on (accent) badge: white, as macOS's on blue,

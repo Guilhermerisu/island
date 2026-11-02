@@ -215,32 +215,42 @@ ColumnLayout {
         var tileHeight = layout.center.tileHeight
         var inset = layout.inset
         var fullWidth = width - 2 * inset
-        var halfWidth = (fullWidth - gap) / 2
         var rowY = inset
-        var halfUsed = false
+        // Rows of four units: a small control takes one, the rest two, a
+        // wide card the row. A row is as tall as its tallest; a half left
+        // alone in its row stretches across it.
+        var unit = (fullWidth - 3 * gap) / 4
+        var row = [], used = 0
+        function flush() {
+          if (!row.length) return
+          var rowHeight = 0
+          for (var r = 0; r < row.length; r++) rowHeight = Math.max(rowHeight, row[r].height)
+          if (row.length === 1 && row[0].units === 2) row[0].width = fullWidth
+          for (var q = 0; q < row.length; q++)
+            result[row[q].key] = { x: row[q].x, y: rowY, width: row[q].width, height: rowHeight }
+          rowY += rowHeight + gap
+          row = []
+          used = 0
+        }
         for (var i = 0; i < layout.visibleControlKeys.length; i++) {
           var key = layout.visibleControlKeys[i]
-          var wide = layout.controls.controlWide(key)
-          var cardHeight = wide ? layout.center.sectionHeight : tileHeight
-          if (key === "sound") cardHeight += layout.outputsExtra
-          if (key === "microphone") cardHeight += layout.inputsExtra
-          if (wide) {
-            if (halfUsed) { rowY += tileHeight + gap; halfUsed = false }
+          if (layout.controls.controlWide(key)) {
+            flush()
+            var cardHeight = layout.center.sectionHeight
+            if (key === "sound") cardHeight += layout.outputsExtra
+            if (key === "microphone") cardHeight += layout.inputsExtra
             result[key] = { x: inset, y: rowY, width: fullWidth, height: cardHeight }
             rowY += cardHeight + gap
-          } else if (halfUsed) {
-            result[key] = { x: inset + halfWidth + gap, y: rowY, width: halfWidth, height: tileHeight }
-            rowY += tileHeight + gap
-            halfUsed = false
-          } else {
-            var nextKey = i + 1 < layout.visibleControlKeys.length ? layout.visibleControlKeys[i + 1] : ""
-            var nextIsSmall = nextKey !== "" && !layout.controls.controlWide(nextKey)
-            result[key] = { x: inset, y: rowY, width: nextIsSmall ? halfWidth : fullWidth, height: tileHeight }
-            if (nextIsSmall) halfUsed = true
-            else rowY += tileHeight + gap
+            continue
           }
+          var units = layout.controls.isSmall(key) ? 1 : 2
+          if (used + units > 4) flush()
+          row.push({ key: key, units: units, x: inset + used * (unit + gap), width: units * unit + (units - 1) * gap,
+            height: units === 1 ? layout.center.smallTileHeight : tileHeight })
+          used += units
         }
-        result.height = Math.max(0, rowY + (halfUsed ? tileHeight : rowY > inset ? -gap : 0) + inset)
+        flush()
+        result.height = Math.max(0, rowY + (rowY > inset ? -gap : 0) + inset)
         return result
       }
       Repeater {
@@ -276,6 +286,8 @@ ColumnLayout {
           // sliding there from where it was last shown.
           Behavior on x { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
           Behavior on y { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on width { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on height { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
 
           // While it's dragged, an empty slot holds its place.
           Rectangle {
@@ -320,6 +332,38 @@ ColumnLayout {
               }
             }
             onCanceled: layout.endDrag()
+          }
+          // Resize, in edit mode: a quarter row (icon over label) or half.
+          Rectangle {
+            readonly property bool small: layout.controls.isSmall(controlCard.modelData)
+            visible: scale > 0
+            scale: layout.center.editMode && !controlCard.dragged && controlCard.shown
+              && !layout.controls.controlWide(controlCard.modelData) ? (resizeMouse.pressed ? 0.85 : 1) : 0
+            Behavior on scale { MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+            z: 2
+            // Inside the card's bottom-right corner, clear of the neighbours' − badges.
+            x: parent.width - width - 5
+            y: parent.height - height - 5
+            width: 20
+            height: 20
+            radius: 10
+            color: Qt.tint(layout.center.well, layout.center.host.theme.withAlpha(layout.center.text, resizeMouse.containsMouse ? 0.9 : 0.72))
+            Text {
+              anchors.centerIn: parent
+              text: parent.small ? "󰁌" : "󰁄"
+              color: layout.center.host.theme.background
+              font.family: layout.center.iconFont
+              font.pixelSize: 12
+            }
+            MouseArea {
+              id: resizeMouse
+              anchors.fill: parent
+              anchors.margins: -4
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: layout.controls.setSmall(controlCard.modelData, !parent.small)
+            }
+            Tooltip { theme: layout.center.host.theme; text: parent.small ? "Make larger" : "Make smaller" }
           }
           CcEditBadge {
             center: layout.center

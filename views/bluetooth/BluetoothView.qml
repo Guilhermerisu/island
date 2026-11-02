@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import "../../components"
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 
 // Bluetooth devices, opened from the Control Center's Bluetooth tile, laid out
 // like the Wi-Fi view and macOS's Bluetooth module: My Devices (connected
@@ -221,6 +222,35 @@ ColumnLayout {
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
+    // Power, as the tile's badge: on lifts rfkill's soft block first.
+    Rectangle {
+      visible: !!bt.adapter
+      Layout.preferredWidth: 38
+      Layout.preferredHeight: 22
+      radius: 11
+      color: bt.powered ? bt.host.theme.accent : bt.host.theme.solid("stronger")
+      Behavior on color { MotionColorAnimation { theme: bt.host.theme } }
+      Rectangle {
+        width: 18; height: 18; radius: 9
+        y: 2
+        x: bt.powered ? parent.width - width - 2 : 2
+        Behavior on x { MotionAnimation { theme: bt.host.theme; pace: "standard" } }
+        color: "#ffffff"
+      }
+      MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        onClicked: {
+          if (bt.powered) bt.adapter.enabled = false
+          else unblock.running = true
+        }
+      }
+      Process {
+        id: unblock
+        command: ["rfkill", "unblock", "bluetooth"]
+        onExited: if (bt.adapter) bt.adapter.enabled = true
+      }
+    }
   }
 
   Rectangle {
