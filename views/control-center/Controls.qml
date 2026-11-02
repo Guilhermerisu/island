@@ -111,6 +111,18 @@ Item {
   }
 
   // --- Bluetooth ---
+  // Turning it on lifts rfkill's soft block first (Omarchy's Bluetooth off
+  // sets it), or the adapter refuses to power up.
+  function setBluetooth(on) {
+    if (!btAdapter) return
+    if (!on) { btAdapter.enabled = false; return }
+    rfkillUnblock.running = true
+  }
+  Process {
+    id: rfkillUnblock
+    command: ["rfkill", "unblock", "bluetooth"]
+    onExited: if (controls.btAdapter) controls.btAdapter.enabled = true
+  }
   readonly property var btAdapter: Bluetooth.defaultAdapter
   readonly property var btConnected: {
     var devs = Bluetooth.devices ? Bluetooth.devices.values : []
@@ -221,7 +233,7 @@ Item {
   function toggleControl(key) {
     if (key === "microphoneMute") { toggleMicrophoneMute(); return }
     if (key === "wifi" && wifiDevice) Networking.wifiEnabled = !Networking.wifiEnabled
-    else if (key === "bluetooth" && btAdapter) btAdapter.enabled = !btAdapter.enabled
+    else if (key === "bluetooth" && btAdapter) setBluetooth(!btAdapter.enabled)
     else if (key === "focus" && notifications) notifications.setDoNotDisturb(!dnd)
     else if (key === "game") setGameMode(!gameMode)
     else if (key === "awake" && idle) idle.setIdleEnabled(stayAwake)
