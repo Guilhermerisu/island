@@ -14,6 +14,12 @@ Rectangle {
   property string chevronLabel: "Sound Output"
   property string chevronHideLabel: "Hide Outputs"
   signal chevronClicked()
+  // An optional round toggle left of the › (Sound's mute, Microphone's).
+  property string toggleIcon: ""
+  property bool toggleOn: false
+  property string toggleTip: ""
+  signal toggleClicked()
+  readonly property real headerRight: (showChevron ? 44 : 16) + (toggleIcon !== "" ? 28 : 0)
   default property alias content: body.data
 
   Layout.fillWidth: true
@@ -38,7 +44,7 @@ Rectangle {
   }
   Text {
     anchors.right: parent.right
-    anchors.rightMargin: sec.showChevron ? 44 : 16
+    anchors.rightMargin: sec.headerRight
     anchors.top: parent.top
     anchors.topMargin: 14
     text: sec.detail
@@ -70,6 +76,27 @@ Rectangle {
       Behavior on rotation { MotionAnimation { theme: center.host.theme; pace: "standard" } }
     }
     MouseArea { id: chevronMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sec.chevronClicked() }
+  }
+  Rectangle {
+    visible: sec.toggleIcon !== ""
+    scale: toggleMouse.pressed ? 0.92 : 1
+    Behavior on scale { MotionAnimation { theme: center.host.theme; pace: toggleMouse.pressed ? "press" : "standard" } }
+    anchors.right: parent.right
+    anchors.rightMargin: sec.showChevron ? 42 : 14
+    anchors.top: parent.top
+    anchors.topMargin: 9
+    width: 22; height: 22; radius: 11
+    color: sec.toggleOn ? center.host.theme.system.red : toggleMouse.containsMouse ? center.wellHover : center.well
+    Behavior on color { MotionColorAnimation { theme: center.host.theme } }
+    Tooltip { theme: center.host.theme; text: sec.toggleTip }
+    Text {
+      anchors.centerIn: parent
+      text: sec.toggleIcon
+      color: sec.toggleOn ? "#ffffff" : center.textMuted
+      font.family: center.iconFont
+      font.pixelSize: center.host.theme.px(13)
+    }
+    MouseArea { id: toggleMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sec.toggleClicked() }
   }
   ColumnLayout {
     id: body
