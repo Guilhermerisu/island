@@ -12,7 +12,11 @@ import Quickshell.Io
 // and normalizes the video after it stops); nothing is polled otherwise.
 Item {
   id: recorder
-  readonly property string stateFile: "/tmp/omarchy-screenrecord-filename"
+  // Omarchy now keeps the marker in the session runtime dir (it used /tmp),
+  // with the same fallback its script uses.
+  readonly property string runtimeDir: Quickshell.env("XDG_RUNTIME_DIR")
+    || ((Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/omarchy")
+  readonly property string stateFile: runtimeDir + "/omarchy-screenrecord-filename"
 
   readonly property bool present: marker.count > 0
   // "idle", "recording", or "saving"
@@ -26,7 +30,7 @@ Item {
 
   FolderListModel {
     id: marker
-    folder: "file:///tmp"
+    folder: "file://" + recorder.runtimeDir
     nameFilters: ["omarchy-screenrecord-filename"]
     showDirs: false
     onCountChanged: recorder.check()
@@ -46,7 +50,7 @@ Item {
   // recorder that died doesn't hold the island.
   Process {
     id: status
-    command: ["sh", "-c", "pgrep -f '^gpu-screen-recorder' >/dev/null && echo recording || { pgrep -f '[o]marchy-capture-screenrecording' >/dev/null && echo saving || echo idle; }"]
+    command: ["sh", "-c", "pgrep -f '^(gpu-screen-recorder|wf-recorder)' >/dev/null && echo recording || { pgrep -f '[o]marchy-capture-screenrecording' >/dev/null && echo saving || echo idle; }"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
