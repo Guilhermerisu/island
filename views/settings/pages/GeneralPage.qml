@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../controls"
+import "../../../components"
 
 // Settings → General: the pill, when it hides, appearance and motion.
 ColumnLayout {
@@ -86,6 +87,62 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰩨"
+      iconTint: page.system.orange
+      label: "Pill size"
+      detail: "Scales the island; open views shrink about half as much"
+      SettingsSlider {
+        view: page.view
+        from: 0.6
+        to: 1
+        value: page.view.settings.pillScale
+        onMoved: function(v) { page.view.settings.pillScale = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰁝"
+      iconTint: page.system.cyan
+      label: "Top margin"
+      detail: "Gap between the screen edge and the island (not in notch style)"
+      SettingsSlider {
+        view: page.view
+        from: 0
+        to: 32
+        step: 1
+        value: page.view.settings.topGap
+        onMoved: function(v) { page.view.settings.topGap = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰁅"
+      iconTint: page.system.cyan
+      label: "Bottom margin"
+      detail: "Extra space between the island and windows in top bar mode"
+      SettingsSlider {
+        view: page.view
+        from: 0
+        to: 32
+        step: 1
+        value: page.view.settings.barGap
+        onMoved: function(v) { page.view.settings.barGap = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰘔"
+      iconTint: page.system.green
+      label: "Top bar"
+      detail: "Keep windows from sliding under the island; the hide-bar toggle is ignored"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.reserveTop
+        onToggled: function(on) { page.view.settings.reserveTop = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰁌"
       iconTint: page.system.blue
       label: "Hover style"
@@ -96,13 +153,14 @@ ColumnLayout {
         options: [
           { label: "󰁌  Expand island (Glance)", short: "Expand", value: "expand" },
           { label: "󰂚  Flanking capsules", short: "Capsules", value: "capsules" },
+          { label: "󰂚  Capsules, always shown", short: "Always", value: "always" },
           { label: "󰅖  Disabled", short: "Disabled", value: "none" }
         ]
         value: page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")
         onPicked: function(v) {
           page.view.settings.hoverStyle = v
           page.view.settings.hoverExpand = (v === "expand")
-          page.view.settings.hoverCapsules = (v === "capsules")
+          page.view.settings.hoverCapsules = (v === "capsules" || v === "always")
         }
       }
     }
@@ -234,7 +292,159 @@ ColumnLayout {
   SettingsGroup {
     view: page.view
     title: "Capsules on hover"
-    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")) === "capsules"
+    visible: ["capsules", "always"].indexOf(page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")) >= 0
+    // Where each capsule sits around the island: a line read left to right,
+    // the island in the middle, of the capsules switched on below. Drag one
+    // along it (across the island too) or use its arrows; Settings lowers
+    // under the pill meanwhile, so the capsules show in their new places.
+    // Saved as "left nearest-first|right nearest-first".
+    SettingsRow {
+      id: arrangeRow
+      view: page.view
+      icon: "󰕰"
+      iconTint: page.system.indigo
+      label: "Arrangement"
+      detail: "Drag the capsules around the island"
+      readonly property var names: ({ event: "Event", tray: "Tray", workspaces: "Workspaces", media: "Media", weather: "Weather", notifications: "Notifications", system: "System" })
+      readonly property var on: ({
+        event: !!page.view.settings.capsuleEvent, tray: page.view.settings.capsuleTray !== false,
+        workspaces: !!page.view.settings.capsuleWorkspaces, media: !!page.view.settings.capsuleMedia,
+        weather: !!page.view.settings.capsuleWeather, notifications: page.view.settings.capsuleNotifications !== false,
+        system: page.view.settings.capsuleSystem !== false
+      })
+      readonly property string defaultOrder: "event,tray,workspaces,media|weather,notifications,system"
+      // Every capsule, left to right, with the island.
+      readonly property var line: {
+        var sides = String(page.view.settings.capsuleOrder || defaultOrder).split("|")
+        var left = (sides[0] || "").split(",").filter(function(k) { return k in names })
+        var right = (sides[1] || "").split(",").filter(function(k) { return k in names && left.indexOf(k) < 0 })
+        var fb = defaultOrder.split("|")
+        fb[0].split(",").forEach(function(k) { if (left.indexOf(k) < 0 && right.indexOf(k) < 0) left.push(k) })
+        fb[1].split(",").forEach(function(k) { if (left.indexOf(k) < 0 && right.indexOf(k) < 0) right.push(k) })
+        return left.slice().reverse().concat(["island"], right)
+      }
+      // The ones shown: switched on, and the island.
+      readonly property var shownLine: line.filter(function(k) { return k === "island" || on[k] })
+      function save(full) {
+        var at = full.indexOf("island")
+        page.view.settings.capsuleOrder = full.slice(0, at).reverse().join(",") + "|" + full.slice(at + 1).join(",")
+      }
+      // Moves a shown capsule past its shown neighbour; hidden ones keep their place.
+      function move(key, by) {
+        var shown = shownLine, i = shown.indexOf(key), j = i + by
+        if (i < 0 || j < 0 || j >= shown.length) return
+        var full = line.slice(), a = full.indexOf(key), b = full.indexOf(shown[j])
+        full[a] = shown[j]
+        full[b] = key
+        save(full)
+        page.view.host.preview("capsules", 3000)
+      }
+    }
+    // Kept by name, so a reorder moves the pills (and the Flow slides them
+    // over) instead of rebuilding them mid-drag.
+    KeyedListModel { id: arrangeModel; values: arrangeRow.shownLine }
+    Flow {
+      id: arrangeFlow
+      Layout.fillWidth: true
+      Layout.leftMargin: 14
+      Layout.rightMargin: 14
+      Layout.bottomMargin: 10
+      spacing: 6
+      // The others slide into their new places.
+      move: Transition { MotionAnimation { theme: page.view.host.theme; property: "x"; pace: "standard" } }
+      HoverHandler {
+        onHoveredChanged: hovered ? page.view.host.holdPreview("capsules") : page.view.host.preview("capsules", 1500)
+      }
+      Repeater {
+        model: arrangeModel.model
+        delegate: Item {
+          id: pill
+          required property var entry
+          required property int index
+          readonly property string modelData: String(entry)
+          readonly property bool island: modelData === "island"
+          readonly property bool dragging: drag.active
+          z: dragging ? 10 : 0
+          height: 28
+          width: pillRow.implicitWidth + 12
+          // Where the pointer is along the Flow while dragging.
+          property real pointerX: 0
+          property real grabX: 0
+
+          // The pill itself: under the pointer while dragged (lifted a
+          // little), easing back into its slot on release.
+          Rectangle {
+            id: face
+            width: parent.width
+            height: parent.height
+            radius: 14
+            x: pill.dragging ? pill.pointerX - pill.grabX - pill.x : 0
+            Behavior on x { enabled: !pill.dragging; MotionAnimation { theme: page.view.host.theme; pace: "standard" } }
+            scale: pill.dragging ? 1.08 : 1
+            Behavior on scale { MotionAnimation { theme: page.view.host.theme; pace: "quick" } }
+            color: pill.island ? page.view.accent : pill.dragging ? page.view.host.theme.fill("stronger") : page.view.host.theme.fill("raised")
+            Behavior on color { MotionColorAnimation { theme: page.view.host.theme } }
+            border.width: pill.dragging ? 1 : 0
+            border.color: page.view.host.theme.fill("strong")
+            Row {
+              id: pillRow
+              anchors.centerIn: parent
+              spacing: 4
+              Text {
+                visible: !pill.island
+                text: "‹"
+                color: leftArrow.containsMouse ? "#ffffff" : page.view.textMuted
+                font.pixelSize: page.view.host.theme.px(15)
+                anchors.verticalCenter: parent.verticalCenter
+                MouseArea { id: leftArrow; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                  onClicked: arrangeRow.move(pill.modelData, -1) }
+              }
+              Text {
+                text: pill.island ? "Island" : arrangeRow.names[pill.modelData]
+                color: pill.island ? page.view.host.theme.accentText : "#ffffff"
+                font.family: page.view.host.theme.textFontFamily
+                font.pixelSize: page.view.host.theme.px(12)
+                font.weight: Font.Medium
+                anchors.verticalCenter: parent.verticalCenter
+              }
+              Text {
+                visible: !pill.island
+                text: "›"
+                color: rightArrow.containsMouse ? "#ffffff" : page.view.textMuted
+                font.pixelSize: page.view.host.theme.px(15)
+                anchors.verticalCenter: parent.verticalCenter
+                MouseArea { id: rightArrow; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                  onClicked: arrangeRow.move(pill.modelData, 1) }
+              }
+            }
+          }
+          HoverHandler { enabled: !pill.island; cursorShape: pill.dragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
+          DragHandler {
+            id: drag
+            enabled: !pill.island
+            target: null
+            yAxis.enabled: false
+            onActiveChanged: if (active) {
+              pill.grabX = centroid.pressPosition.x
+              pill.pointerX = pill.x + pill.grabX
+            }
+            onCentroidChanged: {
+              if (!active) return
+              pill.pointerX = pill.mapToItem(arrangeFlow, centroid.position.x, 0).x
+              // Past a neighbour's middle: trade places with it.
+              var kids = arrangeFlow.children
+              for (var i = 0; i < kids.length; i++) {
+                var other = kids[i]
+                if (other === pill || other.index === undefined) continue
+                var center = other.x + other.width / 2
+                if (other.index === pill.index + 1 && pill.pointerX > center) { arrangeRow.move(pill.modelData, 1); break }
+                if (other.index === pill.index - 1 && pill.pointerX < center) { arrangeRow.move(pill.modelData, -1); break }
+              }
+            }
+          }
+        }
+      }
+    }
     SettingsRow {
       view: page.view
       icon: "󰀻"

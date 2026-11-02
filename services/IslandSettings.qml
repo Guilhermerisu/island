@@ -39,6 +39,8 @@ Item {
       property bool capsuleTray: true
       property bool capsuleSystem: true
       property bool capsuleEvent: false
+      // Where the capsules sit, "left,…|right,…" (see HoverCapsules).
+      property string capsuleOrder: ""
       property bool capsuleWeather: false
       property bool capsuleNotifications: true
       property bool capsuleMedia: false
@@ -47,6 +49,10 @@ Item {
       property bool brightnessHud: true
       property int bannerSeconds: 5
       property bool notch: false
+      property bool reserveTop: false
+      property real pillScale: 1
+      property real topGap: 8
+      property real barGap: 4
       property bool downloads: true
       property bool clipboard: true
       property bool screenRecordingActivity: true
