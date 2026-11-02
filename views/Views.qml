@@ -14,6 +14,7 @@ import "menu"
 import "player"
 import "settings"
 import "../addons/tray"
+import "share"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
 // route: `omarchy-shell guilhermerisu.island show <name>`), how wide the
@@ -24,7 +25,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface]
+  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, shareSurface, settingsSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     for (var j = 0; j < addonSurfaces.count; j++) {
@@ -125,6 +126,15 @@ Item {
     viewName: "trayMenu"
     fixedWidth: 440
     TrayList { host: views.host; active: trayMenuSurface.active; anchors.fill: parent }
+  }
+
+  Surface {
+    id: shareSurface
+    host: views.host
+    viewName: "share"
+    fixedWidth: 460
+    padding: 20
+    ShareView { host: views.host; active: shareSurface.active; anchors.fill: parent }
   }
 
   Surface {

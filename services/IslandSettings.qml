@@ -51,6 +51,7 @@ Item {
       property bool downloads: true
       property bool clipboard: true
       property bool screenRecordingActivity: true
+      property bool screenShareActivity: true
       property bool systemUpdates: true
       property bool batteryActivity: true
       property bool bluetoothActivity: true
