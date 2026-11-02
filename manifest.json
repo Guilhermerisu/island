@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "guilhermerisu.island",
   "name": "Island",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "guilhermerisu",
   "description": "A floating, morphing Omarchy bar",
   "kinds": [
