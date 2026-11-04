@@ -206,8 +206,12 @@ ColumnLayout {
           id: noteMouse
           anchors.fill: parent
           hoverEnabled: true
-          cursorShape: note.modelData.isActive ? Qt.PointingHandCursor : Qt.ArrowCursor
-          onClicked: if (note.modelData.isActive) history.center.host.notifications.command("invokeKey", note.modelData)
+          cursorShape: Qt.PointingHandCursor
+          // Closes the control center first, so the app's window gets the keyboard.
+          onClicked: {
+            history.center.host.view = "rest"
+            history.center.host.notifications.open(note.modelData, false)
+          }
         }
         // The notification's image or app icon; the banner's accent bell
         // tile when there's none (or it fails to load).
