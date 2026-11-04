@@ -7,7 +7,7 @@ IslandPill {
   id: pill
   readonly property var recorder: host.recorder
   readonly property color ink: host.settings.colorfulLiveActivities ? pill.host.theme.system.red : host.theme.accent
-  shown: host.recordingPill
+  shown: host.recordingPill && !host.recordingStacked
   pillWidth: 240
   keepsClock: true
   function clicked(mouse) { recorder.stop() }

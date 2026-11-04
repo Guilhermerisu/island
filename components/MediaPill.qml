@@ -11,7 +11,7 @@ IslandPill {
   shown: host.mediaPill && (!shape || !shape.isGlanceExpanded)
   pillWidth: 240
   keepsClock: true
-  function clicked(mouse) { host.view = mouse.x < 56 || mouse.x > width - 72 ? "player" : "controls" }
+  function clicked(mouse) { host.view = "player" }
 
   PillReveal { id: reveal; theme: media.host.theme; shown: media.shown }
 

@@ -17,6 +17,7 @@ ColumnLayout {
     { kind: "workspace", key: "workspaceHud", title: "Workspace Indicator", description: "Show which workspace is active" },
     { kind: "downloads", key: "downloads", title: "Downloads", description: "Show active download progress" },
     { kind: "recording", key: "screenRecordingActivity", title: "Screen Recording", description: "Show time recorded; click to stop" },
+    { kind: "recording", key: "screenShareActivity", title: "Screen Sharing", description: "While an app shares your screen or a window" },
     { kind: "updates", key: "systemUpdates", title: "System Updates", description: "Show available system updates" },
     { kind: "bluetooth", key: "bluetoothActivity", title: "Bluetooth Devices", description: "Show Bluetooth connection status" },
     { kind: "network", key: "networkActivity", title: "Network", description: "Wi-Fi and Ethernet status" },
@@ -70,6 +71,25 @@ ColumnLayout {
         description: modelData.description
         checked: page.view.settings[modelData.key]
         onToggled: function(on) { page.view.settings[modelData.key] = on }
+      }
+    }
+  }
+  SettingsGroup {
+    view: page.view
+    title: "Now Playing"
+    SettingsRow {
+      view: page.view
+      icon: "󰝚"
+      iconTint: page.view.host.theme.system.red
+      label: "Players"
+      detail: "Only these apps (names, separated by commas) show; empty means every player"
+      last: true
+      SettingsTextField {
+        view: page.view
+        value: page.view.settings.mediaApps
+        placeholder: "spotify, feishin"
+        icon: "󰎆"
+        onCommitted: function(v) { page.view.settings.mediaApps = v }
       }
     }
   }

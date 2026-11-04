@@ -8,6 +8,7 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
+import Quickshell.Widgets
 import "addons"
 import "components"
 import "services"
@@ -30,12 +31,58 @@ Item {
   // then the media playing. None shows while the companion needs setting up.
   readonly property bool resting: view === "rest" && !setup.needsSetup
   readonly property bool recordingPill: resting && settings.screenRecordingActivity && recorder.active
-  readonly property bool restingFree: resting && !recordingPill && !addons.ongoing
+  // A recording shrinks to a dot and its time beside another activity (an
+  // addon's, or the music playing) instead of taking the island from it.
+  readonly property bool recordingStacked: recordingPill && (addons.ongoing || (nowPlaying.playing && settings.mediaPill))
+  // Screen sharing (a portal screencast, as Hyprland reports it): its own
+  // live activity, under an addon's (Claude working) and a recording.
+  property bool screenSharing: false
+  property string shareKind: "screen"
+  property real shareStartedAt: 0
+  readonly property bool sharePill: resting && screenSharing && settings.screenShareActivity !== false
+    && !(recordingPill && !recordingStacked) && !addons.ongoing
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (String(event && event.name) !== "screencast") return
+      // "1,0": started, sharing a monitor; "1,1" a window; "0,…" stopped.
+      // Any screen capture sends these (the share view's own preview too),
+      // so whether a share is on is asked of PipeWire: the portal's stream.
+      var parts = String(event.data || "").split(",")
+      if (parts[0] === "1") root.pendingShareKind = parts[1] === "1" ? "window" : "screen"
+      shareCheckDelay.restart()
+    }
+  }
+  property string pendingShareKind: "screen"
+  Timer { id: shareCheckDelay; interval: 600; onTriggered: shareCheck.running = true }
+  Process {
+    id: shareCheck
+    command: ["python3", decodeURIComponent(String(Qt.resolvedUrl("views/share/share-app.py")).replace("file://", "")), "--active"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var on = String(text || "").trim() === "1"
+        if (on && !root.screenSharing) {
+          root.shareStartedAt = Date.now()
+          root.shareKind = root.pendingShareKind
+        }
+        root.screenSharing = on
+      }
+    }
+  }
+  readonly property bool restingFree: resting && (!recordingPill || recordingStacked) && !addons.ongoing && !sharePill
   readonly property bool downloadDone: restingFree
     && (downloads.finishedName !== "" || packages.finishedTitle !== "")
   readonly property bool downloadActive: restingFree && (downloads.active || packages.active) && !downloadDone
   readonly property bool downloadPill: downloadDone || downloadActive
   readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
+  // Another live activity has the island, and music is playing: the island
+  // widens by stackWidth and the cover and wave sit at its right end.
+  readonly property bool mediaStacked: resting && nowPlaying.playing && settings.mediaPill
+    && (addons.ongoing || downloadPill || sharePill)
+  // Sharing beside another activity shrinks to its glyph, as the others do.
+  readonly property bool shareStacked: resting && screenSharing && settings.screenShareActivity !== false && !sharePill
+  readonly property real stackWidth: (mediaStacked ? 92 : 0) + (recordingStacked ? 74 : 0) + (shareStacked ? 34 : 0)
   // The live-activity pills' height, and the resting clock's.
   readonly property real pillHeight: settings.notch ? 40 : 44
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
@@ -146,7 +193,7 @@ Item {
   // The addon whose pill is on the island, if any (see addons/Addon.qml):
   // the one shown for a moment, or at rest an ongoing one's.
   readonly property var addonPill: view === "feedback" ? addons.pillFor(feedbackKind)
-    : resting && !recordingPill ? addons.ongoing : null
+    : resting && (!recordingPill || recordingStacked) ? addons.ongoing : null
 
   // ---------- Workspace switches ----------
 
@@ -669,6 +716,9 @@ Item {
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
+          // How much of the island's right end the stacked media takes.
+          property real stackShift: root.stackWidth
+          Behavior on stackShift { MotionAnimation { theme: root.theme; pace: "standard" } }
           readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
           property bool glanceActive: false
           readonly property bool hasGlanceItems: glanceBar ? glanceBar.hasItems : false
@@ -734,7 +784,7 @@ Item {
             : baseGlanceWidth + clockExtra
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : island.isGlanceExpanded ? island.glanceWidth
-            : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
+            : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0) + root.stackWidth
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
             : 100 + clockExtra
@@ -853,6 +903,7 @@ Item {
           Item {
             id: pills
             anchors.fill: parent
+            anchors.rightMargin: island.stackShift
             readonly property Item active: {
               for (var i = 0; i < children.length; i++) if (children[i].shown) return children[i]
               return null
@@ -865,6 +916,7 @@ Item {
             WorkspacePill { host: root; anchors.fill: parent }
             AddonPills { host: root; anchors.fill: parent }
             RecordingPill { host: root; anchors.fill: parent }
+            ScreenSharePill { host: root; anchors.fill: parent }
             MediaPill { id: mediaPillItem; host: root; shape: island; anchors.fill: parent }
             DownloadPill { host: root; anchors.fill: parent }
           }
@@ -877,7 +929,113 @@ Item {
             anchors.fill: parent
           }
 
-          IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
+          IslandLabel {
+            id: clockLabel
+            host: root
+            pill: island.activePill
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenterOffset: -island.stackShift / 2
+            anchors.verticalCenter: parent.verticalCenter
+          }
+          // The music, stacked into the same island beside the other activity.
+          Item {
+            id: stackedMedia
+            opacity: root.mediaStacked ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { MotionAnimation { theme: root.theme; pace: "standard"; curve: "fade" } }
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            width: 68
+            height: 26
+            Row {
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: 8
+              ClippingRectangle {
+                width: 24
+                height: 24
+                radius: 7
+                color: root.theme.fill("raised")
+                anchors.verticalCenter: parent.verticalCenter
+                Image {
+                  anchors.fill: parent
+                  source: root.nowPlaying.art
+                  sourceSize.width: 48
+                  sourceSize.height: 48
+                  fillMode: Image.PreserveAspectCrop
+                  asynchronous: true
+                }
+              }
+              SoundWave {
+                bars: 3
+                maxHeight: 14
+                playing: root.nowPlaying.playing
+                color: root.nowPlaying.tint
+                anchors.verticalCenter: parent.verticalCenter
+              }
+            }
+            MouseArea {
+              anchors.fill: parent
+              anchors.margins: -4
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.view = "player"
+            }
+          }
+          // Screen sharing, stacked: its glyph.
+          Text {
+            id: stackedShare
+            opacity: root.shareStacked ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { MotionAnimation { theme: root.theme; pace: "standard"; curve: "fade" } }
+            anchors.right: root.recordingStacked ? stackedRecording.left : root.mediaStacked ? stackedMedia.left : parent.right
+            anchors.rightMargin: root.recordingStacked || root.mediaStacked ? 12 : 14
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.shareKind === "window" ? "󰖯" : "󰍹"
+            color: root.settings.colorfulLiveActivities ? root.theme.system.green : root.theme.accent
+            font.family: root.theme.fontFamily
+            font.pixelSize: root.theme.px(16)
+            MouseArea {
+              anchors.fill: parent
+              anchors.margins: -4
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.view = "share"
+            }
+          }
+          // The recording, stacked the same way: its dot and time; a click stops it.
+          Item {
+            id: stackedRecording
+            opacity: root.recordingStacked ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { MotionAnimation { theme: root.theme; pace: "standard"; curve: "fade" } }
+            anchors.right: root.mediaStacked ? stackedMedia.left : parent.right
+            anchors.rightMargin: root.mediaStacked ? 12 : 14
+            anchors.verticalCenter: parent.verticalCenter
+            width: 50
+            height: 26
+            readonly property color ink: root.settings.colorfulLiveActivities ? root.theme.system.red : root.theme.accent
+            Rectangle {
+              anchors.verticalCenter: parent.verticalCenter
+              width: 9; height: 9; radius: 4.5
+              color: stackedRecording.ink
+              opacity: root.recorder.recording ? 1 : 0.35
+            }
+            Text {
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              text: root.recorder.recording ? root.recorder.timeText(root.recorder.elapsed) : "…"
+              color: stackedRecording.ink
+              font.family: root.theme.textFontFamily
+              font.pixelSize: root.theme.px(12)
+              font.weight: Font.Medium
+              font.features: { "tnum": 1 }
+            }
+            MouseArea {
+              anchors.fill: parent
+              anchors.margins: -4
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.recorder.stop()
+            }
+          }
           TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockStacked ? root.clockWidestText : root.clockText }
 
           Views { id: views; host: root; anchors.fill: parent }

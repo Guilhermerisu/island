@@ -9,7 +9,22 @@ Item {
   required property var theme
 
   readonly property var service: shell ? shell.firstPartyServiceFor("omarchy.media") : null
-  readonly property var player: service ? service.activePlayer : null
+  // Only the players named in Settings (matched against the player's name
+  // or desktop entry); none named means every player, as Omarchy picks it.
+  readonly property var allowedApps: String(theme.settings.mediaApps || "").toLowerCase()
+    .split(/[\s,]+/).filter(function(a) { return a !== "" })
+  function allows(p) {
+    if (!p) return false
+    var name = (String(p.identity || "") + " " + String(p.desktopEntry || "")).toLowerCase()
+    return allowedApps.some(function(a) { return name.indexOf(a) >= 0 })
+  }
+  readonly property var player: {
+    if (!service) return null
+    var active = service.activePlayer
+    if (allowedApps.length === 0 || allows(active)) return active
+    var mine = (service.players || []).filter(function(p) { return allows(p) && !service.isProxyPlayer(p) })
+    return mine.find(function(p) { return p.isPlaying }) || mine.find(function(p) { return p.trackTitle }) || null
+  }
   readonly property bool playing: !!(player && player.isPlaying)
   readonly property string title: player ? String(player.trackTitle || "") : ""
   readonly property string artist: player ? String(player.trackArtist || "") : ""

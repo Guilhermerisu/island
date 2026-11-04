@@ -15,6 +15,16 @@ Item {
   property bool active: false
 
   readonly property var mpris: host.nowPlaying.player
+  // The cover or the track opens the player app: its window if it's open,
+  // else the app is launched from its desktop entry.
+  function openApp() {
+    if (!mpris) return
+    var name = String(mpris.desktopEntry || mpris.identity || "")
+    if (name === "") return
+    Quickshell.execDetached(["sh", "-c", 'omarchy-hyprland-focus-app "$1" || omarchy-hyprland-focus-app "$2" || gtk-launch "$1"',
+      "open", name, String(mpris.identity || name)])
+    host.view = "rest"
+  }
   readonly property bool playing: !!(mpris && mpris.isPlaying)
   readonly property real length: mpris && mpris.lengthSupported ? mpris.length : 0
   readonly property bool canSeek: !!(mpris && mpris.canSeek && length > 0)
@@ -81,6 +91,8 @@ Item {
         radius: 16
         color: "transparent"
         id: coverBox
+        TapHandler { onTapped: player.openApp() }
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
         // Two covers taking turns: a new track's art loads into the hidden
         // one and fades in over the old, so changing tracks never flashes
         // the fallback in between.
@@ -135,6 +147,8 @@ Item {
       ColumnLayout {
         Layout.fillWidth: true
         spacing: 2
+        TapHandler { onTapped: player.openApp() }
+        HoverHandler { cursorShape: Qt.PointingHandCursor }
         Text {
           Layout.fillWidth: true
           text: player.mpris ? String(player.mpris.trackTitle || "Unknown track") : "Nothing playing"
