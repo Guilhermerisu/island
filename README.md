@@ -56,8 +56,10 @@ Plugins that add their own panel, overlay, or menu keep working. Open the
 Plugins view (Settings → Keybinds, or the Plugins addon) to enable one and open
 it.
 
-Plugins that add a **bar widget** can't show while Island is the bar, since
-Island doesn't render other plugins' widgets.
+Plugins that add a **bar widget** can't be drawn in the island, but they still
+open: Island keeps the third-party widgets of your `shell.json` bar layout alive
+off screen, and their panel opens under the island, from the Plugins view or
+from `omarchy-shell shell toggle <plugin-id>` bound to a key.
 </details>
 
 <details>
