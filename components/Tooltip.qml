@@ -21,6 +21,10 @@ Item {
 
   HoverHandler {
     id: hover
+    // Qt's default blocks the hover of everything under it: a button whose
+    // look follows its hover (a × that shows while its banner is hovered)
+    // would lose it the moment the pointer reached it, and flicker.
+    blocking: false
     onHoveredChanged: if (!hovered) tip.shown = false
   }
   Timer {
