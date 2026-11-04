@@ -134,6 +134,19 @@ Item {
   }
   Process { id: proc; running: false; onExited: client.refreshHistory() }
 
+  // Takes the user to where a notification came from. One still on screen
+  // (`live`) is invoked through the companion: its default action, or else the
+  // sending app's window. One only in the history has nothing left to invoke,
+  // so the sending app's window is focused here.
+  function open(row, live) {
+    if (live || row.isActive) command("invokeKey", row)
+    else if (row.app) {
+      focusProc.command = ["omarchy-hyprland-focus-app", String(row.app)]
+      focusProc.startDetached()
+    }
+  }
+  Process { id: focusProc }
+
   function clearAll() {
     history = []
     proc.command = ["bash", "-c", "omarchy-shell notifications dismissAll; omarchy-shell notifications clear"]
