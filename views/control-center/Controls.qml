@@ -48,12 +48,20 @@ Item {
   // Controls that stay out of the layout until added from the gallery, even
   // for settings saved before they existed.
   readonly property var optIn: ({ microphoneMute: "microphoneMuteControl", awake: "stayAwakeControl", screensaver: "screensaverControl", screenshot: "screenshotControl", screenrecord: "screenRecordControl", dictate: "dictateControl", reminder: "reminderControl" })
+  readonly property string pluginTilePrefix: "plugins."
+  function isPluginTile(key) { return String(key).indexOf(pluginTilePrefix) === 0 }
   function isShown(key) {
     if (optIn[key] && !settings[optIn[key]]) return false
+    if (isPluginTile(key) && String(settings.controlCenterPlugins || "").split(",").indexOf(key) === -1) return false
     return String(settings.controlCenterHidden || "").split(",").indexOf(key) === -1
   }
   function setShown(key, shown) {
     if (optIn[key]) settings[optIn[key]] = shown
+    if (isPluginTile(key)) {
+      var added = String(settings.controlCenterPlugins || "").split(",").filter(function(item) { return item !== "" && item !== key })
+      if (shown) added.push(key)
+      settings.controlCenterPlugins = added.join(",")
+    }
     var hidden = String(settings.controlCenterHidden || "").split(",").filter(function(item) { return item !== "" && item !== key })
     if (!shown) hidden.push(key)
     settings.controlCenterHidden = hidden.join(",")

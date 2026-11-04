@@ -6,6 +6,8 @@ import "../controls"
 // Settings → Keybinds: the island's shortcuts from companion/bindings.sh, and
 // recording new ones. Addons' shortcuts aren't listed here: they're set in
 // each addon's options on the Addons page, through this page's recorder.
+// Plugins that open from the island (see addons/plugins) have a section of
+// their own, bound by bindings.sh as "plugin:<id>".
 // While recording, Hyprland is switched to an empty submap so its own
 // bindings don't take the keys.
 ColumnLayout {
@@ -19,7 +21,7 @@ ColumnLayout {
   // opens; recording and a pending conflict end when it closes.
   readonly property bool shown: view.active && (view.currentPage === "Keybinds" || view.currentPage === "Addons")
   onShownChanged: {
-    if (shown) { shortcutList.running = true; boundList.running = true }
+    if (shown) { shortcutList.running = true; boundList.running = true; pluginList.running = true }
     else { stopRecording(); cancelPending() }
   }
   Component.onDestruction: if (recordingId !== "") submapReset.running = true
@@ -48,6 +50,30 @@ ColumnLayout {
       }
     }
   }
+  // Plugins the island can open, as the Plugins view lists them.
+  property var plugins: []
+  Process {
+    id: pluginList
+    command: ["omarchy-plugin-list", "--json"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        try {
+          page.plugins = JSON.parse(text).filter(function(p) {
+            var kinds = p.kinds || []
+            return !p.firstParty && p.enabled && p.id !== "guilhermerisu.notifications" && kinds.indexOf("bar") === -1
+              && (kinds.some(function(k) { return ["panel", "overlay", "menu"].indexOf(k) !== -1 })
+                || page.view.host.barWidgets.has(String(p.id)))
+          }).map(function(p) { return { id: String(p.id), name: String(p.name || p.id) } })
+        } catch (e) {}
+      }
+    }
+  }
+  readonly property var pluginEntries: plugins.map(function(p) {
+    var id = "plugin:" + p.id
+    var saved = shortcuts.filter(function(e) { return e.id === id })[0]
+    return { id: id, label: p.name, keys: saved ? saved.keys : "", command: "omarchy-shell shell toggle " + p.id + " '{}'", addon: "@plugin" }
+  })
   Process {
     id: shortcutSet
     onExited: page.runNextSet()
@@ -77,12 +103,15 @@ ColumnLayout {
   }
 
   function setShortcut(id, keys) {
+    var plugin = pluginEntries.filter(function(e) { return e.id === id })[0]
+    var known = shortcuts.some(function(e) { return e.id === id })
     shortcuts = shortcuts.map(function(entry) {
       if (entry.id === id) return { id: entry.id, label: entry.label, keys: keys, command: entry.command, addon: entry.addon }
       if (keys !== "" && entry.keys === keys) return { id: entry.id, label: entry.label, keys: "", command: entry.command, addon: entry.addon }
       return entry
     })
-    queueRun(["set", id, keys])
+    if (plugin && !known) shortcuts = shortcuts.concat([Object.assign({}, plugin, { keys: keys })])
+    queueRun(plugin ? ["set", id, keys, plugin.label] : ["set", id, keys])
   }
   function restoreDefaults() {
     stopRecording()
@@ -212,6 +241,25 @@ ColumnLayout {
           iconTint: section.modelData.color
           last: index === section.entries.length - 1
         }
+      }
+    }
+  }
+
+  SettingsGroup {
+    view: page.view
+    visible: page.pluginEntries.length > 0
+    title: "Plugins"
+    Repeater {
+      model: page.pluginEntries
+      delegate: ShortcutRow {
+        view: page.view
+        keybinds: page
+        required property var modelData
+        required property int index
+        entry: modelData
+        icon: "󰐱"
+        iconTint: "#ff9f0a"
+        last: index === page.pluginEntries.length - 1
       }
     }
   }
