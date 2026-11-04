@@ -67,10 +67,31 @@ Addon {
     loading = true
     listProc.running = true
     keysProc.running = true
+    // Slower, and these rarely change: not each time the control center opens.
+    if (host.view !== "controls") boundProc.running = true
   }
 
-  // Each plugin's shortcut, by plugin id (see companion/bindings.sh).
-  property var keysById: ({})
+  // Each plugin's shortcut, by plugin id (see companion/bindings.sh): set in
+  // Settings, else bound elsewhere (the user's own bindings).
+  readonly property var keysById: Object.assign({}, boundKeys, savedKeys)
+  property var savedKeys: ({})
+  property var boundKeys: ({})
+  Process {
+    id: boundProc
+    command: ["bash", pluginsAddon.host.setup.companionDir + "/bindings.sh", "bound"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var keys = {}
+        String(text || "").split("\n").forEach(function(line) {
+          var cols = line.split("\t")
+          var match = String(cols[2] || "").match(/^omarchy-shell shell toggle (\S+)/)
+          if (match && !keys[match[1]]) keys[match[1]] = cols[0]
+        })
+        pluginsAddon.boundKeys = keys
+      }
+    }
+  }
   Process {
     id: keysProc
     command: ["bash", pluginsAddon.host.setup.companionDir + "/bindings.sh", "list"]
@@ -82,7 +103,7 @@ Addon {
           var cols = line.split("\t")
           if (cols[0].indexOf("plugin:") === 0) keys[cols[0].slice(7)] = cols[2] || ""
         })
-        pluginsAddon.keysById = keys
+        pluginsAddon.savedKeys = keys
       }
     }
   }

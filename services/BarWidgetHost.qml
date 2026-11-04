@@ -76,6 +76,8 @@ Item {
   // One panel open at a time, as there.
   QtObject {
     id: bar
+    property var shell: hosts.host.shell
+    readonly property var foreignPopoutMarker: ({ foreign: true })
     property color foreground: hosts.host.theme.text
     property color barForeground: hosts.host.theme.text
     property color background: hosts.host.theme.background

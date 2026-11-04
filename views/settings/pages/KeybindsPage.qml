@@ -69,11 +69,23 @@ ColumnLayout {
       }
     }
   }
-  readonly property var pluginEntries: plugins.map(function(p) {
-    var id = "plugin:" + p.id
-    var saved = shortcuts.filter(function(e) { return e.id === id })[0]
-    return { id: id, label: p.name, keys: saved ? saved.keys : "", command: "omarchy-shell shell toggle " + p.id + " '{}'", addon: "@plugin" }
-  })
+  // Keys set here first, else ones bound elsewhere (the user's own bindings).
+  // A plugin since disabled or removed stays while it holds a key, so the key
+  // can be taken back.
+  readonly property var pluginEntries: {
+    var rows = plugins.map(function(p) {
+      var id = "plugin:" + p.id
+      var command = "omarchy-shell shell toggle " + p.id
+      var saved = shortcuts.filter(function(e) { return e.id === id })[0]
+      var live = liveBindings.filter(function(b) { return b.command === command || b.command.indexOf(command + " ") === 0 })[0]
+      return { id: id, label: p.name, name: p.name, keys: saved ? saved.keys : live ? live.keys : "", command: command + " '{}'", addon: "@plugin" }
+    })
+    shortcuts.forEach(function(e) {
+      if (e.addon !== "@plugin" || e.keys === "" || plugins.some(function(p) { return "plugin:" + p.id === e.id })) return
+      rows.push({ id: e.id, label: e.label + " (not enabled)", name: e.label, keys: e.keys, command: e.command, addon: e.addon })
+    })
+    return rows
+  }
   Process {
     id: shortcutSet
     onExited: page.runNextSet()
@@ -111,7 +123,7 @@ ColumnLayout {
       return entry
     })
     if (plugin && !known) shortcuts = shortcuts.concat([Object.assign({}, plugin, { keys: keys })])
-    queueRun(plugin ? ["set", id, keys, plugin.label] : ["set", id, keys])
+    queueRun(plugin ? ["set", id, keys, plugin.name] : ["set", id, keys])
   }
   function restoreDefaults() {
     stopRecording()
@@ -149,7 +161,7 @@ ColumnLayout {
   function captured(keys) {
     var id = recordingId
     stopRecording()
-    var own = shortcuts.filter(function(e) { return e.id === id })[0]
+    var own = shortcuts.concat(pluginEntries).filter(function(e) { return e.id === id })[0]
     var used = liveBindings.filter(function(b) {
       return b.keys === keys && (!own || b.command !== own.command)
     })[0]
