@@ -18,11 +18,11 @@ IslandPill {
   pillWidth: 440
   pillHeight: 84
   // The island's own banners act on a click (see Island.qml's showBanner);
-  // any other notification is dismissed.
+  // any other notification takes you to where it came from (and is dismissed).
   function clicked(mouse) {
     if (row.islandUpdate) host.updateIsland()
     else if (row.islandSetupRetry) { host.dismissFeedback(); host.setup.install() }
-    else host.dismissPillNotification()
+    else { host.dismissFeedback(); host.notifications.open(row, true) }
   }
 
   PillReveal { id: reveal; theme: host.theme; shown: pill.shown }
