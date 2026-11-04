@@ -38,6 +38,8 @@ Item {
   anchors.margins: padding
   implicitWidth: view ? view.implicitWidth : 0
   implicitHeight: view ? view.implicitHeight : 0
+  // Never taller than the island can be: a view that wants more has to scroll.
+  height: Math.min(implicitHeight, maxHeight - 2 * padding)
 
   // Content fades in once the island has started morphing open.
   visible: active || opacity > 0.01
