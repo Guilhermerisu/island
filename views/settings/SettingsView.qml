@@ -16,7 +16,7 @@ Item {
   // The core panes, with the enabled addons' own (see addons/Addon.qml)
   // after Addons.
   readonly property var addonPages: host.addons.settingsPages
-  readonly property var pages: ["General", "Live Activities", "Notifications", "Addons"]
+  readonly property var pages: ["General", "Live Activities", "Notifications", "Network", "Addons"]
     .concat(addonPages.map(function(page) { return page.title }), ["Keybinds"])
   onPagesChanged: if (pages.indexOf(currentPage) === -1) currentPage = "General"
   readonly property var pageInfo: {
@@ -37,6 +37,7 @@ Item {
     "General": { icon: "󰢻", color: settingsView.host.theme.system.gray, about: "Appearance, motion, and how the pill looks at rest." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
     "Notifications": { icon: "󰂜", color: "#ff3b30", about: "How notification banners appear on the island." },
+    "Network": { icon: "󰖩", color: "#0a84ff", about: "Wi-Fi, Ethernet, and VPN connections, and the computer's name on the network." },
     "Addons": { icon: "󰐕", color: settingsView.host.theme.system.blue, about: "Extras that stay unloaded until you add them." },
     "Keybinds": { icon: "󰥻", color: settingsView.host.theme.system.gray, about: "Keyboard shortcuts that open each part of the island." }
   })
@@ -47,6 +48,7 @@ Item {
       "General": "general time format 12-hour clock style hide automatically appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile omarchy menu search apps applications",
       "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads screen recording record system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration",
+      "Network": "network wifi wi-fi ethernet vpn wireguard openvpn connection connections ip address dns dhcp router gateway hostname password hidden forget networkmanager nmtui",
       "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
         return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
       }).join(" "),
@@ -272,6 +274,7 @@ Item {
           GeneralPage { view: settingsView }
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
+          NetworkPage { view: settingsView }
           AddonsPage { view: settingsView }
           // By count: addonPages is rebuilt whenever any addon loads, and a
           // new array as the model would recreate the open page.
