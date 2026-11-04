@@ -172,6 +172,7 @@ Item {
       opacity: slot.itemDisabled ? 0.4 : 1
 
       Loader {
+        id: rowLoader
         anchors.fill: parent
         scale: picker.grid && slotMouse.pressed && !slot.itemDisabled ? 0.96 : 1
         Behavior on scale { MotionAnimation { theme: picker.host.theme; pace: slotMouse.pressed ? "press" : "standard" } }
@@ -187,7 +188,13 @@ Item {
         id: slotMouse
         anchors.fill: parent
         cursorShape: slot.itemDisabled ? Qt.ArrowCursor : Qt.PointingHandCursor
-        onClicked: if (!slot.itemDisabled) picker.chosen(slot.modelData)
+        onClicked: function(mouse) {
+          if (slot.itemDisabled) return
+          // A row can take a click on a part of itself (clickAt, true when it did).
+          var row = rowLoader.item
+          var at = row && row.clickAt ? mapToItem(row, mouse.x, mouse.y) : null
+          if (!at || !row.clickAt(at.x, at.y)) picker.chosen(slot.modelData)
+        }
       }
     }
 
