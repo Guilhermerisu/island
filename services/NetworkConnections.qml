@@ -5,7 +5,9 @@ import Quickshell.Io
 // NetworkPage): the saved profiles by kind, one profile's settings and its
 // live address, and what changes them: edit, connect, disconnect, forget, add
 // a Wi-Fi network, import a VPN, set the hostname. Commands run one at a
-// time, with their arguments passed as such (never through a shell string).
+// time, with their arguments passed as such (never through a shell string);
+// connecting runs beside them, since it can take a minute and can be cancelled.
+// Passwords reach nmcli on its stdin, out of `ps`.
 // A failure's message is kept in `error` until the next command.
 Item {
   id: nm
@@ -15,7 +17,8 @@ Item {
   property var connections: []
   property string hostname: ""
   property string error: ""
-  property bool busy: false
+  // The uuid being connected to.
+  property string connecting: ""
   // The open profile's uuid, its settings ({ field: value }, the keys nmcli's
   // own, like "ipv4.method"), and when it's connected its live addresses.
   property string detailUuid: ""
@@ -40,19 +43,26 @@ Item {
   property var queue: []
   property var current: null
   // run(["connection", "up", uuid], function(ok, output) { … }); the message
-  // of a failed one goes to `error` as well.
-  function run(args, done) {
-    queue = queue.concat([{ args: args, done: done }])
+  // of a failed one goes to `error` as well, unless `quiet`.
+  function run(args, done, quiet) {
+    queue = queue.concat([{ command: nmcliCommand(args), done: done, quiet: quiet }])
     next()
+  }
+  // Stderr joins stdout, and the exit code ends it. C locale, so the values
+  // ("yes", "no") don't depend on the language.
+  function nmcliCommand(args) {
+    return ["bash", "-c", 'LC_ALL=C nmcli "$@" 2>&1; echo "::rc=$?"', "--"].concat(args)
+  }
+  function parseResult(text) {
+    var match = String(text).match(/(?:^|\n)::rc=(\d+)\s*$/)
+    return { ok: !!match && match[1] === "0", output: match ? String(text).slice(0, match.index) : String(text) }
   }
   function next() {
     if (current || queue.length === 0) return
     current = queue[0]
     queue = queue.slice(1)
-    busy = true
-    // Stderr joins stdout, and the exit code ends it. C locale, so the values
-    // ("yes", "no") don't depend on the language.
-    proc.command = ["bash", "-c", 'LC_ALL=C nmcli "$@" 2>&1; echo "::rc=$?"', "--"].concat(current.args)
+    proc.environment = current.secret ? { ISLAND_SECRET: current.secret } : ({})
+    proc.command = current.command
     proc.running = true
   }
   Process {
@@ -60,14 +70,12 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var match = String(text).match(/(?:^|\n)::rc=(\d+)\s*$/)
-        var ok = !!match && match[1] === "0"
-        var output = match ? String(text).slice(0, match.index) : String(text)
+        var result = nm.parseResult(text)
         var job = nm.current
         nm.current = null
-        nm.busy = nm.queue.length > 0
-        if (!ok && !job.quiet) nm.error = output.trim() || "nmcli failed"
-        if (job.done) job.done(ok, output)
+        proc.environment = ({})
+        if (!result.ok && !job.quiet) nm.error = result.output.trim() || "nmcli failed"
+        if (job.done) job.done(result.ok, result.output)
         nm.next()
       }
     }
@@ -105,10 +113,11 @@ Item {
           || (a.active === b.active ? a.name.localeCompare(b.name) : a.active ? -1 : 1)
       })
       nm.connections = found
+      // After the list: a connection's device comes from it.
+      if (nm.detailUuid !== "") nm.loadDetail(nm.detailUuid)
     })
     run(["general", "hostname"], function(ok, output) { if (ok) nm.hostname = output.trim() })
     if (!checkEditor.running) checkEditor.running = true
-    if (detailUuid !== "") loadDetail(detailUuid)
   }
   Process {
     id: checkEditor
@@ -163,13 +172,64 @@ Item {
   // modify(uuid, ["ipv4.method", "auto", …], reapplied): nmcli's property and
   // value pairs; `reapplied` pushes IP and DNS changes to a live connection.
   function modify(uuid, pairs, reapplied) {
+    if (uuid === "") return
     run(["connection", "modify", uuid].concat(pairs), function(ok) {
       if (!ok) return
       if (reapplied) nm.reapply(uuid)
       nm.refresh()
     })
   }
-  function connect(uuid) { run(["connection", "up", uuid], function() { nm.refresh() }) }
+  // Writes a password through nmcli's editor, which reads it from stdin. It
+  // can't keep a space at either end, so that's refused rather than changed.
+  function setSecret(uuid, property, value, done) {
+    if (uuid === "") return
+    if (value !== value.trim()) {
+      error = "A password can't start or end with a space."
+      if (done) done(false)
+      return
+    }
+    queue = queue.concat([{ command: ["bash", "-c", secretScript, "--", property, uuid], secret: value, done: done }])
+    next()
+  }
+  // The editor exits 0 whatever happened, and echoes its input: only its errors
+  // come out.
+  readonly property string secretScript: 'out=$(printf "set %s %s\\nsave persistent\\nquit\\n" "$1" "$ISLAND_SECRET" | LC_ALL=C nmcli connection edit "$2" 2>&1); errors=$(printf "%s\\n" "$out" | grep "^Error"); if [ -n "$errors" ]; then printf "%s\\n" "$errors"; echo "::rc=1"; else echo "::rc=0"; fi'
+  // secrets: [[property, value], …], one after the other; done(ok).
+  function setSecrets(uuid, secrets, done) {
+    if (secrets.length === 0) { done(true); return }
+    setSecret(uuid, secrets[0][0], secrets[0][1], function(ok) {
+      if (ok) nm.setSecrets(uuid, secrets.slice(1), done)
+      else done(false)
+    })
+  }
+
+  // Cancelled by taking the connection down, which ends the `up` as a failure.
+  property bool connectCancelled: false
+  function connect(uuid) {
+    if (connecting === uuid) return
+    if (connecting !== "") { error = "Still connecting to another network."; return }
+    connecting = uuid
+    connectCancelled = false
+    upProc.command = nmcliCommand(["connection", "up", uuid])
+    upProc.running = true
+  }
+  function cancelConnect() {
+    if (connecting === "") return
+    connectCancelled = true
+    run(["connection", "down", connecting], null, true)
+  }
+  Process {
+    id: upProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var result = nm.parseResult(text)
+        if (!result.ok && !nm.connectCancelled) nm.error = result.output.trim() || "nmcli failed"
+        nm.connecting = ""
+        if (nm.active) nm.refresh()
+      }
+    }
+  }
   function disconnect(uuid) { run(["connection", "down", uuid], function() { nm.refresh() }) }
   function forget(uuid) {
     run(["connection", "delete", uuid], function(ok) {
@@ -178,14 +238,21 @@ Item {
       nm.refresh()
     })
   }
-  // `security` is the extra nmcli arguments of its security: none for an open
-  // network, a key for WPA Personal, or the 802.1X ones for an enterprise one.
-  function addWifi(ssid, hidden, security, then) {
+  // `security` is the extra nmcli arguments of its security, and `secrets` its
+  // passwords (see setSecrets). A profile whose passwords don't save is removed.
+  function addWifi(ssid, hidden, security, secrets, then) {
     var args = ["connection", "add", "type", "wifi", "ifname", "*", "con-name", ssid, "ssid", ssid, "wifi.hidden", hidden ? "yes" : "no"].concat(security)
-    run(args, function(ok) {
+    run(args, function(ok, output) {
       if (!ok) return
-      nm.run(["connection", "up", ssid], function() { nm.refresh() })
-      if (then) then()
+      // By uuid: another profile can have the same name.
+      var added = output.match(/\(([0-9a-fA-F-]{36})\)/)
+      if (!added) { nm.error = output.trim(); nm.refresh(); return }
+      nm.setSecrets(added[1], secrets, function(saved) {
+        if (!saved) { nm.run(["connection", "delete", added[1]], function() { nm.refresh() }); return }
+        nm.refresh()
+        nm.connect(added[1])
+        if (then) then()
+      })
     })
   }
   // type: "wireguard" or "openvpn"

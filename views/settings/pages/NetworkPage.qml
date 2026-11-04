@@ -26,6 +26,7 @@ ColumnLayout {
   readonly property bool wifi: !!item && item.type === "802-11-wireless"
   readonly property string keyMgmt: d["802-11-wireless-security.key-mgmt"] || ""
   readonly property bool hasPassword: keyMgmt === "wpa-psk" || keyMgmt === "sae"
+  readonly property bool connecting: !!item && client.connecting === item.uuid
 
   readonly property var kindIcons: ({ "Wi-Fi": "󰖩", "Ethernet": "󰈀", "VPN": "󰦝", "Mobile": "󰢾", "Bluetooth": "󰂯", "Other": "󰛳" })
   readonly property var kindTints: ({
@@ -39,15 +40,29 @@ ColumnLayout {
 
   // The address setup being edited, per protocol: { method, addr, gw, dns, ignore }.
   property var edit: ({ ipv4: {}, ipv6: {} })
+  // What the profile has for each, the connection they're of, and the ones just
+  // applied, which the next read replaces with what NetworkManager made of them.
+  property var editBase: ({ ipv4: {}, ipv6: {} })
+  property string editUuid: ""
+  property var applied: ({})
+  function sameEdit(a, b) {
+    return a.method === b.method && a.addr === b.addr && a.gw === b.gw && a.dns === b.dns && a.ignore === b.ignore
+  }
+  // Rereads them; one being edited stays, whatever else changed on the connection.
   function loadEdits() {
-    var next = {}
+    var next = {}, base = {}
     ;["ipv4", "ipv6"].forEach(function(p) {
-      next[p] = {
+      base[p] = {
         method: d[p + ".method"] || "auto", addr: d[p + ".addresses"] || "", gw: d[p + ".gateway"] || "",
         dns: d[p + ".dns"] || "", ignore: d[p + ".ignore-auto-dns"] === "yes"
       }
+      var keep = editUuid === client.detailUuid && !applied[p] && !sameEdit(edit[p], editBase[p])
+      next[p] = keep ? edit[p] : base[p]
     })
+    editUuid = client.detailUuid
+    editBase = base
     edit = next
+    applied = ({})
     confirmForget = false
   }
   Connections {
@@ -60,18 +75,24 @@ ColumnLayout {
     next[proto][key] = value
     edit = next
   }
-  function dirty(proto) {
-    var e = edit[proto] || {}
-    return e.method !== (d[proto + ".method"] || "auto") || e.addr !== (d[proto + ".addresses"] || "")
-      || e.gw !== (d[proto + ".gateway"] || "") || e.dns !== (d[proto + ".dns"] || "")
-      || e.ignore !== (d[proto + ".ignore-auto-dns"] === "yes")
+  function dirty(proto) { return !sameEdit(edit[proto], editBase[proto]) }
+  function revertEdit(proto) {
+    view.forceActiveFocus()
+    var next = Object.assign({}, edit)
+    next[proto] = editBase[proto]
+    edit = next
   }
   function applyEdit(proto) {
+    // Commits the field being typed in.
+    view.forceActiveFocus()
     var e = edit[proto]
     var manual = e.method === "manual"
     if (manual && e.addr === "") { client.error = "A manual setup needs an address, like 192.168.1.20/24."; return }
     // Only automatic and manual setups use DNS servers.
     var usesDns = manual || e.method === "auto" || e.method === "dhcp"
+    var done = Object.assign({}, applied)
+    done[proto] = true
+    applied = done
     client.modify(client.detailUuid, [
       proto + ".method", e.method,
       proto + ".addresses", manual ? e.addr : "",
@@ -93,6 +114,7 @@ ColumnLayout {
   // Sets one 802.1X value, a path for the files; empty clears it.
   function setEap(key, value) { client.modify(client.detailUuid, ["802-1x." + key, value], false) }
   function setEapPath(key, value) { setEap(key, expand(value)) }
+  function setEapSecret(key, value) { client.setSecret(client.detailUuid, "802-1x." + key, value) }
 
   property bool confirmForget: false
   // "wifi" or "vpn" while that form is open.
@@ -112,6 +134,19 @@ ColumnLayout {
   property string vpnType: "wireguard"
   property string vpnPath: ""
   onShownChanged: if (!shown) adding = ""
+  // Leaving the form forgets what was typed in it, passwords above all.
+  onAddingChanged: {
+    newSsid = ""
+    newHidden = false
+    newKey = ""
+    newIdentity = ""
+    newEapPassword = ""
+    newCa = ""
+    newClientCert = ""
+    newPrivateKey = ""
+    newKeyPassword = ""
+    vpnPath = ""
+  }
 
   component ValueText: Text {
     color: page.view.textMuted
@@ -150,9 +185,8 @@ ColumnLayout {
     property string value: ""
     property string placeholder: "/path/to/file"
     signal committed(string value)
-    function commit() { field.commit() }
     spacing: 6
-    SettingsTextField { id: field; view: pathField.view; value: pathField.value; placeholder: pathField.placeholder; onCommitted: function(v) { pathField.committed(v) } }
+    SettingsTextField { view: pathField.view; value: pathField.value; placeholder: pathField.placeholder; onCommitted: function(v) { pathField.committed(v) } }
     SettingsButton {
       visible: pathField.nmClient.filePickerAvailable
       view: pathField.view
@@ -271,7 +305,7 @@ ColumnLayout {
               icon: page.kindIcons[connectionRow.modelData.kind] || ""
               iconTint: connectionRow.modelData.active ? page.green : page.kindTints[connectionRow.modelData.kind] || page.view.accent
               label: connectionRow.modelData.name
-              detail: connectionRow.modelData.active ? "Connected · " + connectionRow.modelData.device : "Not connected"
+              detail: client.connecting === connectionRow.modelData.uuid ? "Connecting…" : connectionRow.modelData.active ? "Connected · " + connectionRow.modelData.device : "Not connected"
               // The green row has its own edge.
               last: connectionRow.final || connectionRow.modelData.active
               ValueText { text: "󰅂"; font.family: page.view.host.theme.fontFamily }
@@ -313,13 +347,10 @@ ColumnLayout {
       title: "New Wi-Fi Network"
       readonly property bool enterprise: page.newSec === "eap"
       readonly property bool newTunnelled: page.newEap === "peap" || page.newEap === "ttls" || page.newEap === "fast"
-      function commitAll() {
-        [ssidField, keyField, identityField, eapPasswordField, caField, clientCertField, privateKeyField, keyPasswordField].forEach(function(f) { f.commit() })
-      }
       SettingsRow {
         view: page.view
         label: "Network Name"
-        SettingsTextField { id: ssidField; view: page.view; value: page.newSsid; placeholder: "SSID"; onCommitted: function(v) { page.newSsid = v } }
+        SettingsTextField { view: page.view; value: page.newSsid; placeholder: "SSID"; onCommitted: function(v) { page.newSsid = v } }
       }
       SettingsRow {
         view: page.view
@@ -343,7 +374,7 @@ ColumnLayout {
         visible: page.newSec === "psk"
         label: "Password"
         last: true
-        SettingsTextField { id: keyField; view: page.view; secret: true; value: page.newKey; placeholder: "Password"; onCommitted: function(v) { page.newKey = v } }
+        SettingsTextField { view: page.view; secret: true; value: page.newKey; placeholder: "Password"; onCommitted: function(v) { page.newKey = v } }
       }
       SettingsRow {
         view: page.view
@@ -356,13 +387,13 @@ ColumnLayout {
         visible: wifiForm.enterprise
         label: "Identity"
         detail: "Your user name"
-        SettingsTextField { id: identityField; view: page.view; value: page.newIdentity; placeholder: "user@example.com"; onCommitted: function(v) { page.newIdentity = v } }
+        SettingsTextField { view: page.view; value: page.newIdentity; placeholder: "user@example.com"; onCommitted: function(v) { page.newIdentity = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap !== "tls"
         label: "Password"
-        SettingsTextField { id: eapPasswordField; view: page.view; secret: true; value: page.newEapPassword; placeholder: "Password"; onCommitted: function(v) { page.newEapPassword = v } }
+        SettingsTextField { view: page.view; secret: true; value: page.newEapPassword; placeholder: "Password"; onCommitted: function(v) { page.newEapPassword = v } }
       }
       SettingsRow {
         view: page.view
@@ -376,26 +407,26 @@ ColumnLayout {
         label: "CA Certificate"
         detail: "Empty: the system's certificates"
         last: page.newEap !== "tls"
-        PathField { id: caField; view: page.view; nmClient: client; value: page.newCa; placeholder: "/path/to/ca.pem"; onCommitted: function(v) { page.newCa = v } }
+        PathField { view: page.view; nmClient: client; value: page.newCa; placeholder: "/path/to/ca.pem"; onCommitted: function(v) { page.newCa = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
         label: "Client Certificate"
-        PathField { id: clientCertField; view: page.view; nmClient: client; value: page.newClientCert; placeholder: "/path/to/client.pem"; onCommitted: function(v) { page.newClientCert = v } }
+        PathField { view: page.view; nmClient: client; value: page.newClientCert; placeholder: "/path/to/client.pem"; onCommitted: function(v) { page.newClientCert = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
         label: "Private Key"
-        PathField { id: privateKeyField; view: page.view; nmClient: client; value: page.newPrivateKey; placeholder: "/path/to/key.pem"; onCommitted: function(v) { page.newPrivateKey = v } }
+        PathField { view: page.view; nmClient: client; value: page.newPrivateKey; placeholder: "/path/to/key.pem"; onCommitted: function(v) { page.newPrivateKey = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
         label: "Key Password"
         last: true
-        SettingsTextField { id: keyPasswordField; view: page.view; secret: true; value: page.newKeyPassword; placeholder: "Password"; onCommitted: function(v) { page.newKeyPassword = v } }
+        SettingsTextField { view: page.view; secret: true; value: page.newKeyPassword; placeholder: "Password"; onCommitted: function(v) { page.newKeyPassword = v } }
       }
       Item {
         Layout.fillWidth: true
@@ -408,37 +439,28 @@ ColumnLayout {
           anchors.rightMargin: 14
           anchors.verticalCenter: parent.verticalCenter
           onClicked: {
-            wifiForm.commitAll()
-            var security = []
+            // Commits the field being typed in.
+            page.view.forceActiveFocus()
+            var security = [], secrets = []
             if (page.newSsid === "") { client.error = "Enter the network's name."; return }
             if (page.newSec === "psk") {
               if (page.newKey === "") { client.error = "Enter the network's password."; return }
-              security = ["wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", page.newKey]
+              security = ["wifi-sec.key-mgmt", "wpa-psk"]
+              secrets = [["802-11-wireless-security.psk", page.newKey]]
             } else if (page.newSec === "eap") {
               if (page.newIdentity === "") { client.error = "Enter your identity."; return }
               security = ["wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", page.newEap, "802-1x.identity", page.newIdentity]
-              if (page.newEap !== "tls" && page.newEapPassword !== "") security = security.concat(["802-1x.password", page.newEapPassword])
+              if (page.newEap !== "tls" && page.newEapPassword !== "") secrets = [["802-1x.password", page.newEapPassword]]
               if (wifiForm.newTunnelled && page.newInner !== "") security = security.concat(["802-1x.phase2-auth", page.newInner])
               if (page.newCa !== "") security = security.concat(["802-1x.ca-cert", page.expand(page.newCa)])
               else security = security.concat(["802-1x.system-ca-certs", "yes"])
               if (page.newEap === "tls") {
                 if (page.newClientCert === "" || page.newPrivateKey === "") { client.error = "TLS needs a client certificate and a private key."; return }
                 security = security.concat(["802-1x.client-cert", page.expand(page.newClientCert), "802-1x.private-key", page.expand(page.newPrivateKey)])
-                if (page.newKeyPassword !== "") security = security.concat(["802-1x.private-key-password", page.newKeyPassword])
+                if (page.newKeyPassword !== "") secrets = [["802-1x.private-key-password", page.newKeyPassword]]
               }
             }
-            client.addWifi(page.newSsid, page.newHidden, security, function() {
-              page.adding = ""
-              page.newSsid = ""
-              page.newKey = ""
-              page.newIdentity = ""
-              page.newEapPassword = ""
-              page.newCa = ""
-              page.newClientCert = ""
-              page.newPrivateKey = ""
-              page.newKeyPassword = ""
-              page.newHidden = false
-            })
+            client.addWifi(page.newSsid, page.newHidden, security, secrets, function() { page.adding = "" })
           }
         }
       }
@@ -463,7 +485,7 @@ ColumnLayout {
         label: "File"
         detail: "Path to the .conf or .ovpn file"
         last: true
-        SettingsTextField { id: vpnField; view: page.view; value: page.vpnPath; placeholder: "~/vpn.conf"; onCommitted: function(v) { page.vpnPath = v } }
+        SettingsTextField { view: page.view; value: page.vpnPath; placeholder: "~/vpn.conf"; onCommitted: function(v) { page.vpnPath = v } }
       }
       Item {
         Layout.fillWidth: true
@@ -476,9 +498,10 @@ ColumnLayout {
           anchors.rightMargin: 14
           anchors.verticalCenter: parent.verticalCenter
           onClicked: {
-            vpnField.commit()
+            // Commits the field being typed in.
+            page.view.forceActiveFocus()
             if (page.vpnPath === "") { client.error = "Enter the file's path."; return }
-            client.importVpn(page.vpnType, page.expand(page.vpnPath), function() { page.adding = ""; page.vpnPath = "" })
+            client.importVpn(page.vpnType, page.expand(page.vpnPath), function() { page.adding = "" })
           }
         }
       }
@@ -494,13 +517,13 @@ ColumnLayout {
 
     RowLayout {
       Layout.fillWidth: true
-      SettingsButton { view: page.view; label: "‹  All Connections"; onClicked: client.closeDetail() }
+      SettingsButton { view: page.view; label: "‹  All Connections"; onClicked: { page.view.forceActiveFocus(); client.closeDetail() } }
       Item { Layout.fillWidth: true }
       SettingsButton {
         view: page.view
-        primary: !(page.item && page.item.active)
-        label: page.item && page.item.active ? "Disconnect" : "Connect"
-        onClicked: page.item.active ? client.disconnect(page.item.uuid) : client.connect(page.item.uuid)
+        primary: !page.connecting && !(page.item && page.item.active)
+        label: page.connecting ? "Cancel" : page.item && page.item.active ? "Disconnect" : "Connect"
+        onClicked: page.connecting ? client.cancelConnect() : page.item.active ? client.disconnect(page.item.uuid) : client.connect(page.item.uuid)
       }
     }
 
@@ -521,7 +544,7 @@ ColumnLayout {
         label: "State"
         last: !page.item || !page.item.active
         ValueText {
-          text: page.item && page.item.active ? "Connected on " + page.item.device : "Not connected"
+          text: page.connecting ? "Connecting…" : page.item && page.item.active ? "Connected on " + page.item.device : "Not connected"
           color: page.item && page.item.active ? page.green : page.view.textMuted
         }
       }
@@ -613,13 +636,13 @@ ColumnLayout {
           visible: ipGroup.manual
           label: "Address"
           detail: "With its prefix, like " + ipGroup.modelData.example
-          SettingsTextField { view: page.view; value: ipGroup.e.addr || ""; placeholder: ipGroup.modelData.example; onCommitted: function(v) { page.setEdit(ipGroup.modelData.proto, "addr", v) } }
+          SettingsTextField { view: page.view; value: ipGroup.e.addr || ""; placeholder: ipGroup.modelData.example; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "addr", v) } }
         }
         SettingsRow {
           view: page.view
           visible: ipGroup.manual
           label: "Router"
-          SettingsTextField { view: page.view; value: ipGroup.e.gw || ""; placeholder: ipGroup.modelData.gateway; onCommitted: function(v) { page.setEdit(ipGroup.modelData.proto, "gw", v) } }
+          SettingsTextField { view: page.view; value: ipGroup.e.gw || ""; placeholder: ipGroup.modelData.gateway; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "gw", v) } }
         }
         SettingsRow {
           view: page.view
@@ -627,7 +650,7 @@ ColumnLayout {
           label: "DNS Servers"
           detail: "Separated by commas"
           last: !(ipGroup.e.method === "auto" || ipGroup.e.method === "dhcp") && !page.dirty(ipGroup.modelData.proto)
-          SettingsTextField { view: page.view; value: ipGroup.e.dns || ""; placeholder: "Automatic"; onCommitted: function(v) { page.setEdit(ipGroup.modelData.proto, "dns", v) } }
+          SettingsTextField { view: page.view; value: ipGroup.e.dns || ""; placeholder: "Automatic"; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "dns", v) } }
         }
         SettingsRow {
           view: page.view
@@ -646,7 +669,7 @@ ColumnLayout {
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
-            SettingsButton { view: page.view; label: "Revert"; onClicked: page.loadEdits() }
+            SettingsButton { view: page.view; label: "Revert"; onClicked: page.revertEdit(ipGroup.modelData.proto) }
             SettingsButton { view: page.view; primary: true; label: "Apply"; onClicked: page.applyEdit(ipGroup.modelData.proto) }
           }
         }
@@ -678,8 +701,9 @@ ColumnLayout {
         SettingsTextField {
           view: page.view
           secret: true
+          writeOnly: true
           placeholder: "Unchanged"
-          onCommitted: function(v) { if (v !== "") client.modify(client.detailUuid, ["802-11-wireless-security.psk", v], false) }
+          onCommitted: function(v) { if (v !== "") client.setSecret(client.detailUuid, "802-11-wireless-security.psk", v) }
         }
       }
       SettingsRow {
@@ -732,7 +756,7 @@ ColumnLayout {
         visible: page.eap !== "tls"
         label: "Password"
         detail: "Type a new one to change it"
-        SettingsTextField { view: page.view; secret: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEap("password", v) } }
+        SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEapSecret("password", v) } }
       }
       SettingsRow {
         view: page.view
@@ -776,7 +800,7 @@ ColumnLayout {
         visible: page.eap === "tls"
         label: "Key Password"
         last: true
-        SettingsTextField { view: page.view; secret: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEap("private-key-password", v) } }
+        SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEapSecret("private-key-password", v) } }
       }
     }
 
