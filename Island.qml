@@ -176,6 +176,18 @@ Item {
   }
 
 
+  // Other plugins' bar widgets; the shell opens them through the three
+  // functions below (see services/BarWidgetHost).
+  readonly property var barWidgets: barWidgetHost
+  BarWidgetHost { id: barWidgetHost; host: root }
+  function summonBarWidget(id) {
+    if (!barWidgetHost.widget(id)) return false
+    view = "rest"
+    return barWidgetHost.summon(id)
+  }
+  function hideBarWidget(id) { return barWidgetHost.hide(id) }
+  function isBarWidgetOpen(id) { return barWidgetHost.isOpen(id) }
+
   readonly property var addons: addonHost
   Addons { id: addonHost; host: root; settings: root.settings }
 

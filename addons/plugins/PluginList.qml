@@ -1,15 +1,15 @@
 import QtQuick
-import Quickshell
-import Quickshell.Io
 import "../../components"
 
 // Plugins added with `omarchy plugin add` (every third-party plugin but the
 // bar in use, and the island's own notifications companion, which setup
 // manages: switching it off here would quietly bring back Omarchy's
 // notifications and send the island back to "Click to Setup"). Enter opens
-// an enabled panel, overlay, or menu plugin through the shell; on any other
+// an enabled panel, overlay, or menu plugin through the shell, or a bar
+// widget from the bar layout (see services/BarWidgetHost); on any other
 // plugin it flips enabled. Shift+Enter always flips enabled, the same as
-// `omarchy plugin enable|disable`.
+// `omarchy plugin enable|disable`. An openable plugin shows its shortcut at
+// the right; clicking the keys opens Settings → Keybinds, where it is set.
 ListPicker {
   id: plugins
   placeholder: "Search plugins"
@@ -34,55 +34,16 @@ ListPicker {
   }
   onActiveChanged: if (active) refresh()
 
-  readonly property var openKinds: ["panel", "overlay", "menu"]
-  property var all: []
-  property bool loading: false
-
-  Process {
-    id: listProc
-    command: ["omarchy-plugin-list", "--json"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        plugins.loading = false
-        try {
-          plugins.all = JSON.parse(text).filter(function(p) {
-            return !p.firstParty && (p.kinds || []).indexOf("bar") === -1 && p.id !== "guilhermerisu.notifications"
-          }).map(function(p) {
-            var kinds = p.kinds || []
-            return {
-              key: p.id, id: String(p.id), name: String(p.name || p.id), kinds: kinds,
-              enabled: !!p.enabled, canDisable: p.canDisable !== false,
-              openable: kinds.some(function(k) { return plugins.openKinds.indexOf(k) !== -1 })
-            }
-          })
-        } catch (e) {}
-      }
-    }
-  }
-  function refresh() {
-    if (listProc.running) return
-    loading = true
-    listProc.running = true
-  }
-
-  Process {
-    id: toggleProc
-    onExited: plugins.refresh()
-  }
-  function setEnabled(entry, enabled) {
-    if (!entry || toggleProc.running || (!enabled && !entry.canDisable)) return
-    toggleProc.command = [enabled ? "omarchy-plugin-enable" : "omarchy-plugin-disable", entry.id]
-    toggleProc.running = true
-  }
-
-  // Close first so the plugin's window, not the island, gets the keyboard.
-  Process { id: runner }
-  function open(entry) {
-    host.view = "rest"
-    runner.command = ["bash", "-c", 'sleep 0.15; exec omarchy-shell shell toggle "$1" "{}"', "--", entry.id]
-    runner.startDetached()
-  }
+  // The list, shortcuts, and actions live in the addon (see PluginsAddon),
+  // which the control center's tiles share.
+  required property var addon
+  readonly property var all: addon.all
+  readonly property bool loading: addon.loading
+  readonly property var keysById: addon.keysById
+  function keyText(keys) { return addon.keyText(keys) }
+  function refresh() { addon.refresh() }
+  function setEnabled(entry, enabled) { addon.setEnabled(entry, enabled) }
+  function open(entry) { addon.open(entry) }
 
   row: Component {
     Item {
@@ -104,7 +65,7 @@ ListPicker {
       Column {
         anchors.left: icon.right
         anchors.leftMargin: 12
-        anchors.right: stateLabel.left
+        anchors.right: keysChip.visible ? keysChip.left : stateLabel.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         spacing: 1
@@ -128,6 +89,35 @@ ListPicker {
           font.family: plugins.host.theme.textFontFamily
           font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(11))
           font.pixelSize: plugins.host.theme.px(11)
+        }
+      }
+      // Taken by the picker before its own click (see ListPicker's clickAt).
+      function clickAt(x, y) {
+        var at = mapToItem(keysChip, x, y)
+        if (!keysChip.visible || at.x < 0 || at.y < 0 || at.x > keysChip.width || at.y > keysChip.height) return false
+        plugins.host.openSettings("Keybinds")
+        return true
+      }
+      Rectangle {
+        id: keysChip
+        visible: pluginRow.entry.openable === true && pluginRow.entry.enabled === true
+        anchors.right: stateLabel.left
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        width: keysText.implicitWidth + 14
+        height: 22
+        radius: plugins.host.theme.radii.small
+        color: plugins.host.theme.solid("raised")
+        Text {
+          id: keysText
+          anchors.centerIn: parent
+          readonly property string keys: plugins.keysById[pluginRow.entry.id] || ""
+          text: plugins.keyText(keys)
+          color: keys === "" ? plugins.host.theme.muted : plugins.host.theme.text
+          font.family: plugins.host.theme.textFontFamily
+          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(11))
+          font.pixelSize: plugins.host.theme.px(11)
+          font.weight: Font.DemiBold
         }
       }
       Text {

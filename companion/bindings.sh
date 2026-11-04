@@ -6,7 +6,10 @@
 #                                  keys the user already uses for each action
 #   bindings.sh list               id, label, keys, command, and addon of every island action
 #   bindings.sh bound              every live binding: keys, description, command
-#   bindings.sh set <id> <keys>    bind an action ("" clears it)
+#   bindings.sh set <id> <keys> [name]
+#                                  bind an action ("" clears it). A plugin's
+#                                  id is "plugin:<plugin id>", and its name
+#                                  is kept with the keys.
 #   bindings.sh addons <ids>       the enabled addons, comma-separated: the
 #                                  others' bindings are kept but switched off
 #   bindings.sh reset              forget every change and match the keys again
@@ -93,6 +96,8 @@ addon_enabled() {
 }
 
 declare -A keys_for
+# Plugins' shortcuts, to open or close one through the shell, by plugin id.
+declare -A plugin_keys plugin_names
 load_current() {
   local command keys spec
   while IFS=$'\t' read -r command keys; do
@@ -100,6 +105,11 @@ load_current() {
       if [[ $(field "$spec" 2) == "$command" ]]; then keys_for[$(field "$spec" 0)]=$keys; fi
     done
   done < <(current)
+  local id name
+  while IFS=$'\t' read -r id keys name; do
+    plugin_keys[$id]=$keys
+    plugin_names[$id]=$name
+  done < <([[ -f $file ]] && sed -nE 's/^plugin\("([^"]*)", "([^"]*)", "([^"]*)"\)$/\3\t\1\t\2/p' "$file" || true)
 }
 
 # Leaves the file alone when nothing in it would change.
@@ -114,6 +124,12 @@ write_file() {
     echo "  hl.unbind(keys)"
     echo "  o.bind(keys, description, \"$prefix \" .. command)"
     echo "end"
+    if [[ -n ${plugin_keys[*]+x} ]]; then
+      echo "local function plugin(keys, description, id)"
+      echo "  hl.unbind(keys)"
+      echo "  o.bind(keys, description, \"omarchy-shell shell toggle \" .. id .. \" '{}'\")"
+      echo "end"
+    fi
     echo
     echo "-- addons: $enabled_addons"
     for spec in "${catalog[@]}"; do
@@ -121,6 +137,9 @@ write_file() {
       [[ -n ${keys_for[$id]:-} ]] || continue
       addon_enabled "$(field "$spec" 5)" || printf -- '-- off: '
       printf 'island("%s", "%s", "%s")\n' "${keys_for[$id]}" "$(field "$spec" 1)" "$(field "$spec" 2)"
+    done
+    for id in "${!plugin_keys[@]}"; do
+      printf 'plugin("%s", "%s", "%s")\n' "${plugin_keys[$id]}" "${plugin_names[$id]}" "$id"
     done
     echo
     echo "-- While Settings records a shortcut, the island switches to this submap so"
@@ -176,10 +195,14 @@ cmd_list() {
     id=$(field "$spec" 0)
     printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$(field "$spec" 1)" "${keys_for[$id]:-}" "$prefix $(field "$spec" 2)" "$(field "$spec" 5)"
   done
+  for id in "${!plugin_keys[@]}"; do
+    printf 'plugin:%s\t%s\t%s\t%s\t@plugin\n' "$id" "${plugin_names[$id]}" "${plugin_keys[$id]}" "omarchy-shell shell toggle $id '{}'"
+  done
 }
 
 known_id() {
   local spec
+  [[ $1 =~ ^plugin:[A-Za-z0-9._-]+$ ]] && return 0
   for spec in "${catalog[@]}"; do [[ $(field "$spec" 0) == "$1" ]] && return 0; done
   echo "bindings.sh: unknown action: $1" >&2
   exit 1
@@ -198,7 +221,21 @@ cmd_set() {
     other=$(field "$spec" 0)
     if [[ -n $keys && $other != "$id" && ${keys_for[$other]:-} == "$keys" ]]; then keys_for[$other]=""; fi
   done
-  keys_for[$id]=$keys
+  for other in "${!plugin_keys[@]}"; do
+    if [[ -n $keys && plugin:$other != "$id" && ${plugin_keys[$other]} == "$keys" ]]; then unset "plugin_keys[$other]"; fi
+  done
+  if [[ $id == plugin:* ]]; then
+    local name=${3:-${id#plugin:}}
+    name=${name//[\"\\]/}
+    if [[ -n $keys ]]; then
+      plugin_keys[${id#plugin:}]=$keys
+      plugin_names[${id#plugin:}]=$name
+    else
+      unset "plugin_keys[${id#plugin:}]"
+    fi
+  else
+    keys_for[$id]=$keys
+  fi
   write_file
   add_loader
   reload
@@ -246,7 +283,7 @@ case "${1:-}" in
   init) cmd_init ;;
   list) cmd_list ;;
   bound) records ;;
-  set) (( $# >= 2 )) || { echo "Usage: bindings.sh set <id> <keys>" >&2; exit 1; }; cmd_set "$2" "${3:-}" ;;
+  set) (( $# >= 2 )) || { echo "Usage: bindings.sh set <id> <keys> [name]" >&2; exit 1; }; cmd_set "$2" "${3:-}" "${4:-}" ;;
   addons) cmd_addons "${2:-}" ;;
   reset) cmd_reset ;;
   remove) cmd_remove "${2:-}" ;;
