@@ -9,6 +9,8 @@ Rectangle {
   required property var view
   property string value: ""
   property string placeholder: ""
+  // Shows dots, for a password.
+  property bool secret: false
   // A glyph before the text (a pin for a place), or none.
   property string icon: ""
   signal committed(string value)
@@ -77,6 +79,7 @@ Rectangle {
     anchors.rightMargin: 10
     anchors.verticalCenter: parent.verticalCenter
     clip: true
+    echoMode: field.secret ? TextInput.Password : TextInput.Normal
     color: field.view.text
     selectionColor: field.view.accent
     selectedTextColor: field.view.accentInk
