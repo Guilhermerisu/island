@@ -134,11 +134,8 @@ ColumnLayout {
     for (var i = 0; i < nets.length; i++) if (nets[i] && nets[i].name === name) return nets[i]
     return null
   }
-  Process { id: settingsLauncher; command: ["omarchy-launch-tui", "nmtui"] }
-  function openSettings() {
-    host.view = "rest"
-    settingsLauncher.running = true
-  }
+  // Settings → Network.
+  function openSettings() { host.openSettings("Network") }
   function activate(row) {
     if (row.pending) return
     var n = networkFor(row.address)

@@ -55,8 +55,13 @@ Item {
       GradientStop { position: 0; color: Qt.lighter(paneIcon.base, paneIcon.neutral ? 1.04 : 1.1) }
       GradientStop { position: 1; color: paneIcon.base }
     }
+    // Centred on what it draws, not on its text box: an icon font's glyph
+    // (Wi-Fi's) sits off its box's middle.
+    TextMetrics { id: ink; font: flatGlyph.font; text: paneIcon.glyph }
     Text {
-      anchors.centerIn: parent
+      id: flatGlyph
+      x: (parent.width - ink.tightBoundingRect.width) / 2 - ink.tightBoundingRect.x
+      y: (parent.height - ink.tightBoundingRect.height) / 2 - ink.tightBoundingRect.y - baselineOffset
       text: paneIcon.glyph
       color: paneIcon.ink
       font.family: paneIcon.view.host.theme.fontFamily
