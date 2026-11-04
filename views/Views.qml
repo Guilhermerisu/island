@@ -40,7 +40,28 @@ Item {
     viewName: "controls"
     fixedWidth: 540
     maxHeight: 780
-    ControlCenter { host: views.host; active: controlsSurface.active; anchors.fill: parent }
+    // Taller than the island allows (many controls added): scrolls, so the
+    // notifications under them stay in reach.
+    Flickable {
+      id: controlsScroll
+      // Wider than the view by the island's padding, so what pokes out of the
+      // control center (a notification's × sits on its corner) isn't cut.
+      readonly property real bleed: 12
+      anchors.fill: parent
+      anchors.leftMargin: -bleed
+      anchors.rightMargin: -bleed
+      implicitWidth: controlCenter.implicitWidth
+      implicitHeight: controlCenter.implicitHeight
+      contentWidth: width
+      contentHeight: controlCenter.implicitHeight
+      flickableDirection: Flickable.VerticalFlick
+      boundsBehavior: Flickable.StopAtBounds
+      clip: true
+      // Not while editing: dragging a control would flick the page instead.
+      interactive: contentHeight > height && !controlCenter.editMode
+      OverlayScrollbar { flickable: controlsScroll; parent: controlsScroll; theme: views.host.theme }
+      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed }
+    }
   }
 
   Surface {
