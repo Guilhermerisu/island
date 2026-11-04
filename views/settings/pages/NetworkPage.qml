@@ -28,7 +28,11 @@ ColumnLayout {
   readonly property bool hasPassword: keyMgmt === "wpa-psk" || keyMgmt === "sae"
 
   readonly property var kindIcons: ({ "Wi-Fi": "󰖩", "Ethernet": "󰈀", "VPN": "󰦝", "Mobile": "󰢾", "Bluetooth": "󰂯", "Other": "󰛳" })
-  readonly property var kindTints: ({ "Wi-Fi": "#0a84ff", "Ethernet": "#8e8e93", "VPN": "#30d158", "Mobile": "#ff9f0a", "Bluetooth": "#0a84ff", "Other": "#8e8e93" })
+  readonly property var kindTints: ({
+    "Wi-Fi": view.host.theme.system.blue, "Ethernet": view.host.theme.system.gray, "VPN": view.host.theme.system.green,
+    "Mobile": view.host.theme.system.orange, "Bluetooth": view.host.theme.system.blue, "Other": view.host.theme.system.gray
+  })
+  readonly property color green: view.host.theme.system.green
   readonly property var shownKinds: client.kindOrder.filter(function(kind) {
     return client.connections.some(function(c) { return c.kind === kind })
   })
@@ -117,6 +121,27 @@ ColumnLayout {
     elide: Text.ElideRight
   }
 
+  // The fill behind a row of a group's card (the connected one's green, the
+  // hover): flush with the card's inside, so its first and last row follow the
+  // card's rounded corners instead of floating inside them.
+  component RowFill: Rectangle {
+    id: fill
+    property bool first: false
+    property bool last: false
+    // The card's radius less its 1 px border.
+    readonly property real corner: page.view.host.theme.radii.card - 1
+    anchors.fill: parent
+    anchors.leftMargin: 1
+    anchors.rightMargin: 1
+    anchors.topMargin: first ? 1 : 0
+    anchors.bottomMargin: last ? 1 : 0
+    radius: 0
+    topLeftRadius: first ? corner : 0
+    topRightRadius: first ? corner : 0
+    bottomLeftRadius: last ? corner : 0
+    bottomRightRadius: last ? corner : 0
+  }
+
   // A file's path, typed or chosen in a file dialog. `committed` gets the path.
   component PathField: Row {
     id: pathField
@@ -142,16 +167,16 @@ ColumnLayout {
     Layout.fillWidth: true
     implicitHeight: errorText.implicitHeight + 24
     radius: page.view.host.theme.radii.card
-    color: page.view.host.theme.fill("subtle")
+    color: page.view.card
     border.width: 1
-    border.color: page.view.host.theme.fill("raised")
+    border.color: page.view.edge
     Text {
       id: errorIcon
       anchors.left: parent.left
       anchors.leftMargin: 14
       anchors.verticalCenter: parent.verticalCenter
       text: "󰀪"
-      color: "#febc2e"
+      color: page.view.host.theme.system.yellow
       font.family: page.view.host.theme.fontFamily
       font.pixelSize: page.view.host.theme.px(16)
     }
@@ -221,15 +246,22 @@ ColumnLayout {
             required property int index
             Layout.fillWidth: true
             implicitHeight: row.implicitHeight
-            // The connected one stands out in green.
-            Rectangle {
+            readonly property bool first: connectionRow.index === 0
+            readonly property bool final: connectionRow.index === kindGroup.members.length - 1
+            // The connected one stands out in green, the one under the pointer lightly.
+            RowFill {
               visible: connectionRow.modelData.active
-              anchors.fill: parent
-              anchors.margins: 3
-              radius: page.view.host.theme.radii.medium
-              color: Qt.rgba(0.19, 0.82, 0.35, 0.16)
+              first: connectionRow.first
+              last: connectionRow.final
+              color: page.view.host.theme.withAlpha(page.green, 0.16)
               border.width: 1
-              border.color: Qt.rgba(0.19, 0.82, 0.35, 0.4)
+              border.color: page.view.host.theme.withAlpha(page.green, 0.4)
+            }
+            RowFill {
+              visible: !connectionRow.modelData.active && rowMouse.containsMouse
+              first: connectionRow.first
+              last: connectionRow.final
+              color: page.view.host.theme.fill("quiet")
             }
             SettingsRow {
               id: row
@@ -237,14 +269,17 @@ ColumnLayout {
               anchors.left: parent.left
               anchors.right: parent.right
               icon: page.kindIcons[connectionRow.modelData.kind] || ""
-              iconTint: connectionRow.modelData.active ? "#30d158" : page.kindTints[connectionRow.modelData.kind] || page.view.accent
+              iconTint: connectionRow.modelData.active ? page.green : page.kindTints[connectionRow.modelData.kind] || page.view.accent
               label: connectionRow.modelData.name
               detail: connectionRow.modelData.active ? "Connected · " + connectionRow.modelData.device : "Not connected"
-              last: connectionRow.index === kindGroup.members.length - 1
+              // The green row has its own edge.
+              last: connectionRow.final || connectionRow.modelData.active
               ValueText { text: "󰅂"; font.family: page.view.host.theme.fontFamily }
             }
             MouseArea {
+              id: rowMouse
               anchors.fill: parent
+              hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               onClicked: client.loadDetail(connectionRow.modelData.uuid)
             }
@@ -487,7 +522,7 @@ ColumnLayout {
         last: !page.item || !page.item.active
         ValueText {
           text: page.item && page.item.active ? "Connected on " + page.item.device : "Not connected"
-          color: page.item && page.item.active ? "#30d158" : page.view.textMuted
+          color: page.item && page.item.active ? page.green : page.view.textMuted
         }
       }
       SettingsRow {
