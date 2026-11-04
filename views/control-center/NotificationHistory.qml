@@ -113,7 +113,6 @@ ColumnLayout {
 
   ListView {
     id: notes
-    OverlayScrollbar { flickable: notes; parent: notes; theme: history.center.host.theme }
     // Clear All (or dismissing the last banner) lets the rows fade out and
     // the frame close before the list goes, rather than dropping it at once.
     opacity: history.empty ? 0 : 1

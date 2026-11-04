@@ -77,6 +77,8 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
+    // The control center can scroll: a drag that wanders stays on the slider.
+    preventStealing: true
     function apply(x) { s.moved(Math.max(0, Math.min(1, (x - track.height / 2) / (track.width - track.height)))) }
     onPressed: function(e) { apply(e.x) }
     onPositionChanged: function(e) { if (pressed) apply(e.x) }

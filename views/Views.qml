@@ -60,7 +60,11 @@ Item {
       // Not while editing: dragging a control would flick the page instead.
       interactive: contentHeight > height && !controlCenter.editMode
       OverlayScrollbar { flickable: controlsScroll; parent: controlsScroll; theme: views.host.theme }
-      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed }
+      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed
+        // From the top each time it opens, and in edit mode, which doesn't scroll.
+        onActiveChanged: if (active) controlsScroll.contentY = 0
+        onEditModeChanged: controlsScroll.contentY = 0
+      }
     }
   }
 
