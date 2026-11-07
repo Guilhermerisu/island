@@ -11,10 +11,14 @@ import "../../components"
 // empty search goes back up.
 ListPicker {
   id: tray
+  // In a control center zone: opening the control center leaves the keyboard
+  // to it, and an app's menu (which Esc or ← leaves) takes it when entered.
+  property bool inZone: false
+  takeFocus: !inZone
   placeholder: menuItem ? stack.map(function(s) { return s.title }).join(" › ") : "Search tray"
   emptyText: menuItem ? "Empty menu" : SystemTray.items.values.length ? "Nothing matches" : "Nothing in the tray"
   rowHeight: 44
-  visibleRows: 9
+  visibleRows: inZone ? 6 : 9
   items: menuItem ? menuRows : appRows
   onChosen: function(entry) { choose(entry) }
   onKeyFilter: function(event) {
@@ -26,6 +30,7 @@ ListPicker {
   }
   onActiveChanged: {
     if (!active) { closeMenu(); return }
+    if (inZone) return
     // Opened for one app's menu (a right click on it in the hover capsules).
     var item = host.trayMenuFor
     host.trayMenuFor = null
@@ -76,6 +81,7 @@ ListPicker {
     var opener = openerComponent.createObject(tray, { menu: menu })
     if (opener) stack = stack.concat([{ opener: opener, title: title }])
     clearSearch()
+    if (inZone) focusSearch()
   }
   function goBack() {
     var top = stack[stack.length - 1]

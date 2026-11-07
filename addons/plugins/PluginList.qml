@@ -15,7 +15,11 @@ ListPicker {
   placeholder: "Search plugins"
   emptyText: all.length ? "Nothing matches" : loading ? "Loading…" : "No plugins added"
   rowHeight: 46
-  visibleRows: 9
+  // In a control center zone: the keyboard stays with the control center,
+  // and the list is shorter.
+  property bool inZone: false
+  takeFocus: !inZone
+  visibleRows: inZone ? 6 : 9
   items: {
     var q = query.trim().toLowerCase()
     return all.filter(function(p) {
