@@ -33,7 +33,8 @@ Addon {
   readonly property string configPath: host.home + "/.config/hypr/monitors.lua"
   readonly property string helper: decodeURIComponent(String(Qt.resolvedUrl("monitors.py")).replace("file://", ""))
 
-  readonly property bool watching: host.view === "settings"
+  // Or a zone of the control center is on screen (see zoneViews in Addon.qml).
+  readonly property bool watching: host.view === "settings" || zoneViews > 0
   // Edits left pending when Settings closed are dropped, as macOS does.
   onWatchingChanged: if (watching) { refresh(true); readBrightness(); readTextSize() }
   // Read once at start too, so a monitor kept in HDR pauses Night Shift

@@ -2,17 +2,23 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 import "../../components"
+import "gridLayout.js" as Grid
 
 // The control center's grid of controls, and editing it: in edit mode the
-// cards can be dragged to reorder them, dragged out onto the gallery below to
-// remove them, or dragged in from the gallery to add them. The order is saved
+// cards can be dragged to reorder them, dragged out onto the add panel below
+// to remove them, or dragged in from the panel to add them. The order is saved
 // in the island's settings. `center` is the ControlCenter.
 ColumnLayout {
   id: layout
   required property var center
   readonly property var controls: center.controls
+  readonly property DragProxy dragProxy: center.dragProxy
   readonly property bool editMode: center.editMode
   spacing: center.gap
+
+  // The add panel (see ControlCenter.addPanel) drags cards in through it.
+  Component.onCompleted: center.controlLayout = layout
+  Component.onDestruction: if (center.controlLayout === layout) center.controlLayout = null
 
   property string draggedKey: ""
   property bool dragFromGallery: false
@@ -30,6 +36,7 @@ ColumnLayout {
     function onActiveChanged() {
       layout.cardsSettled = false
       if (layout.center.active) cardsSettleTimer.restart()
+      else layout.endDrag()
     }
   }
   Timer {
@@ -39,9 +46,10 @@ ColumnLayout {
   }
   // The room the Sound and Microphone pickers add below their sliders,
   // eased (after the first layout) so the card and the ones under it follow
-  // the rows in and out instead of snapping.
+  // the rows in and out instead of snapping. The Microphone's also holds its
+  // level meter (10).
   readonly property real outputsRoom: center.outputsOpen && !center.editMode ? controls.outputs.length * 40 : 0
-  readonly property real inputsRoom: center.inputsOpen && !center.editMode ? controls.inputs.length * 40 : 0
+  readonly property real inputsRoom: center.inputsOpen && !center.editMode ? controls.inputs.length * 40 + 10 : 0
   property real outputsExtra: outputsRoom
   property real inputsExtra: inputsRoom
   Behavior on outputsExtra { enabled: layout.cardsSettled; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
@@ -49,7 +57,7 @@ ColumnLayout {
   onEditModeChanged: {
     endDrag()
     controlLayoutScroll.contentY = 0
-    if (editMode) controlGallery.resetScroll()
+    if (editMode) center.addPanel.resetScroll()
   }
 
   readonly property var visibleControlKeys: {
@@ -62,7 +70,7 @@ ColumnLayout {
   }
   // `keepProxy` when finishDrag settles the proxy itself.
   function endDrag(keepProxy) {
-    if (!keepProxy && dragProxy.lifted) dragProxy.release(null)
+    if (!keepProxy && draggedKey !== "" && dragProxy.lifted) dragProxy.release(null)
     draggedKey = ""
     dragFromGallery = false
     dropActive = false
@@ -78,17 +86,16 @@ ColumnLayout {
     draggedKey = key
     dragProxy.grabX = grabX === undefined ? width / 2 : grabX
     dragProxy.grabY = grabY === undefined ? height / 2 : grabY
-    dragProxy.lift(key, fromGallery, width, height)
+    dragProxy.lift(key, fromGallery, width, height, center.controlComponent(key))
   }
   function moveDrag(source, x, y) {
-    var point = source.mapToItem(dragLayer, x, y)
-    dragProxy.x = point.x - dragProxy.grabX
-    dragProxy.y = point.y - dragProxy.grabY
+    dragProxy.follow(source, x, y)
     dragPoint = source.mapToItem(controlLayoutScroll, x, y)
-    var galleryPoint = source.mapToItem(controlGallery, x, y)
-    removeDropActive = !dragFromGallery && controlGallery.visible
-      && galleryPoint.x >= 0 && galleryPoint.x <= controlGallery.width
-      && galleryPoint.y >= 0 && galleryPoint.y <= controlGallery.height
+    var panel = center.addPanel
+    var panelPoint = source.mapToItem(panel, x, y)
+    removeDropActive = !dragFromGallery && panel.visible
+      && panelPoint.x >= 0 && panelPoint.x <= panel.width
+      && panelPoint.y >= 0 && panelPoint.y <= panel.height
     updateDropPosition()
   }
   function updateDropPosition() {
@@ -109,7 +116,7 @@ ColumnLayout {
     for (var i = 0; i < keys.length; i++) {
       var slot = slots[keys[i]]
       if (!slot) continue
-      var wide = controls.controlWide(keys[i])
+      var wide = controls.controlWide(keys[i]) && !controls.isVertical(keys[i])
       if (y < slot.y || (y < slot.y + slot.height && (wide
           ? y < slot.y + slot.height / 2 : x < slot.x + slot.width / 2))) {
         target = keys[i]
@@ -135,16 +142,17 @@ ColumnLayout {
     var slot = key !== "" ? cardArea.positions[key] : null
     dragProxy.release(slot ? settleTarget(slot) : null)
   }
-  // Where the proxy settles for a slot, in dragLayer. The grid clips while
+  // Where the proxy settles for a slot, in its layer. The grid clips while
   // it scrolls, so a slot scrolled out of view is clamped to the visible
   // grid's edge: the proxy eases to the edge it went under and fades there
   // rather than settling somewhere the card itself can't be seen.
   function settleTarget(slot) {
-    var target = cardArea.mapToItem(dragLayer, slot.x, slot.y)
-    var view = controlLayoutScroll.mapToItem(dragLayer, 0, 0)
+    var layer = dragProxy.parent
+    var target = cardArea.mapToItem(layer, slot.x, slot.y)
+    var view = controlLayoutScroll.mapToItem(layer, 0, 0)
     var top = view.y
     var bottom = view.y + controlLayoutScroll.height - slot.height
-    return Qt.point(target.x, Math.max(top, Math.min(Math.max(top, bottom), target.y)))
+    return { x: target.x, y: Math.max(top, Math.min(Math.max(top, bottom), target.y)), width: slot.width, height: slot.height }
   }
   Timer {
     interval: 25
@@ -209,40 +217,15 @@ ColumnLayout {
       id: cardArea
       width: controlLayoutScroll.width
       height: positions.height
-      readonly property var positions: {
-        var result = {}
-        var gap = layout.center.gap
-        var tileHeight = layout.center.tileHeight
-        var inset = layout.inset
-        var fullWidth = width - 2 * inset
-        var halfWidth = (fullWidth - gap) / 2
-        var rowY = inset
-        var halfUsed = false
-        for (var i = 0; i < layout.visibleControlKeys.length; i++) {
-          var key = layout.visibleControlKeys[i]
-          var wide = layout.controls.controlWide(key)
-          var cardHeight = wide ? layout.center.sectionHeight : tileHeight
-          if (key === "sound") cardHeight += layout.outputsExtra
-          if (key === "microphone") cardHeight += layout.inputsExtra
-          if (wide) {
-            if (halfUsed) { rowY += tileHeight + gap; halfUsed = false }
-            result[key] = { x: inset, y: rowY, width: fullWidth, height: cardHeight }
-            rowY += cardHeight + gap
-          } else if (halfUsed) {
-            result[key] = { x: inset + halfWidth + gap, y: rowY, width: halfWidth, height: tileHeight }
-            rowY += tileHeight + gap
-            halfUsed = false
-          } else {
-            var nextKey = i + 1 < layout.visibleControlKeys.length ? layout.visibleControlKeys[i + 1] : ""
-            var nextIsSmall = nextKey !== "" && !layout.controls.controlWide(nextKey)
-            result[key] = { x: inset, y: rowY, width: nextIsSmall ? halfWidth : fullWidth, height: tileHeight }
-            if (nextIsSmall) halfUsed = true
-            else rowY += tileHeight + gap
-          }
+      readonly property var positions: Grid.place(layout.visibleControlKeys.map(function(key) {
+        var vertical = layout.controls.isVertical(key)
+        return {
+          key: key,
+          wide: layout.controls.controlWide(key),
+          vertical: vertical,
+          extra: vertical ? 0 : key === "sound" ? layout.outputsExtra : key === "microphone" ? layout.inputsExtra : 0
         }
-        result.height = Math.max(0, rowY + (halfUsed ? tileHeight : rowY > inset ? -gap : 0) + inset)
-        return result
-      }
+      }), { width: width, inset: layout.inset, gap: layout.center.gap, tileHeight: layout.center.tileHeight, sectionHeight: layout.center.sectionHeight })
       Repeater {
         model: layout.controls.known
         delegate: Item {
@@ -328,6 +311,18 @@ ColumnLayout {
             tip: "Remove"
             onClicked: { layout.controls.setShown(controlCard.modelData, false); layout.endDrag() }
           }
+          // Slider cards flip between horizontal and upright; the glyph and
+          // tip name what a click turns it into.
+          CcEditBadge {
+            readonly property bool vertical: layout.controls.isVertical(controlCard.modelData)
+            center: layout.center
+            corner: "right"
+            glyph: vertical ? "↔" : "↕"
+            shown: layout.center.editMode && !controlCard.dragged && controlCard.shown && layout.controls.canBeVertical(controlCard.modelData)
+            cornerRadius: controlCard.cornerRadius
+            tip: vertical ? "Horizontal Slider" : "Vertical Slider"
+            onClicked: { layout.controls.setVertical(controlCard.modelData, !vertical); layout.endDrag() }
+          }
         }
       }
     }
@@ -348,105 +343,6 @@ ColumnLayout {
       font.family: layout.center.host.theme.textFontFamily
       font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.px(12))
       font.pixelSize: layout.center.host.theme.px(12)
-    }
-  }
-
-  ControlGallery {
-    id: controlGallery
-    visible: layout.center.editMode
-    Layout.fillWidth: true
-    controlCenter: layout.center
-    controlLayout: layout
-  }
-
-  // Over the whole control center, beside it rather than inside the layout.
-  // Sized by bindings, not anchors: anchors could resolve before the new
-  // parent is set, and an anchor to a non-sibling is dropped.
-  Item {
-    id: dragLayer
-    parent: layout.center.parent
-    x: layout.center.x
-    y: layout.center.y
-    width: layout.center.width
-    height: layout.center.height
-    z: 100
-    // The dragged card, lifted off the grid on pickup. On drop it settles
-    // into its slot before going, or sinks away where it was let go when
-    // it has no slot (removed, or a gallery control dropped outside).
-    Rectangle {
-      id: dragProxy
-      // Kept past the drag, so it still shows its control while it settles.
-      property string key: ""
-      property bool fromGallery: false
-      property bool held: false
-      property bool lifted: false
-      property bool sinking: false
-      property bool settling: false
-      // Where in the card it's held, from beginDrag.
-      property real grabX: 0
-      property real grabY: 0
-      function lift(key, fromGallery, width, height) {
-        proxySettleTimer.stop()
-        settling = false
-        // Reset while hidden, so the lift always starts from the card's size.
-        sinking = false
-        dragProxy.key = key
-        dragProxy.fromGallery = fromGallery
-        dragProxy.width = width
-        dragProxy.height = height
-        held = true
-        lifted = true
-      }
-      function release(target) {
-        lifted = false
-        if (target) {
-          settling = true
-          x = target.x
-          y = target.y
-          proxySettleTimer.restart()
-        } else {
-          sinking = true
-          held = false
-        }
-      }
-      opacity: held ? 1 : 0
-      visible: opacity > 0.01
-      scale: lifted ? 1.05 : sinking ? 0.9 : 1
-      radius: layout.center.cardRadius
-      color: layout.center.card
-      // Appears at once over the card it lifts; only fades on the way out.
-      Behavior on opacity { enabled: dragProxy.sinking || dragProxy.settling; MotionAnimation { theme: layout.center.host.theme; pace: "exit"; curve: "exit" } }
-      Behavior on scale {
-        enabled: dragProxy.visible
-        MotionAnimation { theme: layout.center.host.theme; pace: dragProxy.sinking ? "exit" : "standard"; curve: dragProxy.sinking ? "exit" : "settle" }
-      }
-      // Follows the pointer directly while dragged, and eases only to settle.
-      Behavior on x { enabled: dragProxy.settling; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-      Behavior on y { enabled: dragProxy.settling; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-      Timer {
-        id: proxySettleTimer
-        interval: layout.center.host.theme.motionDuration("standard")
-        onTriggered: dragProxy.held = false
-      }
-      // The shadow deepens as it lifts and fades as it settles.
-      property real shadowStrength: lifted ? 1 : 0
-      Behavior on shadowStrength { MotionAnimation { theme: layout.center.host.theme; pace: dragProxy.lifted ? "standard" : "exit"; curve: dragProxy.lifted ? "settle" : "exit" } }
-      layer.enabled: visible
-      layer.effect: MultiEffect {
-        shadowEnabled: true
-        shadowColor: Qt.rgba(0, 0, 0, 0.6)
-        shadowOpacity: dragProxy.shadowStrength
-        shadowBlur: 0.8
-        shadowVerticalOffset: 6
-      }
-      Loader {
-        anchors.fill: parent
-        enabled: false
-        property var center: layout.center
-        property string controlKey: dragProxy.key
-        property bool galleryPreview: dragProxy.fromGallery
-        sourceComponent: layout.center.controlComponent(dragProxy.key)
-      }
     }
   }
 }
