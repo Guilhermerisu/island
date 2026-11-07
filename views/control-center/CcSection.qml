@@ -3,6 +3,8 @@ import QtQuick.Layouts
 import "../../components"
 
 // Section card with a title row (and an optional › button) over content.
+// `vertical`: a tall card (a slider standing up): no title row or › button,
+// the content (the slider, which draws the title itself) fills the card.
 // `center` is the ControlCenter, for its colours.
 Rectangle {
   id: sec
@@ -11,6 +13,7 @@ Rectangle {
   property string detail: ""
   property bool showChevron: false
   property bool chevronOpen: false
+  property bool vertical: false
   property string chevronLabel: "Sound Output"
   property string chevronHideLabel: "Hide Outputs"
   signal chevronClicked()
@@ -19,11 +22,13 @@ Rectangle {
   Layout.fillWidth: true
   Layout.preferredHeight: body.implicitHeight + 52
   radius: center.cardRadius
-  color: center.card
-  border.width: 1
+  // Upright, the slider's pill draws the card itself (rounder than this).
+  color: vertical ? "transparent" : center.card
+  border.width: sec.vertical ? 0 : 1
   border.color: center.edge
 
   Text {
+    visible: !sec.vertical
     anchors.left: parent.left
     anchors.leftMargin: 16
     anchors.top: parent.top
@@ -37,6 +42,7 @@ Rectangle {
     font.letterSpacing: -0.1
   }
   Text {
+    visible: !sec.vertical
     anchors.right: parent.right
     anchors.rightMargin: sec.showChevron ? 44 : 16
     anchors.top: parent.top
@@ -52,7 +58,7 @@ Rectangle {
     id: chevron
     scale: chevronMouse.pressed ? 0.92 : 1
     Behavior on scale { MotionAnimation { theme: center.host.theme; pace: chevronMouse.pressed ? "press" : "standard" } }
-    visible: sec.showChevron
+    visible: sec.showChevron && !sec.vertical
     anchors.right: parent.right
     anchors.rightMargin: 14
     anchors.top: parent.top
@@ -76,9 +82,11 @@ Rectangle {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    anchors.topMargin: 38
-    anchors.leftMargin: 14
-    anchors.rightMargin: 14
+    anchors.topMargin: sec.vertical ? 0 : 38
+    anchors.bottom: sec.vertical ? parent.bottom : undefined
+    anchors.bottomMargin: sec.vertical ? 0 : 12
+    anchors.leftMargin: sec.vertical ? 0 : 14
+    anchors.rightMargin: sec.vertical ? 0 : 14
     spacing: 6
   }
 }

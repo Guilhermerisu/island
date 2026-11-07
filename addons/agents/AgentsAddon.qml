@@ -41,7 +41,8 @@ Addon {
   })
   readonly property var provider: providers[addon.option("agent")] || providers.claude
 
-  readonly property bool watching: host.view === "settings"
+  // Or a zone of the control center is on screen (see zoneViews in Addon.qml).
+  readonly property bool watching: host.view === "settings" || zoneViews > 0
   readonly property string usageDir: host.home + "/.local/state/omarchy/agents/usage"
   readonly property string recordPath: provider.id === "all"
     ? host.home + "/.cache/guilhermerisu.island/agents/all.json"

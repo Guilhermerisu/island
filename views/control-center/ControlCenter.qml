@@ -1,15 +1,28 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Services.UPower
 import "../../components"
+import "zones.js" as ZoneModel
 
 // A compact Control Center with grouped switches, sliders, and notifications.
 // What the controls show and do is in Controls.qml, the grid and editing it
-// in ControlLayout.qml; the cards are their own files.
+// in ControlLayout.qml; the cards are their own files. Under the header, its
+// zones (the grid, the notifications, addons') sit in 1 to 3 columns: which
+// and where is in Zones.qml, how they're drawn and moved in ZoneColumns.qml.
 ColumnLayout {
   id: cc
   required property var host
   property bool active: false
   readonly property Controls controls: Controls { host: cc.host }
+  readonly property Zones zones: Zones { host: cc.host }
+  // The grid's layout while its zone is on show (it sets itself), and the
+  // panel that adds to it: they take each other's drags.
+  property var controlLayout: null
+  // The Plugins zone's likewise (PluginsZone sets itself).
+  property var pluginsZone: null
+  readonly property Item addPanel: addPanelItem
+  // The card lifted by a drag in edit mode, whichever zone it's from.
+  readonly property DragProxy dragProxy: dragProxyItem
 
   // Keep the black island while deriving its controls from the active theme.
   readonly property color accent: host.theme.accent
@@ -34,6 +47,25 @@ ColumnLayout {
   property bool editMode: false
   property bool outputsOpen: false
   property bool inputsOpen: false
+  // Off for the first layout each time it opens, so the header's controls
+  // change shape only for what's done while it's showing.
+  property bool settled: false
+  Timer {
+    id: settleTimer
+    interval: cc.host.theme.motionDuration("morph")
+    onTriggered: cc.settled = cc.active
+  }
+
+  // The island's width follows the columns showing (all of them while
+  // editing, else the ones with a zone in them), within a share of the
+  // screen. `surfacePadding` is the island's around the view, set by Views.
+  property real surfacePadding: 16
+  readonly property int shownColumns: editMode ? zones.columns : zones.occupied
+  readonly property real islandWidth: ZoneModel.islandWidth(shownColumns, Window.width, gap)
+  // What the columns share (ZoneColumns divides it); the island's final
+  // width, not the one it is growing to.
+  readonly property real columnsSpace: ZoneModel.columnsSpace(shownColumns, islandWidth, surfacePadding, gap)
+
   onEditModeChanged: {
     outputsOpen = false
     inputsOpen = false
@@ -42,7 +74,9 @@ ColumnLayout {
   onActiveChanged: {
     // Reset on open, not on close, so the view keeps its shape while it
     // fades out with the collapsing island.
-    if (!active) { controlLayout.endDrag(); return }
+    settled = false
+    if (!active) return
+    settleTimer.restart()
     outputsOpen = false
     inputsOpen = false
     editMode = false
@@ -62,7 +96,7 @@ ColumnLayout {
 
   // Esc leaves edit mode, then closes the control center.
   Keys.onEscapePressed: {
-    if (cc.editMode) { cc.editMode = false; controlLayout.endDrag() }
+    if (cc.editMode) cc.editMode = false
     else cc.host.view = "rest"
   }
 
@@ -85,6 +119,46 @@ ColumnLayout {
       font.letterSpacing: -0.2
     }
     Item { Layout.fillWidth: true }
+    // How many columns, while editing: the choice is saved as it's made.
+    Rectangle {
+      visible: cc.editMode
+      Layout.preferredWidth: 3 * 30 + 4
+      Layout.preferredHeight: 28
+      radius: 14
+      color: cc.card
+      Repeater {
+        model: [1, 2, 3]
+        delegate: Rectangle {
+          id: choice
+          required property int modelData
+          readonly property bool current: cc.zones.columns === modelData
+          x: 2 + (modelData - 1) * 30
+          y: 2
+          width: 30
+          height: 24
+          radius: 12
+          color: current ? cc.well : choiceMouse.containsMouse ? cc.wellHover : "transparent"
+          Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
+          Tooltip { theme: cc.host.theme; text: modelData === 1 ? "1 column" : modelData + " columns" }
+          Text {
+            anchors.centerIn: parent
+            text: choice.modelData
+            color: choice.current ? cc.text : cc.textMuted
+            font.family: cc.host.theme.textFontFamily
+            font.features: { "tnum": 1 }
+            font.pixelSize: cc.host.theme.px(12)
+            font.weight: Font.DemiBold
+          }
+          MouseArea {
+            id: choiceMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: cc.zones.setColumns(choice.modelData)
+          }
+        }
+      }
+    }
     Rectangle {
       scale: editMouse.pressed ? 0.92 : 1
       Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: editMouse.pressed ? "press" : "standard" } }
@@ -95,7 +169,7 @@ ColumnLayout {
       color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
       // The pencil widens into Done, as Clear All does, cross-fading the two;
       // not while opening, when edit mode is reset.
-      Behavior on Layout.preferredWidth { enabled: controlLayout.cardsSettled; MotionAnimation { theme: cc.host.theme; pace: "standard" } }
+      Behavior on Layout.preferredWidth { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "standard" } }
       Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
       Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit Controls" }
       Text {
@@ -106,7 +180,7 @@ ColumnLayout {
         color: cc.text
         font.family: cc.iconFont
         font.pixelSize: cc.host.theme.px(15)
-        Behavior on opacity { enabled: controlLayout.cardsSettled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
+        Behavior on opacity { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
       }
       Text {
         anchors.centerIn: parent
@@ -118,7 +192,7 @@ ColumnLayout {
         font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(12))
         font.pixelSize: cc.host.theme.px(12)
         font.weight: Font.Medium
-        Behavior on opacity { enabled: controlLayout.cardsSettled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
+        Behavior on opacity { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
       }
       MouseArea {
         id: editMouse
@@ -160,6 +234,23 @@ ColumnLayout {
       Layout.rightMargin: 6
       spacing: 6
       readonly property bool low: cc.controls.batteryPercent <= 20 && !cc.controls.charging
+      // Time left, only when discharging with an estimate (UPower reports 0
+      // otherwise); hidden while editing, when the header has no room to spare.
+      readonly property real secondsLeft: UPower.onBattery && !cc.controls.charging ? cc.controls.battery.timeToEmpty : 0
+      Text {
+        visible: !cc.editMode && parent.secondsLeft > 0
+        anchors.verticalCenter: parent.verticalCenter
+        text: {
+          var m = Math.round(parent.secondsLeft / 60)
+          return m >= 60 ? Math.floor(m / 60) + "h " + m % 60 + "m" : m + "m"
+        }
+        color: cc.textMuted
+        font.family: cc.host.theme.textFontFamily
+        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(13))
+        font.pixelSize: cc.host.theme.px(13)
+        font.weight: Font.Medium
+        font.features: { "tnum": 1 }
+      }
       Text {
         anchors.verticalCenter: parent.verticalCenter
         text: cc.controls.batteryPercent + "%"
@@ -182,15 +273,42 @@ ColumnLayout {
     }
   }
 
-  ControlLayout {
-    id: controlLayout
+  ZoneColumns { center: cc }
+
+  Rectangle {
+    visible: !cc.editMode && cc.zones.empty
     Layout.fillWidth: true
-    center: cc
+    Layout.preferredHeight: cc.tileHeight
+    radius: cc.cardRadius
+    color: cc.card
+    border.width: 1
+    border.color: cc.edge
+    Text {
+      anchors.centerIn: parent
+      text: "Click the pencil to add zones"
+      color: cc.textMuted
+      font.family: cc.host.theme.textFontFamily
+      font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(12))
+      font.pixelSize: cc.host.theme.px(12)
+    }
   }
 
-  NotificationHistory { center: cc }
+  AddPanel { id: addPanelItem; center: cc }
 
-  // ---------- Cards, loaded by the grid and the gallery ----------
+  // Over the whole control center, beside it rather than inside the layout.
+  // Sized by bindings, not anchors: anchors could resolve before the new
+  // parent is set, and an anchor to a non-sibling is dropped.
+  Item {
+    parent: cc.parent
+    x: cc.x
+    y: cc.y
+    width: cc.width
+    height: cc.height
+    z: 100
+    DragProxy { id: dragProxyItem; center: cc }
+  }
+
+  // ---------- Cards, loaded by the grid and the add panel ----------
 
   Component {
     id: quickCard
