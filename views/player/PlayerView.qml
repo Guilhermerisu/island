@@ -1,14 +1,15 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
+import Quickshell.Hyprland
 import Quickshell.Widgets
+import Quickshell.Wayland
 import "../../components"
 
 // Now-playing view, opened from the media pill's cover or wave: cover, title
 // and artist, the live sound wave, a seekable progress bar with elapsed and
-// remaining time, and transport controls. Keys: Space play/pause, ←/→ seek
-// 10 s, Esc close.
+// remaining time, transport controls, shuffle and a shortcut to the player's
+// window. Keys: Space play/pause, S shuffle, ←/→ seek 10 s, Esc close.
 Item {
   id: player
   required property var host
@@ -20,6 +21,40 @@ Item {
   readonly property bool canSeek: !!(mpris && mpris.canSeek && length > 0)
   property real position: 0
   property bool dragging: false
+
+  readonly property bool canShuffle: !!(mpris && mpris.canControl && mpris.shuffleSupported)
+  // The player's desktop entry. Chromium-based players (Electron apps)
+  // report an empty desktopEntry, so fall back to a heuristic lookup on the
+  // identity. Reading the applications list makes it re-run once it loads.
+  readonly property var appEntry: {
+    DesktopEntries.applications.values
+    if (!mpris) return null
+    var de = String(mpris.desktopEntry || ""), id = String(mpris.identity || "")
+    return (de !== "" ? DesktopEntries.byId(de) || DesktopEntries.heuristicLookup(de) : null)
+      || (id !== "" ? DesktopEntries.heuristicLookup(id) : null)
+  }
+  // The player's window, from the compositor's live toplevel list, which
+  // follows windows opening later. Exact matches only, so a
+  // browser is never mistaken for another app: the app id or its last
+  // segment (com.spotify.Client -> client) against the names the player and
+  // its desktop entry go by, most specific first so a generic name such as
+  // "chromium" only counts when nothing better matches.
+  readonly property var appWindow: {
+    var tl = ToplevelManager.toplevels.values
+    if (!mpris) return null
+    var dbus = String(mpris.dbusName || "").replace(/^org\.mpris\.MediaPlayer2\./, "").replace(/\.instance.*$/, "")
+    var names = [mpris.desktopEntry, appEntry ? appEntry.id : "", appEntry ? appEntry.startupClass : "", mpris.identity, dbus]
+    for (var n = 0; n < names.length; n++) {
+      var name = String(names[n] || "").toLowerCase()
+      if (name === "") continue
+      for (var i = 0; i < tl.length; i++) {
+        var cls = String(tl[i].appId || "").toLowerCase()
+        if (cls !== "" && (cls === name || cls.substring(cls.lastIndexOf(".") + 1) === name)) return tl[i]
+      }
+    }
+    return null
+  }
+  readonly property bool canOpenApp: !!(appWindow || (mpris && mpris.canRaise) || appEntry)
 
   implicitHeight: layout.implicitHeight
 
@@ -43,6 +78,32 @@ Item {
   }
 
   function action(name) { if (host.nowPlaying.service) host.nowPlaying.service.runAction(name, false, "") }
+  function toggleShuffle() { if (canShuffle) mpris.shuffle = !mpris.shuffle }
+  // Close first so the app, not the island, gets the keyboard; focus follows
+  // after the island's layer has let go of it. Window, else the player's own
+  // Raise, else its desktop entry (single-instance apps bring their window
+  // up when launched again).
+  function openApp() {
+    var win = appWindow
+    host.view = "rest"
+    if (win) { focusTimer.win = win; focusTimer.restart() }
+    else if (mpris && mpris.canRaise) mpris.raise()
+    else if (appEntry) appEntry.execute()
+  }
+  Timer {
+    id: focusTimer
+    property var win: null
+    interval: 150
+    onTriggered: {
+      if (!win) return
+      win.activate()
+      // On Hyprland 0.56 activate() only focuses a window on the current
+      // workspace; this Lua-config dispatch (the form Omarchy's own scripts
+      // use) is what brings its workspace up. Matched on the live app id, not
+      // on Hyprland's client list, so nothing here goes stale.
+      Hyprland.dispatch('hl.dsp.focus({ window = "class:' + String(win.appId).replace(/["\\]/g, "") + '" })')
+    }
+  }
   function seekTo(seconds) {
     if (!canSeek) return
     var target = Math.max(0, Math.min(length, seconds))
@@ -57,6 +118,7 @@ Item {
 
   Keys.onPressed: function(event) {
     if (event.key === Qt.Key_Space) { action("playPause"); event.accepted = true }
+    else if (event.key === Qt.Key_S) { toggleShuffle(); event.accepted = true }
     else if (event.key === Qt.Key_Left) { seekTo(position - 10); event.accepted = true }
     else if (event.key === Qt.Key_Right) { seekTo(position + 10); event.accepted = true }
     else if (event.key === Qt.Key_Escape) { host.view = "rest"; event.accepted = true }
@@ -252,7 +314,34 @@ Item {
         Tooltip { theme: player.host.theme; text: control.name; above: true }
       }
 
+      // Shuffle and open-app hang off the sides of the transport row, so
+      // Previous / Play / Next stay centred whatever their glyph widths.
+      Control {
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.right: transport.left
+        anchors.rightMargin: 46
+        text: "󰒟"
+        name: !player.canShuffle && player.mpris ? "Shuffle isn't supported by " + String(player.mpris.identity || "this player")
+          : player.mpris && player.mpris.shuffle ? "Shuffle: on" : "Shuffle: off"
+        color: player.mpris && player.mpris.shuffle ? player.host.nowPlaying.tint : Qt.rgba(1, 1, 1, 0.6)
+        font.pixelSize: player.host.theme.px(26)
+        available: player.canShuffle
+        onActivated: player.toggleShuffle()
+      }
+      Control {
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: transport.right
+        anchors.leftMargin: 46
+        text: "󰏌"
+        name: "Open " + (player.mpris ? String(player.mpris.identity || player.mpris.desktopEntry || "app") : "app")
+        color: Qt.rgba(1, 1, 1, 0.6)
+        font.pixelSize: player.host.theme.px(26)
+        available: player.canOpenApp
+        onActivated: player.openApp()
+      }
+
       Row {
+        id: transport
         anchors.centerIn: parent
         spacing: 46
         Control {
