@@ -1,14 +1,15 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Widgets
 import "../../components"
 
 // Now-playing view, opened from the media pill's cover or wave: cover, title
 // and artist, the live sound wave, a seekable progress bar with elapsed and
-// remaining time, and transport controls. Keys: Space play/pause, ←/→ seek
-// 10 s, Esc close.
+// remaining time, transport controls, shuffle and a shortcut to the player's
+// window. Keys: Space play/pause, S shuffle, ←/→ seek 10 s, Esc close.
 Item {
   id: player
   required property var host
@@ -20,6 +21,25 @@ Item {
   readonly property bool canSeek: !!(mpris && mpris.canSeek && length > 0)
   property real position: 0
   property bool dragging: false
+
+  readonly property bool canShuffle: !!(mpris && mpris.shuffleSupported)
+  // The player's Hyprland window, matched on its class against the MPRIS
+  // desktop entry or identity (also on the last segment of a dotted class
+  // like com.spotify.Client). Re-evaluates as windows open and close.
+  readonly property var appWindow: {
+    var tl = Hyprland.toplevels.values
+    var names = mpris ? [mpris.desktopEntry, mpris.identity] : []
+    names = names.map(function(n) { return String(n || "").toLowerCase() }).filter(function(n) { return n !== "" })
+    for (var i = 0; i < tl.length; i++) {
+      var ipc = tl[i].lastIpcObject
+      var cls = ipc && ipc.class ? String(ipc.class).toLowerCase() : ""
+      if (cls === "" || ipc.mapped === false) continue
+      var last = cls.substring(cls.lastIndexOf(".") + 1)
+      if (names.indexOf(cls) !== -1 || names.indexOf(last) !== -1) return ipc
+    }
+    return null
+  }
+  readonly property bool canOpenApp: !!(appWindow || (mpris && mpris.canRaise))
 
   implicitHeight: layout.implicitHeight
 
@@ -43,6 +63,16 @@ Item {
   }
 
   function action(name) { if (host.nowPlaying.service) host.nowPlaying.service.runAction(name, false, "") }
+  function toggleShuffle() { if (canShuffle) mpris.shuffle = !mpris.shuffle }
+  // Close first so the app, not the island, gets the keyboard. Hyprland here
+  // runs a Lua config, so the dispatch is the hl.dsp form (Omarchy's own
+  // scripts do the same); focusing the window also switches workspace.
+  function openApp() {
+    var win = appWindow
+    host.view = "rest"
+    if (win) Quickshell.execDetached(["bash", "-c", 'sleep 0.15; exec hyprctl dispatch "hl.dsp.focus({ window = \"address:$1\" })"', "--", win.address])
+    else if (mpris && mpris.canRaise) mpris.raise()
+  }
   function seekTo(seconds) {
     if (!canSeek) return
     var target = Math.max(0, Math.min(length, seconds))
@@ -57,6 +87,7 @@ Item {
 
   Keys.onPressed: function(event) {
     if (event.key === Qt.Key_Space) { action("playPause"); event.accepted = true }
+    else if (event.key === Qt.Key_S) { toggleShuffle(); event.accepted = true }
     else if (event.key === Qt.Key_Left) { seekTo(position - 10); event.accepted = true }
     else if (event.key === Qt.Key_Right) { seekTo(position + 10); event.accepted = true }
     else if (event.key === Qt.Key_Escape) { host.view = "rest"; event.accepted = true }
@@ -252,7 +283,33 @@ Item {
         Tooltip { theme: player.host.theme; text: control.name; above: true }
       }
 
+      // Shuffle and open-app hang off the sides of the transport row, so
+      // Previous / Play / Next stay centred whatever their glyph widths.
+      Control {
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.right: transport.left
+        anchors.rightMargin: 46
+        text: "󰒟"
+        name: player.mpris && player.mpris.shuffle ? "Shuffle: on" : "Shuffle: off"
+        color: player.mpris && player.mpris.shuffle ? player.host.nowPlaying.tint : Qt.rgba(1, 1, 1, 0.6)
+        font.pixelSize: player.host.theme.px(26)
+        available: player.canShuffle
+        onActivated: player.toggleShuffle()
+      }
+      Control {
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: transport.right
+        anchors.leftMargin: 46
+        text: "󰏌"
+        name: "Open " + (player.mpris ? String(player.mpris.identity || player.mpris.desktopEntry || "app") : "app")
+        color: Qt.rgba(1, 1, 1, 0.6)
+        font.pixelSize: player.host.theme.px(26)
+        available: player.canOpenApp
+        onActivated: player.openApp()
+      }
+
       Row {
+        id: transport
         anchors.centerIn: parent
         spacing: 46
         Control {
