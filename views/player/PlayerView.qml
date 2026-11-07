@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
-import Quickshell.Io
 import Quickshell.Widgets
+import Quickshell.Wayland
 import "../../components"
 
 // Now-playing view, opened from the media pill's cover or wave: cover, title
@@ -22,24 +22,39 @@ Item {
   property real position: 0
   property bool dragging: false
 
-  readonly property bool canShuffle: !!(mpris && mpris.shuffleSupported)
-  // The player's Hyprland window, matched on its class against the MPRIS
-  // desktop entry or identity (also on the last segment of a dotted class
-  // like com.spotify.Client). Re-evaluates as windows open and close.
+  readonly property bool canShuffle: !!(mpris && mpris.canControl && mpris.shuffleSupported)
+  // The player's desktop entry. Chromium-based players (Electron apps)
+  // report an empty desktopEntry, so fall back to a heuristic lookup on the
+  // identity. Reading the applications list makes it re-run once it loads.
+  readonly property var appEntry: {
+    DesktopEntries.applications.values
+    if (!mpris) return null
+    var de = String(mpris.desktopEntry || ""), id = String(mpris.identity || "")
+    return (de !== "" ? DesktopEntries.byId(de) || DesktopEntries.heuristicLookup(de) : null)
+      || (id !== "" ? DesktopEntries.heuristicLookup(id) : null)
+  }
+  // The player's window, from the compositor's live toplevel list, which
+  // follows windows opening later. Exact matches only, so a
+  // browser is never mistaken for another app: the app id or its last
+  // segment (com.spotify.Client -> client) against the names the player and
+  // its desktop entry go by, most specific first so a generic name such as
+  // "chromium" only counts when nothing better matches.
   readonly property var appWindow: {
-    var tl = Hyprland.toplevels.values
-    var names = mpris ? [mpris.desktopEntry, mpris.identity] : []
-    names = names.map(function(n) { return String(n || "").toLowerCase() }).filter(function(n) { return n !== "" })
-    for (var i = 0; i < tl.length; i++) {
-      var ipc = tl[i].lastIpcObject
-      var cls = ipc && ipc.class ? String(ipc.class).toLowerCase() : ""
-      if (cls === "" || ipc.mapped === false) continue
-      var last = cls.substring(cls.lastIndexOf(".") + 1)
-      if (names.indexOf(cls) !== -1 || names.indexOf(last) !== -1) return ipc
+    var tl = ToplevelManager.toplevels.values
+    if (!mpris) return null
+    var dbus = String(mpris.dbusName || "").replace(/^org\.mpris\.MediaPlayer2\./, "").replace(/\.instance.*$/, "")
+    var names = [mpris.desktopEntry, appEntry ? appEntry.id : "", appEntry ? appEntry.startupClass : "", mpris.identity, dbus]
+    for (var n = 0; n < names.length; n++) {
+      var name = String(names[n] || "").toLowerCase()
+      if (name === "") continue
+      for (var i = 0; i < tl.length; i++) {
+        var cls = String(tl[i].appId || "").toLowerCase()
+        if (cls !== "" && (cls === name || cls.substring(cls.lastIndexOf(".") + 1) === name)) return tl[i]
+      }
     }
     return null
   }
-  readonly property bool canOpenApp: !!(appWindow || (mpris && mpris.canRaise))
+  readonly property bool canOpenApp: !!(appWindow || (mpris && mpris.canRaise) || appEntry)
 
   implicitHeight: layout.implicitHeight
 
@@ -64,14 +79,30 @@ Item {
 
   function action(name) { if (host.nowPlaying.service) host.nowPlaying.service.runAction(name, false, "") }
   function toggleShuffle() { if (canShuffle) mpris.shuffle = !mpris.shuffle }
-  // Close first so the app, not the island, gets the keyboard. Hyprland here
-  // runs a Lua config, so the dispatch is the hl.dsp form (Omarchy's own
-  // scripts do the same); focusing the window also switches workspace.
+  // Close first so the app, not the island, gets the keyboard; focus follows
+  // after the island's layer has let go of it. Window, else the player's own
+  // Raise, else its desktop entry (single-instance apps bring their window
+  // up when launched again).
   function openApp() {
     var win = appWindow
     host.view = "rest"
-    if (win) Quickshell.execDetached(["bash", "-c", 'sleep 0.15; exec hyprctl dispatch "hl.dsp.focus({ window = \"address:$1\" })"', "--", win.address])
+    if (win) { focusTimer.win = win; focusTimer.restart() }
     else if (mpris && mpris.canRaise) mpris.raise()
+    else if (appEntry) appEntry.execute()
+  }
+  Timer {
+    id: focusTimer
+    property var win: null
+    interval: 150
+    onTriggered: {
+      if (!win) return
+      win.activate()
+      // On Hyprland 0.56 activate() only focuses a window on the current
+      // workspace; this Lua-config dispatch (the form Omarchy's own scripts
+      // use) is what brings its workspace up. Matched on the live app id, not
+      // on Hyprland's client list, so nothing here goes stale.
+      Hyprland.dispatch('hl.dsp.focus({ window = "class:' + String(win.appId).replace(/["\\]/g, "") + '" })')
+    }
   }
   function seekTo(seconds) {
     if (!canSeek) return
@@ -290,7 +321,8 @@ Item {
         anchors.right: transport.left
         anchors.rightMargin: 46
         text: "󰒟"
-        name: player.mpris && player.mpris.shuffle ? "Shuffle: on" : "Shuffle: off"
+        name: !player.canShuffle && player.mpris ? "Shuffle isn't supported by " + String(player.mpris.identity || "this player")
+          : player.mpris && player.mpris.shuffle ? "Shuffle: on" : "Shuffle: off"
         color: player.mpris && player.mpris.shuffle ? player.host.nowPlaying.tint : Qt.rgba(1, 1, 1, 0.6)
         font.pixelSize: player.host.theme.px(26)
         available: player.canShuffle
