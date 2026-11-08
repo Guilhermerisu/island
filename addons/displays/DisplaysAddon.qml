@@ -36,10 +36,20 @@ Addon {
   // Or a zone of the control center is on screen (see zoneViews in Addon.qml).
   readonly property bool watching: host.view === "settings" || zoneViews > 0
   // Edits left pending when Settings closed are dropped, as macOS does.
-  onWatchingChanged: if (watching) { refresh(true); readBrightness(); readTextSize() }
+  onWatchingChanged: if (watching) { refresh(true); readBrightness(); readTextSize(); wallpaperRead.running = true }
   // Read once at start too, so a monitor kept in HDR pauses Night Shift
   // (see below) from login on.
-  Component.onCompleted: refresh(true)
+  Component.onCompleted: { refresh(true); wallpaperRead.running = true }
+
+  // The wallpaper's real file, as the previews show it: omarchy's own path is
+  // a link that stays the same when the wallpaper changes, so it couldn't be
+  // cached, and the previews wouldn't know to load the new one.
+  property string wallpaper: ""
+  Process {
+    id: wallpaperRead
+    command: ["readlink", "-f", displaysAddon.host.home + "/.local/state/omarchy/current/background"]
+    stdout: StdioCollector { onStreamFinished: displaysAddon.wallpaper = String(text).trim() }
+  }
 
   // Every monitor, as the pane edits it (see entryFrom): `original` as they
   // are, `draft` with the pending edits; empty before the first read.
@@ -90,8 +100,10 @@ Addon {
     var next = list.map(entryFrom).sort(function(a, b) { return a.name < b.name ? -1 : 1 })
     var sameSet = next.map(function(e) { return e.name }).join() === original.map(function(e) { return e.name }).join()
     var keep = !reset && dirty && sameSet
-    original = next
-    if (!keep) draft = copy(next)
+    // Only when they differ: a new list rebuilds every preview drawn from it.
+    var json = JSON.stringify(next)
+    if (json !== JSON.stringify(original)) original = next
+    if (!keep && json !== JSON.stringify(draft)) draft = copy(next)
     // No HDR left (turned off, or reverted): Night Shift back, if paused.
     if (!anyHdr && !confirming) resumeNight()
     loaded = true

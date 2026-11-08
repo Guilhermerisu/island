@@ -73,12 +73,30 @@ Item {
       clip: true
       // Not while editing: dragging a control would flick the page instead.
       interactive: contentHeight > height && !controlCenter.editMode
+      function scrollTo(y) { contentY = Math.max(0, Math.min(contentHeight - height, y)) }
+      // Not left past the end when what's in it gets shorter (a zone removed).
+      onContentHeightChanged: scrollTo(contentY)
+      onHeightChanged: scrollTo(contentY)
       // Editing keeps the flick off (it would steal the drags), so the wheel
       // scrolls by hand: a tall layout in one column would be cut off.
       WheelHandler {
         enabled: controlCenter.editMode
-        onWheel: function(event) {
-          controlsScroll.contentY = Math.max(0, Math.min(controlsScroll.contentHeight - controlsScroll.height, controlsScroll.contentY - event.angleDelta.y / 2))
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: function(event) { controlsScroll.scrollTo(controlsScroll.contentY - event.angleDelta.y / 2) }
+      }
+      // More below: what's there fades into the island instead of being cut.
+      Rectangle {
+        parent: controlsScroll
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 28
+        opacity: controlsScroll.contentY < controlsScroll.contentHeight - controlsScroll.height - 1 ? 1 : 0
+        visible: opacity > 0.01
+        Behavior on opacity { MotionAnimation { theme: views.host.theme; pace: "fade"; curve: "fade" } }
+        gradient: Gradient {
+          GradientStop { position: 0; color: views.host.theme.withAlpha(views.host.theme.background, 0) }
+          GradientStop { position: 1; color: views.host.theme.background }
         }
       }
       OverlayScrollbar { flickable: controlsScroll; parent: controlsScroll; theme: views.host.theme }
@@ -240,6 +258,8 @@ Item {
       width: 36; height: 5; radius: 2.5
       color: grip.containsMouse || grip.pressed ? views.host.theme.fill("stronger") : views.host.theme.fill("strong")
       Behavior on color { MotionColorAnimation { theme: views.host.theme } }
+      opacity: grip.containsMouse || grip.pressed || controlCenter.editMode ? 1 : 0
+      Behavior on opacity { MotionAnimation { theme: views.host.theme; pace: "fade"; curve: "fade" } }
     }
     MouseArea {
       id: grip

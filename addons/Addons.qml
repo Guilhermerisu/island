@@ -23,7 +23,8 @@ Item {
   // else { title, minWidth } to name it differently, and to size it where the
   // view's own width (less its padding) isn't what a column needs; it is
   // shown only in columns at least `minWidth` wide. An addon with several
-  // lists them as `zones: [{ key, title, minWidth, editable }]`.
+  // lists them as `zones: [{ key, title, about, minWidth, editable }]`, `about`
+  // being its line in the add panel (else the addon's description).
   // A new addon gets its zone with this one line, `zone: true`, none in its
   // own files. Meetings, Keyboard Layout and Ask AI have none: nothing of
   // theirs but a pill or a one-off answer is on screen to put in a column.
@@ -113,8 +114,8 @@ Item {
       description: "Apps tray icons and menus" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
       zones: [
-        { key: "list", title: "Plugin List", minWidth: 360 },
-        { key: "pinned", title: "Plugins", minWidth: 260, editable: true }
+        { key: "list", title: "Plugin List", about: "Every plugin, to open or switch on", minWidth: 360 },
+        { key: "pinned", title: "Plugins", about: "The plugins you pin, as tiles", minWidth: 260, editable: true }
       ],
       iconLayers: [
         { rect: true, color: "#ffffff", x: 0.33, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },

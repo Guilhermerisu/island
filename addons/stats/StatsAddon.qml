@@ -6,8 +6,8 @@ import ".."
 // System Stats: Activity Monitor's figures as a pane in Settings (see
 // StatsPage), which is also its control center zone (see Addon.qml, without
 // the process table). The sampler (sampler.py) runs while Settings is open on
-// any screen, or a zone is on screen, so they have figures the moment they're
-// shown, printing a reading every five seconds; the latest is kept here.
+// any screen, or a zone is on screen, printing a reading every five seconds;
+// the latest is kept here, on show until the next one arrives.
 Addon {
   id: stats
   settingsPages: [{
@@ -17,12 +17,9 @@ Addon {
     search: "system stats activity monitor cpu processor load memory ram pressure swap gpu graphics vram disk storage processes quit force kill"
   }]
 
-
-  readonly property bool sampling: host.view === "settings" || zoneViews > 0
-  onSamplingChanged: if (sampling) clear()
+  readonly property bool inSettings: host.view === "settings"
 
   property var latest: null
-  function clear() { latest = null }
   function take(line) {
     try { latest = JSON.parse(line) } catch (e) {}
   }
@@ -31,13 +28,17 @@ Addon {
   // again rather than leaving the pane frozen.
   property bool resting: false
   Timer { id: rest; interval: 2000; onTriggered: stats.resting = false }
-  Process {
-    id: sampler
-    running: stats.sampling && !stats.resting
-    onExited: if (stats.sampling && !stats.resting) { stats.resting = true; rest.restart() }
-    command: ["python3", decodeURIComponent(String(Qt.resolvedUrl("sampler.py")).replace("file://", ""))]
+  component Sampler: Process {
+    property bool wanted: false
+    property var flags: []
+    running: wanted && !stats.resting
+    onExited: if (wanted && !stats.resting) { stats.resting = true; rest.restart() }
+    command: ["python3", decodeURIComponent(String(Qt.resolvedUrl("sampler.py")).replace("file://", ""))].concat(flags)
     stdout: SplitParser { onRead: function(line) { stats.take(line) } }
   }
+  Sampler { wanted: stats.inSettings }
+  // A zone alone has no process table, the bulk of a reading to send and parse.
+  Sampler { wanted: !stats.inSettings && stats.zoneViews > 0; flags: ["--no-processes"] }
 
   // Quit (SIGTERM) or Force Quit (SIGKILL) a row's processes of the user's,
   // as the latest reading has them: a lone process only if it's still the

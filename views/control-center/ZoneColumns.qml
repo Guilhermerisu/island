@@ -17,12 +17,34 @@ Item {
   // Not a layout itself, so the stand-in can be placed freely over the columns.
   implicitHeight: row.implicitHeight
   visible: implicitHeight > 0
+  // Over the add panel, where a zone dragged in from it starts.
+  z: draggedId !== "" ? 1 : 0
 
   property string draggedId: ""
   property real grabX: 0
   property real grabY: 0
   property int dropColumn: -1
   property int dropIndex: 0
+  // Held by the ghost as it fades out, when no zone is dragged any more.
+  property string ghostTitle: ""
+  property string ghostIcon: ""
+  onDraggedIdChanged: {
+    var zone = zones.definition(draggedId)
+    if (!zone) return
+    ghostTitle = zone.title
+    ghostIcon = zone.icon
+  }
+  // Zones slide only while editing: elsewhere a column's height follows a
+  // picker opening frame by frame, which a slide would only lag behind.
+  readonly property bool animating: center.editMode && center.settled
+  // Columns ease only back to equal widths: dragging a handle or the island
+  // growing already moves them.
+  property bool evening: false
+  Timer {
+    id: eveningTimer
+    interval: board.center.host.theme.motionDuration("standard")
+    onTriggered: board.evening = false
+  }
 
   // Which columns take room: all of them while editing, else those holding a zone.
   readonly property var shown: {
@@ -107,6 +129,7 @@ Item {
         visible: board.shown[index] === true
         Layout.fillHeight: true
         Layout.preferredWidth: board.layoutWidth(index)
+        Behavior on Layout.preferredWidth { enabled: board.evening; MotionAnimation { theme: board.center.host.theme; pace: "standard" } }
         Layout.minimumWidth: 0
         implicitHeight: Math.max(stack.implicitHeight, board.center.editMode ? 64 : 0)
 
@@ -170,8 +193,10 @@ Item {
 
         // Where the dragged zone would land.
         Rectangle {
+          id: dropLine
           visible: board.draggedId !== "" && board.dropColumn === column.index && column.count > 0
           y: column.lineY(board.dropIndex)
+          Behavior on y { enabled: dropLine.visible; MotionAnimation { theme: board.center.host.theme; pace: "quick" } }
           width: parent.width
           height: 3
           radius: 1.5
@@ -180,7 +205,7 @@ Item {
 
         // Between this column and the next one showing, over both a little.
         // The whole height is grabbable; the capsule sits mid-view, like the
-        // grip under the island, and is always shown.
+        // grip under the island.
         MouseArea {
           id: handle
           readonly property int next: board.nextShown(column.index)
@@ -216,7 +241,11 @@ Item {
             board.liveShares = null
           }
           onCanceled: board.liveShares = null
-          onDoubleClicked: board.zones.setShares(null)
+          onDoubleClicked: {
+            board.evening = true
+            eveningTimer.restart()
+            board.zones.setShares(null)
+          }
           Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             y: Math.max(0, Math.min(parent.height - height, board.viewMiddle - height / 2))
@@ -225,6 +254,9 @@ Item {
             radius: 2.5
             color: handle.pressed || handle.containsMouse ? board.center.host.theme.fill("stronger") : board.center.host.theme.fill("strong")
             Behavior on color { MotionColorAnimation { theme: board.center.host.theme } }
+            // Only when it's being reached for, or while editing.
+            opacity: handle.pressed || handle.containsMouse || board.center.editMode ? 1 : 0
+            Behavior on opacity { MotionAnimation { theme: board.center.host.theme; pace: "fade"; curve: "fade" } }
           }
         }
 
@@ -247,25 +279,40 @@ Item {
   Rectangle {
     id: ghost
     z: 10
-    visible: board.draggedId !== ""
+    // Lifts as it's picked up, and fades where it's let go.
+    opacity: board.draggedId !== "" ? 1 : 0
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: board.center.host.theme; pace: board.draggedId !== "" ? "fade" : "exit"; curve: "fade" } }
     radius: Math.min(board.center.cardRadius, height / 2)
     color: board.center.tile
     border.width: 1
     border.color: board.center.edge
-    scale: 1.03
+    scale: board.draggedId !== "" ? 1.03 : 1
+    Behavior on scale { MotionAnimation { theme: board.center.host.theme; pace: "standard" } }
     Drag.active: board.draggedId !== ""
     // Only the columns take it, not what else is dragged (a plugin's card).
     Drag.keys: ["zone"]
     Drag.hotSpot.x: board.grabX
     Drag.hotSpot.y: board.grabY
-    Text {
+    Row {
       anchors.centerIn: parent
-      text: board.zones.definition(board.draggedId) ? board.zones.definition(board.draggedId).title : ""
-      color: board.center.text
-      font.family: board.center.host.theme.textFontFamily
-      font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.px(12))
-      font.pixelSize: board.center.host.theme.px(12)
-      font.weight: Font.DemiBold
+      spacing: 8
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        text: board.ghostIcon
+        color: board.center.textMuted
+        font.family: board.center.iconFont
+        font.pixelSize: board.center.host.theme.px(14)
+      }
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        text: board.ghostTitle
+        color: board.center.text
+        font.family: board.center.host.theme.textFontFamily
+        font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.px(12))
+        font.pixelSize: board.center.host.theme.px(12)
+        font.weight: Font.DemiBold
+      }
     }
   }
 }

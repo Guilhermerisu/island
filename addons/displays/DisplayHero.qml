@@ -73,6 +73,7 @@ Rectangle {
               width: Math.min(parent.width, parent.height * screen.ratio) * screen.size
               height: width / screen.ratio
               view: hero.view
+              wallpaper: hero.displays.wallpaper
               radius: hero.single ? 10 : 7
               bezel: hero.single ? 6 : 3
               sourceWidth: hero.single ? 600 : 360

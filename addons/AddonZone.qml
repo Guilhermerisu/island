@@ -17,7 +17,8 @@ Rectangle {
   readonly property var center: parent.center
   readonly property bool zoneActive: !!parent.zoneActive
   default property alias content: body.data
-  readonly property real padding: 16
+  // A Settings page draws its own cards, so it goes without this one.
+  readonly property real padding: mountedPage ? 0 : 16
 
   property bool mount: false
   readonly property var owner: mount ? parent.addonRoot : null
@@ -29,8 +30,8 @@ Rectangle {
 
   implicitHeight: body.height + 2 * padding
   radius: center.cardRadius
-  color: center.card
-  border.width: 1
+  color: mountedPage ? "transparent" : center.card
+  border.width: mountedPage ? 0 : 1
   border.color: center.edge
 
   Item {
@@ -50,7 +51,6 @@ Rectangle {
         if (item.active !== undefined) item.active = Qt.binding(function() { return card.zoneActive })
       }
     }
-    ZoneLook { id: look; center: card.center; width: parent.width }
     Loader {
       id: page
       width: parent.width
@@ -89,7 +89,7 @@ Rectangle {
     if (same && page.item) return
     madeWith = next
     if (!next) page.source = ""
-    else page.setSource(mountedPage.source, Object.assign({ view: look }, mountedPage.properties || {}))
+    else page.setSource(mountedPage.source, Object.assign({ view: center.zoneLook }, mountedPage.properties || {}))
   }
   function count() {
     var next = shown ? owner : null

@@ -82,7 +82,8 @@ Item {
       && panelPoint.x >= 0 && panelPoint.x <= panel.width
       && panelPoint.y >= 0 && panelPoint.y <= panel.height
     var point = source.mapToItem(zone, x, y)
-    dropActive = !removeDropActive && point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height
+    // A row's slack under the tiles: the zone is only as tall as they are.
+    dropActive = !removeDropActive && point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height + center.tileHeight + gap
     if (dropActive) previewInsertAt(point.x, point.y)
     else if (dragFromPanel) previewIds = previewIds.filter(function(id) { return id !== draggedId })
   }

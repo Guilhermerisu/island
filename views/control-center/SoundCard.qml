@@ -11,7 +11,7 @@ CcSection {
   readonly property bool galleryPreview: parent.galleryPreview
   anchors.fill: parent
   title: "Sound"
-  vertical: !galleryPreview && card.controls.isVertical("sound")
+  vertical: !galleryPreview && card.controls.isVertical("sound") && card.controls.controlPresent("sound")
   detail: !card.controls.controlPresent("sound") ? "Unavailable" : card.controls.muted ? "Muted" : Math.round(card.controls.volume * 100) + "%"
   showChevron: !galleryPreview && !card.center.editMode && card.controls.outputs.length > 1
   chevronOpen: card.center.outputsOpen

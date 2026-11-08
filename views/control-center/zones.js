@@ -1,8 +1,8 @@
 .pragma library
 
-// The control center's zones as plain data, so they can be checked without
-// Quickshell (task/checks/zones-check.js): a model is a list of columns,
-// each a list of zone ids. Every function returns a new model.
+// The control center's zones as plain data, kept free of Quickshell: a model
+// is a list of columns, each a list of zone ids. Every function returns a new
+// model.
 
 var fallback = [["controls", "notifications"]]
 // What the island is wide for 1, 2 and 3 columns, each column taking its
@@ -38,6 +38,28 @@ function normalize(json, columns, known, aliases) {
       target.push(id)
     }
   }
+  return result
+}
+
+// `next`, a change made while `json`'s extra columns were folded, with those
+// columns kept: the folded last column is cut back at the places it was
+// joined. Zones stay in the order they have on screen, so one moved ahead of
+// its old column takes what follows it along.
+function unfold(json, next) {
+  var saved
+  try { saved = JSON.parse(json) } catch (e) { return next }
+  if (!Array.isArray(saved) || saved.length <= next.length) return next
+  var last = next.length - 1
+  var from = {}
+  for (var c = last; c < saved.length; c++)
+    if (Array.isArray(saved[c])) saved[c].forEach(function(id) { from[id] = c })
+  var result = next.slice(0, last)
+  for (c = last; c < saved.length; c++) result.push([])
+  var at = last
+  next[last].forEach(function(id) {
+    if (from[id] > at) at = from[id]
+    result[at].push(id)
+  })
   return result
 }
 

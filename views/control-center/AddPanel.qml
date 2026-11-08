@@ -27,6 +27,8 @@ Rectangle {
   function resetScroll() { scroll.contentY = 0 }
 
   visible: center.editMode
+  opacity: visible ? 1 : 0
+  Behavior on opacity { enabled: panel.center.settled; MotionAnimation { theme: panel.center.host.theme; pace: "fade"; curve: "fade" } }
   Layout.fillWidth: true
   Layout.preferredHeight: content.implicitHeight + 26
   radius: center.cardRadius

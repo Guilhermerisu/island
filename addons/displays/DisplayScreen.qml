@@ -9,6 +9,8 @@ import QtQuick.Effects
 Item {
   id: screen
   required property var view
+  // The wallpaper's file (see DisplaysAddon).
+  required property string wallpaper
   property real radius: 6
   property real bezel: 3
   property bool shadow: true
@@ -48,10 +50,9 @@ Item {
     }
     Image {
       anchors.fill: parent
-      source: "file://" + screen.view.host.home + "/.local/state/omarchy/current/background"
+      source: screen.wallpaper !== "" ? "file://" + screen.wallpaper : ""
       fillMode: Image.PreserveAspectCrop
       asynchronous: true
-      cache: false
       sourceSize.width: screen.sourceWidth
     }
   }
