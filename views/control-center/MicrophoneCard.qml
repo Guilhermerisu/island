@@ -11,6 +11,7 @@ CcSection {
   readonly property bool galleryPreview: parent.galleryPreview
   anchors.fill: parent
   title: "Microphone"
+  vertical: !galleryPreview && card.controls.isVertical("microphone")
   detail: !card.controls.controlPresent("microphone") ? "Unavailable" : card.controls.microphoneMuted ? "Muted" : Math.round(card.controls.microphoneVolume * 100) + "%"
   showChevron: !galleryPreview && !card.center.editMode && card.controls.inputs.length > 1
   chevronOpen: card.center.inputsOpen
@@ -20,6 +21,9 @@ CcSection {
 
   CcSlider {
     center: card.center
+    vertical: card.vertical
+    title: card.title
+    detail: card.detail
     enabled: card.controls.microphoneReady
     icon: "󰍬"
     value: card.controls.microphoneVolume
@@ -31,7 +35,7 @@ CcSection {
   // Input picker, as the Sound card's output picker: rows kept by source
   // name, fading in and out in place while the rest slide (the card's height
   // follows, in ControlLayout).
-  readonly property bool inputsShown: !galleryPreview && card.center.inputsOpen && !card.center.editMode
+  readonly property bool inputsShown: !galleryPreview && !card.vertical && card.center.inputsOpen && !card.center.editMode
   KeyedListModel {
     id: inputRows
     // The label rides along, so a row still reads right while it fades out
@@ -46,6 +50,29 @@ CcSection {
     var inputs = card.controls.inputs
     for (var i = 0; i < inputs.length; i++) if (String(inputs[i].name || inputs[i].id) === name) return inputs[i]
     return null
+  }
+  // Live input level, as Omarchy's audio panel. Only listens to the mic while
+  // the picker is open.
+  PwNodePeakMonitor {
+    id: peakMonitor
+    node: card.controls.microphoneSource
+    enabled: card.inputsShown && !!card.controls.microphoneSource
+  }
+  Rectangle {
+    Layout.fillWidth: true
+    Layout.preferredHeight: 4
+    radius: 2
+    color: card.center.host.theme.fill("strong")
+    opacity: card.inputsShown ? (card.controls.microphoneMuted ? 0.35 : 1) : 0
+    visible: opacity > 0.01
+    Behavior on opacity { MotionAnimation { theme: card.center.host.theme; pace: card.inputsShown ? "fade" : "exit"; curve: card.inputsShown ? "fade" : "exit" } }
+    Rectangle {
+      height: parent.height
+      radius: parent.radius
+      width: parent.width * Math.max(0, Math.min(1, peakMonitor.peak))
+      color: "white"
+      Behavior on width { NumberAnimation { duration: 70 } }
+    }
   }
   ListView {
     Layout.fillWidth: true

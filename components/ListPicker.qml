@@ -16,6 +16,9 @@ Item {
   id: picker
   required property var host
   property bool active: false
+  // Whether becoming active puts the keyboard in the search field; a list
+  // sharing the screen with others (a control center zone) leaves it be.
+  property bool takeFocus: true
   property var items: []
   property Component row
   property Component side
@@ -47,7 +50,7 @@ Item {
     if (!active) return
     search.clear()
     reset()
-    Qt.callLater(function() { search.focusInput() })
+    if (takeFocus) focusSearch()
   }
   onQueryChanged: reset()
   // The list re-forms under the cursor (results, clipboard, the live app
@@ -60,6 +63,7 @@ Item {
   }
 
   function clearSearch() { search.clear() }
+  function focusSearch() { Qt.callLater(function() { search.focusInput() }) }
   // Rows whose `disabled:` guard answered true stay listed but dimmed, and
   // the cursor steps over them, the way Omarchy's menu treats them.
   function isDisabled(item) { return !!(item && item.disabled) }

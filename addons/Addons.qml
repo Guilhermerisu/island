@@ -17,9 +17,19 @@ Item {
   // default, choices, placeholder, icon (a text field's leading glyph) }).
   // `describedWith` ({ key, text }) shows that option in the description
   // once it's set, `text`'s %1 standing for its value. Its views' keybindings are tagged with its id in
-  // companion/bindings.sh.
+  // companion/bindings.sh. `zone` offers the addon as a zone of the control
+  // center (what it shows is the addon's own first view or Settings page, or
+  // a `zone` it draws, see Addon.qml): `true` for a zone named for the addon,
+  // else { title, minWidth } to name it differently, and to size it where the
+  // view's own width (less its padding) isn't what a column needs; it is
+  // shown only in columns at least `minWidth` wide. An addon with several
+  // lists them as `zones: [{ key, title, minWidth, editable }]`.
+  // A new addon gets its zone with this one line, `zone: true`, none in its
+  // own files. Meetings, Keyboard Layout and Ask AI have none: nothing of
+  // theirs but a pill or a one-off answer is on screen to put in a column.
   readonly property var entries: [
     { id: "weather", name: "Weather", icon: "󰖐", color: "#1f8ef1", default: false, source: "weather/WeatherAddon.qml",
+      zone: { minWidth: 320 },
       iconLayers: [
         { circle: true, color: "#ffd60a", x: 0.65, y: 0.37, size: 0.36 },
         { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
@@ -32,6 +42,7 @@ Item {
           choices: [{ label: "°C", value: false }, { label: "°F", value: true }] }
       ] },
     { id: "calendar", name: "Calendar", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
+      zone: { minWidth: 400 },
       iconLayers: [
         { rect: true, color: "#f2564f", x: 0.5, y: 0.13, width: 1, height: 0.36 },
         { date: "month", color: "#ffffff", weight: Font.Bold, x: 0.5, y: 0.17, size: 0.2 },
@@ -52,6 +63,7 @@ Item {
         { key: "slack", label: "Slack", detail: "Huddles, in the app or a browser", type: "switch", default: true }
       ] },
     { id: "timer", name: "Timer", icon: "󰔛", color: "#1c1c1e", default: false, source: "timer/TimerAddon.qml",
+      zone: { minWidth: 340 },
       iconLayers: [
         { rect: true, color: "#ff9f0a", x: 0.5, y: 0.13, width: 0.2, height: 0.08, radius: 0.5 },
         { circle: true, color: "#ff9f0a", x: 0.5, y: 0.56, size: 0.68 },
@@ -61,6 +73,7 @@ Item {
       ],
       description: "A countdown on the island" },
     { id: "stats", name: "System Stats", icon: "󰓅", color: "#232325", default: true, source: "stats/StatsAddon.qml",
+      zone: { minWidth: 300 },
       // Activity Monitor's: a red and a blue wave either side of a line,
       // over a faint grid.
       iconLayers: [1, 2, 3, 4, 5, 6, 7].reduce(function(grid, n) {
@@ -76,6 +89,7 @@ Item {
       ]),
       description: "Live CPU, memory, GPU, and disk use" },
     { id: "displays", name: "Displays", icon: "󰖨", color: "#0a84ff", default: true, source: "displays/DisplaysAddon.qml",
+      zone: { minWidth: 480 },
       // macOS's: a white sun, a disc ringed by eight rounded rays.
       iconLayers: [{ circle: true, color: "#ffffff", x: 0.5, y: 0.5, size: 0.32 }]
         .concat([0, 1, 2, 3, 4, 5, 6, 7].map(function(i) {
@@ -84,6 +98,7 @@ Item {
         })),
       description: "Arrange monitors and set their modes" },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
+      zone: { minWidth: 260 },
       iconLayers: [
         { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
         { circle: true, color: "#34c759", x: 0.56, y: 0.26, size: 0.07 },
@@ -97,6 +112,10 @@ Item {
       ],
       description: "Apps tray icons and menus" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
+      zones: [
+        { key: "list", title: "Plugin List", minWidth: 360 },
+        { key: "pinned", title: "Plugins", minWidth: 260, editable: true }
+      ],
       iconLayers: [
         { rect: true, color: "#ffffff", x: 0.33, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
         { rect: true, color: "#ffffff", x: 0.67, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
@@ -116,6 +135,7 @@ Item {
       description: "Show the layout on the pill when it changes" },
     // All Models' robot; its Settings pane takes the picked agent's logo.
     { id: "agents", name: "Agents", icon: "󰚩", color: "#5e5ce6", default: false, source: "agents/AgentsAddon.qml",
+      zone: { minWidth: 340 },
       description: "Agent limits, daily tokens, and Claude Code at work",
       options: [
         { key: "live", label: "Live Activity", detail: "Claude Code's steps on the island while it works", type: "switch", default: true },
@@ -268,6 +288,10 @@ Item {
       Component.onCompleted: load()
       function load() {
         if (!wanted) { source = ""; return }
+        // Already made: onWantedChanged and Component.onCompleted both call
+        // this, and making it again drops the root that zones, pages and the
+        // sampler already hold.
+        if (item) return
         var e = modelData
         slot.setSource(String(Qt.resolvedUrl(e.source)).replace(/^qs:/, "file:"), {
           host: addons.host,

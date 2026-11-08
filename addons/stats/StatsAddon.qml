@@ -4,9 +4,10 @@ import Quickshell.Io
 import ".."
 
 // System Stats: Activity Monitor's figures as a pane in Settings (see
-// StatsPage). The sampler (sampler.py) runs while Settings is open on any
-// screen, so the pane has figures the moment it's picked, printing a
-// reading every five seconds; the latest is kept here.
+// StatsPage), which is also its control center zone (see Addon.qml, without
+// the process table). The sampler (sampler.py) runs while Settings is open on
+// any screen, or a zone is on screen, so they have figures the moment they're
+// shown, printing a reading every five seconds; the latest is kept here.
 Addon {
   id: stats
   settingsPages: [{
@@ -16,7 +17,8 @@ Addon {
     search: "system stats activity monitor cpu processor load memory ram pressure swap gpu graphics vram disk storage processes quit force kill"
   }]
 
-  readonly property bool sampling: host.view === "settings"
+
+  readonly property bool sampling: host.view === "settings" || zoneViews > 0
   onSamplingChanged: if (sampling) clear()
 
   property var latest: null

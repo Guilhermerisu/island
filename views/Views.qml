@@ -34,12 +34,26 @@ Item {
     return null
   }
 
+  // The control center's height cap: the one dragged out on its handle (0 =
+  // the default 780), within the screen, plus some room while editing for the
+  // zones' bars and the add panel. The island sits 8 px under the top edge, so
+  // `screenMargin` leaves the same below it. `dragMax` is the live value
+  // while the handle is held (-1 otherwise).
+  readonly property real screenMargin: 60
+  readonly property real screenLimit: Math.max(260, Window.height - screenMargin)
+  readonly property real editRoom: controlCenter.editMode ? 100 : 0
+  property real dragMax: -1
+  readonly property real chosenMax: dragMax >= 0 ? dragMax
+    : views.host.settings.controlCenterMaxHeight > 0 ? views.host.settings.controlCenterMaxHeight : 780
+  readonly property real controlsMaxHeight: Math.min(Math.max(260, Math.min(chosenMax, screenLimit)) + editRoom, screenLimit)
+
   Surface {
     id: controlsSurface
     host: views.host
     viewName: "controls"
-    fixedWidth: 540
-    maxHeight: 780
+    // Follows the columns the control center shows.
+    fixedWidth: controlCenter.islandWidth
+    maxHeight: views.controlsMaxHeight
     // Taller than the island allows (many controls added): scrolls, so the
     // notifications under them stay in reach.
     Flickable {
@@ -59,9 +73,17 @@ Item {
       clip: true
       // Not while editing: dragging a control would flick the page instead.
       interactive: contentHeight > height && !controlCenter.editMode
+      // Editing keeps the flick off (it would steal the drags), so the wheel
+      // scrolls by hand: a tall layout in one column would be cut off.
+      WheelHandler {
+        enabled: controlCenter.editMode
+        onWheel: function(event) {
+          controlsScroll.contentY = Math.max(0, Math.min(controlsScroll.contentHeight - controlsScroll.height, controlsScroll.contentY - event.angleDelta.y / 2))
+        }
+      }
       OverlayScrollbar { flickable: controlsScroll; parent: controlsScroll; theme: views.host.theme }
-      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed
-        // From the top each time it opens, and in edit mode, which doesn't scroll.
+      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; surfacePadding: controlsSurface.padding; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed
+        // From the top each time it opens, and as edit mode starts.
         onActiveChanged: if (active) controlsScroll.contentY = 0
         onEditModeChanged: controlsScroll.contentY = 0
       }
@@ -193,6 +215,57 @@ Item {
         : modelData.padding === undefined ? 16 : modelData.padding
       cornerRadius: own && own.surfaceRadius !== undefined ? own.surfaceRadius : 0
       Loader { anchors.fill: parent; sourceComponent: modelData.component }
+    }
+  }
+
+  // The grip under the control center: drag it to set how tall the island may
+  // grow (the rest scrolls), double-click for the default. It rides the
+  // island's bottom edge, inside the surface's padding, so it never overlaps
+  // the content and stays put when the content is shorter than the cap.
+  Item {
+    id: resizeHandle
+    visible: controlsSurface.active
+    opacity: controlsSurface.opacity
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    width: 72
+    height: controlsSurface.padding
+    // Pointer y in the window, not in the handle: the handle moves with the
+    // island while it is dragged.
+    property real pressY
+    property real pressHeight
+    property bool moved
+    Rectangle {
+      anchors.centerIn: parent
+      width: 36; height: 5; radius: 2.5
+      color: grip.containsMouse || grip.pressed ? views.host.theme.fill("stronger") : views.host.theme.fill("strong")
+      Behavior on color { MotionColorAnimation { theme: views.host.theme } }
+    }
+    MouseArea {
+      id: grip
+      anchors.fill: parent
+      hoverEnabled: true
+      preventStealing: true
+      cursorShape: Qt.SizeVerCursor
+      onPressed: function(mouse) {
+        resizeHandle.pressY = mapToItem(null, mouse.x, mouse.y).y
+        // The height shown, which is under the cap when the content is short.
+        resizeHandle.pressHeight = controlsSurface.islandHeight
+        resizeHandle.moved = false
+      }
+      onPositionChanged: function(mouse) {
+        if (!pressed) return
+        var dy = mapToItem(null, mouse.x, mouse.y).y - resizeHandle.pressY
+        if (!resizeHandle.moved && Math.abs(dy) < 2) return
+        resizeHandle.moved = true
+        views.dragMax = Math.max(260, Math.min(resizeHandle.pressHeight + dy - views.editRoom, views.screenLimit - views.editRoom))
+      }
+      onReleased: {
+        if (views.dragMax >= 0) views.host.settings.controlCenterMaxHeight = Math.round(views.dragMax)
+        views.dragMax = -1
+      }
+      onCanceled: views.dragMax = -1
+      onDoubleClicked: views.host.settings.controlCenterMaxHeight = 0
     }
   }
 }
