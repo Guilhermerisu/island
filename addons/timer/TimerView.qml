@@ -12,6 +12,9 @@ Item {
   id: view
   required property var timer
   property bool active: false
+  // In a control center zone: it doesn't take the keyboard, which stays with
+  // the control center (Esc closes that), and starting leaves it open.
+  property bool inZone: false
   readonly property var host: timer.host
   readonly property bool picking: timer.phase === "idle"
   readonly property int defaultMinutes: 15
@@ -26,7 +29,7 @@ Item {
     minutes = defaultMinutes
     roller.stop()
     roller.roll = 0
-    Qt.callLater(function() { view.forceActiveFocus() })
+    if (!inZone) Qt.callLater(function() { view.forceActiveFocus() })
   }
   Keys.onEscapePressed: host.view = "rest"
   Keys.onSpacePressed: if (timer.phase === "running" || timer.phase === "paused") timer.togglePause()
@@ -49,7 +52,7 @@ Item {
   }
   function start() {
     timer.start(minutes * 60000)
-    host.view = "rest"
+    if (!inZone) host.view = "rest"
   }
 
   component Fade: Item {
@@ -89,9 +92,11 @@ Item {
       }
     }
 
-    // Beside it, one that closes the view without starting.
+    // Beside it, one that closes the view without starting (none in a zone,
+    // which isn't this view to close).
     Rectangle {
       id: cancelButton
+      visible: !view.inZone
       anchors.left: startButton.right
       anchors.leftMargin: 12
       anchors.verticalCenter: parent.verticalCenter

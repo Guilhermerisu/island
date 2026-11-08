@@ -13,6 +13,9 @@ Item {
   id: view
   required property var calendar
   property bool active: false
+  // In a control center zone: it doesn't take the keyboard, which stays with
+  // the control center (Esc closes that).
+  property bool inZone: false
   readonly property var host: view.calendar.host
   readonly property var theme: host.theme
   readonly property color accent: theme.accent
@@ -40,7 +43,7 @@ Item {
   onActiveChanged: {
     if (!active) return
     view.calendar.viewOpened()
-    Qt.callLater(function() { view.forceActiveFocus() })
+    if (!inZone) Qt.callLater(function() { view.forceActiveFocus() })
   }
   Keys.onEscapePressed: host.view = "rest"
   Keys.onLeftPressed: view.calendar.shiftDay(-1)

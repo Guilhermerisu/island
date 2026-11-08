@@ -63,8 +63,20 @@ Item {
       property real textScale: 1
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
-      // Plugin tiles (addons/plugins) shown in it, as "plugins.<plugin id>"; none until added.
+      // The plugins pinned to its Plugins zone (addons/plugins), in order, as
+      // "plugins.<plugin id>"; none until added.
       property string controlCenterPlugins: ""
+      // Its columns (1–3) and, per column, the zones in it (JSON, see
+      // views/control-center/Zones.qml).
+      property int controlCenterColumns: 1
+      property string controlCenterZones: "[[\"controls\",\"notifications\"]]"
+      // Each column's share of the width, per column count (JSON, e.g.
+      // {"3":[0.3,0.4,0.3]}); unset counts split evenly.
+      property string controlCenterColumnWidths: ""
+      // Slider cards drawn upright, as their keys.
+      property string controlCenterVertical: ""
+      // Its height cap, set with the handle under it; 0 for the default.
+      property int controlCenterMaxHeight: 0
       property bool microphoneMuteControl: false
       property bool stayAwakeControl: false
       property bool screensaverControl: false

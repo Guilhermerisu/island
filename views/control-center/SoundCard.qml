@@ -11,6 +11,7 @@ CcSection {
   readonly property bool galleryPreview: parent.galleryPreview
   anchors.fill: parent
   title: "Sound"
+  vertical: !galleryPreview && card.controls.isVertical("sound")
   detail: !card.controls.controlPresent("sound") ? "Unavailable" : card.controls.muted ? "Muted" : Math.round(card.controls.volume * 100) + "%"
   showChevron: !galleryPreview && !card.center.editMode && card.controls.outputs.length > 1
   chevronOpen: card.center.outputsOpen
@@ -18,6 +19,9 @@ CcSection {
 
   CcSlider {
     center: card.center
+    vertical: card.vertical
+    title: card.title
+    detail: card.detail
     visible: galleryPreview || card.controls.controlPresent("sound")
     icon: card.controls.muted || card.controls.volume <= 0 ? "󰖁" : card.controls.volume < 0.34 ? "󰕿" : card.controls.volume < 0.67 ? "󰖀" : "󰕾"
     value: card.controls.muted ? 0 : card.controls.volume
@@ -31,7 +35,7 @@ CcSection {
   // and opening the picker doesn't animate every row in. A ListView rather
   // than a Repeater, so an output that goes away fades out in place while
   // the rest slide up (the card's height follows, in ControlLayout).
-  readonly property bool outputsShown: !galleryPreview && card.center.outputsOpen && !card.center.editMode
+  readonly property bool outputsShown: !galleryPreview && !card.vertical && card.center.outputsOpen && !card.center.editMode
   KeyedListModel {
     id: outputRows
     // The label rides along, so a row still reads right while it fades out
@@ -91,6 +95,7 @@ CcSection {
   Text {
     visible: !galleryPreview && !card.controls.controlPresent("sound")
     text: "No audio output available"
+    wrapMode: Text.WordWrap
     color: card.center.textMuted
     font.family: card.center.host.theme.textFontFamily
     font.letterSpacing: card.center.host.theme.tracking(card.center.host.theme.textFontFamily, card.center.host.theme.px(12))

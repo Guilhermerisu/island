@@ -4,7 +4,9 @@ import "../../components"
 
 // The round − (remove) or + (add) on a card in edit mode, as macOS's Edit
 // Controls: a light disc centred on the curve of the card's top-left corner,
-// popping in. `center` is the ControlCenter, for its colours.
+// popping in. With a `glyph` it is a plain action button instead of − / +,
+// and `corner: "right"` moves it to the top-right corner. `center` is the
+// ControlCenter, for its colours.
 Item {
   id: b
   required property var center
@@ -14,10 +16,12 @@ Item {
   property real cornerRadius: 0
   property bool interactive: true
   property string tip: ""
+  property string glyph: ""
+  property string corner: "left"
   readonly property real inset: cornerRadius * (1 - Math.SQRT1_2)
   signal clicked()
 
-  x: inset - width / 2
+  x: corner === "right" ? parent.width - inset - width / 2 : inset - width / 2
   y: inset - height / 2
   z: 2
   width: 20
@@ -40,15 +44,24 @@ Item {
     }
   }
   Rectangle {
+    visible: b.glyph === ""
     anchors.centerIn: parent
     width: 9; height: 2; radius: 1
     color: b.center.host.theme.background
   }
   Rectangle {
-    visible: b.adding
+    visible: b.adding && b.glyph === ""
     anchors.centerIn: parent
     width: 2; height: 9; radius: 1
     color: b.center.host.theme.background
+  }
+  Text {
+    visible: b.glyph !== ""
+    anchors.centerIn: parent
+    text: b.glyph
+    color: b.center.host.theme.background
+    font.family: b.center.iconFont
+    font.pixelSize: b.center.host.theme.px(13)
   }
   MouseArea {
     id: badgeMouse
