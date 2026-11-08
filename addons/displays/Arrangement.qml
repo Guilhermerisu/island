@@ -103,6 +103,7 @@ Item {
         anchors.fill: parent
         anchors.margins: 1
         view: arrangement.view
+        wallpaper: arrangement.displays.wallpaper
         radius: 5
         bezel: 2
         sourceWidth: 320

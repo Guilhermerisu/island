@@ -389,6 +389,8 @@ def drm_usage(procs, fd_cache, pdevs, now):
 
 def main():
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    # A control center zone has no process table: "processes" stays empty.
+    with_rows = "--no-processes" not in sys.argv[1:]
     cards = drm_cards()
     nvidia = NvidiaWatch() if any(v == "0x10de" for _, _, v in cards) else None
     others = [c for c in cards if c[2] != "0x10de"]
@@ -408,7 +410,7 @@ def main():
     vols, vols_at = [], 0
     temp_path, ssds = cpu_temp_path(), ssd_paths()
     ssd, ssd_at = [], 0
-    window_watch = WindowWatch()
+    window_watch = WindowWatch() if with_rows else None
     try:
         first = True
         while True:
@@ -432,7 +434,7 @@ def main():
             if now - ssd_at > SSD_EVERY:
                 ssd, ssd_at = ssd_temps(ssds), now
 
-            win = window_watch.get()
+            win = window_watch.get() if window_watch else {}
 
             procs = processes()
             usage = drm_usage(procs, fd_cache, other_pdevs, now) if others else {}
@@ -449,10 +451,6 @@ def main():
                     kernel["cpu"] += cpu
                     kernel["threads"] += p["threads"]
                     continue
-                key = (pid, p["comm"])
-                if key not in names:
-                    names[key] = process_name(pid, p["comm"])
-                    commands[key] = process_command(pid)
                 # An AMD or Intel GPU's busy share, for its card, as the sum of
                 # what each of your processes keeps it busy (also beside an
                 # NVIDIA card, whose own figures come from nvidia-smi).
@@ -466,6 +464,12 @@ def main():
                         share = 100 * (ns - drm.get(cid, ns)) / (elapsed * 1e9)
                         gpu = max(gpu, share)
                     busy_total += gpu
+                if not with_rows:
+                    continue
+                key = (pid, p["comm"])
+                if key not in names:
+                    names[key] = process_name(pid, p["comm"])
+                    commands[key] = process_command(pid)
                 # The window this process belongs to: itself or its nearest
                 # ancestor with one.
                 app, cur, hops = None, pid, 0
@@ -481,7 +485,8 @@ def main():
                              "threads": p["threads"], "app": app,
                              "appClass": win.get(pid, "") if app == pid else ""})
             kernel["cpu"] = round(kernel["cpu"], 1)
-            rows.append(kernel)
+            if with_rows:
+                rows.append(kernel)
             last_ticks = {(pid, p["start"]): p["ticks"] for pid, p in procs.items()}
             drm = new_drm
             names = {k: v for k, v in names.items() if k[0] in procs}

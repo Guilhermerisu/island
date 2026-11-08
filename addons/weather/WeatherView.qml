@@ -77,7 +77,7 @@ Item {
       Column {
         id: place
         anchors.left: headerIcon.right
-        anchors.leftMargin: 8
+        anchors.leftMargin: 14
         anchors.right: temperature.left
         anchors.rightMargin: 12
         anchors.verticalCenter: parent.verticalCenter

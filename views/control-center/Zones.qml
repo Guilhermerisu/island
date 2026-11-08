@@ -15,14 +15,15 @@ Item {
 
   readonly property int columns: ZoneModel.clampColumns(settings.controlCenterColumns)
   readonly property var definitions: [
-    { id: "controls", title: "Controls" },
-    { id: "notifications", title: "Notifications" }
+    { id: "controls", title: "Controls", icon: String.fromCodePoint(0xF062E), about: "Your switches and sliders" },
+    { id: "notifications", title: "Notifications", icon: String.fromCodePoint(0xF009A), about: "Your notification history" }
   ].concat(host.addons.entries.reduce(function(list, entry) {
     // `zone: true` is a zone named for the addon, sized by what it shows.
     var own = entry.zones || (entry.zone ? [entry.zone === true ? {} : entry.zone] : [])
     return list.concat(own.map(function(zone) {
       return { id: "addon:" + entry.id + (zone.key ? "/" + zone.key : ""), key: zone.key || "",
         title: zone.title || entry.name, name: entry.name, addon: entry.id,
+        icon: entry.icon, about: zone.about || entry.description,
         minWidth: zone.minWidth || 0, editable: !!zone.editable }
     }))
   }, []))
@@ -30,7 +31,7 @@ Item {
   // Ids saved before the Plugins addon had two zones: its one was the tiles.
   readonly property var aliases: ({ "addon:plugins": "addon:plugins/pinned" })
   // Shrinking the columns only folds them on screen: the saved lists stay
-  // until the next change, so going back to more columns puts them back.
+  // (see save), so going back to more columns puts them back.
   readonly property var arrangement: ZoneModel.normalize(settings.controlCenterZones, columns, ids, aliases)
   readonly property var absent: ZoneModel.absent(arrangement, ids)
   // How many columns hold something; the island is no wider than that
@@ -48,7 +49,7 @@ Item {
     return null
   }
   function save(next) {
-    var json = JSON.stringify(next)
+    var json = JSON.stringify(ZoneModel.unfold(settings.controlCenterZones, next))
     if (json !== settings.controlCenterZones) settings.controlCenterZones = json
   }
   function setShares(values) {
@@ -56,14 +57,22 @@ Item {
     if (json !== settings.controlCenterColumnWidths) settings.controlCenterColumnWidths = json
   }
   function setColumns(count) { settings.controlCenterColumns = ZoneModel.clampColumns(count) }
-  function add(id) {
-    save(ZoneModel.add(arrangement, id))
-    // An addon's zone needs the addon; removing the zone leaves it on.
+  // An addon's zone needs the addon; removing the zone leaves it on.
+  function enableAddon(id) {
     var zone = definition(id)
     if (zone && zone.addon) host.addons.setEnabled(zone.addon, true)
+  }
+  function add(id) {
+    save(ZoneModel.add(arrangement, id))
+    enableAddon(id)
   }
   // Put it in a column only if it isn't in one already.
   function ensure(id) { if (absent.indexOf(id) !== -1) add(id) }
   function remove(id) { save(ZoneModel.remove(arrangement, id)) }
-  function move(id, column, index) { save(ZoneModel.move(arrangement, id, column, index)) }
+  // Also how one dragged in from the add panel gets its place.
+  function move(id, column, index) {
+    var adding = absent.indexOf(id) !== -1
+    save(ZoneModel.move(arrangement, id, column, index))
+    if (adding) enableAddon(id)
+  }
 }

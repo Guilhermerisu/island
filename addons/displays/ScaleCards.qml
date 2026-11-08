@@ -96,6 +96,7 @@ Item {
                   width: Math.min(parent.width, parent.height * screenSlot.ratio)
                   height: width / screenSlot.ratio
                   view: cards.view
+                  wallpaper: cards.displays.wallpaper
                   radius: 8
                   bezel: 1
                   shadow: false

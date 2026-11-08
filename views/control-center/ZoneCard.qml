@@ -39,13 +39,43 @@ ColumnLayout {
     return view && view.width > 0 ? view.width - 2 * (view.padding === undefined ? 16 : view.padding) + 32 : 0
   }
   readonly property bool tooNarrow: minWidth > 0 && columnWidth < minWidth
+  readonly property bool addonOff: isAddon && !center.host.addons.isEnabled(info.addon)
+  // Made the first time the control center opens, then kept.
+  property bool opened: center.active
+  Connections {
+    target: zone.center
+    function onActiveChanged() { if (zone.center.active) zone.opened = true }
+  }
   spacing: center.gap
-  opacity: zoneBoard.draggedId === zoneId ? 0.4 : 1
+  // Fades and grows in once made (a zone added, or moved to another column).
+  property bool appeared: false
+  Component.onCompleted: appeared = true
+  opacity: !appeared ? 0 : zoneBoard.draggedId === zoneId ? 0.4 : 1
   Behavior on opacity { MotionAnimation { theme: zone.center.host.theme; pace: "fade"; curve: "fade" } }
+  scale: appeared ? 1 : 0.96
+  Behavior on scale { enabled: zone.zoneBoard.animating; MotionAnimation { theme: zone.center.host.theme; pace: "standard" } }
+
+  // The column's layout places it at once; it's drawn from where it was and
+  // eases there, so sizes are never in doubt. Not until the layout has first
+  // placed it, or a new zone would slide down from the column's top.
+  transform: Translate { id: slide }
+  MotionAnimation { id: slideHome; target: slide; property: "y"; to: 0; theme: zone.center.host.theme; pace: "standard" }
+  property bool placed: false
+  property real lastY: 0
+  Timer { interval: 50; running: true; onTriggered: { zone.lastY = zone.y; zone.placed = true } }
+  onYChanged: {
+    if (placed && zoneBoard.animating) {
+      slide.y += lastY - y
+      slideHome.restart()
+    }
+    lastY = y
+  }
 
   Rectangle {
     id: bar
     visible: zone.center.editMode
+    opacity: visible ? 1 : 0
+    Behavior on opacity { enabled: zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: "fade"; curve: "fade" } }
     Layout.fillWidth: true
     Layout.preferredHeight: 28
     radius: Math.min(zone.center.cardRadius, height / 2)
@@ -66,6 +96,14 @@ ColumnLayout {
     Text {
       anchors.verticalCenter: parent.verticalCenter
       x: 32
+      text: zone.info ? zone.info.icon : ""
+      color: zone.center.textMuted
+      font.family: zone.center.iconFont
+      font.pixelSize: zone.center.host.theme.px(14)
+    }
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      x: 54
       text: zone.info ? zone.info.title : zone.zoneId
       color: zone.center.text
       font.family: zone.center.host.theme.textFontFamily
@@ -97,6 +135,8 @@ ColumnLayout {
   Loader {
     active: !zone.isAddon
     visible: active && (zone.zoneId === "controls" || !zone.center.editMode)
+    opacity: visible ? 1 : 0
+    Behavior on opacity { enabled: zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: "fade"; curve: "fade" } }
     Layout.fillWidth: true
     // The notifications sit a little off the grid above them.
     Layout.topMargin: zone.zoneId === "notifications" ? 4 : 0
@@ -113,8 +153,10 @@ ColumnLayout {
     property var center: zone.center
     property bool zoneActive: zone.center.active
     property var addonRoot: zone.addonRoot
-    active: zone.isAddon && !!zone.bodyComponent && !zone.tooNarrow
+    active: zone.isAddon && !!zone.bodyComponent && !zone.tooNarrow && zone.opened
     visible: active && zone.showsBody
+    opacity: visible ? 1 : 0
+    Behavior on opacity { enabled: zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: "fade"; curve: "fade" } }
     Layout.fillWidth: true
     Layout.preferredHeight: item ? item.implicitHeight : 0
     sourceComponent: zone.bodyComponent
@@ -123,7 +165,7 @@ ColumnLayout {
   Rectangle {
     visible: zone.isAddon && zone.showsBody && !addonBody.active
     Layout.fillWidth: true
-    Layout.preferredHeight: zone.tooNarrow ? 64 : zone.center.tileHeight * 0.7
+    Layout.preferredHeight: zone.addonOff || zone.tooNarrow ? 64 : zone.center.tileHeight * 0.7
     radius: zone.center.cardRadius
     color: zone.center.card
     border.width: 1
@@ -136,22 +178,31 @@ ColumnLayout {
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        text: zone.tooNarrow ? zone.info.name + " needs a wider column" : zone.addonRoot && !zone.bodyComponent ? "Nothing to show" : "Loading…"
-        color: zone.tooNarrow ? zone.center.text : zone.center.textMuted
+        text: zone.addonOff ? zone.info.name + " is off"
+          : zone.tooNarrow ? zone.info.name + " needs a wider column"
+          : zone.addonRoot && !zone.bodyComponent ? "Nothing to show" : "Loading…"
+        color: zone.addonOff || zone.tooNarrow ? zone.center.text : zone.center.textMuted
         font.family: zone.center.host.theme.textFontFamily
         font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.px(12))
         font.pixelSize: zone.center.host.theme.px(12)
-        font.weight: zone.tooNarrow ? Font.DemiBold : Font.Normal
+        font.weight: zone.addonOff || zone.tooNarrow ? Font.DemiBold : Font.Normal
       }
       Text {
-        visible: zone.tooNarrow
+        visible: zone.addonOff || zone.tooNarrow
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
-        text: "Use fewer columns"
-        color: zone.center.textMuted
+        text: zone.addonOff ? "Turn On" : "Use fewer columns"
+        color: zone.addonOff ? zone.center.accent : zone.center.textMuted
         font.family: zone.center.host.theme.textFontFamily
         font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.px(11))
         font.pixelSize: zone.center.host.theme.px(11)
+        MouseArea {
+          anchors.fill: parent
+          anchors.margins: -4
+          enabled: zone.addonOff
+          cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+          onClicked: zone.center.host.addons.setEnabled(zone.info.addon, true)
+        }
       }
     }
   }

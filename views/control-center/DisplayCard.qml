@@ -9,7 +9,7 @@ CcSection {
   readonly property bool galleryPreview: parent.galleryPreview
   anchors.fill: parent
   title: "Display"
-  vertical: !galleryPreview && card.controls.isVertical("display")
+  vertical: !galleryPreview && card.controls.isVertical("display") && card.controls.brightnessAvailable
   detail: card.controls.brightnessAvailable ? card.controls.brightness + "%" : "Unavailable"
   CcSlider {
     center: card.center

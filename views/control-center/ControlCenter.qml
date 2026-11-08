@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.UPower
+import "../../addons"
 import "../../components"
 import "zones.js" as ZoneModel
 
@@ -21,8 +22,11 @@ ColumnLayout {
   // The Plugins zone's likewise (PluginsZone sets itself).
   property var pluginsZone: null
   readonly property Item addPanel: addPanelItem
+  readonly property Item zoneBoard: zoneBoardItem
   // The card lifted by a drag in edit mode, whichever zone it's from.
   readonly property DragProxy dragProxy: dragProxyItem
+  // What the Settings pages mounted as zones have as their `view`.
+  readonly property ZoneLook zoneLook: zoneLookItem
 
   // Keep the black island while deriving its controls from the active theme.
   readonly property color accent: host.theme.accent
@@ -94,9 +98,10 @@ ColumnLayout {
 
   spacing: cc.gap
 
-  // Esc leaves edit mode, then closes the control center.
+  // Esc closes a zone's menu, leaves edit mode, then closes the control center.
   Keys.onEscapePressed: {
-    if (cc.editMode) cc.editMode = false
+    if (cc.zoneLook.menuButton) cc.zoneLook.menuButton = null
+    else if (cc.editMode) cc.editMode = false
     else cc.host.view = "rest"
   }
 
@@ -108,9 +113,9 @@ ColumnLayout {
     Layout.leftMargin: 6
     Layout.rightMargin: 2
     spacing: 6
-    // Today's date as the title ("Wed, Oct 21"); Edit Controls while editing.
+    // Today's date as the title ("Wed, Oct 21"); Edit while editing.
     Text {
-      text: cc.editMode ? "Edit Controls" : Qt.locale("en_US").toString(cc.host.clockDate, "ddd, MMM d")
+      text: cc.editMode ? "Edit" : Qt.locale("en_US").toString(cc.host.clockDate, "ddd, MMM d")
       color: cc.text
       font.family: cc.host.theme.textFontFamily
       font.features: { "tnum": 1 }
@@ -122,6 +127,8 @@ ColumnLayout {
     // How many columns, while editing: the choice is saved as it's made.
     Rectangle {
       visible: cc.editMode
+      opacity: visible ? 1 : 0
+      Behavior on opacity { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
       Layout.preferredWidth: 3 * 30 + 4
       Layout.preferredHeight: 28
       radius: 14
@@ -171,7 +178,7 @@ ColumnLayout {
       // not while opening, when edit mode is reset.
       Behavior on Layout.preferredWidth { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "standard" } }
       Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
-      Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit Controls" }
+      Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit" }
       Text {
         anchors.centerIn: parent
         opacity: cc.editMode ? 0 : 1
@@ -273,7 +280,7 @@ ColumnLayout {
     }
   }
 
-  ZoneColumns { center: cc }
+  ZoneColumns { id: zoneBoardItem; center: cc }
 
   Rectangle {
     visible: !cc.editMode && cc.zones.empty
@@ -306,6 +313,7 @@ ColumnLayout {
     height: cc.height
     z: 100
     DragProxy { id: dragProxyItem; center: cc }
+    ZoneLook { id: zoneLookItem; center: cc; anchors.fill: parent }
   }
 
   // ---------- Cards, loaded by the grid and the add panel ----------
@@ -316,7 +324,7 @@ ColumnLayout {
       center: cc
       anchors.fill: parent
       icon: cc.controls.controlIcon(parent.controlKey)
-      title: cc.controls.controlTitle(parent.controlKey)
+      title: cc.controls.controlTitle(parent.controlKey, width < 190)
       subtitle: cc.controls.controlSubtitle(parent.controlKey)
       checked: cc.controls.controlChecked(parent.controlKey)
       available: parent.galleryPreview || cc.controls.controlAvailable(parent.controlKey)

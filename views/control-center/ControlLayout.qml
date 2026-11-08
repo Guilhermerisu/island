@@ -44,6 +44,14 @@ ColumnLayout {
     interval: layout.center.host.theme.motionDuration("morph")
     onTriggered: layout.cardsSettled = layout.center.active
   }
+  // A slider standing up or lying down reshapes in place; only then, as a
+  // card's size also follows the column while a handle is dragged.
+  property bool flipping: false
+  Timer {
+    id: flipTimer
+    interval: layout.center.host.theme.motionDuration("standard")
+    onTriggered: layout.flipping = false
+  }
   // The room the Sound and Microphone pickers add below their sliders,
   // eased (after the first layout) so the card and the ones under it follow
   // the rows in and out instead of snapping. The Microphone's also holds its
@@ -259,6 +267,8 @@ ColumnLayout {
           // sliding there from where it was last shown.
           Behavior on x { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
           Behavior on y { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on width { enabled: layout.flipping; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
+          Behavior on height { enabled: layout.flipping; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
 
           // While it's dragged, an empty slot holds its place.
           Rectangle {
@@ -321,7 +331,12 @@ ColumnLayout {
             shown: layout.center.editMode && !controlCard.dragged && controlCard.shown && layout.controls.canBeVertical(controlCard.modelData)
             cornerRadius: controlCard.cornerRadius
             tip: vertical ? "Horizontal Slider" : "Vertical Slider"
-            onClicked: { layout.controls.setVertical(controlCard.modelData, !vertical); layout.endDrag() }
+            onClicked: {
+              layout.flipping = true
+              flipTimer.restart()
+              layout.controls.setVertical(controlCard.modelData, !vertical)
+              layout.endDrag()
+            }
           }
         }
       }

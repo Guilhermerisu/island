@@ -4,20 +4,29 @@ import "../../components"
 
 // The plugins not yet pinned, in the add panel (see AddPanel): a card each,
 // like the controls'. Click its + to pin it, or drag it onto the Plugins zone
-// to pin it where it's dropped: the zone (see PluginsZone) takes the drag, as
-// the control grid does for the controls'. `panel` is the AddPanel.
+// (which the drag brings in if it isn't there) to pin it where it's dropped:
+// the zone (see PluginsZone) takes the drag, as the control grid does for the
+// controls'. `panel` is the AddPanel.
 ColumnLayout {
   id: gallery
   required property var panel
   readonly property var cc: panel.center
   // The Plugins addon, once it's on: it has the list of plugins.
   readonly property var addon: cc.host.addons.root("plugins")
-  readonly property var plugins: addon ? addon.unpinned : []
   readonly property string zoneId: "addon:plugins/pinned"
-  // The zone, while it's in the Control Center: what a card is dragged
-  // through. Without it only the + works.
+  // While a drag has brought the zone in; it goes again if the card isn't
+  // dropped on it.
+  property bool zoneForDrag: false
+  // All of them while the zone is away: pins are kept without it (tiles from
+  // before the zone existed are), and pinning one brings it and them back.
+  readonly property var plugins: !addon ? [] : zoneForDrag || cc.zones.absent.indexOf(zoneId) !== -1 ? addon.all : addon.unpinned
+  // The zone, while it's in the Control Center: what a card is dragged through.
   readonly property var zone: cc.pluginsZone
   readonly property string draggedId: zone && zone.dragFromPanel ? zone.draggedId : ""
+  function settleDrag(landed) {
+    if (zoneForDrag && !landed) cc.zones.remove(zoneId)
+    zoneForDrag = false
+  }
 
   spacing: 8
 
@@ -50,26 +59,37 @@ ColumnLayout {
           id: dragMouse
           anchors.fill: parent
           hoverEnabled: true
-          cursorShape: gallery.zone ? (pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor) : Qt.ArrowCursor
+          cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
           preventStealing: true
           property real pressX: 0
           property real pressY: 0
           onPressed: function(mouse) { pressX = mouse.x; pressY = mouse.y }
           onPositionChanged: function(mouse) {
-            if (!pressed || !gallery.zone) return
-            if (gallery.zone.draggedId === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
+            if (!pressed) return
+            if ((!gallery.zone || gallery.zone.draggedId === "") && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
+            if (!gallery.zone) {
+              gallery.zoneForDrag = true
+              gallery.cc.zones.ensure(gallery.zoneId)
+              if (!gallery.zone) return
+            }
             // Held where it was taken (the card is inset by 4).
             if (gallery.zone.draggedId === "")
               gallery.zone.beginDrag(card.modelData.id, true, card.width - 8, card.height - 8, pressX - 4, pressY - 4)
             gallery.zone.moveDrag(dragMouse, mouse.x, mouse.y)
           }
           onReleased: function(mouse) {
+            var landed = false
             if (gallery.draggedId === card.modelData.id) {
               gallery.zone.moveDrag(dragMouse, mouse.x, mouse.y)
+              landed = gallery.zone.dropActive
               gallery.zone.finishDrag()
             }
+            gallery.settleDrag(landed)
           }
-          onCanceled: if (gallery.zone) gallery.zone.endDrag()
+          onCanceled: {
+            if (gallery.zone) gallery.zone.endDrag()
+            gallery.settleDrag(false)
+          }
         }
         Item {
           anchors.fill: parent
@@ -86,7 +106,7 @@ ColumnLayout {
             }
           }
         }
-        Tooltip { theme: gallery.cc.host.theme; text: (gallery.zone ? "Drag to Plugins, or pin " : "Pin ") + card.modelData.name }
+        Tooltip { theme: gallery.cc.host.theme; text: "Drag to Plugins, or pin " + card.modelData.name }
       }
     }
   }

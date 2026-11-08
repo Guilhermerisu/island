@@ -198,7 +198,11 @@ Item {
     if (key === "keyboard") return "󰌌"
     return "󰖔"
   }
-  function controlTitle(key) { return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : title(key) }
+  // `narrow`: for a tile in a narrow column, where the longest name is cut off.
+  function controlTitle(key, narrow) {
+    if (narrow && key === "screenrecord") return "Recording"
+    return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : title(key)
+  }
   function controlSubtitle(key) {
     if (key === "microphoneMute") return microphoneMuted ? "Muted" : "Unmuted"
     if (key === "wifi") return wifiDevice

@@ -1,7 +1,6 @@
 .pragma library
 
-// Where the control center's cards go, as plain data so it can be checked
-// without Quickshell (task/checks/vertical-layout-check.js).
+// Where the control center's cards go, as plain data.
 //
 // `items` are { key, wide, vertical, extra } in display order; `o` is
 // { width, inset, gap, tileHeight, sectionHeight }. Small tiles pair up two
