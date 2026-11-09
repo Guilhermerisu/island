@@ -88,6 +88,10 @@ Item {
     for (var i = 0; i < nets.length; i++) if (nets[i] && nets[i].connected) return nets[i]
     return null
   }
+  // Ethernet takes the tile only while Wi-Fi is on no network (as in the
+  // capsules). With the Wi-Fi radio off the Wi-Fi tile stays: its badge is
+  // the only switch to turn Wi-Fi back on.
+  readonly property bool wiredActive: !!(wiredDevice && wiredDevice.connected) && !wifiNetwork && (!wifiDevice || Networking.wifiEnabled)
 
   // --- Audio ---
   readonly property var sink: Pipewire.defaultAudioSink
@@ -184,7 +188,7 @@ Item {
   }
   function controlIcon(key) {
     if (key === "microphoneMute") return microphoneMuted ? "󰍭" : "󰍬"
-    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰌗"
+    if (key === "wifi") return wiredActive ? "󰈀" : wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰌗"
     if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
     if (key === "focus") return "󰍶"
     if (key === "game") return "󰊗"
@@ -201,13 +205,13 @@ Item {
   // `narrow`: for a tile in a narrow column, where the longest name is cut off.
   function controlTitle(key, narrow) {
     if (narrow && key === "screenrecord") return "Recording"
-    return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : title(key)
+    return key === "wifi" ? (wifiDevice && !wiredActive ? "Wi-Fi" : "Ethernet") : title(key)
   }
   function controlSubtitle(key) {
     if (key === "microphoneMute") return microphoneMuted ? "Muted" : "Unmuted"
-    if (key === "wifi") return wifiDevice
+    if (key === "wifi") return wiredActive ? "Connected" : wifiDevice
       ? (!Networking.wifiEnabled ? "Off" : wifiNetwork ? wifiNetwork.name : "Not connected")
-      : (wiredDevice && wiredDevice.connected ? "Connected" : "Disconnected")
+      : "Disconnected"
     if (key === "bluetooth") return !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
     if (key === "focus") return dnd ? "On" : "Off"
     if (key === "game") return gameMode ? "On" : "Off"
@@ -223,7 +227,7 @@ Item {
   }
   function controlChecked(key) {
     if (key === "microphoneMute") return microphoneMuted
-    if (key === "wifi") return wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
+    if (key === "wifi") return wiredActive || (!!wifiDevice && Networking.wifiEnabled)
     if (key === "bluetooth") return !!(btAdapter && btAdapter.enabled)
     if (key === "focus") return dnd
     if (key === "game") return gameMode
@@ -238,7 +242,7 @@ Item {
   }
   function controlAvailable(key) {
     if (key === "microphoneMute") return microphoneReady
-    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : !!wiredDevice
+    if (key === "wifi") return wiredActive || (wifiDevice ? Networking.wifiHardwareEnabled !== false : !!wiredDevice)
     if (key === "bluetooth") return !!btAdapter
     if (key === "focus") return !!notifications
     return true
