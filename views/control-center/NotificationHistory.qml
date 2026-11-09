@@ -349,7 +349,7 @@ ColumnLayout {
           }
           // The buttons of a notification still on screen.
           Row {
-            visible: !!note.modelData.isActive && (note.modelData.actions || []).length > 0
+            visible: history.center.host.settings.notificationButtons && !!note.modelData.isActive && (note.modelData.actions || []).length > 0
             topPadding: 5
             spacing: 6
             Repeater {

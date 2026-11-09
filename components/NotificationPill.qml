@@ -15,7 +15,7 @@ IslandPill {
   onRowChanged: imageFailed = false
   readonly property string iconSource: host.notifications.iconSource(host.notifications.last, imageFailed)
   readonly property var brand: host.notifications.brand(row)
-  readonly property var actions: row.actions || []
+  readonly property var actions: host.settings.notificationButtons ? row.actions || [] : []
   // Room under the text for the buttons.
   readonly property real actionsExtra: actions.length > 0 ? 42 : 0
   shown: host.notificationPill

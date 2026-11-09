@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import "../controls"
 
-// Settings → Notifications: how long banners stay, and whether an app's
-// notifications stack.
+// Settings → Notifications: how long banners stay, whether an app's
+// notifications stack, and whether they show the app's buttons.
 ColumnLayout {
   id: page
   required property var view
@@ -29,11 +29,21 @@ ColumnLayout {
       view: page.view
       label: "Stack Notifications"
       detail: "Group each app's notifications into one, with a count"
-      last: true
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.stackNotifications
         onToggled: function(on) { page.view.settings.stackNotifications = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      label: "Notification Buttons"
+      detail: "Show the buttons an app offers, like Open or Edit"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.notificationButtons
+        onToggled: function(on) { page.view.settings.notificationButtons = on }
       }
     }
   }
