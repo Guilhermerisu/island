@@ -72,14 +72,12 @@ Rectangle {
     width: 22; height: 22; radius: 11
     color: chevronMouse.containsMouse ? center.wellHover : center.well
     Tooltip { theme: center.host.theme; text: sec.chevronOpen ? sec.chevronHideLabel : sec.chevronLabel }
-    Text {
+    Chevron {
       anchors.centerIn: parent
-      text: "󰅂"
-      rotation: sec.chevronOpen ? 90 : 0
+      theme: center.host.theme
+      open: sec.chevronOpen
       color: center.textMuted
-      font.family: center.iconFont
-      font.pixelSize: center.host.theme.px(14)
-      Behavior on rotation { MotionAnimation { theme: center.host.theme; pace: "standard" } }
+      pixelSize: center.host.theme.px(14)
     }
     MouseArea { id: chevronMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sec.chevronClicked() }
   }

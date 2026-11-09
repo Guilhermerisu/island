@@ -362,14 +362,12 @@ ColumnLayout {
                   running: spinner.visible && bt.active
                 }
               }
-              Text {
+              Chevron {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "󰅂"
-                rotation: bt.otherOpen ? 90 : 0
+                theme: bt.host.theme
+                open: bt.otherOpen
                 color: bt.textMuted
-                font.family: bt.iconFont
-                font.pixelSize: bt.host.theme.px(17)
-                Behavior on rotation { MotionAnimation { theme: bt.host.theme; pace: "standard" } }
+                pixelSize: bt.host.theme.px(17)
               }
             }
             MouseArea {

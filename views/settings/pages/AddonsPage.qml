@@ -142,18 +142,15 @@ ColumnLayout {
               }
               // Only added addons have options, so only their group keeps a
               // slot for it and the buttons line up in both.
-              Text {
+              Chevron {
                 visible: group.modelData.on
                 anchors.verticalCenter: parent.verticalCenter
                 width: 12
-                horizontalAlignment: Text.AlignHCenter
                 opacity: addon.hasOptions ? (rowHover.hovered || addon.open ? 1 : 0.55) : 0
-                text: "󰅂"
-                rotation: addon.open ? 90 : 0
+                theme: page.view.host.theme
+                open: addon.open
                 color: page.view.textMuted
-                font.family: page.view.host.theme.fontFamily
-                font.pixelSize: page.view.host.theme.px(14)
-                Behavior on rotation { MotionAnimation { theme: page.view.host.theme; pace: "standard" } }
+                pixelSize: page.view.host.theme.px(14)
               }
             }
           }
