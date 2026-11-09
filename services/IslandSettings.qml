@@ -47,6 +47,8 @@ Item {
       property bool brightnessHud: true
       property int bannerSeconds: 5
       property bool notch: false
+      // Windows start under the resting island (see Island.qml, reserveZone).
+      property bool reserveSpace: false
       property bool downloads: true
       property bool clipboard: true
       property bool screenRecordingActivity: true
