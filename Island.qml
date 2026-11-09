@@ -412,7 +412,7 @@ Item {
   NotificationClient {
     id: notificationClient
     home: root.home
-    historyVisible: root.view === "controls"
+    historyVisible: root.view === "controls" || root.view === "notifications"
     onArrived: function(row) {
       // One with buttons stays long enough to press one.
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"),
