@@ -9,7 +9,8 @@ CcTile {
   required property var addon
   required property var entry
 
-  icon: "󰐱"
+  icon: addon.iconOf(entry.id).text
+  iconFamily: addon.iconOf(entry.id).family
   title: entry.name
   checked: entry.enabled
   subtitle: !entry.enabled ? "Off"

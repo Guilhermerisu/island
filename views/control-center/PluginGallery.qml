@@ -50,7 +50,8 @@ ColumnLayout {
           anchors.margins: 4
           enabled: false
           center: gallery.cc
-          icon: "󰐱"
+          icon: gallery.addon.iconOf(card.modelData.id).text
+          iconFamily: gallery.addon.iconOf(card.modelData.id).family
           title: card.modelData.name
           subtitle: card.modelData.id
           checked: card.modelData.enabled
