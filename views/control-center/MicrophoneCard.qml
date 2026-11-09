@@ -13,7 +13,7 @@ CcSection {
   title: "Microphone"
   vertical: !galleryPreview && card.controls.isVertical("microphone")
   detail: !card.controls.controlPresent("microphone") ? "Unavailable" : card.controls.microphoneMuted ? "Muted" : Math.round(card.controls.microphoneVolume * 100) + "%"
-  showChevron: !galleryPreview && !card.center.editMode && card.controls.inputs.length > 1
+  showChevron: !galleryPreview && !card.center.editMode && card.controls.inputs.length > 0
   chevronOpen: card.center.inputsOpen
   chevronLabel: "Microphone Input"
   chevronHideLabel: "Hide Inputs"
