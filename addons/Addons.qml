@@ -40,7 +40,7 @@ Item {
       options: [
         { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon", icon: "󰟙" },
         // Off to keep an empty City from asking a third party where you are.
-        { key: "autoLocate", label: "Detect my location", detail: "No city set: asks get.geojs.io (or ipwho.is) once, with your IP", type: "switch", default: true },
+        { key: "autoLocate", label: "Detect my location", detail: "No city set: asks get.geojs.io (or ipwho.is) once, with your IP", type: "switch", default: false },
         { key: "fahrenheit", label: "Temperature", detail: "Unit shown on the pill", type: "segmented", default: false,
           choices: [{ label: "°C", value: false }, { label: "°F", value: true }] }
       ] },

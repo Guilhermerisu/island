@@ -7,7 +7,7 @@ import ".."
 // WeatherView). The city is looked up once, its first match kept, then its
 // conditions are fetched every 30 minutes, again when the unit changes, and
 // when the view opens on a reading older than that.
-// With no city set, and "Detect my location" on (the default), the place
+// With no city set, and "Detect my location" turned on, the place
 // comes from the IP address instead: one request to a keyless service (a
 // second one is the fallback), which already gives coordinates, so there is
 // no Open-Meteo lookup. It is asked once per session (the answer is kept in
