@@ -1,14 +1,15 @@
 import QtQuick
-import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
 import "../../components"
 
-// Wallpaper picker for the current theme: the images in the theme's
+// Wallpaper picker for the current theme: the images and videos in the theme's
 // backgrounds/ folder plus ~/.config/omarchy/backgrounds/<theme>/, the same
-// set Omarchy's own background switcher offers. Applying runs
-// omarchy-theme-bg-set.
+// set Omarchy's own background switcher offers. Rows come from
+// omarchy-menu-images, which also gives videos the ffmpegthumbnailer stills the
+// native picker shows: Qt cannot draw a video frame as a card, so a still is
+// what makes them selectable. Applying runs omarchy-theme-bg-set.
 Picker {
   id: ws
   cardHeight: 110
@@ -20,9 +21,9 @@ Picker {
 
   onActiveChanged: {
     if (!active) return
-    // The theme's backgrounds folder is replaced on theme switches, which a
-    // directory watch can miss; reload both listings on every open.
-    refreshTick++
+    // The theme's backgrounds folder is replaced on theme switches, so reload
+    // the rows on every open.
+    refresh()
     linkReader.running = true
   }
 
@@ -35,7 +36,9 @@ Picker {
 
       Image {
         anchors.fill: parent
-        source: wallpaperCard.entry.path ? "file://" + wallpaperCard.entry.path : ""
+        // Every row carries a thumbnail: the still itself for an image, the
+        // first frame for a video.
+        source: wallpaperCard.entry.thumbnail ? "file://" + wallpaperCard.entry.thumbnail : ""
         sourceSize.width: 400
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
@@ -47,9 +50,11 @@ Picker {
   // ---------- Wallpaper data ----------
 
   readonly property string stateDir: host.home + "/.local/state/omarchy/current"
+  readonly property string themeDir: stateDir + "/theme/backgrounds"
+  readonly property string userDir: host.theme.name
+    ? host.home + "/.config/omarchy/backgrounds/" + host.theme.name
+    : ""
   property string currentPath: ""
-  property int refreshTick: 0
-  readonly property var imageFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp", "*.webp"]
 
   // The current background is a symlink; resolve it to compare with cards.
   Process {
@@ -60,26 +65,46 @@ Picker {
       onStreamFinished: ws.currentPath = String(text || "").trim()
     }
   }
-  Component.onCompleted: linkReader.running = true
-
-  // A trailing slash toggled by refreshTick forces FolderListModel to rescan.
-  FolderListModel {
-    id: themeBackgrounds
-    folder: "file://" + ws.stateDir + "/theme/backgrounds" + (ws.refreshTick % 2 ? "/" : "")
-    nameFilters: ws.imageFilters
-    caseSensitive: false
-    showDirs: false
-    onStatusChanged: collectTimer.restart()
-    onCountChanged: collectTimer.restart()
+  Component.onCompleted: {
+    linkReader.running = true
+    // Warm the rows so the first open shows cards straight away; the open
+    // still refreshes them for a theme switch.
+    refresh()
   }
-  FolderListModel {
-    id: userBackgrounds
-    folder: ws.host.theme.name ? "file://" + ws.host.home + "/.config/omarchy/backgrounds/" + ws.host.theme.name + (ws.refreshTick % 2 ? "/" : "") : ""
-    nameFilters: ws.imageFilters
-    caseSensitive: false
-    showDirs: false
-    onStatusChanged: collectTimer.restart()
-    onCountChanged: collectTimer.restart()
+
+  // The theme name is read asynchronously at startup; warm once it is known.
+  Connections {
+    target: ws.host.theme
+    function onNameChanged() { if (ws.active) ws.refresh() }
+  }
+
+  // ---------- Rows ----------
+
+  // The native selector builds the rows (and their cached thumbnails) for
+  // both folders; --print-rows keeps it from opening its own picker.
+  property bool scanQueued: false
+  property string rowsOutput: ""
+
+  function refresh() {
+    if (!userDir) return
+    if (rowsReader.running) { scanQueued = true; return }
+    rowsReader.command = ["omarchy-menu-images", "--print-rows", themeDir, userDir]
+    rowsReader.running = true
+  }
+
+  Process {
+    id: rowsReader
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: ws.rowsOutput = String(text || "")
+    }
+    onExited: function(code) {
+      // A missing command (an older Omarchy) must not wipe the last good list.
+      if (code === 0) ws.collect(ws.rowsOutput)
+      if (!ws.scanQueued) return
+      ws.scanQueued = false
+      ws.refresh()
+    }
   }
 
   // "00-fog-desends.jpg" -> "fog-desends"
@@ -87,29 +112,25 @@ Picker {
     return String(fileName).replace(/\.[^.]+$/, "").replace(/^\d+[-_ ]+/, "")
   }
 
-  // Both folders rescan independently; rebuilding on each signal would
-  // briefly publish one folder while the other is mid-rescan (and empty).
-  // Coalesce, and wait until neither is loading.
-  Timer {
-    id: collectTimer
-    interval: 40
-    onTriggered: {
-      if (themeBackgrounds.status === FolderListModel.Loading || userBackgrounds.status === FolderListModel.Loading) restart()
-      else ws.collect()
-    }
-  }
-
-  function collect() {
+  // One "path<TAB>thumbnail" line per media file, in the same order as the
+  // native picker. A video the converter rejected simply has no line.
+  function collect(rows) {
     var list = []
-    function add(model) {
-      for (var i = 0; i < model.count; i++) {
-        var path = String(model.get(i, "filePath"))
-        var fileName = String(model.get(i, "fileName"))
-        list.push({ key: path, path: path, fileName: fileName, name: displayName(fileName) })
-      }
+    var lines = rows.split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      if (!lines[i]) continue
+      var columns = lines[i].split("\t")
+      var path = columns[0]
+      if (!path) continue
+      var fileName = path.split("/").pop()
+      list.push({
+        key: path,
+        path: path,
+        thumbnail: columns[1] || path,
+        fileName: fileName,
+        name: displayName(fileName)
+      })
     }
-    add(userBackgrounds)
-    add(themeBackgrounds)
     list.sort(function(a, b) { return a.fileName < b.fileName ? -1 : a.fileName > b.fileName ? 1 : 0 })
     items = list
   }
