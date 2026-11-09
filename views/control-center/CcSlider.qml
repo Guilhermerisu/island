@@ -166,6 +166,14 @@ Item {
     }
     onPressed: function(e) { apply(e.x, e.y) }
     onPositionChanged: function(e) { if (pressed) apply(e.x, e.y) }
-    onWheel: function(e) { s.moved(Math.max(0, Math.min(1, s.value + (e.angleDelta.y > 0 ? 0.05 : -0.05)))) }
+    onWheel: function(e) {
+      // While editing, the wheel scrolls the page (Views.qml) and must not
+      // change a value under the pointer.
+      if (s.center.editMode) {
+        e.accepted = false
+        return
+      }
+      s.moved(Math.max(0, Math.min(1, s.value + (e.angleDelta.y > 0 ? 0.05 : -0.05))))
+    }
   }
 }
