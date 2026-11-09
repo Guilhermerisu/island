@@ -217,8 +217,8 @@ ColumnLayout {
       text: "Drag a control here"
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
-      font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.px(13))
-      font.pixelSize: layout.center.host.theme.px(13)
+      font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.size.body)
+      font.pixelSize: layout.center.host.theme.size.body
     }
     Item {
       id: cardArea
@@ -355,8 +355,8 @@ ColumnLayout {
       text: "Click the pencil to add controls"
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
-      font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.px(12))
-      font.pixelSize: layout.center.host.theme.px(12)
+      font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.size.callout)
+      font.pixelSize: layout.center.host.theme.size.callout
     }
   }
 }

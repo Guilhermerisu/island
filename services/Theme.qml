@@ -25,6 +25,12 @@ Item {
   // value at 1.0 and passed through px().
   readonly property real textScale: settings.textScale > 0 ? settings.textScale : 1
   function px(size) { return Math.max(1, Math.round(size * textScale)) }
+  // The text sizes, named as macOS's text styles. Glyphs and the few big
+  // numerals are sized on their own with px().
+  readonly property var size: ({
+    largeTitle: px(26), title1: px(22), title2: px(17), title3: px(15),
+    body: px(13), callout: px(12), subheadline: px(11), footnote: px(10)
+  })
   // Letter spacing for the island's own font (Adwaita Sans, drawn from
   // Inter): Inter's size-based tracking, a touch looser below 12px and
   // tighter as text grows, as macOS does. Other fonts keep their spacing.

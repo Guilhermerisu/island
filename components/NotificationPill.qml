@@ -91,7 +91,7 @@ IslandPill {
       text: String(pill.row.stack || 0)
       color: host.theme.accentText
       font.family: host.theme.textFontFamily
-      font.pixelSize: host.theme.px(11)
+      font.pixelSize: host.theme.size.subheadline
       font.weight: Font.Bold
     }
   }
@@ -119,11 +119,11 @@ IslandPill {
         elide: Text.ElideRight
         // iOS's type: a semibold title and a regular body of nearly the same
         // size, in SF's stand-in (Adwaita Sans).
-        color: "#ffffff"
+        color: host.theme.text
         font.family: host.theme.textFontFamily
-        font.pixelSize: host.theme.px(15)
+        font.pixelSize: host.theme.size.title3
         font.weight: Font.DemiBold
-        font.letterSpacing: -0.2
+        font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.title3)
       }
       Text {
         id: age
@@ -133,8 +133,8 @@ IslandPill {
         textFormat: Text.PlainText
         color: Qt.rgba(1, 1, 1, 0.45)
         font.family: host.theme.textFontFamily
-        font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.px(13))
-        font.pixelSize: host.theme.px(13)
+        font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.body)
+        font.pixelSize: host.theme.size.body
       }
     }
     Text {
@@ -145,8 +145,8 @@ IslandPill {
       elide: Text.ElideRight
       color: Qt.rgba(1, 1, 1, 0.72)
       font.family: host.theme.textFontFamily
-      font.pixelSize: host.theme.px(13)
-      font.letterSpacing: -0.1
+      font.pixelSize: host.theme.size.body
+      font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.body)
     }
   }
 
@@ -182,9 +182,9 @@ IslandPill {
           text: String(modelData.label || "")
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: "#ffffff"
+          color: host.theme.text
           font.family: host.theme.textFontFamily
-          font.pixelSize: host.theme.px(13)
+          font.pixelSize: host.theme.size.body
           font.weight: Font.DemiBold
         }
         MouseArea {

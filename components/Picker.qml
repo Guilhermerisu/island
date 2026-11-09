@@ -269,8 +269,8 @@ Item {
       text: picker.emptyText
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
-      font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.px(13))
-      font.pixelSize: picker.host.theme.px(13)
+      font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.size.body)
+      font.pixelSize: picker.host.theme.size.body
     }
   }
 

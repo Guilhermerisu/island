@@ -69,9 +69,9 @@ Rectangle {
       elide: Text.ElideRight
       color: center.text
       font.family: center.host.theme.textFontFamily
-      font.pixelSize: center.host.theme.px(13)
+      font.pixelSize: center.host.theme.size.body
       font.weight: Font.DemiBold
-      font.letterSpacing: -0.1
+      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.body)
     }
     Text {
       width: parent.width
@@ -81,9 +81,9 @@ Rectangle {
       elide: Text.ElideRight
       color: center.textMuted
       font.family: center.host.theme.textFontFamily
-      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.px(11))
+      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.subheadline)
       font.features: { "tnum": 1 }
-      font.pixelSize: center.host.theme.px(11)
+      font.pixelSize: center.host.theme.size.subheadline
     }
   }
   MouseArea {

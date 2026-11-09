@@ -29,7 +29,7 @@ Item {
   Text {
     id: singleText
     anchors.centerIn: parent
-    visible: !labelRoot.isStacked
+    visible: labelRoot.isWarningOrFeedback
     width: Math.min(labelRoot.parent ? labelRoot.parent.width - 24 : 300, implicitWidth)
     horizontalAlignment: Text.AlignHCenter
     elide: Text.ElideRight
@@ -37,12 +37,21 @@ Item {
     text: host.view === "feedback" && !host.notificationPill && !host.volumePill ? host.feedback
       : host.setup.needsSetup ? "󰀦  " + host.setup.warning
       : host.clockText
-    color: host.view === "rest" && host.setup.needsSetup ? host.theme.urgent : "#e2e6de"
+    color: host.view === "rest" && host.setup.needsSetup ? host.theme.urgent : labelRoot.host.theme.text
     font.family: host.theme.textFontFamily
-    font.pixelSize: host.theme.px(15)
+    font.pixelSize: host.theme.size.title3
     font.weight: Font.DemiBold
     font.features: { "tnum": 1, "case": 1 }
-    font.letterSpacing: -0.4
+    font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.title3)
+  }
+  // The clock itself, its digits rolling as the minute turns.
+  RollingText {
+    anchors.centerIn: parent
+    visible: !labelRoot.isWarningOrFeedback && !labelRoot.isStacked
+    theme: labelRoot.host.theme
+    text: labelRoot.host.clockText
+    color: labelRoot.host.theme.text
+    font: singleText.font
   }
   TextMetrics { id: singleMetrics; font: singleText.font; text: singleText.text }
 
@@ -53,26 +62,27 @@ Item {
     visible: labelRoot.isStacked
     spacing: 0
 
-    Text {
+    RollingText {
+      theme: labelRoot.host.theme
       id: stackedTimeText
       anchors.horizontalCenter: parent.horizontalCenter
       text: labelRoot.host.clockTimeText
-      color: "#e2e6de"
+      color: labelRoot.host.theme.text
       font.family: labelRoot.host.theme.textFontFamily
-      font.pixelSize: labelRoot.host.theme.px(13)
+      font.pixelSize: labelRoot.host.theme.size.body
       font.weight: Font.DemiBold
       font.features: { "tnum": 1, "case": 1 }
-      font.letterSpacing: -0.3
+      font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.body)
     }
     Text {
       id: stackedSubText
       anchors.horizontalCenter: parent.horizontalCenter
       text: labelRoot.host.clockSubText
-      color: Qt.rgba(0.88, 0.90, 0.87, 0.7)
+      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.7)
       font.family: labelRoot.host.theme.textFontFamily
-      font.pixelSize: labelRoot.host.theme.px(10)
+      font.pixelSize: labelRoot.host.theme.size.footnote
       font.weight: Font.Medium
-      font.letterSpacing: -0.1
+      font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
     }
   }
   TextMetrics { id: stackedTimeMetrics; font: stackedTimeText.font; text: stackedTimeText.text }

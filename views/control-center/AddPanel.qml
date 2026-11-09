@@ -40,8 +40,8 @@ Rectangle {
     Layout.leftMargin: 4
     color: panel.center.text
     font.family: panel.center.host.theme.textFontFamily
-    font.letterSpacing: panel.center.host.theme.tracking(panel.center.host.theme.textFontFamily, panel.center.host.theme.px(13))
-    font.pixelSize: panel.center.host.theme.px(13)
+    font.letterSpacing: panel.center.host.theme.tracking(panel.center.host.theme.textFontFamily, panel.center.host.theme.size.body)
+    font.pixelSize: panel.center.host.theme.size.body
     font.weight: Font.DemiBold
   }
 
@@ -61,8 +61,8 @@ Rectangle {
         text: panel.removing ? "Release to remove" : "Drag in or click +"
         color: panel.center.textMuted
         font.family: panel.center.host.theme.textFontFamily
-        font.letterSpacing: panel.center.host.theme.tracking(panel.center.host.theme.textFontFamily, panel.center.host.theme.px(11))
-        font.pixelSize: panel.center.host.theme.px(11)
+        font.letterSpacing: panel.center.host.theme.tracking(panel.center.host.theme.textFontFamily, panel.center.host.theme.size.subheadline)
+        font.pixelSize: panel.center.host.theme.size.subheadline
       }
     }
     Flickable {

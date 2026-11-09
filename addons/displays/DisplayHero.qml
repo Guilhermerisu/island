@@ -108,7 +108,7 @@ Rectangle {
                   text: "Aa"
                   color: hero.view.text
                   font.family: hero.theme.textFontFamily
-                  font.pixelSize: hero.theme.px(14)
+                  font.pixelSize: hero.theme.size.body
                   font.weight: Font.Bold
                 }
               }

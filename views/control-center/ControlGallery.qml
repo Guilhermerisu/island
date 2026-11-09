@@ -48,8 +48,8 @@ ColumnLayout {
         text: section.modelData.title
         color: gallery.cc.textMuted
         font.family: gallery.cc.host.theme.textFontFamily
-        font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(12))
-        font.pixelSize: gallery.cc.host.theme.px(12)
+        font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.size.callout)
+        font.pixelSize: gallery.cc.host.theme.size.callout
         font.weight: Font.DemiBold
       }
       GridLayout {
@@ -131,7 +131,7 @@ ColumnLayout {
     text: "All controls have been added"
     color: gallery.cc.textMuted
     font.family: gallery.cc.host.theme.textFontFamily
-    font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(13))
-    font.pixelSize: gallery.cc.host.theme.px(13)
+    font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.size.body)
+    font.pixelSize: gallery.cc.host.theme.size.body
   }
 }

@@ -24,24 +24,7 @@ IslandPill {
     anchors.verticalCenter: parent.verticalCenter
     width: 30; height: 30; radius: 8
     color: "transparent"
-    ArtFallback {
-      anchors.fill: parent
-      host: media.host
-      visible: artImage.status !== Image.Ready
-    }
-    Image {
-      id: artImage
-      anchors.fill: parent
-      source: media.host.nowPlaying.art
-      sourceSize.width: 60
-      sourceSize.height: 60
-      fillMode: Image.PreserveAspectCrop
-      asynchronous: true
-      // Browsers rewrite and delete their cover files as tracks change; never
-      // hold on to a cached copy of one.
-      cache: false
-      visible: status === Image.Ready
-    }
+    CoverArt { anchors.fill: parent; host: media.host; imageSize: 60 }
   }
 
   SoundWave {

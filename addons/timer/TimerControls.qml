@@ -69,7 +69,8 @@ Item {
     font.pixelSize: Math.round(controls.theme.px(controls.timeSize) * 0.4)
     font.weight: Font.Medium
   }
-  Text {
+  RollingText {
+    theme: controls.theme
     id: time
     anchors.right: parent.right
     anchors.verticalCenter: parent.verticalCenter
@@ -79,6 +80,6 @@ Item {
     font.pixelSize: controls.theme.px(controls.timeSize)
     font.weight: Font.Light
     font.features: { "tnum": 1, "case": 1 }
-    font.letterSpacing: -1
+    font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, controls.theme.px(controls.timeSize))
   }
 }

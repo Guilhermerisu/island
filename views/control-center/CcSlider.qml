@@ -128,8 +128,8 @@ Item {
         text: s.title
         color: pillFill.y < pillLabels.y + y + height / 2 ? "#5c5c60" : center.textMuted
         font.family: center.host.theme.textFontFamily
-        font.pixelSize: center.host.theme.px(10)
-        font.letterSpacing: -0.1
+        font.pixelSize: center.host.theme.size.footnote
+        font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.footnote)
       }
       Text {
         width: parent.width - 8
@@ -140,7 +140,7 @@ Item {
         color: pillFill.y < pillLabels.y + y + height / 2 ? "#5c5c60" : center.textMuted
         font.family: center.host.theme.textFontFamily
         font.features: { "tnum": 1 }
-        font.pixelSize: center.host.theme.px(12)
+        font.pixelSize: center.host.theme.size.callout
         font.weight: Font.DemiBold
       }
     }

@@ -54,9 +54,9 @@ ColumnLayout {
       text: "Notifications"
       color: history.center.text
       font.family: history.center.host.theme.textFontFamily
-      font.pixelSize: history.center.host.theme.px(13)
+      font.pixelSize: history.center.host.theme.size.body
       font.weight: Font.DemiBold
-      font.letterSpacing: -0.1
+      font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.body)
     }
     Item { Layout.fillWidth: true }
     // macOS's round ×, widening into "Clear All" while hovered.
@@ -93,8 +93,8 @@ ColumnLayout {
         text: "Clear All"
         color: history.center.text
         font.family: history.center.host.theme.textFontFamily
-        font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(11))
-        font.pixelSize: history.center.host.theme.px(11)
+        font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.subheadline)
+        font.pixelSize: history.center.host.theme.size.subheadline
         font.weight: Font.Medium
         Behavior on opacity { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
       }
@@ -121,8 +121,8 @@ ColumnLayout {
     text: "No Notifications"
     color: history.center.textMuted
     font.family: history.center.host.theme.textFontFamily
-    font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(13))
-    font.pixelSize: history.center.host.theme.px(13)
+    font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.body)
+    font.pixelSize: history.center.host.theme.size.body
   }
 
   ListView {
@@ -315,9 +315,9 @@ ColumnLayout {
               elide: Text.ElideRight
               color: history.center.text
               font.family: history.center.host.theme.textFontFamily
-              font.pixelSize: history.center.host.theme.px(13)
+              font.pixelSize: history.center.host.theme.size.body
               font.weight: Font.DemiBold
-              font.letterSpacing: -0.1
+              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.body)
             }
             Text {
               id: noteAge
@@ -327,8 +327,8 @@ ColumnLayout {
               textFormat: Text.PlainText
               color: history.center.textMuted
               font.family: history.center.host.theme.textFontFamily
-              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(11))
-              font.pixelSize: history.center.host.theme.px(11)
+              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.subheadline)
+              font.pixelSize: history.center.host.theme.size.subheadline
             }
           }
           Text {
@@ -342,8 +342,8 @@ ColumnLayout {
             lineHeight: 1.08
             color: history.center.host.theme.withAlpha(history.center.text, 0.78)
             font.family: history.center.host.theme.textFontFamily
-            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(12))
-            font.pixelSize: history.center.host.theme.px(12)
+            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.callout)
+            font.pixelSize: history.center.host.theme.size.callout
           }
           // The buttons of a notification still on screen.
           Row {
@@ -370,7 +370,7 @@ ColumnLayout {
                   elide: Text.ElideRight
                   color: history.center.text
                   font.family: history.center.host.theme.textFontFamily
-                  font.pixelSize: history.center.host.theme.px(12)
+                  font.pixelSize: history.center.host.theme.size.callout
                   font.weight: Font.Medium
                 }
                 MouseArea {
@@ -395,7 +395,7 @@ ColumnLayout {
               text: note.modelData.stackOpen ? "Show Less" : "Show " + (note.modelData.stackSize - 1) + " More"
               color: history.center.host.theme.accent
               font.family: history.center.host.theme.textFontFamily
-              font.pixelSize: history.center.host.theme.px(11)
+              font.pixelSize: history.center.host.theme.size.subheadline
               font.weight: Font.DemiBold
               MouseArea {
                 anchors.fill: parent

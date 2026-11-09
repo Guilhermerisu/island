@@ -43,11 +43,12 @@ Rectangle {
     color: center.text
     font.family: center.host.theme.textFontFamily
     font.features: { "tnum": 1 }
-    font.pixelSize: center.host.theme.px(13)
+    font.pixelSize: center.host.theme.size.body
     font.weight: Font.DemiBold
-    font.letterSpacing: -0.1
+    font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.body)
   }
-  Text {
+  RollingText {
+    theme: center.host.theme
     visible: !sec.vertical
     anchors.right: parent.right
     anchors.rightMargin: sec.headerRight
@@ -56,8 +57,8 @@ Rectangle {
     text: sec.detail
     color: center.textMuted
     font.family: center.host.theme.textFontFamily
-    font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.px(11))
-    font.pixelSize: center.host.theme.px(11)
+    font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.subheadline)
+    font.pixelSize: center.host.theme.size.subheadline
     font.features: { "tnum": 1 }
   }
   Rectangle {

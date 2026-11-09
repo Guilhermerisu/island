@@ -91,8 +91,8 @@ ListPicker {
         elide: Text.ElideRight
         color: keybinds.host.theme.text
         font.family: keybinds.host.theme.textFontFamily
-        font.letterSpacing: keybinds.host.theme.tracking(keybinds.host.theme.textFontFamily, keybinds.host.theme.px(15))
-        font.pixelSize: keybinds.host.theme.px(15)
+        font.letterSpacing: keybinds.host.theme.tracking(keybinds.host.theme.textFontFamily, keybinds.host.theme.size.title3)
+        font.pixelSize: keybinds.host.theme.size.title3
         font.weight: Font.Medium
       }
       // Keys as keycaps.
@@ -119,8 +119,8 @@ ListPicker {
               textFormat: Text.PlainText
               color: keybinds.host.theme.text
               font.family: keybinds.host.theme.textFontFamily
-              font.letterSpacing: keybinds.host.theme.tracking(keybinds.host.theme.textFontFamily, keybinds.host.theme.px(11))
-              font.pixelSize: keybinds.host.theme.px(11)
+              font.letterSpacing: keybinds.host.theme.tracking(keybinds.host.theme.textFontFamily, keybinds.host.theme.size.subheadline)
+              font.pixelSize: keybinds.host.theme.size.subheadline
               font.weight: Font.DemiBold
             }
           }

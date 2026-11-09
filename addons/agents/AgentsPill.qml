@@ -58,16 +58,17 @@ Item {
       height: restTime.implicitHeight
       clip: true
       opacity: shown
-      Text {
+      RollingText {
+        theme: pill.theme
         id: restTime
         anchors.right: parent.right
         text: pill.agents.timeText(pill.agents.turnTime)
         color: pill.ink
         font.family: pill.theme.textFontFamily
-        font.pixelSize: pill.theme.px(13)
+        font.pixelSize: pill.theme.size.body
         font.weight: Font.DemiBold
         font.features: { "tnum": 1, "case": 1 }
-        font.letterSpacing: -0.2
+        font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
       }
     }
     // Opening in the time's place.
@@ -131,9 +132,9 @@ Item {
           opacity: shown
           transform: Translate { x: 10 * (1 - doneWord.shown) }
           font.family: pill.theme.textFontFamily
-          font.pixelSize: pill.theme.px(13)
+          font.pixelSize: pill.theme.size.body
           font.weight: Font.DemiBold
-          font.letterSpacing: -0.2
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
         }
       }
     }

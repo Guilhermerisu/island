@@ -194,8 +194,8 @@ Item {
             text: "Search"
             color: settingsView.textMuted
             font.family: settingsView.host.theme.textFontFamily
-            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.px(13))
-            font.pixelSize: settingsView.host.theme.px(13)
+            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
+            font.pixelSize: settingsView.host.theme.size.body
           }
           TextInput {
             id: searchInput
@@ -206,8 +206,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             color: settingsView.text
             font.family: settingsView.host.theme.textFontFamily
-            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.px(13))
-            font.pixelSize: settingsView.host.theme.px(13)
+            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
+            font.pixelSize: settingsView.host.theme.size.body
             onTextChanged: {
               settingsView.searchQuery = text
               if (text.trim() === "" || settingsView.pageMatches(settingsView.currentPage)) return
@@ -238,8 +238,8 @@ Item {
           text: "No Results"
           color: settingsView.textMuted
           font.family: settingsView.host.theme.textFontFamily
-          font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.px(13))
-          font.pixelSize: settingsView.host.theme.px(13)
+          font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
+          font.pixelSize: settingsView.host.theme.size.body
           Layout.alignment: Qt.AlignHCenter
           Layout.topMargin: 18
         }

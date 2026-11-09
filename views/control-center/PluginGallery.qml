@@ -122,7 +122,7 @@ ColumnLayout {
       : gallery.addon.loading ? "Loading…" : "No plugins added"
     color: gallery.cc.textMuted
     font.family: gallery.cc.host.theme.textFontFamily
-    font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.px(13))
-    font.pixelSize: gallery.cc.host.theme.px(13)
+    font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.size.body)
+    font.pixelSize: gallery.cc.host.theme.size.body
   }
 }

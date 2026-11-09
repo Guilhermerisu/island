@@ -66,9 +66,9 @@ Item {
           elide: Text.ElideRight
           color: pill.theme.text
           font.family: pill.theme.textFontFamily
-          font.pixelSize: pill.theme.px(13)
+          font.pixelSize: pill.theme.size.body
           font.weight: Font.DemiBold
-          font.letterSpacing: -0.3
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
         }
         Text {
           width: parent.width
@@ -76,8 +76,8 @@ Item {
           elide: Text.ElideRight
           color: pill.theme.secondary
           font.family: pill.theme.textFontFamily
-          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(12))
-          font.pixelSize: pill.theme.px(12)
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.callout)
+          font.pixelSize: pill.theme.size.callout
           font.features: { "tnum": 1 }
         }
       }
@@ -111,8 +111,8 @@ Item {
           text: pill.displays.secondsLeft
           color: pill.theme.text
           font.family: pill.theme.textFontFamily
-          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(11))
-          font.pixelSize: pill.theme.px(11)
+          font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.subheadline)
+          font.pixelSize: pill.theme.size.subheadline
           font.weight: Font.DemiBold
           font.features: { "tnum": 1 }
         }
@@ -139,8 +139,8 @@ Item {
             text: button.modelData.label
             color: button.modelData.primary ? pill.theme.accentText : pill.theme.text
             font.family: pill.theme.textFontFamily
-            font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.px(13))
-            font.pixelSize: pill.theme.px(13)
+            font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
+            font.pixelSize: pill.theme.size.body
             font.weight: Font.DemiBold
           }
           MouseArea {

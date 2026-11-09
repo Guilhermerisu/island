@@ -152,57 +152,7 @@ Item {
         Layout.preferredHeight: 72
         radius: 16
         color: "transparent"
-        id: coverBox
-        // Two covers taking turns: a new track's art loads into the hidden
-        // one and fades in over the old, so changing tracks never flashes
-        // the fallback in between.
-        readonly property string art: player.host.nowPlaying.art
-        property Image front: coverA
-        readonly property Image back: front === coverA ? coverB : coverA
-        readonly property bool hasArt: art !== "" && (front.status === Image.Ready || back.status === Image.Ready)
-        onArtChanged: {
-          if (art === front.source.toString()) { back.source = ""; return }
-          back.source = art
-        }
-        Component.onCompleted: front.source = art
-        function arrived(cover) {
-          if (cover !== back || cover.status !== Image.Ready) return
-          cover.opacity = 0
-          front = cover
-          coverIn.target = cover
-          coverIn.restart()
-        }
-        ArtFallback {
-          anchors.fill: parent
-          host: player.host
-          glyphSize: 30
-          visible: !coverBox.hasArt
-        }
-        component Cover: Image {
-          id: c
-          anchors.fill: parent
-          sourceSize.width: 144
-          sourceSize.height: 144
-          fillMode: Image.PreserveAspectCrop
-          asynchronous: true
-          cache: false
-          visible: status === Image.Ready && coverBox.art !== ""
-          z: c === coverBox.front ? 1 : 0
-          onStatusChanged: coverBox.arrived(c)
-        }
-        Cover { id: coverA }
-        Cover { id: coverB }
-        MotionAnimation {
-          id: coverIn
-          theme: player.host.theme
-          property: "opacity"
-          to: 1
-          pace: "fade"
-          curve: "fade"
-          // Once it's in, the old cover underneath is let go (unless it's
-          // already loading the next track's).
-          onFinished: if (coverBox.back.source.toString() !== coverBox.art) coverBox.back.source = ""
-        }
+        CoverArt { anchors.fill: parent; host: player.host; glyphSize: 30 }
       }
       ColumnLayout {
         Layout.fillWidth: true
@@ -212,10 +162,10 @@ Item {
           text: player.mpris ? String(player.mpris.trackTitle || "Unknown track") : "Nothing playing"
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: "#ffffff"
+          color: player.host.theme.text
           font.family: player.host.theme.textFontFamily
-          font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(17))
-          font.pixelSize: player.host.theme.px(17)
+          font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.title2)
+          font.pixelSize: player.host.theme.size.title2
           font.weight: Font.DemiBold
         }
         Text {
@@ -226,8 +176,8 @@ Item {
           elide: Text.ElideRight
           color: Qt.rgba(1, 1, 1, 0.55)
           font.family: player.host.theme.textFontFamily
-          font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(15))
-          font.pixelSize: player.host.theme.px(15)
+          font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.title3)
+          font.pixelSize: player.host.theme.size.title3
         }
       }
       SoundWave {
@@ -252,8 +202,8 @@ Item {
         text: player.clock(player.position)
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
-        font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(12))
-        font.pixelSize: player.host.theme.px(12)
+        font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.callout)
+        font.pixelSize: player.host.theme.size.callout
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }
@@ -288,8 +238,8 @@ Item {
         text: "−" + player.clock(player.length - player.position)
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
-        font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.px(12))
-        font.pixelSize: player.host.theme.px(12)
+        font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.callout)
+        font.pixelSize: player.host.theme.size.callout
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }

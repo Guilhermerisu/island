@@ -43,7 +43,7 @@ Rectangle {
       font.pixelSize: header.compact ? header.view.host.theme.px(22) : header.view.detailTitleFontSize
       font.weight: Font.Bold
       font.variableAxes: header.view.titleFontAxes
-      font.letterSpacing: -0.3
+      font.letterSpacing: header.view.host.theme.tracking(header.view.host.theme.textFontFamily, header.compact ? header.view.host.theme.px(22) : header.view.detailTitleFontSize)
     }
     Text {
       width: parent.width

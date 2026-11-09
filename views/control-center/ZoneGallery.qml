@@ -91,7 +91,7 @@ ColumnLayout {
     text: "All zones have been added"
     color: gallery.center.textMuted
     font.family: gallery.center.host.theme.textFontFamily
-    font.letterSpacing: gallery.center.host.theme.tracking(gallery.center.host.theme.textFontFamily, gallery.center.host.theme.px(13))
-    font.pixelSize: gallery.center.host.theme.px(13)
+    font.letterSpacing: gallery.center.host.theme.tracking(gallery.center.host.theme.textFontFamily, gallery.center.host.theme.size.body)
+    font.pixelSize: gallery.center.host.theme.size.body
   }
 }

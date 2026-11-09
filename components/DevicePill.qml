@@ -80,12 +80,12 @@ IslandPill {
     text: pill.activity.title || ""
     textFormat: Text.PlainText
     elide: Text.ElideRight
-    color: "#ffffff"
+    color: pill.host.theme.text
     font.family: pill.host.theme.textFontFamily
     font.features: { "tnum": 1 }
-    font.pixelSize: pill.host.theme.px(13)
+    font.pixelSize: pill.host.theme.size.body
     font.weight: Font.Medium
-    font.letterSpacing: -0.2
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
   }
 
   // Trailing: the status (with a device's battery), a beat after the rest.
@@ -103,9 +103,9 @@ IslandPill {
       text: pill.activity.status || ""
       color: pill.statusColor
       font.family: pill.host.theme.textFontFamily
-      font.pixelSize: pill.host.theme.px(13)
+      font.pixelSize: pill.host.theme.size.body
       font.weight: Font.DemiBold
-      font.letterSpacing: -0.2
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
       font.features: { "tnum": 1 }
     }
     BatteryIcon {
@@ -163,9 +163,9 @@ IslandPill {
       text: pill.activity.status || ""
       color: "#888888"
       font.family: pill.host.theme.textFontFamily
-      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
       font.features: { "tnum": 1 }
-      font.pixelSize: pill.host.theme.px(13)
+      font.pixelSize: pill.host.theme.size.body
       font.weight: Font.Medium
     }
     Text {
@@ -173,12 +173,12 @@ IslandPill {
       text: pill.activity.title || ""
       textFormat: Text.PlainText
       elide: Text.ElideRight
-      color: "#ffffff"
+      color: pill.host.theme.text
       font.family: pill.host.theme.textFontFamily
       font.features: { "tnum": 1 }
-      font.pixelSize: pill.host.theme.px(15)
+      font.pixelSize: pill.host.theme.size.title3
       font.weight: Font.Medium
-      font.letterSpacing: -0.2
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.title3)
     }
   }
   // Battery ring: a dim track, the level around it, the percentage inside.
@@ -235,8 +235,8 @@ IslandPill {
         text: ring.reporting ? pill.deviceBattery : ""
         color: pill.ringColor
         font.family: pill.host.theme.textFontFamily
-        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
-        font.pixelSize: pill.host.theme.px(13)
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
+        font.pixelSize: pill.host.theme.size.body
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }
       }

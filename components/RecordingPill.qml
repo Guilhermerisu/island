@@ -32,7 +32,8 @@ IslandPill {
       NumberAnimation { to: 1; duration: pill.host.theme.scaled(467); easing.type: Easing.InOutSine }
     }
   }
-  Text {
+  RollingText {
+    theme: pill.host.theme
     opacity: reveal.trailingIn
     PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
@@ -41,9 +42,9 @@ IslandPill {
     text: pill.recorder.recording ? pill.recorder.timeText(pill.recorder.elapsed) : "Saving…"
     color: pill.ink
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: pill.host.theme.px(13)
+    font.pixelSize: pill.host.theme.size.body
     font.weight: Font.Medium
     font.features: { "tnum": 1, "case": 1 }
-    font.letterSpacing: -0.2
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
   }
 }

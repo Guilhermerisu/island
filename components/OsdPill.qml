@@ -28,7 +28,7 @@ IslandPill {
     width: 24
     horizontalAlignment: Text.AlignHCenter
     text: osd.host.osdIcon
-    color: "#ffffff"
+    color: osd.host.theme.text
     font.family: osd.host.theme.fontFamily
     font.pixelSize: osd.host.theme.px(21)
     opacity: reveal.leadingIn
@@ -65,10 +65,10 @@ IslandPill {
     width: Math.max(36, implicitWidth)
     horizontalAlignment: Text.AlignRight
     text: osd.host.osdMessage
-    color: "#ffffff"
+    color: osd.host.theme.text
     font.family: osd.host.theme.textFontFamily
-    font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.px(12))
-    font.pixelSize: osd.host.theme.px(12)
+    font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.size.callout)
+    font.pixelSize: osd.host.theme.size.callout
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }
     opacity: reveal.trailingIn
@@ -85,11 +85,11 @@ IslandPill {
     text: osd.host.osdMessage
     textFormat: Text.PlainText
     elide: Text.ElideRight
-    color: "#ffffff"
+    color: osd.host.theme.text
     font.family: osd.host.theme.textFontFamily
-    font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.px(13))
+    font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.size.body)
     font.features: { "tnum": 1 }
-    font.pixelSize: osd.host.theme.px(13)
+    font.pixelSize: osd.host.theme.size.body
     font.weight: Font.Medium
     opacity: reveal.middleIn
     transformOrigin: Item.Left

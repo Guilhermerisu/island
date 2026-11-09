@@ -120,15 +120,16 @@ ColumnLayout {
     Layout.leftMargin: 6
     Layout.rightMargin: 2
     spacing: 6
+    StaggerIn { step: 0 }
     // Today's date as the title ("Wed, Oct 21"); Edit while editing.
     Text {
       text: cc.editMode ? "Edit" : Qt.locale("en_US").toString(cc.host.clockDate, "ddd, MMM d")
       color: cc.text
       font.family: cc.host.theme.textFontFamily
       font.features: { "tnum": 1 }
-      font.pixelSize: cc.host.theme.px(15)
+      font.pixelSize: cc.host.theme.size.title3
       font.weight: Font.DemiBold
-      font.letterSpacing: -0.2
+      font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.title3)
     }
     Item { Layout.fillWidth: true }
     // How many columns, while editing: the choice is saved as it's made.
@@ -160,7 +161,7 @@ ColumnLayout {
             color: choice.current ? cc.text : cc.textMuted
             font.family: cc.host.theme.textFontFamily
             font.features: { "tnum": 1 }
-            font.pixelSize: cc.host.theme.px(12)
+            font.pixelSize: cc.host.theme.size.callout
             font.weight: Font.DemiBold
           }
           MouseArea {
@@ -203,8 +204,8 @@ ColumnLayout {
         text: "Done"
         color: cc.text
         font.family: cc.host.theme.textFontFamily
-        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(12))
-        font.pixelSize: cc.host.theme.px(12)
+        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.callout)
+        font.pixelSize: cc.host.theme.size.callout
         font.weight: Font.Medium
         Behavior on opacity { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "fade"; curve: "fade" } }
       }
@@ -261,8 +262,8 @@ ColumnLayout {
         }
         color: cc.textMuted
         font.family: cc.host.theme.textFontFamily
-        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(13))
-        font.pixelSize: cc.host.theme.px(13)
+        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.body)
+        font.pixelSize: cc.host.theme.size.body
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }
@@ -271,8 +272,8 @@ ColumnLayout {
         text: cc.controls.batteryPercent + "%"
         color: parent.low ? cc.host.theme.system.red : cc.text
         font.family: cc.host.theme.textFontFamily
-        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(13))
-        font.pixelSize: cc.host.theme.px(13)
+        font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.body)
+        font.pixelSize: cc.host.theme.size.body
         font.weight: Font.Medium
         font.features: { "tnum": 1 }
       }
@@ -303,8 +304,8 @@ ColumnLayout {
       text: "Click the pencil to add zones"
       color: cc.textMuted
       font.family: cc.host.theme.textFontFamily
-      font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(12))
-      font.pixelSize: cc.host.theme.px(12)
+      font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.callout)
+      font.pixelSize: cc.host.theme.size.callout
     }
   }
 

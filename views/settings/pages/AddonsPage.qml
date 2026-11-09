@@ -94,8 +94,8 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: page.view.text
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(15))
-                font.pixelSize: page.view.host.theme.px(15)
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.title3)
+                font.pixelSize: page.view.host.theme.size.title3
                 font.weight: Font.Medium
               }
               Text {

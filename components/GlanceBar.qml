@@ -131,9 +131,9 @@ Item {
         }
         Text {
           text: String(glanceBar.host.focusedWorkspaceId > 0 ? glanceBar.host.focusedWorkspaceId : "1")
-          color: "#e2e6de"
+          color: glanceBar.host.theme.text
           font.family: glanceBar.host.theme.textFontFamily
-          font.pixelSize: glanceBar.host.theme.px(12)
+          font.pixelSize: glanceBar.host.theme.size.callout
           font.weight: Font.DemiBold
           anchors.verticalCenter: parent.verticalCenter
         }
@@ -170,16 +170,16 @@ Item {
           visible: battItem.hasBattery
           level: battItem.level
           charging: battItem.onPower
-          color: "#e2e6de"
+          color: glanceBar.host.theme.text
           implicitWidth: 20
           implicitHeight: 11
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
           text: battItem.hasBattery ? battItem.level + "%" : "AC"
-          color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
+          color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.8)
           font.family: glanceBar.host.theme.textFontFamily
-          font.pixelSize: glanceBar.host.theme.px(11)
+          font.pixelSize: glanceBar.host.theme.size.subheadline
           font.weight: Font.Medium
           anchors.verticalCenter: parent.verticalCenter
         }
@@ -232,9 +232,9 @@ Item {
         }
         Text {
           text: !netItem.online ? "Offline" : netItem.net[0].name || (netItem.wired ? "Ethernet" : "Wi-Fi")
-          color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
+          color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.8)
           font.family: glanceBar.host.theme.textFontFamily
-          font.pixelSize: glanceBar.host.theme.px(11)
+          font.pixelSize: glanceBar.host.theme.size.subheadline
           font.weight: Font.Medium
           elide: Text.ElideRight
           width: Math.min(implicitWidth, netItem.maxNetTextWidth)
@@ -278,9 +278,9 @@ Item {
         }
         Text {
           text: weatherItem.ready ? Math.round(weatherItem.weatherAddon.current.temperature) + "°" : "󰖐 --°"
-          color: "#e2e6de"
+          color: glanceBar.host.theme.text
           font.family: glanceBar.host.theme.textFontFamily
-          font.pixelSize: glanceBar.host.theme.px(12)
+          font.pixelSize: glanceBar.host.theme.size.callout
           font.weight: Font.DemiBold
           anchors.verticalCenter: parent.verticalCenter
         }
@@ -362,9 +362,9 @@ Item {
 
         Text {
           text: mediaItem.track !== "" ? (mediaItem.artist ? mediaItem.track + " · " + mediaItem.artist : mediaItem.track) : "Player"
-          color: mediaItem.track !== "" ? Qt.rgba(0.92, 0.94, 0.90, 0.9) : Qt.rgba(0.88, 0.90, 0.87, 0.45)
+          color: mediaItem.track !== "" ? glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.9) : glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.45)
           font.family: glanceBar.host.theme.textFontFamily
-          font.pixelSize: glanceBar.host.theme.px(11)
+          font.pixelSize: glanceBar.host.theme.size.subheadline
           font.weight: Font.Medium
           elide: Text.ElideRight
           width: Math.min(implicitWidth, mediaItem.maxTextWidth)
@@ -399,16 +399,16 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         Text {
           text: glanceBar.host.muted || glanceBar.host.volume <= 0 ? "󰖁" : glanceBar.host.volume < 0.5 ? "󰖀" : "󰕾"
-          color: glanceBar.host.muted ? glanceBar.host.theme.system.orange : "#e2e6de"
+          color: glanceBar.host.muted ? glanceBar.host.theme.system.orange : glanceBar.host.theme.text
           font.family: glanceBar.host.theme.fontFamily
           font.pixelSize: glanceBar.host.theme.px(13)
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
           text: glanceBar.host.muted ? "Muted" : Math.round(glanceBar.host.volume * 100) + "%"
-          color: Qt.rgba(0.88, 0.90, 0.87, 0.8)
+          color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.8)
           font.family: glanceBar.host.theme.textFontFamily
-          font.pixelSize: glanceBar.host.theme.px(11)
+          font.pixelSize: glanceBar.host.theme.size.subheadline
           font.weight: Font.Medium
           anchors.verticalCenter: parent.verticalCenter
         }

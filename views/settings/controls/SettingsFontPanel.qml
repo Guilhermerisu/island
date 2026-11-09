@@ -167,8 +167,8 @@ Popover {
       text: "No fonts match"
       color: panel.view.textMuted
       font.family: panel.view.host.theme.textFontFamily
-      font.letterSpacing: panel.view.host.theme.tracking(panel.view.host.theme.textFontFamily, panel.view.host.theme.px(12))
-      font.pixelSize: panel.view.host.theme.px(12)
+      font.letterSpacing: panel.view.host.theme.tracking(panel.view.host.theme.textFontFamily, panel.view.host.theme.size.callout)
+      font.pixelSize: panel.view.host.theme.size.callout
     }
   }
 }

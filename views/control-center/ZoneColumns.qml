@@ -168,8 +168,8 @@ Item {
             text: "Drag a zone here"
             color: board.center.textMuted
             font.family: board.center.host.theme.textFontFamily
-            font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.px(13))
-            font.pixelSize: board.center.host.theme.px(13)
+            font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.size.body)
+            font.pixelSize: board.center.host.theme.size.body
           }
         }
 
@@ -306,8 +306,8 @@ Item {
         text: board.ghostTitle
         color: board.center.text
         font.family: board.center.host.theme.textFontFamily
-        font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.px(12))
-        font.pixelSize: board.center.host.theme.px(12)
+        font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.size.callout)
+        font.pixelSize: board.center.host.theme.size.callout
         font.weight: Font.DemiBold
       }
     }

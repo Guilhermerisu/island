@@ -80,8 +80,8 @@ ListPicker {
           elide: Text.ElideRight
           color: plugins.host.theme.text
           font.family: plugins.host.theme.textFontFamily
-          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(13))
-          font.pixelSize: plugins.host.theme.px(13)
+          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.size.body)
+          font.pixelSize: plugins.host.theme.size.body
           font.weight: Font.Medium
         }
         Text {
@@ -91,8 +91,8 @@ ListPicker {
           elide: Text.ElideRight
           color: plugins.host.theme.muted
           font.family: plugins.host.theme.textFontFamily
-          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(11))
-          font.pixelSize: plugins.host.theme.px(11)
+          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.size.subheadline)
+          font.pixelSize: plugins.host.theme.size.subheadline
         }
       }
       // Taken by the picker before its own click (see ListPicker's clickAt).
@@ -119,8 +119,8 @@ ListPicker {
           text: plugins.keyText(keys)
           color: keys === "" ? plugins.host.theme.muted : plugins.host.theme.text
           font.family: plugins.host.theme.textFontFamily
-          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(11))
-          font.pixelSize: plugins.host.theme.px(11)
+          font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.size.subheadline)
+          font.pixelSize: plugins.host.theme.size.subheadline
           font.weight: Font.DemiBold
         }
       }
@@ -131,8 +131,8 @@ ListPicker {
         text: pluginRow.entry.enabled ? (pluginRow.entry.openable ? "Open" : "On") : "Off"
         color: pluginRow.entry.enabled ? plugins.host.theme.text : plugins.host.theme.muted
         font.family: plugins.host.theme.textFontFamily
-        font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.px(12))
-        font.pixelSize: plugins.host.theme.px(12)
+        font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.size.callout)
+        font.pixelSize: plugins.host.theme.size.callout
       }
     }
   }

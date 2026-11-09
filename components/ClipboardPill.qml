@@ -92,11 +92,11 @@ IslandPill {
     }
     textFormat: Text.PlainText
     elide: Text.ElideRight
-    color: "#ffffff"
+    color: pill.host.theme.text
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: pill.host.theme.px(13)
+    font.pixelSize: pill.host.theme.size.body
     font.weight: Font.Medium
-    font.letterSpacing: -0.2
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
   }
 
   // Trailing: the status, a beat after the rest.
@@ -109,9 +109,9 @@ IslandPill {
     text: "Copied"
     color: pill.host.theme.accent
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: pill.host.theme.px(13)
+    font.pixelSize: pill.host.theme.size.body
     font.weight: Font.DemiBold
-    font.letterSpacing: -0.2
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
     opacity: reveal.trailingIn
   }
 }

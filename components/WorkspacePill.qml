@@ -64,8 +64,8 @@ IslandPill {
         text: pill.host.focusedWorkspaceId
         color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
         font.family: pill.host.theme.textFontFamily
-        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(12))
-        font.pixelSize: pill.host.theme.px(12)
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.callout)
+        font.pixelSize: pill.host.theme.size.callout
         font.weight: Font.Bold
         font.features: { "tnum": 1 }
       }

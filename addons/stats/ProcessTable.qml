@@ -311,9 +311,9 @@ Item {
                   Text {
                     anchors.centerIn: parent
                     text: row.modelData.name.charAt(0).toUpperCase()
-                    color: "#ffffff"
+                    color: table.view.host.theme.text
                     font.family: table.view.host.theme.textFontFamily
-                    font.pixelSize: table.view.host.theme.px(10)
+                    font.pixelSize: table.view.host.theme.size.footnote
                     font.weight: Font.Bold
                   }
                 }
@@ -400,8 +400,8 @@ Item {
               text: cellItem.isName ? "" : table.cell(row.modelData, cellItem.modelData.key)
               color: row.selected ? row.ink : cellItem.isCpu ? table.cpuColor(cpu) : table.view.text
               font.family: table.view.host.theme.textFontFamily
-              font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(12))
-              font.pixelSize: table.view.host.theme.px(12)
+              font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.size.callout)
+              font.pixelSize: table.view.host.theme.size.callout
               font.weight: cellItem.isCpu && cpu >= 10 ? Font.Bold : Font.Normal
               font.features: { "tnum": 1 }
             }
@@ -417,8 +417,8 @@ Item {
     text: table.stats.latest ? "No Processes" : "Loading…"
     color: table.view.textMuted
     font.family: table.view.host.theme.textFontFamily
-    font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.px(13))
+    font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.size.body)
     font.features: { "tnum": 1 }
-    font.pixelSize: table.view.host.theme.px(13)
+    font.pixelSize: table.view.host.theme.size.body
   }
 }

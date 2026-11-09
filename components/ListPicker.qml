@@ -119,6 +119,9 @@ Item {
     }
   }
 
+  StaggerIn { target: search; step: 0 }
+  StaggerIn { target: list; step: 1 }
+
   // A GridView with one full-width column doubles as the list.
   GridView {
     id: list
@@ -232,8 +235,8 @@ Item {
       text: picker.emptyText
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
-      font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.px(13))
-      font.pixelSize: picker.host.theme.px(13)
+      font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.size.body)
+      font.pixelSize: picker.host.theme.size.body
     }
   }
 

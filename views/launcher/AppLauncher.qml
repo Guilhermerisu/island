@@ -96,8 +96,8 @@ ListPicker {
         elide: Text.ElideRight
         color: launcher.host.theme.text
         font.family: launcher.host.theme.textFontFamily
-        font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(15))
-        font.pixelSize: launcher.host.theme.px(15)
+        font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
+        font.pixelSize: launcher.host.theme.size.title3
         font.weight: Font.Medium
       }
       // An addon's row: its label and detail, muted, on one line
@@ -114,8 +114,8 @@ ListPicker {
           text: appRow.isAddon ? appRow.entry.label || "" : ""
           color: launcher.host.theme.text
           font.family: launcher.host.theme.textFontFamily
-          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(15))
-          font.pixelSize: launcher.host.theme.px(15)
+          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
+          font.pixelSize: launcher.host.theme.size.title3
           font.weight: Font.Medium
         }
         Text {
@@ -125,8 +125,8 @@ ListPicker {
           elide: Text.ElideRight
           color: launcher.host.theme.muted
           font.family: launcher.host.theme.textFontFamily
-          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(15))
-          font.pixelSize: launcher.host.theme.px(15)
+          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
+          font.pixelSize: launcher.host.theme.size.title3
         }
       }
     }

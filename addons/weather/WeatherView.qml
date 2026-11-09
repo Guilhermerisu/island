@@ -90,9 +90,9 @@ Item {
           color: view.ink
           font.family: view.theme.textFontFamily
           font.features: { "tnum": 1 }
-          font.pixelSize: view.theme.px(22)
+          font.pixelSize: view.theme.size.title1
           font.weight: Font.Medium
-          font.letterSpacing: -0.3
+          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title1)
         }
         Text {
           id: condition
@@ -101,9 +101,9 @@ Item {
           elide: Text.ElideRight
           color: view.inkMuted
           font.family: view.theme.textFontFamily
-          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(15))
+          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
           font.features: { "tnum": 1 }
-          font.pixelSize: view.theme.px(15)
+          font.pixelSize: view.theme.size.title3
           font.weight: Font.Normal
         }
       }
@@ -118,7 +118,7 @@ Item {
         font.features: { "tnum": 1 }
         font.pixelSize: view.theme.px(46)
         font.weight: Font.Light
-        font.letterSpacing: -1
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(46))
       }
     }
 
@@ -140,9 +140,9 @@ Item {
             text: modelData.now ? "Now" : view.hourText(modelData.hour)
             color: view.inkMuted
             font.family: view.theme.textFontFamily
-            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
+            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
             font.features: { "tnum": 1 }
-            font.pixelSize: view.theme.px(13)
+            font.pixelSize: view.theme.size.body
             font.weight: Font.Medium
           }
           // The icon, and the chance of rain under it, share one height so
@@ -166,9 +166,9 @@ Item {
               text: modelData.rain + "%"
               color: "#5ac8fa"
               font.family: view.theme.textFontFamily
-              font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(10))
+              font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.footnote)
               font.features: { "tnum": 1 }
-              font.pixelSize: view.theme.px(10)
+              font.pixelSize: view.theme.size.footnote
               font.weight: Font.Bold
             }
           }
@@ -177,9 +177,9 @@ Item {
             text: Math.round(modelData.temperature)
             color: view.ink
             font.family: view.theme.textFontFamily
-            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(15))
+            font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
             font.features: { "tnum": 1 }
-            font.pixelSize: view.theme.px(15)
+            font.pixelSize: view.theme.size.title3
             font.weight: Font.Medium
             Text {
               anchors.left: parent.right
@@ -214,9 +214,9 @@ Item {
         : "Couldn't reach Open-Meteo"
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily
-      font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(15))
+      font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
       font.features: { "tnum": 1 }
-      font.pixelSize: view.theme.px(15)
+      font.pixelSize: view.theme.size.title3
     }
     Rectangle {
       visible: notice.status !== "loading"
@@ -234,9 +234,9 @@ Item {
         text: notice.needsCity ? "Open Settings" : "Try Again"
         color: view.theme.accentText
         font.family: view.theme.textFontFamily
-        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(13))
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
         font.features: { "tnum": 1 }
-        font.pixelSize: view.theme.px(13)
+        font.pixelSize: view.theme.size.body
         font.weight: Font.Medium
       }
       MouseArea {

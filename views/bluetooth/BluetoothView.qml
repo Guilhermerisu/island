@@ -216,8 +216,8 @@ ColumnLayout {
       text: "Bluetooth"
       color: bt.text
       font.family: bt.host.theme.textFontFamily
-      font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(17))
-      font.pixelSize: bt.host.theme.px(17)
+      font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.title2)
+      font.pixelSize: bt.host.theme.size.title2
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
@@ -338,8 +338,8 @@ ColumnLayout {
               text: row.modelData.header || ""
               color: bt.textMuted
               font.family: bt.host.theme.textFontFamily
-              font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(13))
-              font.pixelSize: bt.host.theme.px(13)
+              font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.body)
+              font.pixelSize: bt.host.theme.size.body
               font.weight: Font.DemiBold
             }
             Row {
@@ -417,8 +417,8 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: bt.text
                 font.family: bt.host.theme.textFontFamily
-                font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(15))
-                font.pixelSize: bt.host.theme.px(15)
+                font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.title3)
+                font.pixelSize: bt.host.theme.size.title3
               }
               Text {
                 width: parent.width
@@ -430,8 +430,8 @@ ColumnLayout {
                 text: status
                 color: bt.textMuted
                 font.family: bt.host.theme.textFontFamily
-                font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(12))
-                font.pixelSize: bt.host.theme.px(12)
+                font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.callout)
+                font.pixelSize: bt.host.theme.size.callout
               }
             }
             MouseArea {
@@ -459,8 +459,8 @@ ColumnLayout {
                   text: row.modelData.battery + "%"
                   color: parent.low ? bt.host.theme.system.red : bt.textMuted
                   font.family: bt.host.theme.textFontFamily
-                  font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(13))
-                  font.pixelSize: bt.host.theme.px(13)
+                  font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.body)
+                  font.pixelSize: bt.host.theme.size.body
                   font.features: { "tnum": 1 }
                 }
                 BatteryIcon {

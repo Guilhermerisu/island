@@ -221,8 +221,8 @@ Item {
       text: zone.editing ? "Drag a plugin here" : zone.addon.pinnedIds.length && zone.addon.loading ? "Loading…" : "No plugins pinned"
       color: zone.center.textMuted
       font.family: zone.center.host.theme.textFontFamily
-      font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.px(12))
-      font.pixelSize: zone.center.host.theme.px(12)
+      font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.callout)
+      font.pixelSize: zone.center.host.theme.size.callout
     }
   }
 }

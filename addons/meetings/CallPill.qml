@@ -106,16 +106,17 @@ Item {
           Behavior on rotation { MotionAnimation { theme: pill.theme; pace: "morph" } }
         }
       }
-      Text {
+      RollingText {
+        theme: pill.theme
         anchors.verticalCenter: parent.verticalCenter
         text: pill.meetings.timeText(pill.meetings.elapsed)
         color: pill.meetings.ended ? pill.endInk : pill.ink
         Behavior on color { MotionColorAnimation { theme: pill.theme } }
         font.family: pill.theme.textFontFamily
-        font.pixelSize: pill.theme.px(13)
+        font.pixelSize: pill.theme.size.body
         font.weight: Font.DemiBold
         font.features: { "tnum": 1, "case": 1 }
-        font.letterSpacing: -0.2
+        font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
       }
     }
 
@@ -144,11 +145,11 @@ Item {
         width: Math.min(implicitWidth, pill.width - 150 - (appIcon.visible ? appIcon.width + parent.spacing : 0))
         elide: Text.ElideRight
         text: pill.meetings.callName
-        color: "#e2e6de"
+        color: pill.theme.text
         font.family: pill.theme.textFontFamily
-        font.pixelSize: pill.theme.px(14)
+        font.pixelSize: pill.theme.size.body
         font.weight: Font.DemiBold
-        font.letterSpacing: -0.3
+        font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
       }
     }
 
@@ -211,9 +212,9 @@ Item {
       }
       transform: Translate { x: 10 * (1 - endedLabel.shown) }
       font.family: pill.theme.textFontFamily
-      font.pixelSize: pill.theme.px(13)
+      font.pixelSize: pill.theme.size.body
       font.weight: Font.DemiBold
-      font.letterSpacing: -0.2
+      font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
       opacity: shown
     }
   }

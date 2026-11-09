@@ -45,11 +45,11 @@ Item {
     text: pill.layout.name
     textFormat: Text.PlainText
     elide: Text.ElideRight
-    color: "#ffffff"
+    color: pill.host.theme.text
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: pill.host.theme.px(13)
+    font.pixelSize: pill.host.theme.size.body
     font.weight: Font.Medium
-    font.letterSpacing: -0.2
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
   }
 
   // Trailing: a chip per layout; the capsule keeps its place while hidden,
@@ -88,8 +88,8 @@ Item {
           color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: pill.host.theme.textFontFamily
-          font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(11))
-          font.pixelSize: pill.host.theme.px(11)
+          font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.subheadline)
+          font.pixelSize: pill.host.theme.size.subheadline
           font.weight: Font.Bold
         }
       }

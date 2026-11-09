@@ -25,7 +25,7 @@ Item {
     horizontalAlignment: Text.AlignHCenter
     text: volume.icon !== "" ? volume.icon
       : volume.effectiveLevel <= 0 ? "󰖁" : volume.effectiveLevel < 0.34 ? "󰕿" : volume.effectiveLevel < 0.67 ? "󰖀" : "󰕾"
-    color: "#ffffff"
+    color: volume.theme.text
     font.family: volume.theme.fontFamily
     font.pixelSize: volume.theme.px(21)
   }
@@ -48,18 +48,18 @@ Item {
     }
   }
 
-  Text {
+  RollingText {
+    theme: volume.theme
     id: percentage
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
     width: 36
-    horizontalAlignment: Text.AlignRight
     text: Math.round(volume.effectiveLevel * 100) + "%"
-    color: "#ffffff"
+    color: volume.theme.text
     font.family: volume.theme.textFontFamily
-    font.letterSpacing: volume.theme.tracking(volume.theme.textFontFamily, volume.theme.px(12))
-    font.pixelSize: volume.theme.px(12)
+    font.letterSpacing: volume.theme.tracking(volume.theme.textFontFamily, volume.theme.size.callout)
+    font.pixelSize: volume.theme.size.callout
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }
   }

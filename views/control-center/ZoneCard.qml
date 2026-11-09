@@ -107,8 +107,8 @@ ColumnLayout {
       text: zone.info ? zone.info.title : zone.zoneId
       color: zone.center.text
       font.family: zone.center.host.theme.textFontFamily
-      font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.px(12))
-      font.pixelSize: zone.center.host.theme.px(12)
+      font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.callout)
+      font.pixelSize: zone.center.host.theme.size.callout
       font.weight: Font.DemiBold
     }
     HoverHandler { cursorShape: dragger.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
@@ -183,8 +183,8 @@ ColumnLayout {
           : zone.addonRoot && !zone.bodyComponent ? "Nothing to show" : "Loading…"
         color: zone.addonOff || zone.tooNarrow ? zone.center.text : zone.center.textMuted
         font.family: zone.center.host.theme.textFontFamily
-        font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.px(12))
-        font.pixelSize: zone.center.host.theme.px(12)
+        font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.callout)
+        font.pixelSize: zone.center.host.theme.size.callout
         font.weight: zone.addonOff || zone.tooNarrow ? Font.DemiBold : Font.Normal
       }
       Text {
@@ -194,8 +194,8 @@ ColumnLayout {
         text: zone.addonOff ? "Turn On" : "Use fewer columns"
         color: zone.addonOff ? zone.center.accent : zone.center.textMuted
         font.family: zone.center.host.theme.textFontFamily
-        font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.px(11))
-        font.pixelSize: zone.center.host.theme.px(11)
+        font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.subheadline)
+        font.pixelSize: zone.center.host.theme.size.subheadline
         MouseArea {
           anchors.fill: parent
           anchors.margins: -4

@@ -108,6 +108,7 @@ Item {
         required property var modelData
         required property int index
         readonly property bool isSelected: index === power.currentIndex
+        StaggerIn { step: slot.index }
         width: power.tileWidth
         height: power.tileHeight
 
@@ -140,8 +141,8 @@ Item {
               opacity: slot.isSelected ? 1 : 0.8
               Behavior on opacity { MotionAnimation { theme: power.host.theme; pace: "fade"; curve: "fade" } }
               font.family: power.host.theme.textFontFamily
-              font.letterSpacing: power.host.theme.tracking(power.host.theme.textFontFamily, power.host.theme.px(13))
-              font.pixelSize: power.host.theme.px(13)
+              font.letterSpacing: power.host.theme.tracking(power.host.theme.textFontFamily, power.host.theme.size.body)
+              font.pixelSize: power.host.theme.size.body
               font.weight: Font.Medium
             }
           }

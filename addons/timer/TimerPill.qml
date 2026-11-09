@@ -31,7 +31,8 @@ Item {
     track: Qt.rgba(1, 159 / 255, 10 / 255, 0.25)
     thickness: 3
   }
-  Text {
+  RollingText {
+    theme: pill.host.theme
     opacity: reveal.trailingIn
     PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
@@ -40,9 +41,9 @@ Item {
     text: pill.timer.timeText(pill.timer.remaining)
     color: pill.ink
     font.family: pill.host.theme.textFontFamily
-    font.pixelSize: pill.host.theme.px(13)
+    font.pixelSize: pill.host.theme.size.body
     font.weight: Font.Medium
     font.features: { "tnum": 1, "case": 1 }
-    font.letterSpacing: -0.2
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
   }
 }

@@ -113,9 +113,9 @@ Rectangle {
 
     Text {
       text: satellite.track !== "" ? (satellite.artist ? satellite.track + " · " + satellite.artist : satellite.track) : "Now Playing"
-      color: Qt.rgba(0.92, 0.94, 0.90, 0.95)
+      color: satellite.host.theme.withAlpha(satellite.host.theme.text, 0.95)
       font.family: satellite.host.theme.textFontFamily
-      font.pixelSize: satellite.host.theme.px(11)
+      font.pixelSize: satellite.host.theme.size.subheadline
       font.weight: Font.Medium
       elide: Text.ElideRight
       width: Math.min(implicitWidth, 140)

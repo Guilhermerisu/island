@@ -209,8 +209,8 @@ Item {
         wrapMode: Text.Wrap
         color: answer.error ? answer.host.theme.urgent : "#ffffff"
         font.family: answer.host.theme.textFontFamily
-        font.pixelSize: answer.host.theme.px(22)
-        font.letterSpacing: -0.3
+        font.pixelSize: answer.host.theme.size.title1
+        font.letterSpacing: answer.host.theme.tracking(answer.host.theme.textFontFamily, answer.host.theme.size.title1)
         lineHeight: 1.1
       }
     }
@@ -258,10 +258,10 @@ Item {
           id: copyLabel
           anchors.centerIn: parent
           text: "Copy"
-          color: "#ffffff"
+          color: answer.host.theme.text
           font.family: answer.host.theme.textFontFamily
-          font.letterSpacing: answer.host.theme.tracking(answer.host.theme.textFontFamily, answer.host.theme.px(12))
-          font.pixelSize: answer.host.theme.px(12)
+          font.letterSpacing: answer.host.theme.tracking(answer.host.theme.textFontFamily, answer.host.theme.size.callout)
+          font.pixelSize: answer.host.theme.size.callout
           font.weight: Font.Medium
         }
         MouseArea {

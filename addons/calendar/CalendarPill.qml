@@ -79,12 +79,12 @@ Item {
           anchors.centerIn: parent
           anchors.verticalCenterOffset: 0.5
           text: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][pill.day.getMonth()]
-          color: "#ffffff"
+          color: pill.host.theme.text
           font.family: pill.host.theme.textFontFamily
           font.features: { "tnum": 1 }
           font.pixelSize: pill.host.theme.px(8)
           font.weight: Font.Bold
-          font.letterSpacing: 0.2
+          font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(8))
         }
       }
       Text {
@@ -95,8 +95,8 @@ Item {
         text: pill.day.getDate()
         color: "#2c2c2e"
         font.family: pill.host.theme.textFontFamily
-        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(17))
-        font.pixelSize: pill.host.theme.px(17)
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.title2)
+        font.pixelSize: pill.host.theme.size.title2
         font.weight: Font.Normal
         font.features: { "tnum": 1 }
       }
@@ -119,12 +119,12 @@ Item {
       text: pill.event ? pill.event.title : ""
       textFormat: Text.PlainText
       elide: Text.ElideRight
-      color: "#ffffff"
+      color: pill.host.theme.text
       font.family: pill.host.theme.textFontFamily
       font.features: { "tnum": 1 }
-      font.pixelSize: pill.host.theme.px(13)
+      font.pixelSize: pill.host.theme.size.body
       font.weight: Font.DemiBold
-      font.letterSpacing: -0.3
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
     }
     Text {
       width: parent.width
@@ -133,8 +133,8 @@ Item {
       // Apple's secondary label.
       color: Qt.rgba(235 / 255, 235 / 255, 245 / 255, 0.6)
       font.family: pill.host.theme.textFontFamily
-      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(12))
-      font.pixelSize: pill.host.theme.px(12)
+      font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.callout)
+      font.pixelSize: pill.host.theme.size.callout
       font.features: { "tnum": 1 }
     }
   }
@@ -148,10 +148,10 @@ Item {
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
     text: pill.calendar.reminderMs / 60000 + " min"
-    color: "#ffffff"
+    color: pill.host.theme.text
     font.family: pill.host.theme.textFontFamily
-    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(15))
-    font.pixelSize: pill.host.theme.px(15)
+    font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.title3)
+    font.pixelSize: pill.host.theme.size.title3
     font.weight: Font.DemiBold
     font.features: { "tnum": 1 }
   }

@@ -80,8 +80,8 @@ Item {
               text: "2"
               color: preview.colorfulActivities ? "#000000" : preview.view.accentInk
               font.family: preview.view.host.theme.textFontFamily
-              font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(11))
-              font.pixelSize: preview.view.host.theme.px(11)
+              font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.subheadline)
+              font.pixelSize: preview.view.host.theme.size.subheadline
               font.weight: Font.Bold
             }
           }
@@ -132,7 +132,7 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       visible: !!preview.sample.label
       text: preview.sample.label || ""
-      color: "#ffffff"
+      color: preview.view.host.theme.text
       font.family: preview.view.host.theme.textFontFamily
       font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, clock ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10))
       font.pixelSize: clock ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10)
@@ -146,8 +146,8 @@ Item {
       text: preview.sample.status || ""
       color: preview.sample.statusColor || "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
-      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(10))
-      font.pixelSize: preview.view.host.theme.px(10)
+      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote)
+      font.pixelSize: preview.view.host.theme.size.footnote
       font.weight: Font.DemiBold
     }
     Column {
@@ -159,10 +159,10 @@ Item {
         text: "Connected"
         color: "#888888"
         font.family: preview.view.host.theme.textFontFamily
-        font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(10))
-        font.pixelSize: preview.view.host.theme.px(10)
+        font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote)
+        font.pixelSize: preview.view.host.theme.size.footnote
       }
-      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(12)); font.pixelSize: preview.view.host.theme.px(12) }
+      Text { text: "Headphones"; color: preview.view.host.theme.text; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.callout); font.pixelSize: preview.view.host.theme.size.callout }
     }
     Rectangle {
       anchors.right: parent.right
@@ -173,16 +173,16 @@ Item {
       color: "transparent"
       border.width: 2
       border.color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent
-      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(10)); font.pixelSize: preview.view.host.theme.px(10) }
+      Text { anchors.centerIn: parent; text: "72"; color: preview.colorfulActivities ? preview.view.host.theme.system.green : preview.accent; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote); font.pixelSize: preview.view.host.theme.size.footnote }
     }
     Text {
       anchors.centerIn: parent
       visible: preview.kind === "media"
       text: "12:34"
-      color: "#ffffff"
+      color: preview.view.host.theme.text
       font.family: preview.view.host.theme.textFontFamily
-      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.px(12))
-      font.pixelSize: preview.view.host.theme.px(12)
+      font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.callout)
+      font.pixelSize: preview.view.host.theme.size.callout
       font.weight: Font.DemiBold
     }
     Row {

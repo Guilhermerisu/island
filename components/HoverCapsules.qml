@@ -37,7 +37,7 @@ Item {
   readonly property int glyphSize: theme.px(18)
   readonly property int traySize: 16
   readonly property int textSize: theme.px(13)
-  readonly property color ink: "#e2e6de"
+  readonly property color ink: capsules.host.theme.text
   readonly property color faint: Qt.rgba(0.89, 0.90, 0.87, 0.4)
 
   Controls { id: controls; host: capsules.host }

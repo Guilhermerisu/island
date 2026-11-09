@@ -180,7 +180,7 @@ Item {
         font.pixelSize: view.host.theme.px(46)
         font.weight: Font.Light
         font.features: { "tnum": 1, "case": 1 }
-        font.letterSpacing: -1
+        font.letterSpacing: view.host.theme.tracking(view.host.theme.textFontFamily, view.host.theme.px(46))
         transform: Scale {
           origin.y: height / 2
           yScale: Math.max(0, 1 - Math.abs(shift) * 0.6)

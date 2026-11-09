@@ -39,8 +39,8 @@ Rectangle {
     selectionColor: field.host.theme.accentFill("ring")
     selectedTextColor: field.host.theme.text
     font.family: field.host.theme.textFontFamily
-    font.letterSpacing: field.host.theme.tracking(field.host.theme.textFontFamily, field.host.theme.px(14))
-    font.pixelSize: field.host.theme.px(14)
+    font.letterSpacing: field.host.theme.tracking(field.host.theme.textFontFamily, field.host.theme.size.body)
+    font.pixelSize: field.host.theme.size.body
     clip: true
     Keys.onPressed: function(event) { field.keyPressed(event) }
     // Starts a hair right of the caret so the caret doesn't sit on the

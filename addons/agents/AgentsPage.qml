@@ -198,7 +198,7 @@ ColumnLayout {
         font.pixelSize: page.view.detailTitleFontSize
         font.weight: Font.Bold
         font.variableAxes: page.view.titleFontAxes
-        font.letterSpacing: -0.3
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailTitleFontSize)
       }
       Text {
         width: parent.width
@@ -402,7 +402,7 @@ ColumnLayout {
             text: page.record ? page.tokens(page.average) : "—"
             color: page.view.text
             font.family: page.view.host.theme.textFontFamily
-            font.letterSpacing: -0.8
+            font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(32))
             font.pixelSize: page.view.host.theme.px(32)
             // Regular, set on Adwaita Sans's weight axis.
             font.weight: Font.Bold
@@ -489,8 +489,8 @@ ColumnLayout {
                 text: grid.modelData === 0 ? "0" : page.scaleLabel(page.scaleTop * grid.modelData)
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(11))
-                font.pixelSize: page.view.host.theme.px(11)
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.subheadline)
+                font.pixelSize: page.view.host.theme.size.subheadline
                 font.features: { "tnum": 1 }
               }
             }
@@ -533,9 +533,9 @@ ColumnLayout {
                 text: page.dayName(day.modelData.date, day.today)
                 color: day.today ? page.view.text : page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(11))
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.subheadline)
                 font.features: { "tnum": 1 }
-                font.pixelSize: page.view.host.theme.px(11)
+                font.pixelSize: page.view.host.theme.size.subheadline
                 font.weight: day.today ? Font.DemiBold : Font.Normal
               }
               MouseArea {
@@ -574,17 +574,17 @@ ColumnLayout {
                     text: page.dayName(day.modelData.date, day.today, true)
                     color: page.view.textMuted
                     font.family: page.view.host.theme.textFontFamily
-                    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(10))
+                    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.footnote)
                     font.features: { "tnum": 1 }
-                    font.pixelSize: page.view.host.theme.px(10)
+                    font.pixelSize: page.view.host.theme.size.footnote
                   }
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: page.tokens(day.count)
                     color: page.view.text
                     font.family: page.view.host.theme.textFontFamily
-                    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(12))
-                    font.pixelSize: page.view.host.theme.px(12)
+                    font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.callout)
+                    font.pixelSize: page.view.host.theme.size.callout
                     font.weight: Font.Medium
                     font.features: { "tnum": 1 }
                   }

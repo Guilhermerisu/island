@@ -73,9 +73,9 @@ ColumnLayout {
           text: "Filter processes"
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
-          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.body)
           font.features: { "tnum": 1 }
-          font.pixelSize: page.view.host.theme.px(13)
+          font.pixelSize: page.view.host.theme.size.body
         }
         TextInput {
           id: filter
@@ -87,9 +87,9 @@ ColumnLayout {
           clip: true
           color: page.view.text
           font.family: page.view.host.theme.textFontFamily
-          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(13))
+          font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.body)
           font.features: { "tnum": 1 }
-          font.pixelSize: page.view.host.theme.px(13)
+          font.pixelSize: page.view.host.theme.size.body
           Keys.onEscapePressed: function(event) {
             if (text !== "") { text = ""; event.accepted = true }
             else event.accepted = false

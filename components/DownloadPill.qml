@@ -129,8 +129,8 @@ IslandPill {
         text: pill.tracker.items.length
         color: Qt.rgba(1, 1, 1, 0.5)
         font.family: pill.host.theme.textFontFamily
-        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(13))
-        font.pixelSize: pill.host.theme.px(13)
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
+        font.pixelSize: pill.host.theme.size.body
         font.weight: Font.DemiBold
         font.features: { "tnum": 1 }
       }
@@ -141,11 +141,11 @@ IslandPill {
           : pill.tracker.speed > 0 ? pill.formatBytes(pill.tracker.speed) + "/s"
           : pill.formatBytes(pill.tracker.bytes)
         textFormat: Text.PlainText
-        color: "#ffffff"
+        color: pill.host.theme.text
         font.family: pill.host.theme.textFontFamily
-        font.pixelSize: pill.host.theme.px(13)
+        font.pixelSize: pill.host.theme.size.body
         font.weight: Font.DemiBold
-        font.letterSpacing: -0.2
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
         font.features: { "tnum": 1 }
       }
     }
@@ -186,7 +186,7 @@ IslandPill {
         anchors.centerIn: parent
         visible: pill.packageMode
         text: "󰏗"
-        color: "#ffffff"
+        color: pill.host.theme.text
         font.family: pill.host.theme.fontFamily
         font.pixelSize: pill.host.theme.px(22)
       }
@@ -206,12 +206,12 @@ IslandPill {
         text: pill.packageMode ? pill.packages.finishedTitle : pill.tracker.finishedName
         textFormat: Text.PlainText
         elide: Text.ElideMiddle
-        color: "#ffffff"
+        color: pill.host.theme.text
         font.family: pill.host.theme.textFontFamily
         font.features: { "tnum": 1 }
-        font.pixelSize: pill.host.theme.px(15)
+        font.pixelSize: pill.host.theme.size.title3
         font.weight: Font.DemiBold
-        font.letterSpacing: -0.2
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.title3)
       }
       Text {
         width: parent.width
@@ -222,9 +222,9 @@ IslandPill {
         elide: Text.ElideRight
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: pill.host.theme.textFontFamily
-        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.px(12))
+        font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.callout)
         font.features: { "tnum": 1 }
-        font.pixelSize: pill.host.theme.px(12)
+        font.pixelSize: pill.host.theme.size.callout
       }
     }
     // Outlined, its tick drawn in once it's there; the whole pill opens the

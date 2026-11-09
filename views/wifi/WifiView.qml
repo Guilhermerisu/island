@@ -253,8 +253,8 @@ ColumnLayout {
       text: "Wi-Fi"
       color: wf.text
       font.family: wf.host.theme.textFontFamily
-      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(17))
-      font.pixelSize: wf.host.theme.px(17)
+      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title2)
+      font.pixelSize: wf.host.theme.size.title2
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
@@ -376,8 +376,8 @@ ColumnLayout {
               text: row.modelData.header || ""
               color: wf.textMuted
               font.family: wf.host.theme.textFontFamily
-              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(13))
-              font.pixelSize: wf.host.theme.px(13)
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.body)
+              font.pixelSize: wf.host.theme.size.body
               font.weight: Font.DemiBold
             }
             Row {
@@ -457,8 +457,8 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: wf.text
                 font.family: wf.host.theme.textFontFamily
-                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
-                font.pixelSize: wf.host.theme.px(15)
+                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title3)
+                font.pixelSize: wf.host.theme.size.title3
               }
               Text {
                 width: parent.width
@@ -470,8 +470,8 @@ ColumnLayout {
                 text: status
                 color: wf.textMuted
                 font.family: wf.host.theme.textFontFamily
-                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
-                font.pixelSize: wf.host.theme.px(12)
+                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
+                font.pixelSize: wf.host.theme.size.callout
               }
             }
             MouseArea {
@@ -508,8 +508,8 @@ ColumnLayout {
                 selectionColor: wf.host.theme.accentFill("ring")
                 selectedTextColor: wf.text
                 font.family: wf.host.theme.textFontFamily
-                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
-                font.pixelSize: wf.host.theme.px(15)
+                font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title3)
+                font.pixelSize: wf.host.theme.size.title3
                 clip: true
                 function sync() { if (row.askingPassword) { text = wf.passwordText; forceActiveFocus() } }
                 Component.onCompleted: sync()
@@ -617,8 +617,8 @@ ColumnLayout {
               elide: Text.ElideRight
               color: wf.text
               font.family: wf.host.theme.textFontFamily
-              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
-              font.pixelSize: wf.host.theme.px(15)
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title3)
+              font.pixelSize: wf.host.theme.size.title3
             }
             Text {
               width: parent.width
@@ -628,8 +628,8 @@ ColumnLayout {
               elide: Text.ElideRight
               color: wf.host.theme.urgent
               font.family: wf.host.theme.textFontFamily
-              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
-              font.pixelSize: wf.host.theme.px(12)
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
+              font.pixelSize: wf.host.theme.size.callout
             }
           }
           Text {
@@ -640,8 +640,8 @@ ColumnLayout {
             text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
             color: wf.textMuted
             font.family: wf.host.theme.textFontFamily
-            font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(13))
-            font.pixelSize: wf.host.theme.px(13)
+            font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.body)
+            font.pixelSize: wf.host.theme.size.body
           }
           MouseArea {
             id: speedMouse
@@ -690,8 +690,8 @@ ColumnLayout {
                   text: dial.modelData.label
                   color: wf.textMuted
                   font.family: wf.host.theme.textFontFamily
-                  font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
-                  font.pixelSize: wf.host.theme.px(12)
+                  font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
+                  font.pixelSize: wf.host.theme.size.callout
                 }
               }
             }
@@ -721,8 +721,8 @@ ColumnLayout {
           text: "Wi-Fi Settings…"
           color: wf.text
           font.family: wf.host.theme.textFontFamily
-          font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
-          font.pixelSize: wf.host.theme.px(15)
+          font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title3)
+          font.pixelSize: wf.host.theme.size.title3
         }
         MouseArea {
           id: settingsMouse
