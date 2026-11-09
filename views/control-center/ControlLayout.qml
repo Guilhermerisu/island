@@ -54,9 +54,8 @@ ColumnLayout {
   }
   // The room the Sound and Microphone pickers add below their sliders,
   // eased (after the first layout) so the card and the ones under it follow
-  // the rows in and out instead of snapping. The Microphone's also holds its
-  // level meter (10).
-  readonly property real outputsRoom: center.outputsOpen && !center.editMode ? controls.outputs.length * 40 : 0
+  // the rows in and out instead of snapping. Both also hold a level meter (10).
+  readonly property real outputsRoom: center.outputsOpen && !center.editMode ? controls.outputs.length * 40 + 10 : 0
   readonly property real inputsRoom: center.inputsOpen && !center.editMode ? controls.inputs.length * 40 + 10 : 0
   property real outputsExtra: outputsRoom
   property real inputsExtra: inputsRoom

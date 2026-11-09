@@ -51,28 +51,12 @@ CcSection {
     for (var i = 0; i < inputs.length; i++) if (String(inputs[i].name || inputs[i].id) === name) return inputs[i]
     return null
   }
-  // Live input level, as Omarchy's audio panel. Only listens to the mic while
-  // the picker is open.
-  PwNodePeakMonitor {
-    id: peakMonitor
+  // Live input level. Only listens to the mic while the picker is open.
+  PeakBar {
+    center: card.center
     node: card.controls.microphoneSource
-    enabled: card.inputsShown && !!card.controls.microphoneSource
-  }
-  Rectangle {
-    Layout.fillWidth: true
-    Layout.preferredHeight: 4
-    radius: 2
-    color: card.center.host.theme.fill("strong")
-    opacity: card.inputsShown ? (card.controls.microphoneMuted ? 0.35 : 1) : 0
-    visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: card.center.host.theme; pace: card.inputsShown ? "fade" : "exit"; curve: card.inputsShown ? "fade" : "exit" } }
-    Rectangle {
-      height: parent.height
-      radius: parent.radius
-      width: parent.width * Math.max(0, Math.min(1, peakMonitor.peak))
-      color: "white"
-      Behavior on width { NumberAnimation { duration: 70 } }
-    }
+    shown: card.inputsShown
+    muted: card.controls.microphoneMuted
   }
   ListView {
     Layout.fillWidth: true
