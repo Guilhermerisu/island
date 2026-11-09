@@ -70,8 +70,9 @@ Rectangle {
     anchors.top: parent.top
     anchors.topMargin: 9
     width: 22; height: 22; radius: 11
-    color: chevronMouse.containsMouse ? center.wellHover : center.well
-    Tooltip { theme: center.host.theme; text: sec.chevronOpen ? sec.chevronHideLabel : sec.chevronLabel }
+    color: chevronTip.hovered || sec.chevronOpen ? center.well : "transparent"
+    Behavior on color { MotionColorAnimation { theme: center.host.theme } }
+    Tooltip { id: chevronTip; theme: center.host.theme; text: sec.chevronOpen ? sec.chevronHideLabel : sec.chevronLabel }
     Chevron {
       anchors.centerIn: parent
       theme: center.host.theme
@@ -90,9 +91,9 @@ Rectangle {
     anchors.top: parent.top
     anchors.topMargin: 9
     width: 22; height: 22; radius: 11
-    color: sec.toggleOn ? center.host.theme.system.red : toggleMouse.containsMouse ? center.wellHover : center.well
+    color: sec.toggleOn ? center.host.theme.system.red : toggleTip.hovered ? center.well : "transparent"
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
-    Tooltip { theme: center.host.theme; text: sec.toggleTip }
+    Tooltip { id: toggleTip; theme: center.host.theme; text: sec.toggleTip }
     Text {
       anchors.centerIn: parent
       text: sec.toggleIcon

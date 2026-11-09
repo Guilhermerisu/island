@@ -13,6 +13,10 @@ Item {
   property var theme: null
   // Wraps longer text at this width (0: one line, however long).
   property int maxWidth: 0
+  // Whether the pointer is on the button. A MouseArea's containsMouse goes
+  // stale beside this tooltip's HoverHandler, so a button that shows its
+  // hover should follow this instead.
+  readonly property bool hovered: hover.hovered
   readonly property Item overlay: tip.Window.contentItem
   anchors.fill: parent
   // Above the button's own MouseArea, which would otherwise take the hover;

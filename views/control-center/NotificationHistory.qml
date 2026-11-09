@@ -74,9 +74,7 @@ ColumnLayout {
       implicitHeight: 22
       radius: height / 2
       clip: true
-      color: clearMouse.containsMouse ? history.center.wellHover : history.center.card
-      border.width: 1
-      border.color: history.center.edge
+      color: clearMouse.containsMouse ? history.center.wellHover : "transparent"
       Behavior on color { MotionColorAnimation { theme: history.center.host.theme } }
       Behavior on implicitWidth { MotionAnimation { theme: history.center.host.theme; pace: "quick" } }
       Text {

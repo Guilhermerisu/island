@@ -180,12 +180,12 @@ ColumnLayout {
       Layout.preferredHeight: 28
       radius: 14
       clip: true
-      color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
+      color: editTip.hovered || cc.editMode ? cc.well : "transparent"
       // The pencil widens into Done, as Clear All does, cross-fading the two;
       // not while opening, when edit mode is reset.
       Behavior on Layout.preferredWidth { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "standard" } }
       Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
-      Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit" }
+      Tooltip { id: editTip; theme: cc.host.theme; text: cc.editMode ? "" : "Edit" }
       Text {
         anchors.centerIn: parent
         opacity: cc.editMode ? 0 : 1
@@ -222,8 +222,9 @@ ColumnLayout {
       Layout.preferredWidth: 28
       Layout.preferredHeight: 28
       radius: 14
-      color: settingsMouse.containsMouse ? cc.well : cc.card
-      Tooltip { theme: cc.host.theme; text: "Island Settings" }
+      color: settingsTip.hovered ? cc.well : "transparent"
+      Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
+      Tooltip { id: settingsTip; theme: cc.host.theme; text: "Island Settings" }
       Text {
         anchors.centerIn: parent
         text: "󰒓"
