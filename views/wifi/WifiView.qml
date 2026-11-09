@@ -63,6 +63,14 @@ ColumnLayout {
     return stops[stops.length - 1]
   }
 
+  // The most the network list may take: its usual 460, less on a screen too
+  // short for that and everything around it (the island's margin and padding,
+  // the header, the card's padding and footer, the Speed Test row and dials).
+  readonly property real listRoom: {
+    var speedRoom = !canSpeedTest ? 0 : 51 + (speed.error !== "" ? 12 : 0) + (speed.running || speed.done ? 128 : 0)
+    return Window.height > 0 ? Math.min(460, Math.max(120, Window.height - 197 - speedRoom)) : 460
+  }
+
   // Network being joined, so its connectionFailed can be reported.
   property var attempt: null
   property string failedName: ""
@@ -296,7 +304,7 @@ ColumnLayout {
           interval: wf.host.theme.motionDuration("morph")
           onTriggered: list.heightSettled = list.settleWanted
         }
-        property real frameHeight: Math.min(contentHeight, 460)
+        property real frameHeight: Math.min(contentHeight, wf.listRoom)
         Behavior on frameHeight { enabled: list.heightSettled; MotionAnimation { theme: wf.host.theme; pace: "standard" } }
         Layout.preferredHeight: frameHeight
         clip: true
