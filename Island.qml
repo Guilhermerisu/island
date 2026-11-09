@@ -38,6 +38,8 @@ Item {
   readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
   // The live-activity pills' height, and the resting clock's.
   readonly property real pillHeight: settings.notch ? 40 : 44
+  // Room the top bar mode keeps clear: the pill, and its gap from the edge.
+  readonly property real reservedTop: pillHeight * settings.pillScale + (settings.notch ? 0 : settings.topGap) + settings.barGap
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
 
   readonly property var nowPlaying: nowPlayingData
@@ -132,6 +134,21 @@ Item {
   // options out) the next time it's shown; both are cleared once taken.
   property string settingsPage: ""
   property string settingsAddon: ""
+  // Settings, open, lowered under a stand-in of the resting pill while its
+  // capsules are being arranged; the island itself is the Settings panel
+  // then, so the stand-in shows what it would look like.
+  property string previewKind: ""
+  readonly property bool previewing: previewKind !== "" && view === "settings"
+  function preview(kind, ms) {
+    previewKind = kind
+    previewTimer.interval = ms || 3000
+    previewTimer.restart()
+  }
+  function holdPreview(kind) {
+    previewKind = kind
+    previewTimer.stop()
+  }
+  Timer { id: previewTimer; onTriggered: root.previewKind = "" }
   function openSettings(page, addonId) {
     settingsPage = page || ""
     settingsAddon = addonId || ""
@@ -256,6 +273,7 @@ Item {
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   onViewChanged: {
+    if (view !== "settings") previewKind = ""
     if (view === "rest" && updateAnnouncePending) Qt.callLater(announceUpdate)
     surfaceContentReady = false
     if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
@@ -439,6 +457,8 @@ Item {
   // A tray app whose own menu the tray view opens straight to (see
   // TrayList), set by a right click on it in the hover capsules.
   property var trayMenuFor: null
+  // Capsules beside the pill, on hover or ("always") all the time.
+  readonly property bool capsuleMode: hoverMode === "capsules" || hoverMode === "always"
   readonly property string hoverMode: settings.hoverStyle ? settings.hoverStyle : settings.hoverCapsules ? "capsules" : settings.hoverExpand ? "expand" : "none"
 
   function toggleView(name) {
@@ -506,6 +526,25 @@ Item {
     onTriggered: root.outsideClickArmed = true
   }
   onSurfaceOpenChanged: if (!surfaceOpen) outsideClickArmed = false
+  // Top bar mode: an empty strip along the island's screen that tiled
+  // windows stop below.
+  Variants {
+    model: root.settings.reserveTop ? Quickshell.screens : []
+    delegate: Component {
+      PanelWindow {
+        required property var modelData
+        screen: modelData
+        visible: modelData.name === root.outputName
+        color: "transparent"
+        exclusiveZone: root.reservedTop
+        implicitHeight: 1
+        anchors { top: true; left: true; right: true }
+        mask: Region {}
+        WlrLayershell.namespace: "omarchy-island-reserve"
+        WlrLayershell.layer: WlrLayer.Background
+      }
+    }
+  }
   Variants {
     model: Quickshell.screens
     delegate: Component {
@@ -560,7 +599,9 @@ Item {
           onTriggered: window.edgeRevealed = false
         }
 
-        readonly property bool isEffectivelyHidden: (root.barHidden || autoHideCondition)
+        // The top bar mode keeps the island up despite the hide-bar toggle,
+        // though not when auto-hide asks.
+        readonly property bool isEffectivelyHidden: ((root.barHidden && !root.settings.reserveTop) || autoHideCondition)
           && (root.view === "rest" || hasScreensaver)
 
         // Hover at the top edge can bring a hidden island back.
@@ -600,7 +641,7 @@ Item {
           // Once revealed it reaches down past the island, so the gap above
           // the floating pill still counts as hovering and doesn't hide it.
           height: !window.revealArmed ? 0
-            : window.edgeRevealed ? (root.settings.notch ? 0 : 8) + island.height : 4
+            : window.edgeRevealed ? (root.settings.notch ? 0 : root.settings.topGap) + island.height : 4
           visible: height > 0
 
           HoverHandler {
@@ -645,13 +686,38 @@ Item {
         }
         IslandShadow { shape: island; offset.y: 14; blur: 48; spread: -4; color: Qt.rgba(0, 0, 0, 0.6) }
 
+        // The stand-in resting pill above lowered Settings (see previewKind).
+        Rectangle {
+          id: previewPill
+          visible: root.previewing
+          width: 100 + island.clockExtra
+          height: root.clockHeight
+          x: (parent.width - width) / 2
+          y: root.settings.notch ? 0 : root.settings.topGap
+          scale: root.settings.pillScale
+          transformOrigin: Item.Top
+          radius: height / 2
+          color: "#000000"
+          border.width: 1
+          border.color: root.theme.fill("raised")
+          Text {
+            anchors.centerIn: parent
+            text: root.clockText
+            color: root.theme.text
+            font.family: root.theme.textFontFamily
+            font.pixelSize: root.theme.px(14)
+            font.weight: Font.DemiBold
+          }
+        }
+
         // Hovering the resting island splits the bar's items into capsules
-        // beside it (see HoverCapsules).
+        // beside it (see HoverCapsules); while they're arranged in Settings,
+        // beside the stand-in.
         HoverCapsules {
           id: hoverCapsules
           host: root
-          island: island
-          shown: (root.hoverMode === "capsules") && island.capsulesShown && !window.islandHidden
+          island: root.previewing ? previewPill : island
+          shown: (island.capsulesShown || root.previewing) && !window.islandHidden
           anchors.fill: parent
           // Under the island, so the capsules can start tucked beneath it.
           z: -1
@@ -665,7 +731,7 @@ Item {
           x: (parent.width - width) / 2
           // On a spring like the shape, so hiding and showing again quickly
           // turns around smoothly.
-          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.settings.notch ? 0 : 8 }
+          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : (root.settings.notch ? 0 : root.settings.topGap) + (root.previewing ? previewPill.height * previewPill.scale + 10 : 0) }
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
@@ -698,7 +764,7 @@ Item {
           Timer {
             id: capsulesEnterTimer
             interval: root.theme.scaled(80)
-            onTriggered: if (root.hoverMode === "capsules" && root.resting) island.capsulesActive = true
+            onTriggered: if (root.capsuleMode && root.resting) island.capsulesActive = true
           }
           onCapsulesHoveredChanged: {
             if (capsulesHovered) {
@@ -724,7 +790,7 @@ Item {
           }
           readonly property bool hasNonMediaActivePill: pills.active !== null && pills.active !== mediaPillItem
           readonly property bool isGlanceExpanded: island.glanceActive && (root.hoverMode === "expand") && island.hasGlanceItems && root.restingFree && !root.downloadPill && !island.hasNonMediaActivePill
-          readonly property bool capsulesShown: island.capsulesActive && (root.hoverMode === "capsules") && (root.resting || root.volumePill)
+          readonly property bool capsulesShown: (island.capsulesActive || root.hoverMode === "always") && root.capsuleMode && (root.resting || root.volumePill)
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
           readonly property real clockExtra: Math.max(0, Math.ceil(clockLabel.advanceWidth || clockMetrics.advanceWidth) + 56 - 100)
@@ -763,9 +829,10 @@ Item {
             bounce: island.squished ? 0 : 0.35
             target: island.squished ? 100 : 0
           }
-          scale: root.settings.notch ? 1.0 : (1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003)
+          // At the pill-size setting; open views (and banners) shrink less.
+          scale: (root.surfaceOpen || root.notificationPill ? 1 - (1 - root.settings.pillScale) * 0.4 : root.settings.pillScale) * (root.settings.notch ? 1.0 : (1 + liftSpring.value * 0.00018 - pressSpring.value * 0.0003))
           // With the notch the island hangs from the top edge, so it scales from there.
-          transformOrigin: root.settings.notch ? Item.Top : Item.Center
+          transformOrigin: root.settings.notch || root.settings.pillScale < 1 ? Item.Top : Item.Center
           HoverHandler { id: clockHover; enabled: root.view === "rest" }
           HoverHandler {
             id: islandPointerHover
@@ -840,10 +907,19 @@ Item {
             id: islandTap
             anchors.fill: parent
             enabled: root.view === "rest" || root.view === "feedback"
+            acceptedButtons: root.settings.rightClick === "none" ? Qt.LeftButton : Qt.LeftButton | Qt.RightButton
             onPressed: squishHold.restart()
+            // Each button does what Settings → General picks for it: what the
+            // activity does, or a view.
             onClicked: function(mouse) {
+              var action = mouse.button === Qt.RightButton ? root.settings.rightClick : root.settings.leftClick
+              if (action === "none") return
               feedbackTimer.stop()
-              if (island.activePill) island.activePill.clicked(mouse)
+              if (action !== "activity" && root.surfaceOpenFor(action)) {
+                if (action === "menu") root.menuRoute = "root"
+                root.view = action
+              }
+              else if (island.activePill) island.activePill.clicked(mouse)
               else if (root.view === "rest" && root.setup.needsSetup) root.setup.pillClicked()
               else root.view = "controls"
             }
@@ -928,6 +1004,9 @@ Item {
     width: shape.width
     height: shape.height
     radius: shape.radius
+    // Scaled with the island (the pill-size setting), or it spreads past it.
+    scale: shape.scale
+    transformOrigin: shape.transformOrigin
     opacity: root.surfaceOpen ? 1 : 0
     visible: opacity > 0.01
     Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
@@ -941,7 +1020,8 @@ Item {
     property bool mirrored: false
     readonly property real r: 10
     visible: root.settings.notch && shape.y > -r
-    x: mirrored ? shape.x + shape.width - 0.5 : shape.x - r
+    // At the island's drawn edges (it's scaled from its top middle).
+    x: mirrored ? shape.x + shape.width * (1 + shape.scale) / 2 - 0.5 : shape.x + shape.width * (1 - shape.scale) / 2 - r
     y: shape.y
     width: r + 0.5
     height: r

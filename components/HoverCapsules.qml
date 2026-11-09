@@ -27,12 +27,16 @@ Item {
   readonly property var theme: host.theme
   readonly property var settings: host.settings
   readonly property real gap: 6
+  // The resting island is drawn at the pill-size setting; the capsules match.
+  readonly property real ps: host.settings.pillScale
   // The island's height, up to a live activity's, so they match the clock
   // and those pills and stay capsules beside the taller ones.
   readonly property real capsuleHeight: Math.min(island.height, host.pillHeight)
   readonly property bool notch: settings.notch
-  // Centred on the island, or hanging from the top edge with the notch.
-  readonly property real capsuleY: notch ? island.y : island.y + (island.height - capsuleHeight) / 2
+  // Level with the top of the island: beside a resting pill that's its
+  // middle, and they stay put when a live activity grows taller (a call
+  // expanding on hover) instead of sliding down with its middle.
+  readonly property real capsuleY: island.y
   // One size for every icon and one for every label, across all capsules.
   readonly property int glyphSize: theme.px(18)
   readonly property int traySize: 16
@@ -154,6 +158,8 @@ Item {
     }
 
     visible: present
+    // Out from the island past the ones before it: leftwards on the left.
+    x: side < 0 ? (parent ? parent.width : 0) - lead - width : lead
     width: row.implicitWidth + padding * 2
     height: capsules.capsuleHeight
     radius: height / 2
@@ -216,15 +222,19 @@ Item {
 
   // ---------- Left: next event, tray apps and updates, workspaces, now playing ----------
 
-  Row {
+  // Each row lays its capsules out itself (see Capsule's x), nearest the
+  // island first, so the order can change without reordering children.
+  Item {
     id: leftRow
-    layoutDirection: Qt.RightToLeft
-    spacing: capsules.gap
-    x: capsules.island.x - capsules.gap - width
+    width: capsules.rowWidth(leftRow)
+    height: capsules.capsuleHeight
+    x: capsules.island.x + capsules.island.width * (1 - capsules.ps) / 2 - capsules.gap * capsules.ps - width
     y: capsules.capsuleY
+    scale: capsules.ps
+    transformOrigin: Item.TopRight
     HoverHandler { id: leftHover }
 
-    // Laid right to left: the one by the island first.
+    // The one by the island first, until arrange() places them.
     Capsule {
       id: eventCapsule
       present: capsules.showEvent
@@ -405,11 +415,14 @@ Item {
 
   // ---------- Right: weather, notifications, connections and power ----------
 
-  Row {
+  Item {
     id: rightRow
-    spacing: capsules.gap
-    x: capsules.island.x + capsules.island.width + capsules.gap
+    width: capsules.rowWidth(rightRow)
+    height: capsules.capsuleHeight
+    x: capsules.island.x + capsules.island.width * (1 + capsules.ps) / 2 + capsules.gap * capsules.ps
     y: capsules.capsuleY
+    scale: capsules.ps
+    transformOrigin: Item.TopLeft
     HoverHandler { id: rightHover }
 
     Capsule {
@@ -441,6 +454,7 @@ Item {
     }
 
     Capsule {
+      id: systemCapsule
       present: capsules.showSystem
       side: 1
       before: [weatherCapsule, notificationCapsule]
@@ -483,5 +497,50 @@ Item {
         TapHandler { onTapped: capsules.host.view = "controls" }
       }
     }
+  }
+
+  // ---------- Order ----------
+
+  // Which side each capsule sits on and in what order, nearest the island
+  // first (Settings → General → Capsules): "left,…|right,…". Capsules missing
+  // from a saved order keep their default place.
+  readonly property string defaultOrder: "event,tray,workspaces,media|weather,notifications,system"
+  readonly property var capsuleByKey: ({
+    event: eventCapsule, tray: trayCapsule, workspaces: workspaceCapsule, media: mediaCapsule,
+    weather: weatherCapsule, notifications: notificationCapsule, system: systemCapsule
+  })
+  function orderSides(text) {
+    var sides = String(text || defaultOrder).split("|")
+    var left = (sides[0] || "").split(",").filter(function(k) { return k in capsuleByKey })
+    var right = (sides[1] || "").split(",").filter(function(k) { return k in capsuleByKey && left.indexOf(k) < 0 })
+    var fallback = defaultOrder.split("|")
+    fallback[0].split(",").forEach(function(k) { if (left.indexOf(k) < 0 && right.indexOf(k) < 0) left.push(k) })
+    fallback[1].split(",").forEach(function(k) { if (left.indexOf(k) < 0 && right.indexOf(k) < 0) right.push(k) })
+    return [left, right]
+  }
+  function rowWidth(row) {
+    var total = 0, kids = row.children
+    for (var i = 0; i < kids.length; i++)
+      if (kids[i].present && kids[i].visible) total += kids[i].width + (total > 0 ? capsules.gap : 0)
+    return total
+  }
+  function arrange() {
+    var sides = orderSides(settings.capsuleOrder)
+    var rows = [leftRow, rightRow]
+    for (var r = 0; r < 2; r++) {
+      var placed = []
+      sides[r].forEach(function(key) {
+        var capsule = capsuleByKey[key]
+        capsule.side = r === 0 ? -1 : 1
+        capsule.before = placed.slice()
+        if (capsule.parent !== rows[r]) capsule.parent = rows[r]
+        placed.push(capsule)
+      })
+    }
+  }
+  Component.onCompleted: arrange()
+  Connections {
+    target: capsules.settings
+    function onCapsuleOrderChanged() { capsules.arrange() }
   }
 }
