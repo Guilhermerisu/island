@@ -205,7 +205,7 @@ Item {
 
         // Between this column and the next one showing, over both a little.
         // The whole height is grabbable; the capsule sits mid-view, like the
-        // grip under the island.
+        // grip under the island, and is always shown.
         MouseArea {
           id: handle
           readonly property int next: board.nextShown(column.index)
@@ -254,9 +254,6 @@ Item {
             radius: 2.5
             color: handle.pressed || handle.containsMouse ? board.center.host.theme.fill("stronger") : board.center.host.theme.fill("strong")
             Behavior on color { MotionColorAnimation { theme: board.center.host.theme } }
-            // Only when it's being reached for, or while editing.
-            opacity: handle.pressed || handle.containsMouse || board.center.editMode ? 1 : 0
-            Behavior on opacity { MotionAnimation { theme: board.center.host.theme; pace: "fade"; curve: "fade" } }
           }
         }
 
