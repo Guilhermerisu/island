@@ -22,17 +22,19 @@ loader='require("default.hypr.require_optional").module("hypr.island-bindings")'
 prefix="omarchy-shell guilhermerisu.island"
 
 # id|label|island command|Omarchy default keys|stock commands that do the same|addon
+# Omarchy 4.5 binds most of these as Lua globals (hl.dsp.global("omarchy:…")),
+# older releases as omarchy-menu commands: both forms are listed.
 # An action that opens an addon's view is only bound while the addon is
 # enabled (see `addons`).
 catalog=(
-  'menu|Omarchy Menu|show menu|SUPER + SPACE|omarchy-menu toggle;omarchy-menu toggle root;omarchy-menu'
-  'apps|App Launcher|apps|SUPER + ALT + SPACE|omarchy-menu toggle apps'
+  'menu|Omarchy Menu|show menu|SUPER + SPACE|omarchy-menu toggle;omarchy-menu toggle root;omarchy-menu;hl.dsp.global("omarchy:menu.root")'
+  'apps|App Launcher|apps|SUPER + ALT + SPACE|omarchy-menu toggle apps;omarchy-shell omarchy.dock apps'
   'keybinds|Keybindings|show keybinds|SUPER + K|omarchy-menu-keybindings;omarchy-menu toggle learn.keybindings'
-  'emoji|Emoji|show emoji|SUPER + CTRL + E|omarchy-shell shell toggle omarchy.emojis;omarchy-menu toggle trigger.emoji'
-  'clipboard|Clipboard|show clipboard|SUPER + CTRL + V|omarchy-shell shell toggle omarchy.clipboard'
-  'themes|Themes|themes|SUPER + SHIFT + CTRL + SPACE|omarchy-menu toggle theme;omarchy-menu toggle style.theme'
-  'wallpapers|Wallpapers|wallpapers|SUPER + CTRL + SPACE|omarchy-menu toggle background;omarchy-menu toggle style.background'
-  'power|Power Menu|power|SUPER + ESCAPE|omarchy-menu toggle system'
+  'emoji|Emoji|show emoji|SUPER + CTRL + E|omarchy-shell shell toggle omarchy.emojis;omarchy-menu toggle trigger.emoji;hl.dsp.global("omarchy:panel.omarchy.emojis")'
+  'clipboard|Clipboard|show clipboard|SUPER + CTRL + V|omarchy-shell shell toggle omarchy.clipboard;hl.dsp.global("omarchy:panel.omarchy.clipboard")'
+  'themes|Themes|themes|SUPER + SHIFT + CTRL + SPACE|omarchy-menu toggle theme;omarchy-menu toggle style.theme;hl.dsp.global("omarchy:menu.theme")'
+  'wallpapers|Wallpapers|wallpapers|SUPER + CTRL + SPACE|omarchy-menu toggle background;omarchy-menu toggle style.background;hl.dsp.global("omarchy:menu.background")'
+  'power|Power Menu|power|SUPER + ESCAPE|omarchy-menu toggle system;hl.dsp.global("omarchy:menu.system")'
   'controls|Control Center|toggle||'
   'player|Now Playing|show player||'
   'settings|Island Settings|show settings||'
