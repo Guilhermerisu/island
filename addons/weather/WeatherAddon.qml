@@ -7,6 +7,11 @@ import ".."
 // WeatherView). The city is looked up once, its first match kept, then its
 // conditions are fetched every 30 minutes, again when the unit changes, and
 // when the view opens on a reading older than that.
+// With no city set, and "Detect my location" on (the default), the place
+// comes from the IP address instead: one request to a keyless service (a
+// second one is the fallback), which already gives coordinates, so there is
+// no Open-Meteo lookup. It is asked once per session (the answer is kept in
+// memory for an hour, never written to disk), not on every refresh.
 Addon {
   id: weatherAddon
   views: [{ name: "weather", width: 480, padding: 22, component: weatherView }]
@@ -16,12 +21,16 @@ Addon {
   }
 
   readonly property string city: String(addon.option("city") || "").trim()
+  readonly property bool detect: !!addon.option("autoLocate")
+  // The city is empty and the place comes from the IP address.
+  readonly property bool detecting: city === "" && detect
   readonly property bool fahrenheit: !!addon.option("fahrenheit")
   readonly property int refreshMs: 30 * 60 * 1000
 
-  // "missing" (no city), "loading", "ready", "unknown" (no such city),
-  // or "offline" (Open-Meteo couldn't be reached).
-  property string status: city === "" ? "missing" : "loading"
+  // "missing" (no city, and not detecting), "loading", "ready", "unknown"
+  // (no such city), or "offline" (Open-Meteo, or the services that find the
+  // user's place, couldn't be reached).
+  property string status: city === "" && !detect ? "missing" : "loading"
   property string place: ""
   property real latitude: 0
   property real longitude: 0
@@ -31,9 +40,14 @@ Addon {
   readonly property int hourCount: 5
   property real fetchedAt: 0
 
-  onCityChanged: locate()
+  // The options arrive one by one when Settings loads (the addon is switched
+  // on before its city is read), so locating waits for the dust to settle:
+  // with a city set, the empty one seen first must not send the IP address
+  // anywhere.
+  onCityChanged: Qt.callLater(locate)
+  onDetectChanged: Qt.callLater(locate)
   onFahrenheitChanged: fetch()
-  Component.onCompleted: locate()
+  Component.onCompleted: Qt.callLater(locate)
 
   Timer {
     interval: weatherAddon.refreshMs
@@ -71,13 +85,86 @@ Addon {
     located = false
     current = null
     hours = []
-    if (city === "") { status = "missing"; return }
+    if (city === "") {
+      if (!detect) { status = "missing"; return }
+      status = "loading"
+      if (ipPlace && Date.now() - ipAt < ipCacheMs) { useIpPlace(); return }
+      if (!asking) lookUp(geoA)
+      return
+    }
     status = "loading"
     if (geocode.running) return
     geocode.city = city
     geocode.command = ["curl", "-sf", "--max-time", "10", "-G", "https://geocoding-api.open-meteo.com/v1/search",
       "--data-urlencode", "name=" + city, "-d", "count=1", "-d", "format=json"]
     geocode.running = true
+  }
+
+  // The place found from the IP address, kept for the session. Two services,
+  // the second asked only when the first fails or sends nonsense; both answer
+  // { latitude, longitude, city, ... } (geojs.io with the numbers as strings).
+  readonly property int ipCacheMs: 60 * 60 * 1000
+  readonly property int maxReply: 65536
+  property var ipPlace: null
+  property real ipAt: 0
+  // A lookup is under way. Not Process.running, which only turns true once
+  // the process has started: a second locate() right after the first would
+  // ask again.
+  property bool asking: false
+
+  component GeoLookup: Process {
+    id: lookup
+    property string url: ""
+    property bool last: false
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: weatherAddon.lookedUp(lookup, weatherAddon.parsePlace(text))
+    }
+  }
+  GeoLookup { id: geoA; url: "https://get.geojs.io/v1/ip/geo.json" }
+  GeoLookup { id: geoB; url: "https://ipwho.is/"; last: true }
+
+  function lookUp(lookup) {
+    // Only https, and a bounded reply: the URL is fixed, nothing typed goes
+    // near the command.
+    asking = true
+    lookup.command = ["curl", "-sf", "--max-time", "10", "--proto", "=https", "--max-filesize", String(maxReply), lookup.url]
+    lookup.running = true
+  }
+  // null unless the reply holds a usable place.
+  function parsePlace(text) {
+    if (text === "" || text.length > maxReply) return null
+    try {
+      var reply = JSON.parse(text)
+      var lat = parseFloat(reply.latitude), lon = parseFloat(reply.longitude)
+      var name = String(reply.city || reply.region || reply.country || "").trim()
+      if (reply.success === false || name === "" || isNaN(lat) || isNaN(lon)
+          || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null
+      // Two decimals (about a kilometre) is all an IP address knows, and all
+      // Open-Meteo needs to be told.
+      return {
+        name: [name, String(reply.city ? reply.country_code || reply.country || "" : "")]
+          .filter(function(part) { return part !== "" }).join(", "),
+        latitude: Math.round(lat * 100) / 100,
+        longitude: Math.round(lon * 100) / 100
+      }
+    } catch (e) { return null }
+  }
+  function lookedUp(lookup, found) {
+    asking = false
+    // Answered after a city was typed in or detection switched off: the
+    // answer isn't wanted any more.
+    if (!detecting) return
+    if (found) { ipPlace = found; ipAt = Date.now(); useIpPlace(); return }
+    if (!lookup.last) lookUp(geoB)
+    else status = "offline"
+  }
+  function useIpPlace() {
+    place = ipPlace.name
+    latitude = ipPlace.latitude
+    longitude = ipPlace.longitude
+    located = true
+    fetch()
   }
 
   Process {
