@@ -32,11 +32,14 @@ Item {
   readonly property real islandWidth: fixedWidth > 0 ? fixedWidth : implicitWidth + 2 * padding
   readonly property real islandHeight: Math.min(implicitHeight + 2 * padding, maxHeight)
 
-  anchors.left: parent ? parent.left : undefined
-  anchors.right: parent ? parent.right : undefined
+  anchors.horizontalCenter: parent ? parent.horizontalCenter : undefined
   anchors.top: parent ? parent.top : undefined
-  anchors.margins: padding
+  anchors.topMargin: padding
   implicitWidth: view ? view.implicitWidth : 0
+  // Its final width from the first frame, centred in the island and cropped
+  // by it while it morphs, so the view lays out once, not on every frame of
+  // the spring. A view with no set width follows the island instead.
+  width: fixedWidth > 0 ? fixedWidth - 2 * padding : parent ? parent.width - 2 * padding : 0
   implicitHeight: view ? view.implicitHeight : 0
   // Never taller than the island can be: a view that wants more has to scroll.
   height: Math.min(implicitHeight, maxHeight - 2 * padding)
