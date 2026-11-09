@@ -48,7 +48,8 @@ fi
 step "Switching back to the stock bar"
 run omarchy bar use omarchy.bar
 
-# 2. The notification companion; removing a clone restores the original.
+# 2. The notification companion; removing a clone restores the original
+# (Omarchy's own service, which the companion was running inside itself).
 if [[ -e $plugins_dir/$companion_id ]]; then
   step "Removing the notification companion"
   run omarchy plugin remove "$companion_id" --yes

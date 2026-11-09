@@ -3,12 +3,13 @@ import Quickshell
 import Quickshell.Io
 import "../components/IconSource.js" as IconSource
 
-// The island's side of the guilhermerisu.notifications companion. The
-// companion writes the notifications on screen to island-feed.json and keeps
-// the rest as files in its history folder; this reads both, and dismisses and
-// invokes through `omarchy-shell notifications`. It also decides how a
-// notification looks: its icon, its title, and the brand tile Claude Code and
-// Codex get.
+// The island's side of the guilhermerisu.notifications companion, which wraps
+// Omarchy's own notification service. The companion writes the notifications
+// on screen to island-feed.json; the closed ones are in Omarchy's own
+// history.json. This reads both, and dismisses, invokes and presses buttons
+// through the companion (`omarchy-shell island-notifications`). It also
+// decides how a notification looks: its icon, its title, and the brand tile
+// Claude Code and Codex get.
 Item {
   id: client
   required property string home
@@ -16,15 +17,21 @@ Item {
   // read then.
   required property bool historyVisible
   readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
-  readonly property string historyDir: home + "/.local/state/omarchy/notifications/history/"
+  readonly property string historyPath: home + "/.local/state/omarchy/notifications/history.json"
+  readonly property int historyLimit: 30
 
   property var active: []
+  // The closed ones, from Omarchy's history.json.
+  property var closed: []
   // The one the notification pill shows; the island's own banners (setup,
   // updates) are set here too.
   property var last: null
-  property string lastKey: ""
-  // The newest ten, on-screen ones first, for the control center.
+  property double lastStamp: 0
+  // The newest ones, on-screen or closed, for the control center.
   property var history: []
+  // The same, an app's notifications together: [{ id, head, rest: [...] }],
+  // newest stack first. A notification with no app group stands alone.
+  property var stacks: []
   // A notification new to the feed.
   signal arrived(var row)
 
@@ -81,12 +88,14 @@ Item {
       var parsed = JSON.parse(raw || "{}")
       var rows = Array.isArray(parsed.active) ? parsed.active : []
       active = rows
-      if (historyVisible) refreshHistory()
+      rebuild()
       if (!rows.length) return
+      // A newer one than any announced, not the older one a dismissal
+      // uncovers; a replaced notification is newer again.
       var current = rows[0]
-      var currentKey = key(current)
-      if (currentKey === lastKey) return
-      lastKey = currentKey
+      var stamp = Number(current.timestamp || 0)
+      if (stamp <= lastStamp) return
+      lastStamp = stamp
       last = current
       arrived(current)
     } catch (e) {
@@ -94,45 +103,81 @@ Item {
     }
   }
 
-  Process {
-    id: historyProc
-    running: false
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: client.loadHistory(text)
-    }
+  FileView {
+    id: historyFile
+    path: client.historyPath
+    watchChanges: true
+    printErrors: false
+    onLoaded: client.loadHistory(text())
+    onFileChanged: reload()
   }
-  function refreshHistory() {
-    if (historyProc.running) return
-    historyProc.command = ["bash", "-c", "awk 1 \"$1\"/*.json 2>/dev/null || true", "--", historyDir]
-    historyProc.running = true
-  }
+  function refreshHistory() { historyFile.reload() }
+  // The entries as Omarchy stores them (docs/notifications.md; ts is seconds,
+  // the body is markup) in the shape of the feed's rows.
   function loadHistory(raw) {
     var rows = []
+    try {
+      var parsed = JSON.parse(raw || "[]")
+      for (var i = 0; Array.isArray(parsed) && i < parsed.length; i++) {
+        var e = parsed[i]
+        if (!e || typeof e !== "object" || !e.key) continue
+        rows.push({ key: String(e.key), originalId: e.originalId, timestamp: Math.round(Number(e.ts || e.closed_ts || 0) * 1000),
+          app: e.app, appIcon: e.appIcon, glyph: e.glyph, summary: e.summary, body: plain(e.body), urgency: e.urgency,
+          group: e.groupKey, actions: [], isActive: false })
+      }
+    } catch (err) {
+      console.warn("island: notification history parse failed", err)
+    }
+    closed = rows
+    rebuild()
+  }
+  // The body as one line of text: no markup, no entities.
+  function plain(markup) {
+    return String(markup || "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ").trim()
+  }
+  // On-screen ones first among equals, then by when they came; stacked by app.
+  function rebuild() {
+    var rows = []
+    var seen = {}
     for (var j = 0; j < active.length; j++) {
       var row = Object.assign({}, active[j])
       row.isActive = true
+      seen[key(row)] = true
       rows.push(row)
     }
-    var lines = String(raw || "").split("\n")
-    for (var i = 0; i < lines.length; i++) {
-      if (!lines[i].trim()) continue
-      try { rows.push(JSON.parse(lines[i])) } catch (e) { }
-    }
+    for (var c = 0; c < closed.length; c++) if (!seen[key(closed[c])]) rows.push(closed[c])
     rows.sort(function(a, b) { return Number(b.timestamp || 0) - Number(a.timestamp || 0) })
-    history = rows.slice(0, 10)
+    history = rows.slice(0, historyLimit)
+    var byGroup = {}
+    var out = []
+    for (var k = 0; k < history.length; k++) {
+      var group = String(history[k].group || "")
+      if (group && byGroup[group]) { byGroup[group].rest.push(history[k]); continue }
+      var stack = { id: group || key(history[k]), head: history[k], rest: [] }
+      if (group) byGroup[group] = stack
+      out.push(stack)
+    }
+    stacks = out
   }
 
+  // The companion's key; the feed of the previous companion had none.
   function key(row) {
-    return String(row.timestamp) + ":" + String(row.originalId)
+    return row.key ? String(row.key) : String(row.timestamp) + ":" + String(row.originalId)
   }
   // Runs one of the companion's per-notification methods (dismissKey,
-  // invokeKey) on `row`.
+  // invokeKey, forgetKey) on `row`.
   function command(method, row) {
-    proc.command = ["omarchy-shell", "notifications", method, key(row)]
+    proc.command = ["omarchy-shell", "island-notifications", method, key(row)]
     proc.running = true
   }
-  Process { id: proc; running: false; onExited: client.refreshHistory() }
+  Process { id: proc; running: false }
+  // Presses button `index` (from 0) of an on-screen notification.
+  function runAction(row, index) {
+    proc.command = ["omarchy-shell", "island-notifications", "runDeed", key(row), String(index + 1)]
+    proc.running = true
+  }
 
   // Takes the user to where a notification came from. One still on screen
   // (`live`) is invoked through the companion: its default action, or else the
@@ -149,20 +194,17 @@ Item {
 
   function clearAll() {
     history = []
-    proc.command = ["bash", "-c", "omarchy-shell notifications dismissAll; omarchy-shell notifications clear"]
+    stacks = []
+    proc.command = ["bash", "-c", "omarchy-shell notifications dismissAll; omarchy-shell island-notifications clearHistory"]
     proc.running = true
   }
-  // An on-screen one is dismissed through the companion; one already in the
-  // history is deleted with its images.
+  // An on-screen one is dismissed through the companion, a closed one is
+  // taken out of Omarchy's history.
   function dismiss(row) {
     var rowKey = key(row)
-    history = history.filter(function(r) { return key(r) !== rowKey })
-    if (row.isActive) {
-      proc.command = ["omarchy-shell", "notifications", "dismissKey", rowKey]
-    } else {
-      var stem = String(row.timestamp) + "-" + String(row.originalId)
-      proc.command = ["bash", "-c", "rm -f \"$1/$2.json\" \"$1/../images/$2\"-*", "--", historyDir, stem]
-    }
-    proc.running = true
+    active = active.filter(function(r) { return key(r) !== rowKey })
+    closed = closed.filter(function(r) { return key(r) !== rowKey })
+    rebuild()
+    command(row.isActive ? "dismissKey" : "forgetKey", row)
   }
 }

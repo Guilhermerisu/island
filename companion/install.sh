@@ -1,6 +1,7 @@
 #!/bin/bash
 # Installs (or updates) the guilhermerisu.notifications companion from this repo,
-# enables it in shell.json in place of the stock notification service, turns
+# enables it in shell.json in place of the stock notification service (the
+# companion loads Omarchy's own, so Omarchy 4.5 or later), turns
 # the stock OSD off so Omarchy's popups show on the island instead, points
 # the Omarchy menu's Theme, Background, System, and Apps entries at the island,
 # writes ~/.config/hypr/island-bindings.lua (see bindings.sh), and restarts the
@@ -37,6 +38,10 @@ finish() {
 trap finish EXIT
 # Anything else that fails: its error is in the log beside the status file.
 trap '[[ -n $fail_reason ]] || fail_reason="setup hit an unexpected error; details are in ${status//$HOME/\~}.log"' ERR
+
+# The companion runs Omarchy's own notification service, from the install.
+native="${OMARCHY_PATH:-/usr/share/omarchy}/shell/plugins/notifications/Service.qml"
+[[ -f $native ]] || fail "the island's notifications need Omarchy 4.5 or later; $native isn't there"
 
 mkdir -p "$plugins_dir"
 if [[ -L $target_dir || ( -e $target_dir && ! -d $target_dir ) ]]; then
