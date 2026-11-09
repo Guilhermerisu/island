@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../../components"
+import "../../services"
 import Quickshell.Io
 import Quickshell.Networking
 
@@ -11,7 +12,9 @@ import Quickshell.Networking
 // a password inline.
 // Keyboard: ↑/↓ (or Tab, j/k) to move, Enter/Space to toggle, connect or
 // disconnect, open Other Networks, or open settings; Delete/x to forget; Esc
-// to cancel a password or go back to the Control Center.
+// to cancel a password or go back to the Control Center. A Speed Test row
+// above the footer measures download and upload with Omarchy's own helper
+// (SpeedTest) while a connection is up.
 ColumnLayout {
   id: wf
   required property var host
@@ -41,6 +44,24 @@ ColumnLayout {
   }
   readonly property bool powered: !!device && Networking.wifiEnabled
   readonly property bool scanning: !!(device && device.scannerEnabled)
+
+  // Any live link will do (Ethernet included): the helper tests the default
+  // route, not this view's adapter.
+  readonly property bool online: {
+    var devs = Networking.devices ? Networking.devices.values : []
+    return devs.some(function(d) { return !!d && !!d.connected })
+  }
+  readonly property bool canSpeedTest: speed.available && online
+  onCanSpeedTestChanged: if (!canSpeedTest) speed.stop()
+  SpeedTest { id: speed; active: wf.active }
+  // The dials' full scale: the smallest stop that holds both readings, so
+  // they share one scale and it only grows during a run.
+  readonly property real speedScale: {
+    var top = Math.max(speed.download, speed.upload)
+    var stops = [100, 250, 500, 1000, 2500, 5000, 10000]
+    for (var i = 0; i < stops.length; i++) if (top <= stops[i] * 0.92) return stops[i]
+    return stops[stops.length - 1]
+  }
 
   // Network being joined, so its connectionFailed can be reported.
   property var attempt: null
@@ -109,6 +130,7 @@ ColumnLayout {
       if (displayRows[i].address) keys.push(displayRows[i].address)
       else if (displayRows[i].toggle) keys.push("other")
     }
+    if (canSpeedTest) keys.push("speed")
     keys.push("settings")
     return keys
   }
@@ -134,6 +156,7 @@ ColumnLayout {
     for (var i = 0; i < nets.length; i++) if (nets[i] && nets[i].name === name) return nets[i]
     return null
   }
+  function toggleSpeedTest() { if (speed.running) speed.stop(); else speed.start() }
   // Settings → Network.
   function openSettings() { host.openSettings("Network") }
   function activate(row) {
@@ -187,6 +210,7 @@ ColumnLayout {
       wf.usingKeys = true
     else if (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space) {
       if (wf.cursor === "other") wf.otherOpenChoice = !wf.otherOpen
+      else if (wf.cursor === "speed") wf.toggleSpeedTest()
       else if (wf.cursor === "settings") wf.openSettings()
       else if (row) wf.activate(row)
     } else if (k === Qt.Key_Delete || k === Qt.Key_X) {
@@ -548,6 +572,121 @@ ColumnLayout {
                 color: wf.textMuted
                 font.family: wf.iconFont
                 font.pixelSize: wf.host.theme.px(15)
+              }
+            }
+          }
+        }
+      }
+
+      // Speed Test: a row that starts and cancels the test, and under it the
+      // download and upload dials while it runs and once it is done.
+      ColumnLayout {
+        visible: wf.canSpeedTest
+        Layout.fillWidth: true
+        spacing: 0
+        Rectangle {
+          Layout.fillWidth: true
+          Layout.leftMargin: 10
+          Layout.rightMargin: 10
+          Layout.topMargin: 4
+          Layout.bottomMargin: 4
+          Layout.preferredHeight: 1
+          color: wf.host.theme.fill("subtle")
+        }
+        Rectangle {
+          Layout.fillWidth: true
+          Layout.preferredHeight: speed.error !== "" ? 54 : 42
+          radius: 8
+          color: speedMouse.pressed ? wf.well : speedMouse.containsMouse || (wf.usingKeys && wf.cursor === "speed") ? wf.tile : "transparent"
+          Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
+          Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 10
+            anchors.right: speedAction.left
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            Text {
+              width: parent.width
+              text: speed.phase === "down" ? "Measuring download…" : speed.phase === "up" ? "Measuring upload…" : "Speed Test"
+              elide: Text.ElideRight
+              color: wf.text
+              font.family: wf.host.theme.textFontFamily
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
+              font.pixelSize: wf.host.theme.px(15)
+            }
+            Text {
+              width: parent.width
+              visible: speed.error !== ""
+              text: speed.error
+              textFormat: Text.PlainText
+              elide: Text.ElideRight
+              color: wf.host.theme.urgent
+              font.family: wf.host.theme.textFontFamily
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
+              font.pixelSize: wf.host.theme.px(12)
+            }
+          }
+          Text {
+            id: speedAction
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
+            color: wf.textMuted
+            font.family: wf.host.theme.textFontFamily
+            font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(13))
+            font.pixelSize: wf.host.theme.px(13)
+          }
+          MouseArea {
+            id: speedMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: wf.toggleSpeedTest()
+          }
+        }
+        Item {
+          id: speedDials
+          readonly property bool shown: speed.running || speed.done
+          Layout.fillWidth: true
+          Layout.preferredHeight: shown ? 128 : 0
+          Behavior on Layout.preferredHeight { MotionAnimation { theme: wf.host.theme; pace: "standard" } }
+          opacity: shown ? 1 : 0
+          Behavior on opacity { MotionAnimation { theme: wf.host.theme; pace: speedDials.shown ? "fade" : "exit"; curve: speedDials.shown ? "fade" : "exit" } }
+          clip: true
+          Row {
+            anchors.centerIn: parent
+            spacing: 56
+            Repeater {
+              model: [
+                { label: "Download", mbps: speed.download, live: speed.phase === "down" },
+                { label: "Upload", mbps: speed.upload, live: speed.phase === "up" }
+              ]
+              delegate: Column {
+                id: dial
+                required property var modelData
+                spacing: 4
+                // The dial that has no figure yet waits dimmed.
+                opacity: modelData.live || modelData.mbps > 0 ? 1 : 0.5
+                Behavior on opacity { MotionAnimation { theme: wf.host.theme; pace: "fade"; curve: "fade" } }
+                Ring {
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  view: wf
+                  width: 88
+                  height: 88
+                  color: wf.accent
+                  value: Math.min(100, dial.modelData.mbps / wf.speedScale * 100)
+                  text: dial.modelData.mbps <= 0 ? "–" : dial.modelData.mbps < 10 ? dial.modelData.mbps.toFixed(1) : String(Math.round(dial.modelData.mbps))
+                  caption: "Mbps"
+                }
+                Text {
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  text: dial.modelData.label
+                  color: wf.textMuted
+                  font.family: wf.host.theme.textFontFamily
+                  font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
+                  font.pixelSize: wf.host.theme.px(12)
+                }
               }
             }
           }
