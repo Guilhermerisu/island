@@ -65,6 +65,19 @@ Item {
     var w = widget(id)
     return !!w && w.opened === true
   }
+  // The icon a hosted widget draws in the bar, as { text, family }, or null
+  // when it has none (not hosted, or nothing drawn): the island shows it as
+  // the plugin's icon. Reads `repeater.count`, so a binding on it follows the
+  // widgets as they load.
+  function iconOf(id) {
+    if (!repeater.count) return null
+    for (var i = 0; i < entries.length; i++)
+      if (entries[i].id === id) {
+        var slot = repeater.itemAt(i)
+        return slot && slot.glyph && slot.glyph.visible ? { text: slot.glyph.text, family: slot.glyph.font.family } : null
+      }
+    return null
+  }
 
   function screenOf(name) {
     var screens = Quickshell.screens
@@ -131,10 +144,36 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         opacity: 0
         sourceComponent: (hosts.host.barWidgetRegistry.widgets[modelData.id] || {}).component || null
+        // The text that draws the widget's icon: the first visible one holding a
+        // single icon-font glyph (a button's own label, or a mark the widget
+        // draws itself). The widget is only read, never run for it: it is
+        // loaded here anyway. Looked for once loaded, and once more a moment
+        // later for a widget that draws it late (a font still loading).
+        property Item glyph: null
+        function findGlyph(from) {
+          var code = typeof from.text === "string" && from.font && from.visible ? from.text.codePointAt(0) : 0
+          if (code && from.text.length === (code > 0xffff ? 2 : 1)
+              && ((code >= 0xe000 && code <= 0xf8ff) || (code >= 0xf0000 && code <= 0x10fffd))) return from
+          var kids = from.children || []
+          for (var i = 0; i < kids.length; i++) {
+            var found = findGlyph(kids[i])
+            if (found) return found
+          }
+          return null
+        }
+        Timer {
+          id: retry
+          interval: 1500
+          onTriggered: slot.glyph = slot.findGlyph(slot.item)
+        }
         onLoaded: {
           if ("bar" in item) item.bar = bar
           if ("moduleName" in item) item.moduleName = modelData.id
           if ("settings" in item) item.settings = modelData.settings
+          Qt.callLater(function() {
+            slot.glyph = slot.item ? slot.findGlyph(slot.item) : null
+            if (!slot.glyph) retry.start()
+          })
         }
       }
     }
