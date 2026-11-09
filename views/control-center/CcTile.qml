@@ -10,6 +10,8 @@ Rectangle {
   id: t
   required property var center
   property string icon: ""
+  // The icon's font, when it isn't the island's (a plugin's own).
+  property string iconFamily: ""
   property string title: ""
   property string subtitle: ""
   property bool checked: false
@@ -50,7 +52,7 @@ Rectangle {
       text: t.icon
       color: t.checked ? center.badgeOnInk : center.text
       Behavior on color { MotionColorAnimation { theme: center.host.theme } }
-      font.family: center.iconFont
+      font.family: t.iconFamily || center.iconFont
       font.pixelSize: center.host.theme.px(18)
     }
   }

@@ -31,6 +31,12 @@ Addon {
         || pluginsAddon.host.barWidgets.has(p.id)
     })
   })
+  // What a plugin shows as its icon, as { text, family } (an empty family: the
+  // island's icon font): what its bar widget draws, else the puzzle. Kept apart
+  // from `all`, so an icon that changes doesn't rebuild the tiles.
+  function iconOf(id) {
+    return host.barWidgets.iconOf(id) || { text: "󰐱", family: "" }
+  }
   function entryFor(id) {
     for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]
     return null

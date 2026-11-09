@@ -61,9 +61,9 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         width: 24
         horizontalAlignment: Text.AlignHCenter
-        text: "󰐱"
+        text: plugins.addon.iconOf(pluginRow.entry.id).text
         color: pluginRow.entry.enabled ? plugins.host.theme.accent : plugins.host.theme.muted
-        font.family: plugins.host.theme.fontFamily
+        font.family: plugins.addon.iconOf(pluginRow.entry.id).family || plugins.host.theme.fontFamily
         font.pixelSize: plugins.host.theme.px(17)
       }
       Column {
