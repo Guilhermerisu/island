@@ -510,12 +510,13 @@ Item {
   onSurfaceOpenChanged: if (!surfaceOpen) outsideClickArmed = false
   Variants {
     model: Quickshell.screens
-    delegate: Component {
+    delegate: Component { Scope {
+      id: perScreen
+      required property var modelData
       PanelWindow {
         id: window
-        required property var modelData
-        screen: modelData
-        visible: modelData.name === root.outputName
+        screen: perScreen.modelData
+        visible: perScreen.modelData.name === root.outputName
         color: "transparent"
         surfaceFormat.opaque: false
         exclusionMode: ExclusionMode.Ignore
@@ -919,7 +920,26 @@ Item {
             || glanceBar.right1Kind === "media" || glanceBar.right2Kind === "media") : false
         }
       }
-    }
+
+      // The strip Hyprland keeps free for the resting island, so tiled windows
+      // start under it. Fixed, so views opening and the morph never move the
+      // windows; it goes while the island is hidden for good (bar off, or an
+      // auto-hide), not with edgeRevealed or an open view. A window of its own
+      // because the island's is full-screen with no exclusive zone.
+      PanelWindow {
+        screen: window.screen
+        visible: window.visible && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition
+        color: "transparent"
+        anchors { top: true; left: true; right: true }
+        exclusionMode: ExclusionMode.Normal
+        exclusiveZone: (root.settings.notch ? 0 : 8) + root.clockHeight
+        implicitHeight: exclusiveZone
+        // Nothing to click: the island's own window is above it.
+        mask: Region {}
+        WlrLayershell.namespace: "omarchy-island-reserve"
+        WlrLayershell.layer: WlrLayer.Top
+      }
+    } }
   }
 
   // A shadow under the island, there while a view is open.

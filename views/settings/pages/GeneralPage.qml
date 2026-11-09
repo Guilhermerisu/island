@@ -86,6 +86,18 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰹑"
+      iconTint: page.system.cyan
+      label: "Reserve space for the island"
+      detail: "Tiled windows start below the island instead of under it"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.reserveSpace
+        onToggled: function(on) { page.view.settings.reserveSpace = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰁌"
       iconTint: page.system.blue
       label: "Hover style"
