@@ -13,7 +13,7 @@ CcSection {
   title: "Sound"
   vertical: !galleryPreview && card.controls.isVertical("sound") && card.controls.controlPresent("sound")
   detail: !card.controls.controlPresent("sound") ? "Unavailable" : card.controls.muted ? "Muted" : Math.round(card.controls.volume * 100) + "%"
-  showChevron: !galleryPreview && !card.center.editMode && card.controls.outputs.length > 1
+  showChevron: !galleryPreview && !card.center.editMode && card.controls.outputs.length > 0
   chevronOpen: card.center.outputsOpen
   onChevronClicked: { card.center.outputsOpen = !card.center.outputsOpen; card.center.inputsOpen = false }
 

@@ -51,6 +51,13 @@ ColumnLayout {
   property bool editMode: false
   property bool outputsOpen: false
   property bool inputsOpen: false
+  // A picker whose list went empty closes (its card leaves the grid), so it
+  // doesn't pop back open when a device returns.
+  Connections {
+    target: cc.controls
+    function onOutputsChanged() { if (!cc.controls.outputs.length) cc.outputsOpen = false }
+    function onInputsChanged() { if (!cc.controls.inputs.length) cc.inputsOpen = false }
+  }
   // Off for the first layout each time it opens, so the header's controls
   // change shape only for what's done while it's showing.
   property bool settled: false
