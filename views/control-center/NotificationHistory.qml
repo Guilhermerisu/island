@@ -4,8 +4,10 @@ import Quickshell.Widgets
 import "../../components"
 
 // The control center's notifications, as macOS's Notification Center: a
-// heading with Clear All over the newest ten as banners, each dismissed by
-// the round × on its corner while hovered. `center` is the ControlCenter.
+// heading with Clear All over the newest ones as banners, each dismissed by
+// the round × on its corner while hovered. An app's notifications are one
+// stack, newest on top, that unfolds with "Show n more". One still on screen
+// shows its buttons (Open, Edit…). `center` is the ControlCenter.
 ColumnLayout {
   id: history
   required property var center
@@ -17,6 +19,20 @@ ColumnLayout {
   // Off for the first layout each time the control center opens (as the
   // grid's cardsSettled), so only changes made while it's showing animate.
   property bool settled: false
+  // The stacks unfolded, by stack id.
+  property var unfolded: ({})
+  // The banners in order: each stack's newest, then, when it is unfolded, the
+  // rest of it.
+  readonly property var shownRows: {
+    var out = []
+    var stacks = history.center.host.notifications.stacks
+    for (var i = 0; i < stacks.length; i++) {
+      var open = !!history.unfolded[stacks[i].id]
+      out.push(Object.assign({}, stacks[i].head, { stackSize: 1 + stacks[i].rest.length, stackOpen: open, stackId: stacks[i].id }))
+      for (var j = 0; open && j < stacks[i].rest.length; j++) out.push(Object.assign({}, stacks[i].rest[j], { child: true }))
+    }
+    return out
+  }
   Connections {
     target: history.center
     function onActiveChanged() {
@@ -137,7 +153,7 @@ ColumnLayout {
     model: noteRows.model
     KeyedListModel {
       id: noteRows
-      values: history.center.host.notifications.history
+      values: history.shownRows
       keyOf: function(row) { return history.center.host.notifications.key(row) }
     }
     // A banner fades in where it lands and out where it was, and the rest
@@ -190,14 +206,29 @@ ColumnLayout {
       readonly property bool hovered: noteHover.hovered
       HoverHandler { id: noteHover }
       width: ListView.view.width
-      height: banner.height + 6
+      readonly property bool stacked: !!note.modelData.stackSize && note.modelData.stackSize > 1
+      // The unfolded rest of a stack sits inset under its newest.
+      readonly property real inset: note.modelData.child ? 14 : 0
+      height: banner.height + 6 + (stacked && !note.modelData.stackOpen ? 8 : 0)
+      // The notifications behind the top one of a folded stack.
+      Rectangle {
+        visible: note.stacked && !note.modelData.stackOpen
+        x: 6 + 10
+        y: banner.y + banner.height - 4
+        width: banner.width - 20
+        height: 12
+        radius: history.center.host.theme.radii.card
+        color: history.center.tile
+        border.width: 1
+        border.color: history.center.edge
+      }
       Rectangle {
         id: banner
         scale: noteMouse.pressed ? 0.98 : 1
         Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: noteMouse.pressed ? "press" : "standard" } }
-        x: 6
+        x: 6 + note.inset
         y: 6
-        width: parent.width - 6
+        width: parent.width - 6 - note.inset
         height: Math.max(noteBody.implicitHeight, 36) + 24
         radius: history.center.host.theme.radii.card
         color: note.hovered ? history.center.tile : history.center.card
@@ -316,10 +347,75 @@ ColumnLayout {
             font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(12))
             font.pixelSize: history.center.host.theme.px(12)
           }
+          // The buttons of a notification still on screen.
+          Row {
+            visible: !!note.modelData.isActive && (note.modelData.actions || []).length > 0
+            topPadding: 5
+            spacing: 6
+            Repeater {
+              model: note.modelData.actions || []
+              delegate: Rectangle {
+                required property var modelData
+                required property int index
+                width: Math.min(actionLabel.implicitWidth + 24, 110)
+                height: 24
+                radius: height / 2
+                color: actionMouse.pressed ? history.center.wellHover : actionMouse.containsMouse ? history.center.wellHover : history.center.well
+                Behavior on color { MotionColorAnimation { theme: history.center.host.theme } }
+                Text {
+                  id: actionLabel
+                  anchors.centerIn: parent
+                  width: parent.width - 16
+                  horizontalAlignment: Text.AlignHCenter
+                  text: String(modelData.label || "")
+                  textFormat: Text.PlainText
+                  elide: Text.ElideRight
+                  color: history.center.text
+                  font.family: history.center.host.theme.textFontFamily
+                  font.pixelSize: history.center.host.theme.px(12)
+                  font.weight: Font.Medium
+                }
+                MouseArea {
+                  id: actionMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: history.center.host.notifications.runAction(note.modelData, index)
+                }
+              }
+            }
+          }
+          // Unfolds or folds the app's stack.
+          Item {
+            visible: note.stacked
+            width: parent.width
+            height: stackToggle.implicitHeight + 4
+            Text {
+              id: stackToggle
+              anchors.left: parent.left
+              anchors.bottom: parent.bottom
+              text: note.modelData.stackOpen ? "Show Less" : "Show " + (note.modelData.stackSize - 1) + " More"
+              color: history.center.host.theme.accent
+              font.family: history.center.host.theme.textFontFamily
+              font.pixelSize: history.center.host.theme.px(11)
+              font.weight: Font.DemiBold
+              MouseArea {
+                anchors.fill: parent
+                anchors.margins: -4
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                  var next = Object.assign({}, history.unfolded)
+                  next[note.modelData.stackId] = !next[note.modelData.stackId]
+                  history.unfolded = next
+                }
+              }
+            }
+          }
         }
       }
       // macOS's × on the banner's corner, while the banner is hovered.
       Rectangle {
+        x: note.inset
         scale: closeMouse.pressed ? 0.9 : 1
         Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: closeMouse.pressed ? "press" : "standard" } }
         width: 20; height: 20; radius: 10

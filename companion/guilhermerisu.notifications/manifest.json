@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "guilhermerisu.notifications",
   "name": "Island Notifications",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "guilhermerisu",
-  "description": "Notification daemon, island previews, DND, and history",
+  "description": "Omarchy's notification service, shown on the island",
   "kinds": [
     "service"
   ],
