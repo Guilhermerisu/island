@@ -368,14 +368,12 @@ ColumnLayout {
                   running: spinner.visible && wf.active
                 }
               }
-              Text {
+              Chevron {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "󰅂"
-                rotation: wf.otherOpen ? 90 : 0
+                theme: wf.host.theme
+                open: wf.otherOpen
                 color: wf.textMuted
-                font.family: wf.iconFont
-                font.pixelSize: wf.host.theme.px(17)
-                Behavior on rotation { MotionAnimation { theme: wf.host.theme; pace: "standard" } }
+                pixelSize: wf.host.theme.px(17)
               }
             }
             MouseArea {
