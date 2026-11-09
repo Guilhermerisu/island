@@ -76,9 +76,10 @@ Item {
     triggeredOnStart: true
     onTriggered: if (!updateCheck.running) updateCheck.running = true
   }
-  // A tray app's own menu in the tray view, or the whole tray when it has none.
+  // A tray app's own menu in the tray view; an app without one opens nothing.
   function openTrayMenu(item) {
-    host.trayMenuFor = item.hasMenu && item.menu ? item : null
+    if (!item.hasMenu || !item.menu) return
+    host.trayMenuFor = item
     host.view = "trayMenu"
   }
 
