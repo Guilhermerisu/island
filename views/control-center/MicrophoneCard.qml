@@ -18,6 +18,11 @@ CcSection {
   chevronLabel: "Microphone Input"
   chevronHideLabel: "Hide Inputs"
   onChevronClicked: { card.center.inputsOpen = !card.center.inputsOpen; card.center.outputsOpen = false }
+  // Hidden in edit mode, like the ›: the card is a drag handle then.
+  toggleIcon: galleryPreview || card.center.editMode || !card.controls.controlPresent("microphone") ? "" : card.controls.microphoneMuted ? "󰍭" : "󰍬"
+  toggleOn: card.controls.microphoneMuted
+  toggleTip: card.controls.microphoneMuted ? "Unmute" : "Mute"
+  onToggleClicked: card.controls.toggleMicrophoneMute()
 
   CcSlider {
     center: card.center
