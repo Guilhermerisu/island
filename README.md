@@ -72,6 +72,20 @@ Bluetooth Devices, Network, Battery, Volume, Brightness, and Clipboard.
 </details>
 
 <details>
+<summary><b>How do notifications work?</b></summary>
+<br>
+
+Island runs Omarchy's own notification service (Omarchy 4.5 or later), through
+a small companion plugin that takes its toasts off the screen and hands what it
+shows to the island. Notifications from the same app are stacked, and unfold in
+the Control Center; the buttons an app offers (Open, Edit…) are on the banner
+and in the Control Center. Do Not Disturb, history and the keybindings are
+Omarchy's own (`omarchy-shell notifications …`). If Omarchy's service can't be
+loaded, the companion says why in `omarchy-shell`'s log and falls back to plain
+banners.
+</details>
+
+<details>
 <summary><b>Can I change the keyboard shortcuts?</b></summary>
 <br>
 
