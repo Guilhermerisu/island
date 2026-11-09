@@ -3,8 +3,9 @@ import QtQuick.Layouts
 import "../../components"
 
 // The weather view: the place, condition, and temperature, then
-// the next hours (see below). Without a city (or one Open-Meteo doesn't
-// know), a hint and a button to Settings → Addons. Esc closes.
+// the next hours (see below). Without a city (and no detected place), or
+// one Open-Meteo doesn't know, a hint and a button to Settings → Addons.
+// Esc closes.
 Item {
   id: view
   required property var weather
@@ -207,8 +208,9 @@ Item {
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
       text: notice.status === "loading" ? "Loading weather…"
-        : notice.status === "missing" ? "Set a city in Settings → Addons"
+        : notice.status === "missing" ? "Set a city, or turn on Detect my location, in Settings → Addons"
         : notice.status === "unknown" ? "Couldn't find “" + view.weather.city + "”"
+        : !view.weather.located && view.weather.detecting ? "Couldn't detect your location"
         : "Couldn't reach Open-Meteo"
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily

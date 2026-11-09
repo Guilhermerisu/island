@@ -35,10 +35,12 @@ Item {
         { circle: true, color: "#ffd60a", x: 0.65, y: 0.37, size: 0.36 },
         { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
       ],
-      description: "Current conditions for your city",
+      description: "Current conditions for your city, or where you are (found from your IP address)",
       describedWith: { key: "city", text: "Current conditions in %1" },
       options: [
         { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon", icon: "󰟙" },
+        // Off to keep an empty City from asking a third party where you are.
+        { key: "autoLocate", label: "Detect my location", detail: "No city set: asks get.geojs.io (or ipwho.is) once, with your IP", type: "switch", default: true },
         { key: "fahrenheit", label: "Temperature", detail: "Unit shown on the pill", type: "segmented", default: false,
           choices: [{ label: "°C", value: false }, { label: "°F", value: true }] }
       ] },
