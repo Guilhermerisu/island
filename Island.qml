@@ -428,6 +428,7 @@ Item {
     id: notificationClient
     home: root.home
     historyVisible: root.view === "controls" || root.view === "notifications"
+    stacked: root.settings.stackNotifications
     onArrived: function(row) {
       // One with buttons stays long enough to press one.
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"),

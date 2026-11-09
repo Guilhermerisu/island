@@ -76,7 +76,7 @@ IslandPill {
   // How many of the app's notifications are waiting, on the tile's corner.
   Rectangle {
     opacity: reveal.leadingIn
-    visible: pill.row.stack > 1
+    visible: pill.row.stack > 1 && host.settings.stackNotifications
     x: appTile.x + appTile.width - width * 0.6
     y: appTile.y - height * 0.4
     width: Math.max(height, stackCount.implicitWidth + 10)

@@ -30,8 +30,11 @@ Item {
   // The newest ones, on-screen or closed, for the control center.
   property var history: []
   // The same, an app's notifications together: [{ id, head, rest: [...] }],
-  // newest stack first. A notification with no app group stands alone.
+  // newest stack first. A notification with no app group stands alone, and
+  // all of them do with `stacked` off.
   property var stacks: []
+  property bool stacked: false
+  onStackedChanged: rebuild()
   // A notification new to the feed.
   signal arrived(var row)
 
@@ -153,7 +156,7 @@ Item {
     var byGroup = {}
     var out = []
     for (var k = 0; k < history.length; k++) {
-      var group = String(history[k].group || "")
+      var group = stacked ? String(history[k].group || "") : ""
       if (group && byGroup[group]) { byGroup[group].rest.push(history[k]); continue }
       var stack = { id: group || key(history[k]), head: history[k], rest: [] }
       if (group) byGroup[group] = stack
