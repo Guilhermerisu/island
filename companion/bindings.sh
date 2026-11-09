@@ -93,6 +93,13 @@ current() {
 # The enabled addons, as the file last recorded them.
 enabled_addons=""
 [[ -f $file ]] && enabled_addons=$(sed -n 's/^-- addons: //p' "$file" | head -n 1)
+
+# Set once setup has matched the file against Omarchy's current shortcuts. An
+# older file keeps lacking it (the island rewrites the file on every start, so
+# only setup may add it), which is how check.sh knows to ask for setup.
+format_line="-- format: 2"
+matched=false
+if [[ -f $file ]] && grep -qxF -- "$format_line" "$file"; then matched=true; fi
 addon_enabled() {
   [[ -z $1 || ",$enabled_addons," == *",$1,"* ]]
 }
@@ -133,6 +140,7 @@ write_file() {
       echo "end"
     fi
     echo
+    if $matched; then echo "$format_line"; fi
     echo "-- addons: $enabled_addons"
     for spec in "${catalog[@]}"; do
       id=$(field "$spec" 0)
@@ -168,17 +176,44 @@ add_loader() {
 
 reload() { hyprctl reload >/dev/null 2>&1 || true; }
 
+# Keys of a stock command that's bound right now, from `records` in $1.
+stock_keys() {
+  awk -F '\t' -v own="$3" -v stock="$2" '
+    BEGIN { n = split(stock, list, ";"); for (i = 1; i <= n; i++) match_[list[i]] = 1; if (own != "") match_[own] = 1 }
+    $1 !~ /XF86/ && ($3 in match_) { print $1; exit }' <<<"$1"
+}
+
+# An existing file from before `format_line`: its choices stay, and actions it
+# has no keys for take over the stock shortcut still bound to them (a file
+# written under Omarchy 4.5 by an older matcher missed most of them).
+match_old_file() {
+  load_current
+  local live spec id stock
+  live=$(records)
+  for spec in "${catalog[@]}"; do
+    id=$(field "$spec" 0)
+    stock=$(field "$spec" 4)
+    if [[ -z ${keys_for[$id]:-} && -n $stock ]]; then keys_for[$id]=$(stock_keys "$live" "$stock" ""); fi
+  done
+  matched=true
+  write_file
+  reload
+}
+
 cmd_init() {
-  [[ -f $file ]] && { add_loader; return 0; }
+  if [[ -f $file ]]; then
+    if ! $matched; then match_old_file; fi
+    add_loader
+    return 0
+  fi
+  matched=true
   local live spec id command keys stock default
   live=$(records)
   for spec in "${catalog[@]}"; do
     id=$(field "$spec" 0)
     command="$prefix $(field "$spec" 2)"
     stock=$(field "$spec" 4)
-    keys=$(awk -F '\t' -v own="$command" -v stock="$stock" '
-      BEGIN { n = split(stock, list, ";"); for (i = 1; i <= n; i++) match_[list[i]] = 1; match_[own] = 1 }
-      $1 !~ /XF86/ && ($3 in match_) { print $1; exit }' <<<"$live")
+    keys=$(stock_keys "$live" "$stock" "$command")
     if [[ -z $keys ]]; then
       default=$(field "$spec" 3)
       if [[ -n $default ]] && ! grep -qxF "$default" < <(cut -f1 <<<"$live"); then keys=$default; fi
@@ -258,6 +293,7 @@ cmd_addons() {
 
 cmd_reset() {
   rm -f "$file"
+  matched=false
   reload
   cmd_init
 }

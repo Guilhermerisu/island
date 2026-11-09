@@ -9,7 +9,8 @@
 #                ignores it and setup can't add the island's entries to it
 #   menu         the Omarchy menu's Theme, Background, Apps, System, Emoji, or Keybindings entry
 #                (and the shortcuts that open them) doesn't open the island yet
-#   bindings     ~/.config/hypr/island-bindings.lua hasn't been written yet
+#   bindings     ~/.config/hypr/island-bindings.lua hasn't been written yet,
+#                or hasn't been matched against the current Omarchy shortcuts
 
 here=$(cd "$(dirname "$0")" && pwd)
 source_dir="$here/guilhermerisu.notifications"
@@ -51,7 +52,7 @@ for entry in style.theme style.background apps system trigger.emoji learn.keybin
   fi
 done
 
-if [[ ! -f $HOME/.config/hypr/island-bindings.lua ]]; then
+if ! grep -qxF -- "-- format: 2" "$HOME/.config/hypr/island-bindings.lua" 2>/dev/null; then
   echo bindings
   exit 0
 fi
