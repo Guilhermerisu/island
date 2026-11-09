@@ -37,13 +37,28 @@ ColumnLayout {
     target: history.center
     function onActiveChanged() {
       history.settled = false
-      if (history.center.active) historySettleTimer.restart()
+      if (!history.center.active) return
+      historySettleTimer.restart()
+      notes.positionViewAtBeginning()
     }
   }
   Timer {
     id: historySettleTimer
     interval: history.center.host.theme.motionDuration("morph")
     onTriggered: history.settled = history.center.active
+  }
+  // The history is re-read on opening, so what's new lands after the list
+  // has gone to its start: it opens on the newest either way.
+  onShownRowsChanged: if (!history.settled && history.center.active) Qt.callLater(notes.positionViewAtBeginning)
+
+  // What "2m ago" counts from, kept current only while it's on screen.
+  property real now: Date.now()
+  Timer {
+    interval: 20000
+    repeat: true
+    running: history.center.active
+    triggeredOnStart: true
+    onTriggered: history.now = Date.now()
   }
 
   RowLayout {
@@ -323,7 +338,7 @@ ColumnLayout {
               id: noteAge
               anchors.right: parent.right
               anchors.baseline: noteTitle.baseline
-              text: history.center.host.notifications.age(note.modelData.timestamp)
+              text: history.center.host.notifications.age(note.modelData.timestamp, history.now)
               textFormat: Text.PlainText
               color: history.center.textMuted
               font.family: history.center.host.theme.textFontFamily

@@ -71,8 +71,8 @@ Item {
     if (agent(row) === "gemini") return "Gemini"
     return String(row.summary || row.app || "Notification")
   }
-  function age(timestamp) {
-    var ms = Date.now() - Number(timestamp || 0)
+  function age(timestamp, now) {
+    var ms = (now || Date.now()) - Number(timestamp || 0)
     if (!timestamp || ms < 60000) return "now"
     if (ms < 3600000) return Math.floor(ms / 60000) + "m ago"
     if (ms < 86400000) return Math.floor(ms / 3600000) + "h ago"
