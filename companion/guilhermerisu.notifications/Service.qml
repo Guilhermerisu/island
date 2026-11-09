@@ -31,6 +31,9 @@ Item {
   readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/omarchy"
   // The daemon's public members used below; its other internals are not touched.
   readonly property var needs: ["layout", "deedsFor", "runDeed", "activate", "closeToast", "doNotDisturb", "setDoNotDisturb"]
+  // What nativeRows reads off each of its rows. A row without one of these
+  // (an Omarchy that changed) hands over to Fallback.qml like a missing member.
+  readonly property var rowFields: ["key", "originalId", "ts", "app", "appIcon", "image", "glyph", "summary", "bodyLine", "urgency", "groupKey", "duration"]
 
   // Omarchy's daemon, or null while starting or once Fallback.qml took over.
   property var core: null
@@ -52,6 +55,7 @@ Item {
     var daemon = comp.createObject(service)
     if (!daemon) return useFallback("couldn't start " + nativeUrl)
     var missing = service.needs.filter(function(name) { return !(name in daemon) })
+    if (!missing.length && !(daemon.layout && Array.isArray(daemon.layout.decks))) missing = ["layout.decks"]
     if (missing.length) {
       daemon.destroy()
       return useFallback("it no longer has " + missing.join(", "))
@@ -73,6 +77,21 @@ Item {
     fallback = fallbackComponent.createObject(service)
   }
   Component { id: fallbackComponent; Fallback { } }
+  // The daemon stopped making sense while running. Its bus name is only free
+  // once it is gone, so the fallback waits for that.
+  function abandonCore(why) {
+    var dead = core
+    core = null
+    if (dead) dead.destroy()
+    fallbackDelay.why = why
+    fallbackDelay.restart()
+  }
+  Timer {
+    id: fallbackDelay
+    property string why: ""
+    interval: 250
+    onTriggered: service.useFallback(why)
+  }
   Connections {
     target: service.fallback
     ignoreUnknownSignals: true
@@ -84,9 +103,13 @@ Item {
   // island-feed.json: { version: 1, active: [row...] }, newest first. A row is
   //   key, originalId, timestamp (ms), app, appIcon, image, glyph, summary,
   //   body (one line), urgency, group (the app's stack), stack (how many are in
-  //   it), actions [{ label }] (the buttons, in the order runDeed counts them).
+  //   it), actions [{ label }] (the buttons, in the order runDeed counts them),
+  //   shown (ms, when it came on screen; a replayed one keeps its old timestamp).
   // The first six are what the previous companion wrote; the rest is new.
-  readonly property string feedPath: stateDir + "/island-feed.json"
+  // It holds what the notifications say, codes included, so it lives in the
+  // daemon's private folder, not beside it.
+  readonly property string feedDir: stateDir + "/notifications"
+  readonly property string feedPath: feedDir + "/island-feed.json"
   property var rows: []
   property string written: ""
 
@@ -96,6 +119,14 @@ Item {
     function onLayoutChanged() { feedDebounce.restart() }
   }
   Timer { id: feedDebounce; interval: 30; onTriggered: service.publish() }
+
+  // The private folder, for when the fallback is all there is, and the feed
+  // the previous companion left where anyone could read it.
+  Process {
+    running: true
+    command: ["sh", "-c", 'mkdir -p -- "$1" && chmod 700 -- "$1" && rm -f -- "$2"', "island-feed-prepare", service.feedDir, service.stateDir + "/island-feed.json"]
+    onExited: { service.written = ""; service.publish() }
+  }
 
   FileView {
     id: feedFile
@@ -110,24 +141,37 @@ Item {
     for (var d = 0; d < decks.length; d++)
       for (var r = 0; r < decks[d].rows.length; r++) {
         var row = decks[d].rows[r]
+        for (var f = 0; f < rowFields.length; f++)
+          if (row[rowFields[f]] === undefined) throw new Error("its rows no longer have " + rowFields[f])
         var key = String(row.key)
         out.push({ key: key, originalId: row.originalId, timestamp: Math.round(row.ts * 1000), app: row.app, appIcon: row.appIcon,
                    image: row.image, glyph: row.glyph, summary: row.summary, body: row.bodyLine, urgency: row.urgency,
                    group: row.groupKey, stack: decks[d].rows.length,
-                   actions: core.deedsFor(key).map(function(deed) { return { label: deed.kind === "code" ? "Copy " + deed.value : deed.label } }),
+                   actions: core.deedsFor(key).map(function(deed) { return { label: deed.kind === "code" ? "Copy code" : deed.label } }),
                    duration: row.duration })
       }
     return out
   }
 
+  // Tried again before giving up, so one bad moment can't end the daemon.
+  property int badPublishes: 0
   function publish() {
-    var live = core ? nativeRows() : (fallback ? fallback.rows : [])
+    var live
+    try {
+      live = core ? nativeRows() : (fallback ? fallback.rows : [])
+      badPublishes = 0
+    } catch (e) {
+      if (++badPublishes < 3) feedDebounce.restart()
+      else { badPublishes = 0; abandonCore(String(e.message || e)) }
+      return
+    }
     live.sort(function(a, b) { return b.timestamp - a.timestamp })
     rows = live
     track()
     var text = JSON.stringify({ version: 1, active: live.map(function(row) {
       var out = Object.assign({}, row)
       delete out.duration
+      out.shown = service.deadlines[row.key].shown
       return out
     }) }) + "\n"
     if (text === written) return
@@ -138,16 +182,21 @@ Item {
   // ------------------------------------------------------------ lifetime
   //
   // A banner ends after its own duration (the daemon's: 5 to 30 seconds, a
-  // critical one waits for you), counted from when it, or its latest text,
-  // arrived.
+  // critical one waits for you), counted from when it, or its latest text
+  // or replacement, arrived.
   property var deadlines: ({})
   function track() {
     var next = {}
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i]
       var seen = deadlines[row.key]
-      var sig = row.summary + "\n" + row.body
-      next[row.key] = seen && seen.sig === sig ? seen : { sig: sig, at: row.duration > 0 ? Date.now() + row.duration : 0 }
+      var sig = row.timestamp + "\n" + row.summary + "\n" + row.body
+      next[row.key] = seen && seen.sig === sig ? seen : {
+        sig: sig,
+        at: row.duration > 0 ? Date.now() + row.duration : 0,
+        timestamp: row.timestamp,
+        shown: seen && seen.timestamp === row.timestamp ? seen.shown : Date.now()
+      }
     }
     deadlines = next
   }

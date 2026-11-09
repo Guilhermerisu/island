@@ -437,7 +437,7 @@ Item {
       // A Glyph's own click area takes the press, so the capsule's TapHandler
       // never saw a click on the bell: it opens the view itself.
       Glyph { text: "󰂚"; onClicked: capsules.host.view = "notifications" }
-      // The history keeps the newest ten.
+      // Anything over nine reads 9+.
       Label { text: capsules.notificationCount >= 10 ? "9+" : capsules.notificationCount }
       TapHandler { onTapped: capsules.host.view = "notifications" }
     }

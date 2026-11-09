@@ -16,7 +16,7 @@ Item {
   // True while the history is on screen (the control center); it's only
   // read then.
   required property bool historyVisible
-  readonly property string feedPath: home + "/.local/state/omarchy/island-feed.json"
+  readonly property string feedPath: home + "/.local/state/omarchy/notifications/island-feed.json"
   readonly property string historyPath: home + "/.local/state/omarchy/notifications/history.json"
   readonly property int historyLimit: 30
 
@@ -91,9 +91,9 @@ Item {
       rebuild()
       if (!rows.length) return
       // A newer one than any announced, not the older one a dismissal
-      // uncovers; a replaced notification is newer again.
+      // uncovers; a replaced or replayed notification is newer again.
       var current = rows[0]
-      var stamp = Number(current.timestamp || 0)
+      var stamp = Number(current.shown || current.timestamp || 0)
       if (stamp <= lastStamp) return
       lastStamp = stamp
       last = current
