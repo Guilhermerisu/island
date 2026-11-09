@@ -412,7 +412,7 @@ Item {
   NotificationClient {
     id: notificationClient
     home: root.home
-    historyVisible: root.view === "controls"
+    historyVisible: root.view === "controls" || root.view === "notifications"
     onArrived: function(row) {
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"), root.settings.bannerSeconds * 1000, "notification")
     }

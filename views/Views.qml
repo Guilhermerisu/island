@@ -13,6 +13,7 @@ import "clipboard"
 import "menu"
 import "player"
 import "settings"
+import "notifications"
 import "../addons/tray"
 
 // Every view the island can open. Each is a Surface: its name (also its IPC
@@ -24,7 +25,7 @@ Item {
   id: views
   required property var host
 
-  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface]
+  readonly property var surfaces: [controlsSurface, wifiSurface, bluetoothSurface, themesSurface, wallpapersSurface, appsSurface, powerSurface, emojiSurface, keybindsSurface, clipboardSurface, menuSurface, playerSurface, settingsSurface, notificationsSurface]
   function surfaceFor(name) {
     for (var i = 0; i < surfaces.length; i++) if (surfaces[i].viewName === name) return surfaces[i]
     for (var j = 0; j < addonSurfaces.count; j++) {
@@ -199,6 +200,15 @@ Item {
     fixedWidth: 440
     padding: 24
     PlayerView { host: views.host; active: playerSurface.active; anchors.fill: parent }
+  }
+
+  // Just the notification history, opened from the hover capsules' bell.
+  Surface {
+    id: notificationsSurface
+    host: views.host
+    viewName: "notifications"
+    fixedWidth: 440
+    NotificationsView { host: views.host; active: notificationsSurface.active; anchors.fill: parent }
   }
 
   Surface {
