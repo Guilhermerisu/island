@@ -273,6 +273,8 @@ Item {
     surfaceContentReady = false
     switchingSurface = surfaceOpenFor(previousView) && surfaceOpenFor(view)
     previousView = view
+    if (switchingSurface) surfaceSwitchEndTimer.restart()
+    else surfaceSwitchEndTimer.stop()
     if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
     else surfaceRevealTimer.stop()
   }
@@ -421,6 +423,14 @@ Item {
     interval: root.switchingSurface ? Math.round(root.theme.motionDuration("exit") / 2) : root.theme.contentRevealDelay
     repeat: false
     onTriggered: root.surfaceContentReady = true
+  }
+  // Once the new view has settled the switch is over, so the view resizing
+  // itself afterwards moves as usual.
+  Timer {
+    id: surfaceSwitchEndTimer
+    interval: Math.round(root.theme.motionDuration("exit") / 2) + root.theme.motionDuration("morph")
+    repeat: false
+    onTriggered: root.switchingSurface = false
   }
 
   readonly property var notifications: notificationClient
