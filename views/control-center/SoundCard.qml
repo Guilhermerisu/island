@@ -51,6 +51,14 @@ CcSection {
     for (var i = 0; i < outputs.length; i++) if (String(outputs[i].name || outputs[i].id) === name) return outputs[i]
     return null
   }
+  // Live output level, as the Microphone card's. Only listens to the sink
+  // while the picker is open.
+  PeakBar {
+    center: card.center
+    node: card.controls.sink
+    shown: card.outputsShown
+    muted: card.controls.muted
+  }
   ListView {
     id: outputList
     Layout.fillWidth: true
