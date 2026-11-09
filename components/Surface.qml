@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 
 // Wraps one island view (control center, a switcher, the launcher, …): names
 // it, sizes the island around it, and handles showing it. The view inside
@@ -61,12 +62,32 @@ Item {
   readonly property real grown: parent && islandHeight > 0
     ? Math.max(0, Math.min(1, parent.height / islandHeight)) : 0
 
+  // Going straight from one view to another: Apple's blur replace. The old one
+  // blurs and recedes as it fades, the new one sharpens and settles into place,
+  // and they cross while neither is legible.
+  // Arriving at a smaller view than the last is a way back, so it's quicker.
+  // Decided on becoming active, before the reveal starts these animations.
+  property string arrivePace: "morph"
+  onActiveChanged: if (active) arrivePace = parent && parent.height > islandHeight + 1 ? "standard" : "morph"
+  property real settle: revealed ? 1 : 0.96
+  Behavior on settle { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? surface.arrivePace : "exit"; curve: surface.revealed ? "morph" : "fade" } }
+  property real veil: revealed ? 0 : 1
+  Behavior on veil { MotionAnimation { theme: surface.host.theme; pace: surface.revealed ? surface.arrivePace : "exit"; curve: surface.revealed ? "morph" : "fade" } }
+
   Item {
     id: holder
     anchors.fill: parent
     // Transform the content without disturbing the panel's measured size.
     transformOrigin: Item.Top
-    scale: 0.985 + 0.015 * surface.grown
+    scale: (0.985 + 0.015 * surface.grown) * (surface.host.switchingSurface ? surface.settle : 1)
+    // Only while it's blurred: a layer costs a texture the size of the view.
+    layer.enabled: surface.host.switchingSurface && surface.visible && surface.veil > 0.001
+    layer.effect: MultiEffect {
+      autoPaddingEnabled: false
+      blurEnabled: true
+      blurMax: 28
+      blur: surface.veil
+    }
     transform: Translate { y: -6 * (1 - surface.grown) }
   }
 }

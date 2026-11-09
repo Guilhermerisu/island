@@ -262,9 +262,17 @@ Item {
 
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
+  // Going straight from one view to another, the new one starts halfway
+  // through the old one's fade: both are blurred by then (see Surface), so
+  // there's no legible overlap and no empty moment.
+  property string previousView: "rest"
+  property bool switchingSurface: false
+
   onViewChanged: {
     if (view === "rest" && updateAnnouncePending) Qt.callLater(announceUpdate)
     surfaceContentReady = false
+    switchingSurface = surfaceOpenFor(previousView) && surfaceOpenFor(view)
+    previousView = view
     if (surfaceOpenFor(view)) surfaceRevealTimer.restart()
     else surfaceRevealTimer.stop()
   }
@@ -410,7 +418,7 @@ Item {
 
   Timer {
     id: surfaceRevealTimer
-    interval: root.theme.contentRevealDelay
+    interval: root.switchingSurface ? Math.round(root.theme.motionDuration("exit") / 2) : root.theme.contentRevealDelay
     repeat: false
     onTriggered: root.surfaceContentReady = true
   }
@@ -817,7 +825,9 @@ Item {
           // as the Dynamic Island does; shrinking, the height goes first. A
           // pill shrinking back (an activity ending) dips a little under its
           // size before it settles, a shrug; closing a view lands flat.
-          readonly property string morphPace: root.surfaceOpen ? "morph" : "collapse"
+          // Going from one view to a smaller one is a way back, as quick as a close.
+          readonly property bool shrinkingToView: root.switchingSurface && (targetHeight < heightSpring.value - 1 || targetWidth < widthSpring.value - 1)
+          readonly property string morphPace: root.surfaceOpen && !shrinkingToView ? "morph" : "collapse"
           MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace }
           MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace }
           MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; target: island.targetRadius }
@@ -828,13 +838,13 @@ Item {
           // size, so the height still trails the width by one beat.
           readonly property bool shrugs: !root.surfaceOpen && heightSpring.value <= 120
           onTargetWidthChanged: {
-            widthSpring.bounce = targetWidth > widthSpring.value ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
+            widthSpring.bounce = targetWidth > widthSpring.value && !root.switchingSurface ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
             if (targetWidth < widthSpring.value) { if (!widthLag.running) widthLag.start(); return }
             widthLag.stop()
             widthSpring.target = targetWidth
           }
           onTargetHeightChanged: {
-            heightSpring.bounce = targetHeight > heightSpring.value ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
+            heightSpring.bounce = targetHeight > heightSpring.value && !root.switchingSurface ? root.theme.morphBounce : shrugs ? root.theme.shrugBounce : 0
             if (targetHeight > heightSpring.value) { if (!heightLag.running) heightLag.start(); return }
             heightLag.stop()
             heightSpring.target = targetHeight
