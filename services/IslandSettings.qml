@@ -47,7 +47,7 @@ Item {
       property bool brightnessHud: true
       property int bannerSeconds: 5
       property bool notch: false
-      // Windows start under the resting island (see Island.qml, reserveZone).
+      // Windows start under the resting island (the reserve window in Island.qml).
       property bool reserveSpace: false
       property bool downloads: true
       property bool clipboard: true

@@ -65,10 +65,17 @@ Item {
   readonly property bool muted: !!(Pipewire.defaultAudioSink && Pipewire.defaultAudioSink.audio
     && Pipewire.defaultAudioSink.audio.muted)
   readonly property string wantedOutput: String(barConfig.output || "DP-1")
-  readonly property string outputName: {
+  // The configured output is connected, so the island stays on it; otherwise
+  // it follows the focused monitor.
+  readonly property bool outputPinned: {
     var screens = Quickshell.screens
     for (var i = 0; i < screens.length; i++)
-      if (screens[i].name === wantedOutput) return wantedOutput
+      if (screens[i].name === wantedOutput) return true
+    return false
+  }
+  readonly property string outputName: {
+    if (outputPinned) return wantedOutput
+    var screens = Quickshell.screens
     var focused = Hyprland.focusedMonitor
     if (focused && focused.name) return String(focused.name)
     return screens.length ? String(screens[0].name) : ""
@@ -925,10 +932,12 @@ Item {
       // start under it. Fixed, so views opening and the morph never move the
       // windows; it goes while the island is hidden for good (bar off, or an
       // auto-hide), not with edgeRevealed or an open view. A window of its own
-      // because the island's is full-screen with no exclusive zone.
+      // because the island's is full-screen with no exclusive zone. An island
+      // that follows the focused monitor reserves on all of them, or every
+      // change of focus would re-tile two monitors.
       PanelWindow {
         screen: window.screen
-        visible: window.visible && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition
+        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition
         color: "transparent"
         anchors { top: true; left: true; right: true }
         exclusionMode: ExclusionMode.Normal
