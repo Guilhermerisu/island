@@ -17,10 +17,7 @@ Item {
 
   readonly property int tileWidth: 116
   readonly property int tileHeight: 92
-  // Slightly wider than a tile so the enlarged selected one clears its
-  // neighbours.
-  readonly property int slotWidth: tileWidth + 6
-  readonly property int tileSpacing: 6
+  readonly property int tileSpacing: 12
 
   property bool suspendAvailable: true
   property bool hibernateAvailable: false
@@ -38,7 +35,7 @@ Item {
     return 0
   }
 
-  implicitWidth: actions.length * slotWidth + (actions.length - 1) * tileSpacing
+  implicitWidth: actions.length * tileWidth + (actions.length - 1) * tileSpacing
   implicitHeight: row.height
 
   onActiveChanged: {
@@ -111,23 +108,17 @@ Item {
         required property var modelData
         required property int index
         readonly property bool isSelected: index === power.currentIndex
-        width: power.slotWidth
-        // Room for the selected tile to grow.
-        height: power.tileHeight * 1.06
+        width: power.tileWidth
+        height: power.tileHeight
 
         Rectangle {
           id: tile
-          anchors.horizontalCenter: parent.horizontalCenter
-          y: power.tileHeight * 0.03
-          width: power.tileWidth
-          height: power.tileHeight
-          radius: 23
+          anchors.fill: parent
+          radius: power.host.theme.radii.card
           color: power.host.theme.fill(slot.isSelected ? "stronger" : "raised")
-          border.width: 2
+          border.width: 1
           border.color: power.host.theme.withAlpha(power.host.theme.accent, slot.isSelected ? 1 : 0)
-          // The selected tile grows into the room left for it; pressed, any
-          // tile dips.
-          scale: tileMouse.pressed ? 0.97 : slot.isSelected ? 1.04 : 1
+          scale: tileMouse.pressed ? 0.97 : 1
           Behavior on color { MotionColorAnimation { theme: power.host.theme } }
           Behavior on border.color { MotionColorAnimation { theme: power.host.theme } }
           Behavior on scale { MotionAnimation { theme: power.host.theme; pace: tileMouse.pressed ? "press" : "standard" } }
