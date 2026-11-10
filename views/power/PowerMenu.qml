@@ -21,9 +21,17 @@ Item {
 
   property bool suspendAvailable: true
   property bool hibernateAvailable: false
+  // Older Omarchy has omarchy-system-shutdown/-reboot, newer merged them into
+  // `omarchy-system shutdown|reboot`; plain systemctl if neither is there.
+  function sessionCommand(action, fallback) {
+    return ["bash", "-c",
+      "if command -v omarchy-system-$0 >/dev/null; then exec omarchy-system-$0; "
+      + "elif command -v omarchy-system >/dev/null; then exec omarchy-system $0; "
+      + "else exec systemctl $1; fi", action, fallback]
+  }
   readonly property var actions: {
-    var list = [{ label: "Power Off", icon: "󰐥", command: ["omarchy-system-shutdown"] }]
-    list.push({ label: "Reboot", icon: "󰜉", command: ["omarchy-system-reboot"] })
+    var list = [{ label: "Power Off", icon: "󰐥", command: sessionCommand("shutdown", "poweroff") }]
+    list.push({ label: "Reboot", icon: "󰜉", command: sessionCommand("reboot", "reboot") })
     list.push({ label: "Lock", icon: "󰍁", command: ["omarchy-system-lock"] })
     if (hibernateAvailable) list.push({ label: "Hibernate", icon: "󰜗", command: ["systemctl", "hibernate"] })
     if (suspendAvailable) list.push({ label: "Suspend", icon: "󰖔", command: ["systemctl", "suspend"] })
@@ -47,15 +55,16 @@ Item {
     Qt.callLater(function() { keys.forceActiveFocus() })
   }
 
-  // Same conditions as the System menu's `when` fields.
+  // Same conditions as the System menu's `when` fields. Older Omarchy has no
+  // omarchy-sleep-disabled; `!` of a missing command passes, so that's fine.
   Process {
     id: suspendCheck
-    command: ["omarchy-toggle-enabled", "suspend-off"]
-    onExited: function(code) { power.suspendAvailable = code !== 0 }
+    command: ["bash", "-c", "! omarchy-toggle-enabled suspend-off && ! omarchy-sleep-disabled"]
+    onExited: function(code) { power.suspendAvailable = code === 0 }
   }
   Process {
     id: hibernateCheck
-    command: ["omarchy-hibernation-available"]
+    command: ["bash", "-c", "omarchy-hibernation-available && ! omarchy-sleep-disabled"]
     onExited: function(code) { power.hibernateAvailable = code === 0 }
   }
 
