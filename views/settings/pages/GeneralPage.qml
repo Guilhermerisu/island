@@ -407,11 +407,23 @@ ColumnLayout {
       iconTint: "#2f6fed"
       label: "Colorful sidebar icons"
       detail: "macOS-style colored icons throughout settings"
-      last: true
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.colorfulSettingsIcons
         onToggled: function(on) { page.view.settings.colorfulSettingsIcons = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰃟"
+      iconTint: page.system.gray
+      label: "Theme background"
+      detail: "Use the current Omarchy theme's background instead of black"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.themeBackground !== false
+        onToggled: function(on) { page.view.settings.themeBackground = on }
       }
     }
   }

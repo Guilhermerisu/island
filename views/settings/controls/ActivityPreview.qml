@@ -38,7 +38,7 @@ Item {
     height: preview.kind === "bluetooth" ? 52 : 40
     scale: Math.min(1.06, preview.width / width)
     radius: height / 2
-    color: "#000000"
+    color: preview.view.host.theme.background
     border.width: 0
     clip: true
     layer.enabled: visible

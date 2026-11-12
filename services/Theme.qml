@@ -2,9 +2,9 @@ import QtQuick
 import Quickshell.Io
 import qs.Commons
 
-// The island's colours, font and motion speed. The island is always black
-// with neutral, macOS-like text and greys; only the accent comes from the
-// Omarchy theme.
+// The island's colours, font and motion speed. By default the fill follows
+// Omarchy's theme background; turn that off for classic black. Text and
+// greys stay neutral (macOS-like); only the accent comes from the theme.
 Item {
   id: theme
   required property var settings
@@ -38,10 +38,11 @@ Item {
     if (family !== pluginFont || !(size > 0)) return 0
     return size * (-0.0223 + 0.185 * Math.exp(-0.1745 * size))
   }
-  readonly property color background: "#000000"
-  // A neutral near-white rather than the theme's foreground, which is often
-  // tinted (and dark on light themes); every grey below is derived from it.
-  readonly property color text: "#e6e6e6"
+  readonly property color background: settings.themeBackground !== false ? Color.background : "#000000"
+  // A neutral label rather than the theme's foreground, which is often
+  // tinted; every grey below is derived from it. Flip light/dark ink so
+  // light theme backgrounds stay readable.
+  readonly property color text: luminance(background) > 0.45 ? "#1a1a1a" : "#e6e6e6"
   // Secondary text and glyphs: a neutral grey, as macOS's secondary label,
   // not the theme's muted colour, which is often tinted and looks dirty
   // next to the neutral cards. The accent alone carries the theme.
@@ -59,7 +60,7 @@ Item {
   // The island's greys: a few text-tint levels every view shares, so a card,
   // a hover or a divider is the same grey everywhere. `fill()` is see-through
   // (for hovers and edges laid over anything); `solid()` is that grey on the
-  // black island. Accent tints follow the same idea with `accentFill()`.
+  // island fill. Accent tints follow the same idea with `accentFill()`.
   readonly property var greys: ({ quiet: 0.05, subtle: 0.08, raised: 0.12, strong: 0.16, stronger: 0.22 })
   readonly property var accentTints: ({ soft: 0.18, medium: 0.3, ring: 0.5 })
   function fill(level) { return withAlpha(text, greys[level]) }
