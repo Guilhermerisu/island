@@ -159,7 +159,7 @@ Item {
     radius: height / 2
     topLeftRadius: capsules.notch ? 0 : radius
     topRightRadius: capsules.notch ? 0 : radius
-    color: "#000000"
+    color: capsules.theme.background
     opacity: Math.min(1, settled * 3)
     transform: [
       Scale {
