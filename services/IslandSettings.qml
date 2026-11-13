@@ -62,7 +62,7 @@ Item {
       property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
       property bool colorfulLiveActivities: true
-      property bool themeBackground: true
+      property bool themeBackground: false
       property string textFontMode: "island"
       property string customFont: ""
       property real textScale: 1

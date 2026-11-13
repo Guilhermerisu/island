@@ -422,7 +422,7 @@ ColumnLayout {
       last: true
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.themeBackground !== false
+        checked: page.view.settings.themeBackground === true
         onToggled: function(on) { page.view.settings.themeBackground = on }
       }
     }

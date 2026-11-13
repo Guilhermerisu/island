@@ -2,8 +2,8 @@ import QtQuick
 import Quickshell.Io
 import qs.Commons
 
-// The island's colours, font and motion speed. By default the fill follows
-// Omarchy's theme background; turn that off for classic black. Text and
+// The island's colours, font and motion speed. The fill is classic black
+// unless the Theme background setting follows Omarchy's theme. Text and
 // greys stay neutral (macOS-like); only the accent comes from the theme.
 Item {
   id: theme
@@ -38,7 +38,7 @@ Item {
     if (family !== pluginFont || !(size > 0)) return 0
     return size * (-0.0223 + 0.185 * Math.exp(-0.1745 * size))
   }
-  readonly property color background: settings.themeBackground !== false ? Color.background : "#000000"
+  readonly property color background: settings.themeBackground === true ? Color.background : "#000000"
   // A neutral label rather than the theme's foreground, which is often
   // tinted; every grey below is derived from it. Flip light/dark ink so
   // light theme backgrounds stay readable.
