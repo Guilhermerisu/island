@@ -913,9 +913,9 @@ Item {
 
           Views { id: views; host: root; anchors.fill: parent }
         }
-        // A faint light edge around the open island, so its black still
-        // reads against a dark wallpaper; fainter on the resting pill while
-        // it's lifted under the pointer.
+        // A faint light edge around the open island (and banners like
+        // notifications), so the fill still reads against a matching
+        // wallpaper; fainter on the resting pill while it's lifted.
         Item {
           id: islandEdge
           x: island.x
@@ -924,16 +924,19 @@ Item {
           height: island.height
           scale: island.scale
           transformOrigin: island.transformOrigin
-          opacity: root.surfaceOpen ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
+          readonly property bool prominent: root.surfaceOpen || root.view === "feedback"
+          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
               strokeWidth: 1
-              strokeColor: root.theme.fill("raised")
+              // Same hairline as open-view chrome (cards, wells), so banners
+              // don't read brighter than an expanded island.
+              strokeColor: root.theme.hairline
               fillColor: "transparent"
               PathSvg { path: island.edgeOutline }
             }
@@ -997,8 +1000,8 @@ Item {
     y: shape.y
     width: r + 0.5
     height: r
-    property real edgeOpacity: root.surfaceOpen ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
-    Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+    property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
+    Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer
     ShapePath {
@@ -1018,7 +1021,7 @@ Item {
       visible: opacity > 0.01
       ShapePath {
         strokeWidth: 1
-        strokeColor: root.theme.fill("raised")
+        strokeColor: root.theme.hairline
         fillColor: "transparent"
         PathSvg {
           readonly property real r: ear.r
