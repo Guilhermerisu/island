@@ -49,6 +49,7 @@ Item {
       property int bannerSeconds: 5
       property bool stackNotifications: false
       property bool notificationButtons: false
+      property bool notificationFullText: false
       property bool notch: false
       // Windows start under the resting island (the reserve window in Island.qml).
       property bool reserveSpace: false

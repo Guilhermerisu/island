@@ -79,6 +79,9 @@ ColumnLayout {
   property string passwordFor: ""
   // Kept here, not in the field: a row's delegate goes when it leaves the list.
   property string passwordText: ""
+  // Show the typed password in clear; reset whenever a field opens or the view closes.
+  property bool revealPassword: false
+  onPasswordForChanged: revealPassword = false
 
   // Rows hold plain values only, as in the Bluetooth view: networks come and
   // go during scans. Actions look the network up again by name.
@@ -208,7 +211,7 @@ ColumnLayout {
     restoreMode: Binding.RestoreNone
   }
 
-  onActiveChanged: if (active) { selectedKey = ""; passwordFor = ""; failedName = ""; otherOpenChoice = null; usingKeys = false; Qt.callLater(function() { wf.forceActiveFocus() }) }
+  onActiveChanged: if (active) { selectedKey = ""; passwordFor = ""; revealPassword = false; failedName = ""; otherOpenChoice = null; usingKeys = false; Qt.callLater(function() { wf.forceActiveFocus() }) }
   Keys.onPressed: function(event) {
     var k = event.key
     var row = wf.rowFor(wf.cursor)
@@ -500,10 +503,10 @@ ColumnLayout {
                 id: password
                 anchors.left: parent.left
                 anchors.leftMargin: 8
-                anchors.right: parent.right
-                anchors.rightMargin: 8
+                anchors.right: reveal.left
+                anchors.rightMargin: 4
                 anchors.verticalCenter: parent.verticalCenter
-                echoMode: TextInput.Password
+                echoMode: wf.revealPassword ? TextInput.Normal : TextInput.Password
                 color: wf.text
                 selectionColor: wf.host.theme.accentFill("ring")
                 selectedTextColor: wf.text
@@ -529,6 +532,30 @@ ColumnLayout {
                   text: "Password for " + (row.modelData.name || "")
                   color: wf.textMuted
                   font: password.font
+                }
+              }
+              // Eye toggle. Hands focus back to the field so Enter/Esc keep working.
+              Rectangle {
+                id: reveal
+                anchors.right: parent.right
+                anchors.rightMargin: 4
+                anchors.verticalCenter: parent.verticalCenter
+                width: 24; height: 24; radius: 12
+                color: revealMouse.containsMouse ? wf.wellHover : "transparent"
+                Tooltip { theme: wf.host.theme; text: wf.revealPassword ? "Hide Password" : "Show Password" }
+                Text {
+                  anchors.centerIn: parent
+                  text: wf.revealPassword ? "󰈉" : "󰈈"
+                  color: revealMouse.containsMouse ? wf.text : wf.textMuted
+                  font.family: wf.iconFont
+                  font.pixelSize: wf.host.theme.px(15)
+                }
+                MouseArea {
+                  id: revealMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: { wf.revealPassword = !wf.revealPassword; password.forceActiveFocus() }
                 }
               }
             }

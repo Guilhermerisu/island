@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import Quickshell.Widgets
 
 // Dynamic Island–style notification pill: the notification's image or app
@@ -20,7 +21,11 @@ IslandPill {
   readonly property real actionsExtra: actions.length > 0 ? 42 : 0
   shown: host.notificationPill
   pillWidth: 440
-  pillHeight: 84 + actionsExtra
+  // With full text the pill grows with the wrapped text, up to 60% of the
+  // screen; past that the body is still cut with "…".
+  readonly property bool fullText: host.settings.notificationFullText
+  readonly property real maxHeight: (Window.height > 0 ? Window.height : 1000) * 0.6
+  pillHeight: fullText ? Math.min(maxHeight, Math.max(84, textColumn.height + 44) + actionsExtra) : 84 + actionsExtra
   // The island's own banners act on a click (see Island.qml's showBanner);
   // any other notification takes you to where it came from (and is dismissed).
   function clicked(mouse) {
@@ -97,6 +102,7 @@ IslandPill {
   }
 
   Column {
+    id: textColumn
     opacity: reveal.middleIn
     PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
     anchors.left: appTile.right
@@ -116,6 +122,9 @@ IslandPill {
         anchors.rightMargin: 8
         text: host.notifications.title(pill.row)
         textFormat: Text.PlainText
+        wrapMode: pill.fullText ? Text.Wrap : Text.NoWrap
+        // Elide only bites when the line limit is hit, or with wrapping off.
+        maximumLineCount: 4
         elide: Text.ElideRight
         // iOS's type: a semibold title and a regular body of nearly the same
         // size, in SF's stand-in (Adwaita Sans).
@@ -142,6 +151,9 @@ IslandPill {
       text: String(pill.row.body || pill.row.app || "")
       visible: text !== ""
       textFormat: Text.PlainText
+      wrapMode: pill.fullText ? Text.Wrap : Text.NoWrap
+      // Room left in the capped pill once the title and padding are taken.
+      height: pill.fullText ? Math.max(0, Math.min(implicitHeight, pill.maxHeight - pill.actionsExtra - 44 - title.height - textColumn.spacing)) : implicitHeight
       elide: Text.ElideRight
       color: Qt.rgba(1, 1, 1, 0.72)
       font.family: host.theme.textFontFamily

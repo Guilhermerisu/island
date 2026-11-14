@@ -37,6 +37,9 @@ Item {
   onStackedChanged: rebuild()
   // A notification new to the feed.
   signal arrived(var row)
+  // The one `last` shows left the feed (dismissed from outside the pill, e.g.
+  // by Omarchy's dismissOne shortcut, which acts on the daemon directly).
+  signal dismissedElsewhere(var row)
 
   onHistoryVisibleChanged: if (historyVisible) refreshHistory()
 
@@ -90,7 +93,10 @@ Item {
     try {
       var parsed = JSON.parse(raw || "{}")
       var rows = Array.isArray(parsed.active) ? parsed.active : []
+      var gone = last && active.some(function(r) { return key(r) === key(last) })
+        && !rows.some(function(r) { return key(r) === key(last) })
       active = rows
+      if (gone) dismissedElsewhere(last)
       rebuild()
       if (!rows.length) return
       // A newer one than any announced, not the older one a dismissal
