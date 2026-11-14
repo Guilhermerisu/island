@@ -28,9 +28,11 @@ Item {
     }))
   }, []))
   readonly property var ids: definitions.map(function(zone) { return zone.id })
+  // Ids saved before the Plugins addon had two zones: its one was the tiles.
+  readonly property var aliases: ({ "addon:plugins": "addon:plugins/pinned" })
   // Shrinking the columns only folds them on screen: the saved lists stay
   // (see save), so going back to more columns puts them back.
-  readonly property var arrangement: ZoneModel.normalize(settings.controlCenterZones, columns, ids)
+  readonly property var arrangement: ZoneModel.normalize(settings.controlCenterZones, columns, ids, aliases)
   readonly property var absent: ZoneModel.absent(arrangement, ids)
   // How many columns hold something; the island is no wider than that
   // outside edit mode.

@@ -73,6 +73,9 @@ Item {
       // The plugins' tiles added to its control grid (addons/plugins), as
       // "plugins.<plugin id>"; none until added.
       property string controlCenterPlugins: ""
+      // The plugins pinned to its Plugins zone (addons/plugins), in order, as
+      // plugin ids; apart from the grid's tiles above.
+      property string pluginsZonePinned: ""
       // Its columns (1–3) and, per column, the zones in it (JSON, see
       // views/control-center/Zones.qml).
       property int controlCenterColumns: 1

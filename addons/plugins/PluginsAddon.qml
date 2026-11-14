@@ -2,18 +2,25 @@ import QtQuick
 import Quickshell.Io
 import ".."
 
-// Plugins added with `omarchy plugin add`, as an island view (see PluginList)
-// and a control center tile for each (see PluginTile), keyed
-// "plugins.<plugin id>": it stays out of the control grid until added from the
-// add panel (see Controls.isShown), then sits among the controls like any of
-// them.
+// Plugins added with `omarchy plugin add`, as an island view (see PluginList),
+// as a control center zone of tiles for the plugins the user pinned
+// ("pinned", drawn by PluginsZone), and as a control center tile for each
+// (see PluginTile), keyed "plugins.<plugin id>": it stays out of the control
+// grid until added from the add panel (see Controls.isShown), then sits among
+// the controls like any of them. The zone's pins and the grid's tiles are
+// kept apart.
 Addon {
   id: pluginsAddon
   views: [{ name: "plugins", width: 520, component: pluginList }]
+  zones: ({ pinned: pinnedZone })
   tiles: all.map(function(entry) { return { key: entry.id, title: entry.name, component: pluginTile } })
   Component {
     id: pluginList
     PluginList { addon: pluginsAddon; host: pluginsAddon.host; active: pluginsAddon.host.view === "plugins" }
+  }
+  Component {
+    id: pinnedZone
+    PluginsZone { addon: pluginsAddon; center: parent.center }
   }
   Component {
     id: pluginTile
@@ -47,6 +54,27 @@ Addon {
   function entryFor(id) {
     for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]
     return null
+  }
+
+  // The plugins pinned to the Plugins zone, in order: the settings hold their
+  // ids. One that's gone stays saved, not shown.
+  readonly property var pinnedIds: String(host.settings.pluginsZonePinned || "").split(",")
+    .filter(function(id) { return id !== "" })
+  readonly property var pinned: pinnedIds.map(entryFor).filter(function(entry) { return !!entry })
+  readonly property var unpinned: all.filter(function(entry) { return pinnedIds.indexOf(entry.id) === -1 })
+  function savePinned(ids) {
+    host.settings.pluginsZonePinned = ids.join(",")
+  }
+  // Pins `id`, or moves it if pinned already: before the pinned plugin
+  // `beforeId`, or at the end without it.
+  function pin(id, beforeId) {
+    var ids = pinnedIds.filter(function(other) { return other !== id })
+    var at = beforeId ? ids.indexOf(beforeId) : -1
+    ids.splice(at === -1 ? ids.length : at, 0, id)
+    savePinned(ids)
+  }
+  function unpin(id) {
+    savePinned(pinnedIds.filter(function(other) { return other !== id }))
   }
 
   Component.onCompleted: refresh()

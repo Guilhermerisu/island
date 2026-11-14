@@ -18,10 +18,11 @@ ColumnLayout {
     { title: "Connectivity", keys: ["wifi", "bluetooth"] },
     { title: "Focus & System", keys: ["focus", "microphoneMute", "night", "awake", "screensaver", "screenshot", "screenrecord", "dictate", "reminder", "game", "power", "keyboard"] },
     { title: "Sound & Display", keys: ["sound", "microphone", "display"] },
-    { title: "Addons", keys: tileKeys.filter(function(key) { return !gallery.controls.isPluginTile(key) }) },
-    { title: "Plugins", keys: tileKeys.filter(function(key) { return gallery.controls.isPluginTile(key) }) }
+    // Plugins' tiles are in the panel's Plugins section (see PluginGallery),
+    // which also pins them to the Plugins zone.
+    { title: "Addons", keys: cc.host.addons.tiles.map(function(tile) { return tile.key })
+        .filter(function(key) { return !gallery.controls.isPluginTile(key) }) }
   ]
-  readonly property var tileKeys: cc.host.addons.tiles.map(function(tile) { return tile.key })
   readonly property bool hasResults: {
     for (var i = 0; i < sections.length; i++)
       if (keysFor(sections[i]).length) return true
