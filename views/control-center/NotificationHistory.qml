@@ -327,6 +327,7 @@ ColumnLayout {
               anchors.rightMargin: 8
               text: history.center.host.notifications.title(note.modelData)
               textFormat: Text.PlainText
+              wrapMode: history.center.host.settings.notificationFullText ? Text.Wrap : Text.NoWrap
               elide: Text.ElideRight
               color: history.center.text
               font.family: history.center.host.theme.textFontFamily
@@ -352,7 +353,8 @@ ColumnLayout {
             visible: text !== ""
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
-            maximumLineCount: 4
+            // Four lines unless Settings asks for the whole message.
+            maximumLineCount: history.center.host.settings.notificationFullText ? 100000 : 4
             elide: Text.ElideRight
             lineHeight: 1.08
             color: history.center.host.theme.withAlpha(history.center.text, 0.78)

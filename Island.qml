@@ -439,6 +439,8 @@ Item {
     home: root.home
     historyVisible: root.view === "controls" || root.view === "notifications"
     stacked: root.settings.stackNotifications
+    // Keeps the pill in step when the notification is dismissed elsewhere.
+    onDismissedElsewhere: if (root.notificationPill) root.dismissFeedback()
     onArrived: function(row) {
       // One with buttons stays long enough to press one.
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"),

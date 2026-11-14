@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import "../controls"
 
 // Settings → Notifications: how long banners stay, whether an app's
-// notifications stack, and whether they show the app's buttons.
+// notifications stack, whether they show the app's buttons, and whether
+// their text is cut short.
 ColumnLayout {
   id: page
   required property var view
@@ -39,11 +40,21 @@ ColumnLayout {
       view: page.view
       label: "Notification Buttons"
       detail: "Show the buttons an app offers, like Open or Edit"
-      last: true
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.notificationButtons
         onToggled: function(on) { page.view.settings.notificationButtons = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      label: "Full Notification Text"
+      detail: "Show the whole title and message instead of cutting it with …"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.notificationFullText
+        onToggled: function(on) { page.view.settings.notificationFullText = on }
       }
     }
   }
