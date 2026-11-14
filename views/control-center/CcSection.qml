@@ -110,8 +110,10 @@ Rectangle {
     anchors.right: parent.right
     anchors.top: parent.top
     anchors.topMargin: sec.vertical ? 0 : 38
-    anchors.bottom: sec.vertical ? parent.bottom : undefined
-    anchors.bottomMargin: sec.vertical ? 0 : 12
+    // Not a bottom anchor: dropping one leaves the tall height behind, and
+    // back to horizontal the slider sat out below the card. `undefined`
+    // resets the height to follow the content again.
+    height: sec.vertical ? parent.height : undefined
     anchors.leftMargin: sec.vertical ? 0 : 14
     anchors.rightMargin: sec.vertical ? 0 : 14
     spacing: 6
