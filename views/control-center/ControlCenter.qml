@@ -19,8 +19,6 @@ ColumnLayout {
   // The grid's layout while its zone is on show (it sets itself), and the
   // panel that adds to it: they take each other's drags.
   property var controlLayout: null
-  // The Plugins zone's likewise (PluginsZone sets itself).
-  property var pluginsZone: null
   readonly property Item addPanel: addPanelItem
   readonly property Item zoneBoard: zoneBoardItem
   // The card lifted by a drag in edit mode, whichever zone it's from.

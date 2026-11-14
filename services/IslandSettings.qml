@@ -42,6 +42,7 @@ Item {
       property bool capsuleWeather: false
       property bool capsuleNotifications: true
       property bool capsuleMedia: false
+      property bool capsulePlugins: false
       property bool mediaPill: true
       property bool volumeHud: true
       property bool brightnessHud: true
@@ -68,7 +69,7 @@ Item {
       property real textScale: 1
       property string controlCenterOrder: "wifi,bluetooth,focus,night,sound,microphone,display"
       property string controlCenterHidden: "game,power,keyboard"
-      // The plugins pinned to its Plugins zone (addons/plugins), in order, as
+      // The plugins' tiles added to its control grid (addons/plugins), as
       // "plugins.<plugin id>"; none until added.
       property string controlCenterPlugins: ""
       // Its columns (1–3) and, per column, the zones in it (JSON, see

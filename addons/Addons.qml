@@ -115,10 +115,6 @@ Item {
       ],
       description: "Apps tray icons and menus" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
-      zones: [
-        { key: "list", title: "Plugin List", about: "Every plugin, to open or switch on", minWidth: 360 },
-        { key: "pinned", title: "Plugins", about: "The plugins you pin, as tiles", minWidth: 260, editable: true }
-      ],
       iconLayers: [
         { rect: true, color: "#ffffff", x: 0.33, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
         { rect: true, color: "#ffffff", x: 0.67, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },

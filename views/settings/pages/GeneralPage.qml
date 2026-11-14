@@ -297,7 +297,6 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
-      last: !page.view.host.addons.isEnabled("calendar") && !page.view.host.addons.isEnabled("weather")
       icon: "󰝚"
       iconTint: page.system.cyan
       label: "Now playing"
@@ -306,6 +305,23 @@ ColumnLayout {
         view: page.view
         checked: !!page.view.settings.capsuleMedia
         onToggled: function(on) { page.view.settings.capsuleMedia = on }
+      }
+    }
+    // It needs the Plugins addon for the list, so turning it on turns that on.
+    SettingsRow {
+      view: page.view
+      last: !page.view.host.addons.isEnabled("calendar") && !page.view.host.addons.isEnabled("weather")
+      icon: "󰐱"
+      iconTint: page.system.orange
+      label: "Plugins"
+      detail: "Icons to open your plugins"
+      SettingsSwitch {
+        view: page.view
+        checked: !!page.view.settings.capsulePlugins && page.view.host.addons.isEnabled("plugins")
+        onToggled: function(on) {
+          page.view.settings.capsulePlugins = on
+          if (on) page.view.host.addons.setEnabled("plugins", true)
+        }
       }
     }
     SettingsRow {

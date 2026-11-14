@@ -6,7 +6,7 @@ import "../../components"
 // held under the pointer with a shadow, then settled into its slot on drop,
 // or sunk where it was let go when it has no slot (removed, or dropped
 // outside). One for the whole control center (see ControlCenter.dragProxy),
-// shared by the control grid and the Plugins zone. The caller sets `grabX` /
+// used by the control grid. The caller sets `grabX` /
 // `grabY` (where in the card the pointer went down) and calls `lift`, moves
 // it with `follow`, and ends with `release`. What it shows is `content`,
 // loaded in a Loader that also carries `controlKey` and `galleryPreview` for

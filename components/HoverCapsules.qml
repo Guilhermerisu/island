@@ -9,8 +9,9 @@ import "../addons/weather"
 
 // Hovering the resting island splits what a bar shows into black capsules
 // beside it. Out from the island, the next event, tray apps with pending
-// Omarchy updates, workspaces and what's playing on the left; the weather, notifications,
-// and Bluetooth, network, sound and battery on the right. Each can be turned
+// Omarchy updates, plugins, workspaces and what's playing on the left; the
+// weather, notifications, and Bluetooth, network, sound and battery on the
+// right. Each can be turned
 // off in Settings, and one with nothing to show stays away. The connections,
 // sound and battery come from the control center's Controls, so both agree.
 Item {
@@ -82,6 +83,13 @@ Item {
     host.trayMenuFor = item
     host.view = "trayMenu"
   }
+
+  // --- Plugins: each one that opens and is on, from the Plugins addon ---
+  readonly property var pluginsAddon: host.addons.isEnabled("plugins") ? host.addons.root("plugins") : null
+  readonly property var pluginItems: settings.capsulePlugins && pluginsAddon
+    ? pluginsAddon.all.filter(function(entry) { return entry.openable && entry.enabled })
+    : []
+  readonly property bool showPlugins: pluginItems.length > 0
 
   // --- Workspaces ---
   readonly property bool showWorkspaces: settings.capsuleWorkspaces
@@ -214,7 +222,7 @@ Item {
     font.features: { "tnum": 1 }
   }
 
-  // ---------- Left: next event, tray apps and updates, workspaces, now playing ----------
+  // ---------- Left: next event, tray apps and updates, plugins, workspaces, now playing ----------
 
   Row {
     id: leftRow
@@ -295,10 +303,29 @@ Item {
     }
 
     Capsule {
+      id: pluginCapsule
+      present: capsules.showPlugins
+      side: -1
+      before: [eventCapsule, trayCapsule]
+      // A click opens the plugin, a right click the Plugins list.
+      Repeater {
+        model: capsules.pluginItems
+        delegate: Glyph {
+          required property var modelData
+          readonly property var icon: capsules.pluginsAddon.iconOf(modelData.id)
+          text: icon.text
+          font.family: icon.family || capsules.theme.fontFamily
+          onClicked: capsules.pluginsAddon.open(modelData)
+          onRightClicked: capsules.host.view = "plugins"
+        }
+      }
+    }
+
+    Capsule {
       id: workspaceCapsule
       present: capsules.showWorkspaces
       side: -1
-      before: [eventCapsule, trayCapsule]
+      before: [eventCapsule, trayCapsule, pluginCapsule]
       padding: 14
       // A number per workspace on a grey tile for the current one, faint
       // when empty.
@@ -337,7 +364,7 @@ Item {
       id: mediaCapsule
       present: capsules.showMedia
       side: -1
-      before: [eventCapsule, trayCapsule, workspaceCapsule]
+      before: [eventCapsule, trayCapsule, pluginCapsule, workspaceCapsule]
       padding: 8
       spacing: 8
       // Like macOS's Now Playing: the cover, the title over the artist, and

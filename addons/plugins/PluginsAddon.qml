@@ -3,20 +3,27 @@ import Quickshell.Io
 import ".."
 
 // Plugins added with `omarchy plugin add`, as an island view (see PluginList)
-// and as two control center zones: the same list ("list", the view as every
-// addon's zone is), and tiles for the plugins the user pinned ("pinned", drawn
-// by PluginsZone).
+// and a control center tile for each (see PluginTile), keyed
+// "plugins.<plugin id>": it stays out of the control grid until added from the
+// add panel (see Controls.isShown), then sits among the controls like any of
+// them.
 Addon {
   id: pluginsAddon
   views: [{ name: "plugins", width: 520, component: pluginList }]
-  zones: ({ pinned: pinnedZone })
+  tiles: all.map(function(entry) { return { key: entry.id, title: entry.name, component: pluginTile } })
   Component {
     id: pluginList
     PluginList { addon: pluginsAddon; host: pluginsAddon.host; active: pluginsAddon.host.view === "plugins" }
   }
   Component {
-    id: pinnedZone
-    PluginsZone { addon: pluginsAddon; center: parent.center }
+    id: pluginTile
+    PluginTile {
+      center: parent.center
+      addon: pluginsAddon
+      // A stand-in for the moment a reloaded list drops it.
+      entry: pluginsAddon.entryFor(String(parent.controlKey).slice(pluginsAddon.addon.id.length + 1))
+        || ({ id: "", name: "", enabled: false, openable: false })
+    }
   }
 
   readonly property var openKinds: ["panel", "overlay", "menu"]
@@ -40,28 +47,6 @@ Addon {
   function entryFor(id) {
     for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]
     return null
-  }
-
-  // The plugins pinned to the control center, in order: the settings hold
-  // "plugins.<id>" for each. One that's gone stays saved, not shown.
-  readonly property string pinPrefix: "plugins."
-  readonly property var pinnedIds: String(host.settings.controlCenterPlugins || "").split(",")
-    .filter(function(key) { return key.indexOf(pinPrefix) === 0 }).map(function(key) { return key.slice(pinPrefix.length) })
-  readonly property var pinned: pinnedIds.map(entryFor).filter(function(entry) { return !!entry })
-  readonly property var unpinned: all.filter(function(entry) { return pinnedIds.indexOf(entry.id) === -1 })
-  function savePinned(ids) {
-    host.settings.controlCenterPlugins = ids.map(function(id) { return pinPrefix + id }).join(",")
-  }
-  // Pins `id`, or moves it if pinned already: before the pinned plugin
-  // `beforeId`, or at the end without it.
-  function pin(id, beforeId) {
-    var ids = pinnedIds.filter(function(other) { return other !== id })
-    var at = beforeId ? ids.indexOf(beforeId) : -1
-    ids.splice(at === -1 ? ids.length : at, 0, id)
-    savePinned(ids)
-  }
-  function unpin(id) {
-    savePinned(pinnedIds.filter(function(other) { return other !== id }))
   }
 
   Component.onCompleted: refresh()
