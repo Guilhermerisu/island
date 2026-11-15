@@ -3,9 +3,10 @@ import Quickshell.Io
 
 // Checks GitHub for a newer island (20 seconds after the shell starts, then
 // every six hours) and installs it. Only a git checkout of the plugin can
-// update; the check is skipped otherwise. The update runs detached, since
-// updating the plugin folder reloads the island, and restarts the shell when
-// it's done.
+// update; the check is skipped otherwise. The update (update.sh) runs
+// detached, since updating the plugin folder reloads the island, and restarts
+// the shell when it's done. When it can't update, it says why through the
+// island's updateFailed command, which lands in fail().
 Item {
   id: updater
   required property string pluginDir
@@ -13,6 +14,9 @@ Item {
   property string status: ""
   // A newer version is on GitHub.
   signal available()
+  // The update didn't go ahead; the row is a banner saying why, which retries
+  // when clicked.
+  signal failed(var row)
 
   // The notification pill's row for an update banner; clicking it updates.
   function bannerRow(body) {
@@ -22,6 +26,11 @@ Item {
     if (status === "updating") return
     status = "updating"
     installUpdate.running = true
+  }
+  function fail(reason) {
+    status = "available"
+    failed({ summary: "Island Update Failed · Click to Retry", body: String(reason || "The update stopped without saying why."),
+      glyph: "󰀦", timestamp: Date.now(), islandUpdate: true, islandFailure: true })
   }
 
   Timer {
@@ -47,6 +56,6 @@ Item {
   }
   Process {
     id: installUpdate
-    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", updater.pluginDir.replace(/.*\//, "")]
+    command: ["setsid", "-f", "bash", updater.pluginDir + "/services/update.sh", updater.pluginDir]
   }
 }

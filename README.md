@@ -101,7 +101,9 @@ Island checks GitHub shortly after the shell starts and then every six hours.
 When a new version is out, the island shows **Island Update: A new version is
 ready. Click to update.** Click it, and Island updates and restarts the shell.
 This needs the plugin to be a git checkout, which `omarchy plugin add` gives
-you, with no local changes.
+you. If the update can't go ahead (files you edited in the plugin folder, your
+own commits, no connection), the island says why and what to do, and clicking
+the message tries again.
 </details>
 
 <details>

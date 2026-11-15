@@ -66,7 +66,7 @@ Item {
     if (status === "menu-invalid") menuEditor.running = true
     else if (failure !== "") {
       failureBanner({ summary: "Island Setup Failed · Click to Retry", body: failure.charAt(0).toUpperCase() + failure.slice(1),
-        glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true })
+        glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true, islandFailure: true })
     }
     else install()
   }

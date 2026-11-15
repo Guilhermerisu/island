@@ -22,8 +22,9 @@ IslandPill {
   shown: host.notificationPill
   pillWidth: 440
   // With full text the pill grows with the wrapped text, up to 60% of the
-  // screen; past that the body is still cut with "…".
-  readonly property bool fullText: host.settings.notificationFullText
+  // screen; past that the body is still cut with "…". The island's own
+  // failure banners always show in full, since they say what to do.
+  readonly property bool fullText: host.settings.notificationFullText || !!row.islandFailure
   readonly property real maxHeight: (Window.height > 0 ? Window.height : 1000) * 0.6
   pillHeight: fullText ? Math.min(maxHeight, Math.max(84, textColumn.height + 44) + actionsExtra) : 84 + actionsExtra
   // The island's own banners act on a click (see Island.qml's showBanner);

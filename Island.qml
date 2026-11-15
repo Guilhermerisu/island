@@ -394,6 +394,7 @@ Item {
     id: islandUpdater
     pluginDir: root.setup.pluginDir
     onAvailable: root.announceUpdate()
+    onFailed: function(row) { root.showBanner(row, 15000) }
   }
   OsdBridge { id: osdBridge; host: root }
   // The banner waits until nothing else is on the island.
@@ -510,6 +511,11 @@ Item {
       var ask = root.addons.root("ask")
       if (ask) ask.ask(question)
       return root.view
+    }
+    // From services/update.sh, when the update couldn't go ahead.
+    function updateFailed(reason: string): string {
+      root.updater.fail(reason)
+      return "shown"
     }
     function companionStatus(): string { return root.setup.status }
     function installCompanion(): string {
