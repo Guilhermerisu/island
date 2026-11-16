@@ -39,7 +39,15 @@ Addon {
     // Every model on this machine, from all-usage.py: no limits, just tokens.
     all: { id: "all", name: "All Models", glyph: "󰚩", glyphSize: 0.6, color: host.theme.system.indigo, login: "" }
   })
-  readonly property var provider: providers[addon.option("agent")] || providers.claude
+  readonly property var selectedAgents: {
+    var saved = addon.option("agent")
+    var ids = typeof saved === "string" ? [saved] : Array.from(saved || [])
+    var valid = ids.filter(function(id, index) { return !!providers[id] && ids.indexOf(id) === index })
+    return valid.length ? valid : ["claude"]
+  }
+  property string activeAgent: ""
+  readonly property string providerId: selectedAgents.indexOf(activeAgent) >= 0 ? activeAgent : selectedAgents[0]
+  readonly property var provider: providers[providerId]
 
   // Or a zone of the control center is on screen (see zoneViews in Addon.qml).
   readonly property bool watching: host.view === "settings" || zoneViews > 0

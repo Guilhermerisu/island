@@ -19,6 +19,18 @@ ColumnLayout {
   property bool shown: false
   spacing: 20
 
+  SettingsSegmented {
+    Layout.alignment: Qt.AlignHCenter
+    visible: page.agents.selectedAgents.length > 1
+    view: page.view
+    minWidth: 0
+    options: page.agents.selectedAgents.map(function(id) {
+      return { label: id === "claude" ? "Claude" : page.agents.providers[id].name, value: id }
+    })
+    value: page.agents.providerId
+    onPicked: function(id) { page.agents.activeAgent = id }
+  }
+
   readonly property var record: agents.record
   readonly property var provider: agents.provider
   // Typed, so theme.withAlpha can tint it.

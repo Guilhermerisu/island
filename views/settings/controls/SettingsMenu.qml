@@ -26,7 +26,7 @@ Popover {
     x = Math.max(4, p.x + target.width - width)
     // As macOS's pop-up menus: the current choice opens over the button.
     var chosen = 0
-    for (var j = 0; j < target.options.length; j++) if (target.options[j].value === target.value) chosen = j
+    for (var j = 0; j < target.options.length; j++) if (target.isSelected(target.options[j].value)) { chosen = j; break }
     var top = p.y + (target.height - 28) / 2 - 5 - chosen * 28
     y = Math.max(4, Math.min(view.height - height - 4, top))
     button = target
@@ -42,7 +42,7 @@ Popover {
       delegate: Rectangle {
         id: menuItem
         required property var modelData
-        readonly property bool chosen: menu.value === modelData.value
+        readonly property bool chosen: !!menu.button && menu.button.isSelected(modelData.value)
         width: menuColumn.width
         height: 28
         radius: menu.view.host.theme.radii.small
@@ -60,6 +60,7 @@ Popover {
           x: 26
           anchors.verticalCenter: parent.verticalCenter
           text: menuItem.modelData.label
+          textFormat: Text.PlainText
           color: itemMouse.containsMouse ? menu.view.accentInk : menu.view.text
           font.family: menu.view.host.theme.textFontFamily
           font.letterSpacing: menu.view.host.theme.tracking(menu.view.host.theme.textFontFamily, menu.view.detailFontSize)
@@ -70,10 +71,11 @@ Popover {
           anchors.fill: parent
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
-          onClicked: {
+          onClicked: function(mouse) {
             var target = menu.button
-            menu.button = null
-            if (target) target.picked(menuItem.modelData.value)
+            var additive = target && target.multiSelect && (mouse.modifiers & Qt.ControlModifier)
+            if (!additive) menu.button = null
+            if (target) target.pick(menuItem.modelData.value, additive)
           }
         }
       }
