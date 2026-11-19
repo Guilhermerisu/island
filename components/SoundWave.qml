@@ -1,13 +1,16 @@
 import QtQuick
 
-// iOS-style bars driven by the CAVA service's real spectrum.
-// Frequency bins are grouped to fit each view; no synthetic motion is added.
+// iOS-style bars driven by the CAVA service's real spectrum. Frequency bins
+// are grouped to fit each view. Without CAVA (not installed, or not started
+// yet) the bars bounce to random heights instead, as they did before it.
 Row {
   id: wave
   property color color: "white"
   property bool playing: false
   property var spectrum: null
   readonly property var levels: visible && playing && spectrum?.playing ? spectrum.levels : null
+  readonly property bool synthetic: visible && playing && !spectrum?.available
+  onSyntheticChanged: if (!synthetic) updateTargets()
   property int bars: 5
   property real barWidth: 3
   property real maxHeight: 18
@@ -62,6 +65,25 @@ Row {
       else bar.level = bar.target
     }
     pulse.running = moving
+  }
+
+  // The fallback: new random targets a few times a second. The middle bars
+  // swing wider than the outer ones, like iOS's.
+  Timer {
+    interval: 180
+    repeat: true
+    triggeredOnStart: true
+    running: wave.synthetic
+    onTriggered: {
+      var middle = (wave.bars + 1) / 2
+      for (var i = 1; i <= wave.bars; i++) {
+        var bar = repeater.itemAt(i)
+        if (!bar) continue
+        var reach = 1 - Math.abs(i - middle) / middle * 0.45
+        bar.target = (0.15 + Math.random() * 0.85) * reach
+      }
+      pulse.running = true
+    }
   }
 
   // Calculate the band energy only for a new input sample. Interpolate at
