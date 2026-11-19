@@ -16,7 +16,7 @@ Item {
   // The core panes, with the enabled addons' own (see addons/Addon.qml)
   // after Addons.
   readonly property var addonPages: host.addons.settingsPages
-  readonly property var pages: ["General", "Live Activities", "Notifications", "Network", "Addons"]
+  readonly property var pages: ["General", "Island Visibility", "Live Activities", "Notifications", "Network", "Addons"]
     .concat(addonPages.map(function(page) { return page.title }), ["Keybinds"])
   onPagesChanged: if (pages.indexOf(currentPage) === -1) currentPage = "General"
   readonly property var pageInfo: {
@@ -35,6 +35,7 @@ Item {
   })
   readonly property var corePageInfo: ({
     "General": { icon: "󰢻", color: settingsView.host.theme.system.gray, about: "Appearance, motion, and how the pill looks at rest." },
+    "Island Visibility": { icon: "󰛑", color: "#0a84ff", about: "Choose when Dynamic Island hides and how to bring it back." },
     "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
     "Notifications": { icon: "󰂜", color: "#ff3b30", about: "How notification banners appear on the island." },
     "Network": { icon: "󰖩", color: "#0a84ff", about: "Wi-Fi, Ethernet, and VPN connections, and the computer's name on the network." },
@@ -46,6 +47,7 @@ Item {
     if (query === "") return true
     var terms = {
       "General": "general time format 12-hour clock style hide automatically appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile omarchy menu search apps applications",
+      "Island Visibility": "visibility hide autohide fullscreen maximized tiled floating empty workspace idle screensaver hover right click bar notifications",
       "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads screen recording record system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
       "Notifications": "notifications banner duration stack stacked group buttons actions",
       "Network": "network wifi wi-fi ethernet vpn wireguard openvpn connection connections ip address dns dhcp router gateway hostname password hidden forget networkmanager nmtui",
@@ -272,6 +274,7 @@ Item {
 
           PaneHeader { view: settingsView; page: settingsView.currentPage }
           GeneralPage { view: settingsView }
+          VisibilityPage { view: settingsView }
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
           NetworkPage { view: settingsView }
