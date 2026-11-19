@@ -164,7 +164,8 @@ Item {
   readonly property string keyboardLabel: host.keyboard.name || "Unknown"
 
   // --- Shell services ---
-  readonly property var notifications: host.shell ? host.shell.firstPartyServiceFor("omarchy.notifications") : null
+  readonly property var notifications: host.shell?.serviceFor?.("guilhermerisu.notifications")
+    || host.shell?.firstPartyServiceFor?.("omarchy.notifications")
   readonly property var nightlight: host.shell ? host.shell.firstPartyServiceFor("omarchy.nightlight") : null
   readonly property var idle: host.shell ? host.shell.firstPartyServiceFor("omarchy.idle") : null
   readonly property bool dnd: notifications ? !!notifications.doNotDisturb : false

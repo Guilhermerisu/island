@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../components/IconSource.js" as IconSource
+import "../companion/guilhermerisu.notifications/DiscordCall.mjs" as Calls
 
 // The island's side of the guilhermerisu.notifications companion, which wraps
 // Omarchy's own notification service. The companion writes the notifications
@@ -42,6 +43,17 @@ Item {
   signal dismissedElsewhere(var row)
 
   onHistoryVisibleChanged: if (historyVisible) refreshHistory()
+
+  function discordCall(row) { return Calls.incomingCall(row) }
+  function openDiscordCall(row) {
+    if (row.hasDefault) {
+      open(row, true)
+      return
+    }
+    command("dismissKey", row)
+    focusProc.command = ["sh", "-c", "omarchy-hyprland-focus-app 'discord|vesktop|webcord' || xdg-open https://discord.com/channels/@me"]
+    focusProc.startDetached()
+  }
 
   function iconSource(row, appIconOnly) {
     if (!row) return ""

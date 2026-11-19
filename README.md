@@ -46,6 +46,9 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+Discord desktop notifications for incoming calls use a call banner.
+In Settings → Notifications you can let these calls through Do Not Disturb.
+
 <h2 align="center">FAQ</h2>
 
 <details>

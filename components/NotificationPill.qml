@@ -16,7 +16,9 @@ IslandPill {
   onRowChanged: imageFailed = false
   readonly property string iconSource: host.notifications.iconSource(host.notifications.last, imageFailed)
   readonly property var brand: host.notifications.brand(row)
-  readonly property var actions: host.settings.notificationButtons ? row.actions || [] : []
+  readonly property var call: host.notifications.discordCall(row)
+  readonly property var actions: call ? [{ label: call.accept >= 0 ? "Accept call" : "Open Discord", actionIndex: call.accept }]
+    : host.settings.notificationButtons ? row.actions || [] : []
   // Room under the text for the buttons.
   readonly property real actionsExtra: actions.length > 0 ? 42 : 0
   shown: host.notificationPill
@@ -32,6 +34,7 @@ IslandPill {
   function clicked(mouse) {
     if (row.islandUpdate) host.updateIsland()
     else if (row.islandSetupRetry) { host.dismissFeedback(); host.setup.install() }
+    else if (call) { host.dismissFeedback(); host.notifications.openDiscordCall(row) }
     else { host.dismissFeedback(); host.notifications.open(row, true) }
   }
 
@@ -52,7 +55,7 @@ IslandPill {
     color: "transparent"
     Rectangle {
       anchors.fill: parent
-      visible: appTileImage.status !== Image.Ready
+      visible: !pill.call && appTileImage.status !== Image.Ready
       gradient: Gradient {
         GradientStop { position: 0; color: pill.brand ? Qt.lighter(pill.brand.tile, 1.12) : Qt.lighter(host.theme.accent, 1.25) }
         GradientStop { position: 1; color: pill.brand ? pill.brand.tile : host.theme.accent }
@@ -61,7 +64,7 @@ IslandPill {
     Image {
       id: appTileImage
       anchors.fill: parent
-      source: pill.iconSource
+      source: pill.call ? "" : pill.iconSource
       sourceSize.width: 100
       sourceSize.height: 100
       fillMode: Image.PreserveAspectCrop
@@ -71,11 +74,34 @@ IslandPill {
     }
     Text {
       anchors.centerIn: parent
-      visible: appTileImage.status !== Image.Ready
+      visible: !pill.call && appTileImage.status !== Image.Ready
       text: pill.brand ? pill.brand.glyph : String(pill.row.glyph || "") || "󰂚"
       color: pill.brand ? pill.brand.ink : host.theme.accentText
       font.family: pill.brand ? "JetBrainsMono Nerd Font" : host.theme.fontFamily
       font.pixelSize: pill.brand ? Math.round(parent.height * 0.6) : pill.host.theme.px(24)
+    }
+    Rectangle {
+      anchors.fill: parent
+      visible: !!pill.call
+      color: "#123525"
+      Text {
+        id: handset
+        anchors.centerIn: parent
+        text: "󰏲"
+        color: "#30d158"
+        font.family: pill.host.theme.fontFamily
+        font.pixelSize: Math.round(parent.height * 0.58)
+        SequentialAnimation on rotation {
+          running: pill.shown && !!pill.call
+          loops: Animation.Infinite
+          onStopped: handset.rotation = 0
+          NumberAnimation { to: -14; duration: pill.host.theme.motionDuration("press") }
+          NumberAnimation { to: 14; duration: pill.host.theme.motionDuration("press") }
+          NumberAnimation { to: -11; duration: pill.host.theme.motionDuration("press") }
+          NumberAnimation { to: 0; duration: pill.host.theme.motionDuration("press") }
+          PauseAnimation { duration: 560 }
+        }
+      }
     }
   }
 
@@ -121,7 +147,7 @@ IslandPill {
         anchors.left: parent.left
         anchors.right: age.left
         anchors.rightMargin: 8
-        text: host.notifications.title(pill.row)
+        text: pill.call ? (pill.call.name || "Incoming call") : host.notifications.title(pill.row)
         textFormat: Text.PlainText
         wrapMode: pill.fullText ? Text.Wrap : Text.NoWrap
         // Elide only bites when the line limit is hit, or with wrapping off.
@@ -149,7 +175,7 @@ IslandPill {
     }
     Text {
       width: parent.width
-      text: String(pill.row.body || pill.row.app || "")
+      text: pill.call ? (pill.call.name ? "Incoming Discord call" : "Discord") : String(pill.row.body || pill.row.app || "")
       visible: text !== ""
       textFormat: Text.PlainText
       wrapMode: pill.fullText ? Text.Wrap : Text.NoWrap
@@ -206,7 +232,8 @@ IslandPill {
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           onClicked: {
-            host.notifications.runAction(pill.row, index)
+            if (pill.call && modelData.actionIndex < 0) host.notifications.openDiscordCall(pill.row)
+            else host.notifications.runAction(pill.row, pill.call ? modelData.actionIndex : index)
             host.dismissFeedback()
           }
         }

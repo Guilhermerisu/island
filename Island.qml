@@ -445,7 +445,8 @@ Item {
     onArrived: function(row) {
       // One with buttons stays long enough to press one.
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"),
-        Math.max(root.settings.bannerSeconds * 1000, root.settings.notificationButtons && (row.actions || []).length > 0 ? 8000 : 0), "notification")
+        Math.max(root.settings.bannerSeconds * 1000, notificationClient.discordCall(row) ? 12000
+          : root.settings.notificationButtons && (row.actions || []).length > 0 ? 8000 : 0), "notification")
     }
   }
   // The island's own banners (setup, updates) in the notification pill.

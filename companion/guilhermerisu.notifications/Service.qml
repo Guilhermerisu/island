@@ -2,7 +2,7 @@
 // loaded as it is from the Omarchy install, with its toasts taken off the
 // screen and everything it knows handed to the island.
 //
-// Nothing of Omarchy's daemon is copied or patched. It keeps owning
+// Omarchy's daemon keeps owning
 // org.freedesktop.Notifications, the stacks, the buttons, Do Not Disturb and
 // the history (~/.local/state/omarchy/notifications/); this file only
 //   - loads it, from wherever the running Omarchy keeps it,
@@ -27,8 +27,9 @@ Item {
   property var shell: null
   property string omarchyPath: Quickshell.env("OMARCHY_PATH")
 
-  readonly property string nativeUrl: "file://" + (omarchyPath || "/usr/share/omarchy") + "/shell/plugins/notifications/Service.qml"
+  readonly property string nativeDirectory: "file://" + (omarchyPath || "/usr/share/omarchy") + "/shell/plugins/notifications"
   readonly property string stateDir: Quickshell.env("HOME") + "/.local/state/omarchy"
+  property bool discordCallsInDnd: false
   // The daemon's public members used below; its other internals are not touched.
   readonly property var needs: ["layout", "deedsFor", "runDeed", "activate", "closeToast", "doNotDisturb", "setDoNotDisturb"]
   // What nativeRows reads off each of its rows. A row without one of these
@@ -49,11 +50,40 @@ Item {
 
   Component.onCompleted: start()
 
+  FileView {
+    path: Quickshell.env("HOME") + "/.config/omarchy/island.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      try { service.discordCallsInDnd = JSON.parse(text()).discordCallsInDnd === true }
+      catch (error) { console.warn("island notifications: couldn’t read Discord call preference", error) }
+    }
+    onLoadFailed: function(error) {
+      if (error === FileViewError.FileNotFound) service.discordCallsInDnd = false
+    }
+  }
+
   function start() {
-    var comp = Qt.createComponent(nativeUrl, Component.PreferSynchronous)
-    if (comp.status !== Component.Ready) return useFallback("couldn't load " + nativeUrl + ": " + comp.errorString())
-    var daemon = comp.createObject(service)
-    if (!daemon) return useFallback("couldn't start " + nativeUrl)
+    var daemon
+    try {
+      // QML resolves this override from the native daemon's receive handler.
+      daemon = Qt.createQmlObject(`
+        import QtQuick
+        import Quickshell.Services.Notifications
+        import ${JSON.stringify(nativeDirectory)} as Native
+        import ${JSON.stringify(nativeDirectory + "/NotificationLogic.js")} as Stock
+        import ${JSON.stringify(Qt.resolvedUrl("DiscordCall.mjs").toString())} as Calls
+        Native.Service {
+          property bool discordCallsInDnd: false
+          function shouldBypassDnd(notification) {
+            return Calls.bypassDoNotDisturb(notification, discordCallsInDnd)
+              || Stock.shouldBypassDnd(notification, NotificationUrgency.Critical)
+          }
+        }`, service, Qt.resolvedUrl("NativeNotifications.qml"))
+    } catch (error) {
+      return useFallback(String(error))
+    }
     var missing = service.needs.filter(function(name) { return !(name in daemon) })
     if (!missing.length && !(daemon.layout && Array.isArray(daemon.layout.decks))) missing = ["layout.decks"]
     if (missing.length) {
@@ -61,6 +91,7 @@ Item {
       return useFallback("it no longer has " + missing.join(", "))
     }
     daemon.shell = Qt.binding(function() { return service.shell })
+    daemon.discordCallsInDnd = Qt.binding(function() { return service.discordCallsInDnd })
     // Its toasts: the one Variants it makes PanelWindows from. Created at
     // load, so the (empty, transparent) surfaces exist for an instant.
     var toasts = null
@@ -73,10 +104,13 @@ Item {
   }
 
   function useFallback(why) {
-    console.error("island notifications: Omarchy's notification service isn't usable (" + why + "); using the basic fallback, without stacks, actions or history")
+    console.error("island notifications: Omarchy's notification service isn't usable (" + why + "); using the basic fallback, without stacks or history")
     fallback = fallbackComponent.createObject(service)
   }
-  Component { id: fallbackComponent; Fallback { } }
+  Component {
+    id: fallbackComponent
+    Fallback { discordCallsInDnd: service.discordCallsInDnd }
+  }
   // The daemon stopped making sense while running. Its bus name is only free
   // once it is gone, so the fallback waits for that.
   function abandonCore(why) {
@@ -144,10 +178,17 @@ Item {
         for (var f = 0; f < rowFields.length; f++)
           if (row[rowFields[f]] === undefined) throw new Error("its rows no longer have " + rowFields[f])
         var key = String(row.key)
+        var ref = core.liveRefs && !(typeof core.isRestoredRow === "function" && core.isRestoredRow(row))
+          ? core.liveRefs[row.originalId] : null
+        var hints = ref?.hints || ({})
         out.push({ key: key, originalId: row.originalId, timestamp: Math.round(row.ts * 1000), app: row.app, appIcon: row.appIcon,
+                   category: String(hints.category || ""), desktopEntry: String(hints["desktop-entry"] || ""),
+                   hasDefault: Array.from(ref?.actions || []).some(action => action.identifier === "default"),
                    image: row.image, glyph: row.glyph, summary: row.summary, body: row.bodyLine, urgency: row.urgency,
                    group: row.groupKey, stack: decks[d].rows.length,
-                   actions: core.deedsFor(key).map(function(deed) { return { label: deed.kind === "code" ? "Copy code" : deed.label } }),
+                   actions: core.deedsFor(key).map(function(deed) {
+                     return { label: deed.kind === "code" ? "Copy code" : deed.label, id: deed.identifier || "" }
+                   }),
                    duration: row.duration })
       }
     return out
@@ -243,8 +284,7 @@ Item {
 
     // Button n (from 1) of a banner, as it is listed in the feed.
     function runDeed(key: string, n: int): string {
-      if (!service.core) return "none"
-      return service.core.runDeed(key, n - 1) ? "ok" : "none"
+      return (service.core ? service.core.runDeed(key, n - 1) : service.fallback?.runAction(key, n - 1)) ? "ok" : "none"
     }
 
     // A history entry, or all of them.
