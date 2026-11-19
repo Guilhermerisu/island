@@ -120,20 +120,6 @@ Addon {
   readonly property var live: working ? sessions.filter(function(s) { return s.state !== "done" })[0] : session
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
-  readonly property bool bannersEnabled: addon.option("live") !== false && addon.option("banners") !== false
-  property var notice: null
-  property var pendingNotices: []
-  property var seenNotices: ({})
-  property double bannersSince: Date.now()
-  onBannersEnabledChanged: {
-    if (bannersEnabled) bannersSince = Date.now()
-    else {
-      notice = null
-      pendingNotices = []
-      seenNotices = ({})
-      noticeTimer.stop()
-    }
-  }
 
   Process {
     id: liveWatch
@@ -147,11 +133,7 @@ Addon {
     stderr: StdioCollector {
       onStreamFinished: if (text.trim() !== "") console.warn("agents addon:", text.trim())
     }
-    onRunningChanged: if (!running) {
-      agentsAddon.sessions = []
-      agentsAddon.notice = null
-      agentsAddon.pendingNotices = []
-    }
+    onRunningChanged: if (!running) agentsAddon.sessions = []
   }
 
   // A turn that ends while it's shown says so on the pill a moment, as a
@@ -161,8 +143,8 @@ Addon {
   function takeSessions(next) {
     var wasWorking = working
     sessions = next
-    if (bannersEnabled) queueNotices(next)
-    if (wasWorking && !working && next.length && next[0].state === "done") {
+    // A turn you stopped isn't a finished one: the pill just goes.
+    if (wasWorking && !working && next.length && next[0].state === "done" && !next[0].interrupted) {
       finished = true
       finishedTimer.restart()
     } else if (working) {
@@ -170,53 +152,26 @@ Addon {
       finishedTimer.stop()
     }
   }
-  function queueNotices(next) {
-    var cutoff = Math.max(bannersSince, Date.now() - 5000)
-    var seen = ({})
-    for (var key in seenNotices)
-      if (seenNotices[key] >= cutoff) seen[key] = seenNotices[key]
-
-    var pending = pendingNotices.slice()
-    for (var i = 0; i < next.length; i++) {
-      var session = next[i]
-      var question = session.state === "asking"
-      var stamp = question ? session.askedAt : session.state === "done" && !session.interrupted ? session.doneAt : 0
-      if (!stamp || stamp < cutoff) continue
-      var id = JSON.stringify([session.id, question, stamp])
-      if (seen[id]) continue
-      seen[id] = stamp
-      pending.push({ sessionId: session.id, question: question, stamp: stamp })
-    }
-    seenNotices = seen
-    pending.sort(function(a, b) { return a.stamp - b.stamp })
-    pendingNotices = pending.slice(-4)
-    if (!notice) nextNotice()
-  }
-  function nextNotice() {
-    var cutoff = Date.now() - 5000
-    var pending = pendingNotices.filter(function(event) {
-      return event.stamp >= cutoff && (!event.question || sessions.some(function(session) {
-        return session.id === event.sessionId && session.askedAt === event.stamp
-      }))
-    })
-    notice = pending.length ? pending[0] : null
-    pendingNotices = pending.slice(1)
-    if (notice) noticeTimer.restart()
-  }
-  Timer { id: noticeTimer; interval: 2500; onTriggered: agentsAddon.nextNotice() }
-
-  function focusSession(event) {
+  // Waiting on you or just done, a click goes to the session's window
+  // (see focus-session.py) instead of the control center; done, the pill
+  // then goes too.
+  function pillClicked() {
+    var target = asking || finished ? live : null
+    if (!target) { host.view = "controls"; return }
     if (focusProc.running) return
-    focusProc.target = event
-    focusProc.command = ["python3", localPath("focus-session.py"), event.sessionId]
+    focusProc.wasDone = !asking
+    focusProc.command = ["python3", localPath("focus-session.py"), target.id]
     focusProc.running = true
   }
   Process {
     id: focusProc
-    property var target: null
+    property bool wasDone: false
     onExited: function(code) {
-      if (code === 0 && agentsAddon.notice === target) agentsAddon.nextNotice()
-      target = null
+      if (code !== 0) agentsAddon.host.view = "controls"
+      else if (wasDone && !agentsAddon.working) {
+        agentsAddon.finished = false
+        finishedTimer.stop()
+      }
     }
   }
   Timer {

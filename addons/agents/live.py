@@ -5,11 +5,12 @@ Follows the transcripts Claude Code writes as it goes (<config>/projects/
 <project>/<session>.jsonl, for ~/.claude and any ~/.claude-* profile) and
 prints one JSON line whenever what's worth showing changes:
 
-  {"sessions": [{"id", "state", "startedAt", "askedAt", "doneAt", "interrupted"}]}
+  {"sessions": [{"id", "state", "startedAt", "doneAt", "interrupted"}]}
 
 newest first. `state` is "thinking", "tool" (a step is running), "asking"
 (it's waiting on your answer to a question or its plan), or "done"
-(the turn ended, or was interrupted, `doneAt` ms ago at most DONE_KEPT).
+(the turn ended, or was interrupted, `doneAt` ms ago at most DONE_KEPT;
+`interrupted` tells the two apart).
 `startedAt` is when you sent the turn's prompt, or when its first step
 started if the prompt is out of reach.
 
@@ -50,7 +51,7 @@ class Session:
         self.path = path
         self.id = os.path.splitext(os.path.basename(path))[0]
         self.offset = 0
-        self.running = {}      # steps by id: question timestamp, or 0 for another tool
+        self.running = {}      # the turn's running steps by id: whether it's asking
         self.state = ""        # "", thinking, tool, asking, done
         self.started = 0
         self.done_at = 0
@@ -109,7 +110,7 @@ class Session:
             return
         for block in content or []:
             if block.get("type") == "tool_use":
-                self.running.setdefault(block.get("id"), stamp if block.get("name") in ASKING_TOOLS else 0)
+                self.running[block.get("id")] = block.get("name") in ASKING_TOOLS
                 self.started = self.started or stamp
         if (entry.get("message") or {}).get("stop_reason") == "end_turn":
             self.finish(stamp)
@@ -139,8 +140,7 @@ class Session:
 
     def snapshot(self):
         return {"id": self.id, "state": self.state, "startedAt": self.started,
-                "askedAt": max(self.running.values(), default=0), "doneAt": self.done_at,
-                "interrupted": self.interrupted}
+                "doneAt": self.done_at, "interrupted": self.interrupted}
 
 
 def mtime_ms(path):

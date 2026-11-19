@@ -52,10 +52,10 @@ omarchy bar use guilhermerisu.island
 <summary><b>Can I jump back to the Claude Code session?</b></summary>
 <br>
 
-With the Agents addon's Live Activity enabled, a brief banner appears when
-Claude Code asks a question or completes a turn. Click it to focus the
-session's window when Island can identify a single matching Hyprland client.
-Use Settings → Addons → Agents to turn Claude Code banners off.
+Yes. While the Agents pill shows Claude Code waiting on you or a finished
+turn, click it to focus the session's window. This works when Island can
+match the session to a single Hyprland window, so it may not work for
+sessions inside a terminal multiplexer.
 </details>
 
 <details>

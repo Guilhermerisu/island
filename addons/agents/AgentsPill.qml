@@ -4,7 +4,8 @@ import "../../components"
 
 // Claude Code at work, as Apple's live activities: Clawd leading and the
 // turn's time trailing, the clock between them; once the turn's done, a
-// green check and "Done" in the time's place. `agents` is the AgentsAddon.
+// green check and "Done" in the time's place, and "Waiting" while it waits
+// on your answer. `agents` is the AgentsAddon.
 Item {
   id: pill
   required property var agents
@@ -62,7 +63,7 @@ Item {
         theme: pill.theme
         id: restTime
         anchors.right: parent.right
-        text: pill.agents.timeText(pill.agents.turnTime)
+        text: pill.phase === "asking" ? "Waiting" : pill.agents.timeText(pill.agents.turnTime)
         color: pill.ink
         font.family: pill.theme.textFontFamily
         font.pixelSize: pill.theme.size.body
