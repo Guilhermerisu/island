@@ -46,6 +46,22 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+### Local tool activities
+
+With the Agents addon's **Live Activity** option on, the Island can follow
+other tools locally. To show a command as a live activity, run:
+
+```sh
+~/.config/omarchy/plugins/guilhermerisu.island/companion/island-activity run "Build" make
+```
+
+For OpenCode, copy the supplied event plugin and restart OpenCode:
+
+```sh
+install -Dm644 ~/.config/omarchy/plugins/guilhermerisu.island/companion/opencode-island-activity.js \
+  ~/.config/opencode/plugins/island-activity.js
+```
+
 <h2 align="center">FAQ</h2>
 
 <details>
