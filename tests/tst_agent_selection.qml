@@ -58,7 +58,8 @@ TestCase {
   function choose(index, modifiers) {
     if (!menu.button) mouseClick(selector, 10, 10)
     tryCompare(menu, "opacity", 1)
-    wait(1)
+    // Its rows are laid out on the next frame; clicked before, they all sit at the top.
+    verify(waitForRendering(menu))
     mouseClick(menu, 35, 5 + index * 28 + 14, Qt.LeftButton, modifiers || Qt.NoModifier)
   }
   function test_mouse_selection() {

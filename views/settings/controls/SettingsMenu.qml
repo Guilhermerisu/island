@@ -2,13 +2,15 @@ import QtQuick
 import "../../../components"
 
 // Settings' pop-up menu, opened by a SettingsPopUp (`button`) with its
-// options; picking one hands it to the button's picked().
+// options; picking one hands it to the button's pick(). `owner` is the
+// button it last opened for, kept while it fades out so its choice stays
+// checked.
 Popover {
   id: menu
   required property var view
   property Item button: null
+  property Item owner: null
   property var options: []
-  property var value
   theme: view.host.theme
   open: !!button
   transformOrigin: Item.Center
@@ -19,7 +21,7 @@ Popover {
     var widest = 0
     for (var i = 0; i < target.options.length; i++) widest = Math.max(widest, menuFont.advanceWidth(target.options[i].label))
     options = target.options
-    value = target.value
+    owner = target
     width = Math.max(target.width, Math.ceil(widest) + 52)
     height = target.options.length * 28 + 10
     var p = target.mapToItem(view, 0, 0)
@@ -42,7 +44,7 @@ Popover {
       delegate: Rectangle {
         id: menuItem
         required property var modelData
-        readonly property bool chosen: !!menu.button && menu.button.isSelected(modelData.value)
+        readonly property bool chosen: !!menu.owner && menu.owner.isSelected(modelData.value)
         width: menuColumn.width
         height: 28
         radius: menu.view.host.theme.radii.small
