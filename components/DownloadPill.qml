@@ -11,11 +11,14 @@ import Quickshell
 IslandPill {
   id: pill
   readonly property var tracker: host.downloads
-  // Package updates share this pill; file downloads take precedence.
+  // Both types share this pill. Keep its last mode while fading out.
   readonly property var packages: host.packages
-  readonly property bool packageMode: !tracker.active && tracker.finishedName === ""
-  readonly property bool downloading: host.downloadActive
-  readonly property bool done: host.downloadDone
+  readonly property string selectedKind: host.restingIndicator
+  property bool packageMode: selectedKind === "updates"
+  onSelectedKindChanged: if (selectedKind === "downloads" || selectedKind === "updates")
+    packageMode = selectedKind === "updates"
+  readonly property bool downloading: shown && !done
+  readonly property bool done: shown && (packageMode ? packages.finishedTitle !== "" : tracker.finishedName !== "")
   readonly property color activityAccent: host.settings.colorfulLiveActivities ? pill.host.theme.system.green : host.theme.accent
 
   shown: host.downloadPill
@@ -25,8 +28,9 @@ IslandPill {
   // The finished file, or while downloading either side, opens it (or its
   // folder); a finished update just goes.
   function clicked(mouse) {
-    if (done || mouse.x < 56 || mouse.x > width - 90) host.openDownloads()
-    else host.view = "controls"
+    if (!done && mouse.x >= 56 && mouse.x <= width - 90) host.view = "controls"
+    else if (packageMode) packages.dismissFinished()
+    else host.openDownloads()
   }
 
   function formatBytes(n) {

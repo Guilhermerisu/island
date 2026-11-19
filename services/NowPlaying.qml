@@ -1,5 +1,7 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
+import "ActivityPriority.mjs" as Priority
 
 // What's playing, from Omarchy's media service: the active player, its cover
 // art, and a tint picked from the cover for the media pill and player view.
@@ -21,6 +23,20 @@ Item {
   onReportedArtChanged: if (reportedArt) { keptArt = reportedArt; keptArtTitle = title }
   onTitleChanged: if (title !== keptArtTitle) { keptArt = reportedArt; keptArtTitle = title }
   readonly property string art: reportedArt || (title === keptArtTitle ? keptArt : "")
+
+  readonly property string source: player ? [player.dbusName, player.identity, player.desktopEntry].join(" ") : ""
+  readonly property string metadataKind: player ? Priority.mediaKind(player.metadata, reportedArt, source) : ""
+  readonly property var browserClass: /chromium|chrome|firefox|zen|brave|vivaldi|librewolf|floorp/i
+  readonly property string tabKind: {
+    if (!playing || metadataKind || !browserClass.test(source) || !title) return ""
+    for (var window of ToplevelManager.toplevels.values) {
+      if (!browserClass.test(window.appId)) continue
+      var kind = Priority.browserTabKind(title, String(window.title || ""))
+      if (kind) return kind
+    }
+    return ""
+  }
+  readonly property string kind: metadataKind || tabKind || "music"
 
   ColorQuantizer {
     id: coverColors

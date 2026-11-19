@@ -44,6 +44,7 @@ Item {
       property bool capsuleMedia: false
       property bool capsulePlugins: false
       property bool mediaPill: true
+      property string indicatorOrder: ""
       property bool volumeHud: true
       property bool brightnessHud: true
       property int bannerSeconds: 5
