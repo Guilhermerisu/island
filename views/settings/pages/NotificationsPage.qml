@@ -50,11 +50,21 @@ ColumnLayout {
       view: page.view
       label: "Full Notification Text"
       detail: "Show the whole title and message instead of cutting it with …"
-      last: true
       SettingsSwitch {
         view: page.view
         checked: page.view.settings.notificationFullText
         onToggled: function(on) { page.view.settings.notificationFullText = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      label: "Allow Discord Calls in Do Not Disturb"
+      detail: "Show incoming calls during Do Not Disturb when Discord sends a desktop notification"
+      last: true
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.discordCallsInDnd
+        onToggled: function(on) { page.view.settings.discordCallsInDnd = on }
       }
     }
   }
