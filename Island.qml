@@ -11,6 +11,7 @@ import Quickshell.Wayland
 import "addons"
 import "components"
 import "services"
+import "services/ActivityPriority.mjs" as Priority
 import "views"
 import "components/Squircle.js" as Squircle
 // Omarchy's own OSD payload model, so what the island shows matches it.
@@ -25,17 +26,23 @@ Item {
   property var barConfig: ({})
   property string omarchyPath: ""
 
-  // The resting island's pills, highest first: a screen recording, an
-  // addon's ongoing activity (see addonPill), a download or system update,
-  // then the media playing. None shows while the companion needs setting up.
   readonly property bool resting: view === "rest" && !setup.needsSetup
-  readonly property bool recordingPill: resting && settings.screenRecordingActivity && recorder.active
-  readonly property bool restingFree: resting && !recordingPill && !addons.ongoing
-  readonly property bool downloadDone: restingFree
-    && (downloads.finishedName !== "" || packages.finishedTitle !== "")
-  readonly property bool downloadActive: restingFree && (downloads.active || packages.active) && !downloadDone
-  readonly property bool downloadPill: downloadDone || downloadActive
-  readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
+  readonly property var indicatorOrder: Priority.normalizeOrder(settings.indicatorOrder)
+  readonly property string restingIndicator: {
+    if (!resting) return ""
+    var ongoing = addons.ongoingPills
+    var confirmation = ongoing.find(addon => addon.pillAsks)
+    var available = ongoing.map(addon => addon.addon.id)
+    if (settings.screenRecordingActivity && recorder.active) available.push("recording")
+    if (settings.downloads && (downloads.active || downloads.finishedName !== "")) available.push("downloads")
+    if (settings.systemUpdates && (packages.active || packages.finishedTitle !== "")) available.push("updates")
+    if (nowPlaying.playing && settings.mediaPill) available.push(nowPlaying.kind)
+    return Priority.selectIndicator(indicatorOrder, available, confirmation?.addon.id)
+  }
+  readonly property bool recordingPill: restingIndicator === "recording"
+  readonly property bool downloadPill: restingIndicator === "downloads" || restingIndicator === "updates"
+  readonly property bool mediaPill: restingIndicator === "music" || restingIndicator === "video"
+  readonly property bool restingFree: resting && (restingIndicator === "" || mediaPill)
   // The live-activity pills' height, and the resting clock's.
   readonly property real pillHeight: settings.notch ? 40 : 44
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
@@ -54,7 +61,7 @@ Item {
       packages.dismissFinished()
       return
     }
-    var path = downloadDone ? downloads.finishedPath : downloads.folder
+    var path = downloads.finishedName !== "" ? downloads.finishedPath : downloads.folder
     downloads.dismissFinished()
     downloadOpener.command = ["sh", "-c", '[ -e "$1" ] && exec xdg-open "$1"; exec xdg-open "$(dirname "$1")"', "sh", path]
     downloadOpener.startDetached()
@@ -153,7 +160,7 @@ Item {
   // The addon whose pill is on the island, if any (see addons/Addon.qml):
   // the one shown for a moment, or at rest an ongoing one's.
   readonly property var addonPill: view === "feedback" ? addons.pillFor(feedbackKind)
-    : resting && !recordingPill ? addons.ongoing : null
+    : addons.ongoingPills.find(addon => addon.addon.id === restingIndicator) || null
 
   // ---------- Workspace switches ----------
 

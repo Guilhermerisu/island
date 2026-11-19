@@ -55,7 +55,6 @@ Item {
       options: [
         { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: "https://…/basic.ics" }
       ] },
-    // Before the timer, so a call holds the island over a countdown.
     { id: "meetings", name: "Meetings", icon: "󰏲", color: "#30d158", default: false, source: "meetings/MeetingsAddon.qml",
       description: "Calls on the island, with mute and hang up",
       options: [
@@ -337,18 +336,7 @@ Item {
     return null
   }
 
-  // The addon whose ongoing activity holds the resting island, if any: the
-  // first in registry order with `ongoing` set, one asking (`pillAsks`)
-  // before the rest.
-  readonly property var ongoing: {
-    var first = null
-    for (var i = 0; i < loaded.length; i++) {
-      if (!loaded[i].ongoing || !loaded[i].pill) continue
-      if (loaded[i].pillAsks) return loaded[i]
-      if (!first) first = loaded[i]
-    }
-    return first
-  }
+  readonly property var ongoingPills: loaded.filter(addon => addon.ongoing && addon.pill)
 
   // Every enabled addon's views, and its control center tiles keyed
   // "<addon id>.<tile key>".

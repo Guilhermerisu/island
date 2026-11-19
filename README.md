@@ -46,6 +46,10 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+Use **Settings → Live Activities → Indicator Priority** to set which
+ongoing activity gets the collapsed pill. Music and video can have
+different priorities. Media without a known type uses the music priority.
+
 <h2 align="center">FAQ</h2>
 
 <details>
