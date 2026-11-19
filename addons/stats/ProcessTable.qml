@@ -216,6 +216,8 @@ Item {
     width: parent.width
     clip: true
     boundsBehavior: Flickable.StopAtBounds
+    // Not while the Settings page scrolls past it: the wheel stays there.
+    interactive: table.view.pageScrolling !== true
     model: slots
     delegate: Item {
       id: row

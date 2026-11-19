@@ -169,7 +169,8 @@ Item {
     onWheel: function(e) {
       // While editing, the wheel scrolls the page (Views.qml) and must not
       // change a value under the pointer.
-      if (s.center.editMode) {
+      // Nor mid-scroll of the page, which slid the slider under the pointer.
+      if (s.center.editMode || s.center.pageScrolling) {
         e.accepted = false
         return
       }

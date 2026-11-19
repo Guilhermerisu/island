@@ -101,7 +101,8 @@ Item {
         }
       }
       OverlayScrollbar { flickable: controlsScroll; parent: controlsScroll; theme: views.host.theme }
-      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; surfacePadding: controlsSurface.padding; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed
+      WheelLatch { id: controlsLatch; flickable: controlsScroll; parent: controlsScroll }
+      ControlCenter { id: controlCenter; host: views.host; active: controlsSurface.active; pageScrolling: controlsLatch.engaged; surfacePadding: controlsSurface.padding; x: controlsScroll.bleed; width: controlsScroll.width - 2 * controlsScroll.bleed
         // From the top each time it opens, and as edit mode starts.
         onActiveChanged: if (active) controlsScroll.contentY = 0
         onEditModeChanged: controlsScroll.contentY = 0

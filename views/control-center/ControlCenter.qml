@@ -49,6 +49,8 @@ ColumnLayout {
   // or a deep shade of the accent when it's too light for white.
   readonly property color badgeOnInk: accent.hslLightness < 0.62 ? "#ffffff" : Qt.hsla(accent.hslHue, accent.hslSaturation, 0.16, 1)
   property bool editMode: false
+  // The page is mid-scroll (WheelLatch): its sliders leave the wheel to it.
+  property bool pageScrolling: false
   property bool outputsOpen: false
   property bool inputsOpen: false
   // A picker whose list went empty closes (its card leaves the grid), so it

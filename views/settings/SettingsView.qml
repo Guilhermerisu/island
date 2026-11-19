@@ -13,6 +13,9 @@ Item {
   // The shortcuts, for the Addons page's rows too.
   readonly property var keybinds: keybindsPage
   property string searchQuery: ""
+  // The page is mid-scroll (WheelLatch): what scrolls inside it (the
+  // process list) leaves the wheel to it.
+  readonly property bool pageScrolling: scrollLatch.engaged
   // The core panes, with the enabled addons' own (see addons/Addon.qml)
   // after Addons.
   readonly property var addonPages: host.addons.settingsPages
@@ -262,6 +265,7 @@ Item {
         contentHeight: groups.implicitHeight + 28
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        WheelLatch { id: scrollLatch; flickable: scroller; parent: scroller; handOffAtEnds: true }
 
         ColumnLayout {
           id: groups
