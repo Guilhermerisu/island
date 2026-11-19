@@ -29,16 +29,33 @@ ListPicker {
     else if (empty && (event.key === Qt.Key_Backspace || event.key === Qt.Key_Left) && activeMenu !== "root") { goBack(); event.accepted = true }
     else if (empty && event.key === Qt.Key_Right && selected && (selected.kind === "menu" || selected.kind === "link")) { activate(selected); event.accepted = true }
   }
-  onActiveChanged: {
-    if (!active) return
-    var route = MenuModel.resolveRoute(items_, itemOrder, host.menuRoute || "root")
-    activeMenu = MenuModel.item(items_, route) ? route : "root"
-    navStack = []
-    evaluateGuards()
+  property bool initialized: false
+  Component.onCompleted: {
+    initialized = true
+    if (active) enterMenu()
   }
+  onActiveChanged: if (initialized && active) enterMenu()
 
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
   property var launcher: null
+  property string pendingRoute: ""
+
+  function enterMenu() {
+    activeMenu = "root"
+    navStack = []
+    pendingRoute = host.menuRoute || "root"
+    resolveInitialRoute()
+    evaluateGuards()
+  }
+
+  function resolveInitialRoute() {
+    if (!active || !pendingRoute) return
+    var route = MenuModel.resolveRoute(items_, itemOrder, pendingRoute)
+    if (!MenuModel.item(items_, route)) return
+    pendingRoute = ""
+    activeMenu = route
+    loadProvider(route)
+  }
 
   // ---------- Menu data ----------
 
@@ -72,6 +89,7 @@ ListPicker {
     items_ = merged.items
     itemOrder = merged.itemOrder
     mergeApps()
+    resolveInitialRoute()
     evaluateGuards()
   }
 
@@ -255,6 +273,7 @@ ListPicker {
   }
 
   function openMenu(id, push) {
+    pendingRoute = ""
     if (push && id !== activeMenu) navStack = navStack.concat([activeMenu])
     activeMenu = id
     clearSearch()

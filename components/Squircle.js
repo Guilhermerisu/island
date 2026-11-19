@@ -28,9 +28,9 @@ function path(width, height, radii, smoothing) {
   var w = Math.max(0, width), h = Math.max(0, height)
   var budget = Math.min(w, h) / 2
   var tl = corner(radii.topLeft, smoothing, budget)
-  var tr = corner(radii.topRight, smoothing, budget)
-  var br = corner(radii.bottomRight, smoothing, budget)
-  var bl = corner(radii.bottomLeft, smoothing, budget)
+  var tr = radii.topRight === radii.topLeft ? tl : corner(radii.topRight, smoothing, budget)
+  var br = radii.bottomRight === radii.topRight ? tr : corner(radii.bottomRight, smoothing, budget)
+  var bl = radii.bottomLeft === radii.bottomRight ? br : corner(radii.bottomLeft, smoothing, budget)
   function f(n) { return n.toFixed(2) }
   var s = "M " + f(w - tr.p) + " 0 "
   if (tr.r > 0) s += "c " + f(tr.a) + " 0 " + f(tr.a + tr.b) + " 0 " + f(tr.a + tr.b + tr.c) + " " + f(tr.d)
@@ -55,7 +55,7 @@ function notchPath(width, height, radius, earRadius, smoothing) {
   var w = Math.max(0, width), h = Math.max(0, height)
   var budget = Math.min(w, h) / 2
   var br = corner(radius, smoothing, budget)
-  var bl = corner(radius, smoothing, budget)
+  var bl = br
   function f(n) { return n.toFixed(2) }
   var er = earRadius || 10
   var s = "M " + f(w) + " " + f(er) + " "

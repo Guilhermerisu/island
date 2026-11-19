@@ -22,15 +22,20 @@ ListPicker {
   onActiveChanged: if (active) hiddenScan.running = true
 
   // DesktopEntries changes when apps are installed or removed.
+  property bool showResults: active
   property int appsRevision: 0
   Connections {
     target: DesktopEntries.applications
     function onValuesChanged() { launcher.appsRevision++ }
   }
+  readonly property var appEntries: {
+    if (!showResults) return []
+    appsRevision
+    return DesktopEntries.applications.values || []
+  }
   readonly property var results: {
-    appsRevision; hiddenIds
-    var values = DesktopEntries.applications.values || []
-    return AppSearch.sortedEntries(values, query, function(entry) { return !!hiddenIds[String(entry.id || "")] })
+    if (!showResults) return []
+    return AppSearch.sortedEntries(appEntries, query, function(entry) { return !!hiddenIds[String(entry.id || "")] })
       .map(function(row) { return row.entry })
   }
 

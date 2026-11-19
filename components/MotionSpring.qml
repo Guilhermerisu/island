@@ -22,30 +22,37 @@ FrameAnimation {
   readonly property real response: (theme ? theme.motionDuration(pace) : 240) * 0.82 / 1000
   readonly property real omega: 2 * Math.PI / Math.max(0.01, response)
 
-  Component.onCompleted: value = target
-  onTargetChanged: if (!running) start()
+  readonly property real damping: 1 - Math.max(0, Math.min(0.9, bounce))
+  readonly property real dampedOmega: omega * Math.sqrt(1 - damping * damping)
+  readonly property real decayRate: damping * omega
+
+  Component.onCompleted: {
+    stop()
+    value = target
+  }
+  onTargetChanged: if (!running && value !== target) start()
 
   onTriggered: {
     // Frames longer than 50 ms (a stall) are treated as one short step.
     var dt = Math.min(frameTime, 0.05)
     var w = omega
     var offset = value - target
-    var zeta = 1 - Math.max(0, Math.min(0.9, bounce))
-    if (zeta >= 1) {
+    if (damping >= 1) {
       var e = Math.exp(-w * dt)
       var k = (velocity + w * offset) * dt
       offset = (offset + k) * e
       velocity = (velocity - w * k) * e
     } else {
       // Underdamped: a decaying swing at the damped frequency.
-      var wd = w * Math.sqrt(1 - zeta * zeta)
-      var decay = Math.exp(-zeta * w * dt)
+      var wd = dampedOmega
+      var rate = decayRate
+      var decay = Math.exp(-rate * dt)
       var a = offset
-      var b = (velocity + zeta * w * offset) / wd
+      var b = (velocity + rate * offset) / wd
       var c = Math.cos(wd * dt)
       var sn = Math.sin(wd * dt)
       offset = decay * (a * c + b * sn)
-      velocity = decay * ((b * wd - zeta * w * a) * c - (a * wd + zeta * w * b) * sn)
+      velocity = decay * ((b * wd - rate * a) * c - (a * wd + rate * b) * sn)
     }
     if (Math.abs(offset) < 0.1 && Math.abs(velocity) < 1) {
       value = target

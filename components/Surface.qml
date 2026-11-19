@@ -8,7 +8,7 @@ import QtQuick.Effects
 //   Surface {
 //     id: emojiSurface
 //     host: root; viewName: "emojis"; fixedWidth: 600
-//     EmojiPicker { host: emojiSurface.host; active: emojiSurface.active }
+//     contentComponent: EmojiPicker { host: emojiSurface.host; active: emojiSurface.active }
 //   }
 Item {
   id: surface
@@ -25,10 +25,11 @@ Item {
   // Whether the island takes the keyboard while this is open.
   property bool wantsKeyboard: true
 
-  default property alias content: holder.data
-  readonly property Item view: holder.children.length ? holder.children[0] : null
+  required property Component contentComponent
+  property bool retainContent: false
+  readonly property Item view: contentLoader.item
   readonly property bool active: host.view === viewName
-  readonly property bool revealed: active && host.surfaceContentReady
+  readonly property bool revealed: active && view !== null && host.surfaceContentReady
 
   readonly property real islandWidth: fixedWidth > 0 ? fixedWidth : implicitWidth + 2 * padding
   readonly property real islandHeight: Math.min(implicitHeight + 2 * padding, maxHeight)
@@ -36,12 +37,12 @@ Item {
   anchors.horizontalCenter: parent ? parent.horizontalCenter : undefined
   anchors.top: parent ? parent.top : undefined
   anchors.topMargin: padding
-  implicitWidth: view ? view.implicitWidth : 0
+  implicitWidth: view?.implicitWidth ?? 0
   // Its final width from the first frame, centred in the island and cropped
   // by it while it morphs, so the view lays out once, not on every frame of
   // the spring. A view with no set width follows the island instead.
   width: fixedWidth > 0 ? fixedWidth - 2 * padding : parent ? parent.width - 2 * padding : 0
-  implicitHeight: view ? view.implicitHeight : 0
+  implicitHeight: view?.implicitHeight ?? 0
   // Never taller than the island can be: a view that wants more has to scroll.
   height: Math.min(implicitHeight, maxHeight - 2 * padding)
 
@@ -59,7 +60,7 @@ Item {
   // (Views fills it) rides a spring, so the content below follows the shape
   // frame by frame instead of on a clock of its own: it settles as the
   // island does, and turns around with it.
-  readonly property real grown: parent && islandHeight > 0
+  readonly property real grown: visible && parent && islandHeight > 0
     ? Math.max(0, Math.min(1, parent.height / islandHeight)) : 0
 
   // Going straight from one view to another: Apple's blur replace. The old one
@@ -81,7 +82,10 @@ Item {
     transformOrigin: Item.Top
     scale: (0.985 + 0.015 * surface.grown) * (surface.host.switchingSurface ? surface.settle : 1)
     // Only while it's blurred: a layer costs a texture the size of the view.
-    layer.enabled: surface.host.switchingSurface && surface.visible && surface.veil > 0.001
+    layer.enabled: surface.host.switchingSurface && surface.opacity > 0.01 && surface.veil > 0.001
+    // The temporary blur does not need a texture at the monitor's device pixel ratio.
+    layer.textureSize: Qt.size(Math.ceil(width), Math.ceil(height))
+    layer.smooth: true
     layer.effect: MultiEffect {
       autoPaddingEnabled: false
       blurEnabled: true
@@ -89,5 +93,14 @@ Item {
       blur: surface.veil
     }
     transform: Translate { y: -6 * (1 - surface.grown) }
+
+    Loader {
+      id: contentLoader
+      anchors.fill: parent
+      active: surface.active || surface.opacity > 0.01 || surface.retainContent
+      // Incubate the view over multiple frames, including on its first open.
+      asynchronous: true
+      sourceComponent: surface.contentComponent
+    }
   }
 }
