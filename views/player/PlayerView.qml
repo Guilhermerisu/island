@@ -181,6 +181,7 @@ Item {
         }
       }
       SoundWave {
+        spectrum: player.host.audioSpectrum
         Layout.alignment: Qt.AlignTop
         Layout.topMargin: 10
         color: player.host.nowPlaying.tint

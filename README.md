@@ -46,6 +46,9 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+The playback wave uses CAVA when it is installed (`omarchy pkg add cava`).
+The bars settle during quiet audio or when CAVA is unavailable.
+
 <h2 align="center">FAQ</h2>
 
 <details>
