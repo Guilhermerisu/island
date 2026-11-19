@@ -35,6 +35,14 @@ Item {
   property var stacks: []
   property bool stacked: false
   onStackedChanged: rebuild()
+  // Claude's own notifications (the desktop app's, or Claude Code's) are left
+  // out, from the pill and the history, while the agents addon's live
+  // activity already shows its turns.
+  property bool hideClaude: false
+  onHideClaudeChanged: rebuild()
+  function hidden(row) {
+    return hideClaude && (String(row.app || "") === "Claude" || agent(row) === "claude")
+  }
   // A notification new to the feed.
   signal arrived(var row)
   // The one `last` shows left the feed (dismissed from outside the pill, e.g.
@@ -105,6 +113,7 @@ Item {
       var stamp = Number(current.shown || current.timestamp || 0)
       if (stamp <= lastStamp) return
       lastStamp = stamp
+      if (hidden(current)) return
       last = current
       arrived(current)
     } catch (e) {
@@ -151,12 +160,13 @@ Item {
     var rows = []
     var seen = {}
     for (var j = 0; j < active.length; j++) {
+      if (hidden(active[j])) continue
       var row = Object.assign({}, active[j])
       row.isActive = true
       seen[key(row)] = true
       rows.push(row)
     }
-    for (var c = 0; c < closed.length; c++) if (!seen[key(closed[c])]) rows.push(closed[c])
+    for (var c = 0; c < closed.length; c++) if (!seen[key(closed[c])] && !hidden(closed[c])) rows.push(closed[c])
     rows.sort(function(a, b) { return Number(b.timestamp || 0) - Number(a.timestamp || 0) })
     history = rows.slice(0, historyLimit)
     var byGroup = {}

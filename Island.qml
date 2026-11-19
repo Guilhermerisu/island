@@ -440,6 +440,7 @@ Item {
     home: root.home
     historyVisible: root.view === "controls" || root.view === "notifications"
     stacked: root.settings.stackNotifications
+    hideClaude: root.addons.isEnabled("agents") && root.addons.option("agents", "live") !== false
     // Keeps the pill in step when the notification is dismissed elsewhere.
     onDismissedElsewhere: if (root.notificationPill) root.dismissFeedback()
     onArrived: function(row) {
