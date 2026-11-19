@@ -25,6 +25,14 @@ Item {
   property color iconTint: view.accent
   readonly property real restHeight: detail !== "" || icon !== "" ? 52 : 44
   readonly property real textLeft: 14 + indent + (icon !== "" ? 38 : 0)
+  readonly property real edgeMargin: boxed ? 14 : 10
+  // An assigned shortcut shows its clear button only while the row is
+  // hovered (or the button has keyboard focus), as macOS's lists do.
+  readonly property bool clearable: !!entry.keys && entry.removable !== false && !recording && !asking
+  readonly property bool clearShown: clearable && (rowHover.hovered || clearButton.activeFocus)
+  property real clearReveal: clearShown ? 1 : 0
+  Behavior on clearReveal { MotionAnimation { theme: shortcutRow.view.host.theme; pace: "standard" } }
+  HoverHandler { id: rowHover }
   PaneIcon {
     visible: shortcutRow.icon !== ""
     view: shortcutRow.view
@@ -75,8 +83,9 @@ Item {
   }
   Rectangle {
     id: keysField
-    anchors.right: clearButton.visible ? clearButton.left : parent.right
-    anchors.rightMargin: clearButton.visible ? 4 : shortcutRow.boxed ? 14 : 10
+    anchors.right: parent.right
+    // Slides left to make room for the clear button while the row is hovered.
+    anchors.rightMargin: shortcutRow.edgeMargin + (clearButton.width + 4) * shortcutRow.clearReveal
     y: (shortcutRow.restHeight - height) / 2
     readonly property bool caps: !shortcutRow.recording && shortcutRow.entry.keys !== ""
     width: shortcutRow.boxed ? shortcutRow.fieldWidth
@@ -193,17 +202,18 @@ Item {
     id: clearButton
     view: shortcutRow.view
     anchors.right: parent.right
-    anchors.rightMargin: shortcutRow.boxed ? 14 : 10
+    anchors.rightMargin: shortcutRow.edgeMargin
     y: (shortcutRow.restHeight - height) / 2
     implicitWidth: implicitHeight
     label: "×"
-    visible: !!shortcutRow.entry.keys && shortcutRow.entry.removable !== false
-      && !shortcutRow.recording && !shortcutRow.asking
+    opacity: shortcutRow.clearReveal
+    visible: shortcutRow.clearable
+    // Only reachable by hovering the row, which reveals it, or by Tab.
     onClicked: shortcutRow.keybinds.clearShortcut(shortcutRow.entry.id)
-    activeFocusOnTab: visible
+    activeFocusOnTab: shortcutRow.clearable
     Accessible.role: Accessible.Button
     Accessible.name: "Remove Shortcut" + " · " + shortcutRow.entry.label
-    Accessible.onPressAction: if (visible) clicked()
+    Accessible.onPressAction: if (shortcutRow.clearable) clicked()
     Keys.onReturnPressed: clicked()
     Keys.onSpacePressed: clicked()
     Tooltip { theme: clearButton.view.host.theme; text: "Remove Shortcut" }
