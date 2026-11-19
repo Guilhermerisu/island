@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Omarchy Island – YouTube",
+  "version": "1.0.0",
+  "description": "Control YouTube playback from Omarchy Island.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqYbJbj/WS0+ataqTbXqwQN6ffAvPb8OJsOK2qjDRTzZ+X+khmOkP/szNZidLifiiM1ZOnOaVrHtw7mos+JU+M893WnDvXfAV5BIkqi5BXHcUADWwJxuylEGY1kumUvOfyA/EqnOSgto9UlCQlDcNwKlMtQSEmSgurqakgXbScv0GFgZEVrGaCWkqsHnDv4mMqgalDqNloqbYsnxfVnOSm/auyvmpSfR0tzktDMDqKb7Fnp18mJGYN7rNjr89RtLkSKgSHZWT/94U45ubt7vDXdn6naywxyD0lntGaNuF+Ch4TVyA6ieXqMg7W5EiRyr8Vw+0rYjIEGsWj2z8WHZ8fwIDAQAB",
+  "permissions": [
+    "nativeMessaging",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "youtube.js"
+      ]
+    }
+  ]
+}

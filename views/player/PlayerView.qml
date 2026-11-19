@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Widgets
 import Quickshell.Wayland
 import "../../components"
@@ -22,10 +23,65 @@ Item {
   property real position: 0
   property bool dragging: false
 
-  readonly property bool canShuffle: !!(mpris && mpris.canControl && mpris.shuffleSupported)
+  readonly property bool nativeShuffle: !!(mpris && mpris.canControl && mpris.shuffleSupported)
+  readonly property bool canShuffle: nativeShuffle || !!youtube.canShuffle
+  readonly property bool shuffleOn: nativeShuffle ? mpris.shuffle : !!youtube.shuffle
+  readonly property bool canNext: !!youtube.canNext || !!(mpris && mpris.canGoNext)
+  readonly property bool canPrevious: !!youtube.canPrevious || !!(mpris && mpris.canGoPrevious)
   // Electron apps and sites installed as apps can all go by the engine's name
   // on MPRIS, which says nothing about which of them is playing.
   function engineName(name) { return /^(chromium|chrome|electron)$/i.test(String(name || "")) }
+  readonly property bool chromium: !!(mpris && /^org\.mpris\.MediaPlayer2\.chromium(?:\.instance\d+)?$/.test(mpris.dbusName))
+  readonly property string trackTitle: mpris ? String(mpris.trackTitle || "") : ""
+  readonly property string bridgePath: decodeURIComponent(String(Qt.resolvedUrl("../../browser/bridge.py")).replace(/^file:\/\//, ""))
+  property string youtubeTitle: ""
+  property var youtubeStatus: ({})
+  readonly property var youtube: chromium && youtubeTitle === trackTitle ? youtubeStatus : ({})
+
+  Timer {
+    interval: 1000
+    repeat: true
+    triggeredOnStart: true
+    running: player.active && player.chromium && player.trackTitle !== ""
+    onTriggered: {
+      if (youtubeProbe.running || youtubeAction.running) return
+      youtubeProbe.title = player.trackTitle
+      youtubeProbe.running = true
+    }
+  }
+  Process {
+    id: youtubeProbe
+    property string title: ""
+    command: ["python3", player.bridgePath, "status", title]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        player.youtubeTitle = youtubeProbe.title
+        try { player.youtubeStatus = JSON.parse(text) }
+        catch (_) { player.youtubeStatus = ({}) }
+      }
+    }
+  }
+  Process {
+    id: youtubeAction
+    property string action: ""
+    property string title: ""
+    command: ["python3", player.bridgePath, action, title]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        if (youtubeAction.action !== "open") return
+        try { if (JSON.parse(text).ok) return }
+        catch (_) {}
+        focusTimer.restart()
+      }
+    }
+  }
+  function youtubeCommand(action) {
+    if (youtubeAction.running) return false
+    youtubeAction.action = action
+    youtubeAction.title = trackTitle
+    youtubeAction.running = true
+    return true
+  }
   // The player's desktop entry. Chromium-based players (Electron apps)
   // report an empty desktopEntry, so fall back to a heuristic lookup on the
   // identity. Reading the applications list makes it re-run once it loads.
@@ -57,12 +113,17 @@ Item {
         if (cls !== "" && (cls === name || (n !== identity && cls.substring(cls.lastIndexOf(".") + 1) === name))) return tl[i]
       }
     }
+    if (chromium) {
+      const browserWindows = tl.filter(window => /^(chromium|org\.chromium\.chromium)$/i.test(window.appId))
+      const matching = browserWindows.find(window => trackTitle !== "" && String(window.title || "").startsWith(trackTitle))
+      return matching || (browserWindows.length === 1 ? browserWindows[0] : null)
+    }
     return null
   }
   // Hyprland reports it a moment after it's first asked for, so this asks as
   // soon as the window is known; "0" until then.
   readonly property string appWindowAddress: appWindow ? String(appWindow.HyprlandToplevel.address) : ""
-  readonly property bool canOpenApp: !!(appWindow || (mpris && mpris.canRaise))
+  readonly property bool canOpenApp: !!(youtube.canOpen || appWindow || (mpris && mpris.canRaise))
 
   implicitHeight: layout.implicitHeight
 
@@ -85,8 +146,15 @@ Item {
     function onPositionChanged() { if (!player.dragging) player.position = player.mpris.position }
   }
 
-  function action(name) { if (host.nowPlaying.service) host.nowPlaying.service.runAction(name, false, "") }
-  function toggleShuffle() { if (canShuffle) mpris.shuffle = !mpris.shuffle }
+  function action(name) {
+    if (name === "next" && youtube.canNext && (youtube.shuffle || !mpris.canGoNext)) youtubeCommand(name)
+    else if (name === "previous" && youtube.canPrevious && (youtube.shuffle || !mpris.canGoPrevious)) youtubeCommand(name)
+    else if (host.nowPlaying.service) host.nowPlaying.service.runAction(name, false, "")
+  }
+  function toggleShuffle() {
+    if (nativeShuffle) mpris.shuffle = !mpris.shuffle
+    else if (youtube.canShuffle) youtubeCommand("shuffle")
+  }
   // Close first so the app, not the island, gets the keyboard; focus follows
   // after the island's layer has let go of it. Window, else the player's own
   // Raise.
@@ -94,7 +162,7 @@ Item {
     focusTimer.win = appWindow
     focusTimer.address = appWindowAddress
     host.view = "rest"
-    focusTimer.restart()
+    if (!youtube.canOpen || !youtubeCommand("open")) focusTimer.restart()
   }
   Timer {
     id: focusTimer
@@ -108,7 +176,7 @@ Item {
         // Not activate(): on Hyprland 0.56 it only focuses a window on the
         // current workspace. This Lua-config dispatch (the form Omarchy's own
         // scripts use) brings its workspace up too.
-        Hyprland.dispatch('hl.dsp.focus({ window = "address:0x' + address + '" })')
+        Hyprland.dispatch('hl.dsp.focus({ window = "address:0x' + address.replace(/^0x/, "") + '" })')
       } else {
         win.activate()
       }
@@ -282,8 +350,8 @@ Item {
         anchors.rightMargin: 46
         text: "󰒟"
         name: !player.canShuffle && player.mpris ? "Shuffle isn't supported by " + String(player.mpris.identity || "this player")
-          : player.mpris && player.mpris.shuffle ? "Shuffle: on" : "Shuffle: off"
-        color: player.mpris && player.mpris.shuffle ? player.host.nowPlaying.tint : Qt.rgba(1, 1, 1, 0.6)
+          : player.shuffleOn ? "Shuffle: on" : "Shuffle: off"
+        color: player.shuffleOn ? player.host.nowPlaying.tint : Qt.rgba(1, 1, 1, 0.6)
         font.pixelSize: player.host.theme.px(26)
         available: player.canShuffle
         onActivated: player.toggleShuffle()
@@ -309,7 +377,7 @@ Item {
           text: "󰑟"
           name: "Previous"
           font.pixelSize: player.host.theme.px(34)
-          available: !!(player.mpris && player.mpris.canGoPrevious)
+          available: player.canPrevious
           onActivated: player.action("previous")
         }
         Control {
@@ -325,7 +393,7 @@ Item {
           text: "󰈑"
           name: "Next"
           font.pixelSize: player.host.theme.px(34)
-          available: !!(player.mpris && player.mpris.canGoNext)
+          available: player.canNext
           onActivated: player.action("next")
         }
       }
