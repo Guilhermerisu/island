@@ -91,6 +91,8 @@ banners.
 
 Yes. Open Settings → Keybinds, pick a shortcut, and press the new keys. An
 addon's shortcuts are set in its options on the Addons page.
+Click **×** beside an assigned shortcut to clear it. If Island took over an
+Omarchy shortcut, clearing it restores the original binding.
 </details>
 
 <details>

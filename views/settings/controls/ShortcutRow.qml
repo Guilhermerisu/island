@@ -75,8 +75,8 @@ Item {
   }
   Rectangle {
     id: keysField
-    anchors.right: parent.right
-    anchors.rightMargin: shortcutRow.boxed ? 14 : 10
+    anchors.right: clearButton.visible ? clearButton.left : parent.right
+    anchors.rightMargin: clearButton.visible ? 4 : shortcutRow.boxed ? 14 : 10
     y: (shortcutRow.restHeight - height) / 2
     readonly property bool caps: !shortcutRow.recording && shortcutRow.entry.keys !== ""
     width: shortcutRow.boxed ? shortcutRow.fieldWidth
@@ -188,6 +188,25 @@ Item {
       cursorShape: Qt.PointingHandCursor
       onClicked: shortcutRow.recording ? shortcutRow.keybinds.stopRecording() : shortcutRow.keybinds.startRecording(shortcutRow.entry.id)
     }
+  }
+  SettingsButton {
+    id: clearButton
+    view: shortcutRow.view
+    anchors.right: parent.right
+    anchors.rightMargin: shortcutRow.boxed ? 14 : 10
+    y: (shortcutRow.restHeight - height) / 2
+    implicitWidth: implicitHeight
+    label: "×"
+    visible: !!shortcutRow.entry.keys && shortcutRow.entry.removable !== false
+      && !shortcutRow.recording && !shortcutRow.asking
+    onClicked: shortcutRow.keybinds.clearShortcut(shortcutRow.entry.id)
+    activeFocusOnTab: visible
+    Accessible.role: Accessible.Button
+    Accessible.name: "Remove Shortcut" + " · " + shortcutRow.entry.label
+    Accessible.onPressAction: if (visible) clicked()
+    Keys.onReturnPressed: clicked()
+    Keys.onSpacePressed: clicked()
+    Tooltip { theme: clearButton.view.host.theme; text: "Remove Shortcut" }
   }
   Row {
     anchors.right: parent.right

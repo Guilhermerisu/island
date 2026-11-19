@@ -78,7 +78,8 @@ ColumnLayout {
       var command = "omarchy-shell shell toggle " + p.id
       var saved = shortcuts.filter(function(e) { return e.id === id })[0]
       var live = liveBindings.filter(function(b) { return b.command === command || b.command.indexOf(command + " ") === 0 })[0]
-      return { id: id, label: p.name, name: p.name, keys: saved ? saved.keys : live ? live.keys : "", command: command + " '{}'", addon: "@plugin" }
+      return { id: id, label: p.name, name: p.name, keys: saved ? saved.keys : live ? live.keys : "",
+        removable: !!saved, command: command + " '{}'", addon: "@plugin" }
     })
     shortcuts.forEach(function(e) {
       if (e.addon !== "@plugin" || e.keys === "" || plugins.some(function(p) { return "plugin:" + p.id === e.id })) return
@@ -124,6 +125,11 @@ ColumnLayout {
     })
     if (plugin && !known) shortcuts = shortcuts.concat([Object.assign({}, plugin, { keys: keys })])
     queueRun(plugin ? ["set", id, keys, plugin.name] : ["set", id, keys])
+  }
+  function clearShortcut(id) {
+    stopRecording()
+    cancelPending()
+    setShortcut(id, "")
   }
   function restoreDefaults() {
     stopRecording()
@@ -322,8 +328,7 @@ ColumnLayout {
       if (name === "ESCAPE" && mods.length === 0) { page.stopRecording(); return }
       if ((name === "BACKSPACE" || name === "DELETE") && mods.length === 0) {
         var id = page.recordingId
-        page.stopRecording()
-        page.setShortcut(id, "")
+        page.clearShortcut(id)
         return
       }
       if (mods.length === 0 && !/^F\d+$/.test(name)) { page.recordHint = "Add a Modifier"; return }
