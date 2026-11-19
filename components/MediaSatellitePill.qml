@@ -123,7 +123,6 @@ Rectangle {
     }
 
     SoundWave {
-      spectrum: satellite.host.audioSpectrum
       anchors.verticalCenter: parent.verticalCenter
       color: satellite.nowPlaying && satellite.nowPlaying.tint ? satellite.nowPlaying.tint : satellite.host.theme.accent
       playing: satellite.shown

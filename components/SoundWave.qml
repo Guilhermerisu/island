@@ -1,42 +1,21 @@
 import QtQuick
 
-// iOS-style bars driven by the CAVA service's real spectrum. Frequency bins
-// are grouped to fit each view. Without CAVA (not installed, or not started
-// yet) the bars bounce to random heights instead, as they did before it.
+// iOS-style bars that bounce to random heights while media plays.
 Row {
   id: wave
   property color color: "white"
   property bool playing: false
-  property var spectrum: null
-  readonly property var levels: visible && playing && spectrum?.playing ? spectrum.levels : null
-  readonly property bool synthetic: visible && playing && !spectrum?.available
-  onSyntheticChanged: if (!synthetic) updateTargets()
+  readonly property bool active: visible && playing
+  onActiveChanged: if (!active) settle()
   property int bars: 5
   property real barWidth: 3
   property real maxHeight: 18
 
   spacing: barWidth
 
-  function levelAt(index) {
-    if (!levels?.length || bars <= 0) return 0
-    // RMS preserves a beat in a narrow band without exaggerating quiet bins.
-    var start = Math.floor(index * levels.length / bars)
-    var end = Math.max(start + 1, Math.floor((index + 1) * levels.length / bars))
-    var power = 0, count = 0
-    for (var i = start; i < Math.min(end, levels.length); i++) {
-      var level = levels[i]
-      power += level * level
-      count++
-    }
-    return count ? Math.sqrt(power / count) : 0
-  }
-
   Repeater {
     id: repeater
     model: wave.bars + 2
-    onItemAdded: function(index, item) {
-      if (!item.dot) wave.updateTargets()
-    }
     delegate: Rectangle {
       required property int index
       objectName: "islandAudioBar_" + index
@@ -52,28 +31,24 @@ Row {
     }
   }
 
-  onLevelsChanged: updateTargets()
-  onVisibleChanged: updateTargets()
-  function updateTargets() {
-    var moving = false
+  // Paused: ease the bars down to rest; hidden: drop them at once.
+  function settle() {
     for (var i = 1; i <= bars; i++) {
       var bar = repeater.itemAt(i)
       if (!bar) continue
-      bar.target = levelAt(i - 1)
+      bar.target = 0
       if (!visible) bar.level = 0
-      else if (Math.abs(bar.target - bar.level) >= 0.002) moving = true
-      else bar.level = bar.target
     }
-    pulse.running = moving
+    pulse.running = visible
   }
 
-  // The fallback: new random targets a few times a second. The middle bars
-  // swing wider than the outer ones, like iOS's.
+  // New random targets a few times a second. The middle bars swing wider
+  // than the outer ones, like iOS's.
   Timer {
     interval: 180
     repeat: true
     triggeredOnStart: true
-    running: wave.synthetic
+    running: wave.active
     onTriggered: {
       var middle = (wave.bars + 1) / 2
       for (var i = 1; i <= wave.bars; i++) {
@@ -86,8 +61,7 @@ Row {
     }
   }
 
-  // Calculate the band energy only for a new input sample. Interpolate at
-  // 30 Hz while the bars move, then stop at silence.
+  // Interpolate at 30 Hz while the bars move, then stop at rest.
   Timer {
     id: pulse
     interval: 33
