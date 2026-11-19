@@ -11,9 +11,11 @@ Item {
   readonly property var host: agents.host
   readonly property var theme: host.theme
   readonly property color ink: agents.ink
-  readonly property color doneInk: pill.theme.system.green
+  readonly property color doneInk: pill.failed ? pill.theme.system.red : pill.theme.system.green
   readonly property string phase: agents.live ? agents.live.state : ""
   readonly property bool done: phase === "done"
+  readonly property bool external: agents.live?.provider === "external"
+  readonly property bool failed: !!agents.live?.failed
 
   opacity: agents.pillShown ? 1 : 0
   visible: opacity > 0.01
@@ -30,15 +32,29 @@ Item {
   // Clawd, walking while it takes a step, thinking between them, and
   // hopping once it's done. Whole pixels, so it stays crisp.
   AgentsMascot {
+    visible: !pill.external
     anchors.left: parent.left
     anchors.leftMargin: 14
     y: Math.round((parent.height - height) / 2) + 1
     color: pill.ink
     mood: ({ done: "done", asking: "wave", tool: "walk" })[pill.phase] || "think"
-    running: pill.agents.pillShown
+    running: pill.agents.pillShown && !pill.external
     opacity: reveal.leadingIn
     PillPart { progress: reveal.leadingIn }
   }
+
+  Text {
+    anchors.left: parent.left
+    anchors.leftMargin: 14
+    anchors.verticalCenter: parent.verticalCenter
+    visible: pill.external
+    opacity: reveal.leadingIn
+    text: "󰆍"
+    color: pill.ink
+    font.family: pill.theme.fontFamily
+    font.pixelSize: pill.theme.px(23)
+  }
+  Tooltip { theme: pill.theme; text: pill.external ? pill.agents.live.name : "" }
 
   // The turn's time, as the other pills give theirs. Done, it gives way
   // to a green check filling in, then "Done" sliding in after it.
@@ -94,6 +110,14 @@ Item {
           color: pill.doneInk
           scale: 0.4 + 0.6 * Math.min(1, doneTick.draw * 2)
           opacity: Math.min(1, doneTick.draw * 3)
+          Text {
+            anchors.centerIn: parent
+            visible: pill.failed
+            text: "×"
+            font.pixelSize: 12
+            font.weight: Font.Bold
+            color: "#000000"
+          }
           Shape {
             id: doneTick
             anchors.fill: parent
@@ -106,7 +130,7 @@ Item {
             }
             preferredRendererType: Shape.CurveRenderer
             Tick {
-              strokeColor: doneTick.draw > 0.01 ? "#000000" : "transparent"
+              strokeColor: !pill.failed && doneTick.draw > 0.01 ? "#000000" : "transparent"
               strokeWidth: 1.8
               startX: 4
               startY: 7.3
@@ -120,7 +144,7 @@ Item {
         Text {
           id: doneWord
           anchors.verticalCenter: parent.verticalCenter
-          text: "Done"
+          text: pill.failed ? "Failed" : "Done"
           color: pill.doneInk
           property real shown: pill.done ? 1 : 0
           Behavior on shown {

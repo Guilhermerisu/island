@@ -23,6 +23,12 @@ import glob
 import json
 import os
 import time
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "companion"))
+from activity_events import external_sessions
 
 POLL = 0.5          # seconds between looks at the sessions in play
 RELIST = 3          # seconds between looks for new transcripts
@@ -135,7 +141,7 @@ class Session:
         return now - max(self.updated, mtime_ms(self.path)) < idle * 1000
 
     def snapshot(self):
-        return {"id": self.id, "state": self.state, "startedAt": self.started, "doneAt": self.done_at}
+        return {"id": self.id, "state": self.state, "startedAt": self.started, "doneAt": self.done_at, "updatedAt": self.updated}
 
 
 def mtime_ms(path):
@@ -173,8 +179,10 @@ def main():
                 sessions[path] = Session(path)
             sessions[path].read()
         stamp = now_ms()
-        shown = sorted((s for s in sessions.values() if s.shown(stamp)), key=lambda s: -s.updated)
-        out = json.dumps({"sessions": [s.snapshot() for s in shown[:MAX_SESSIONS]]}, separators=(",", ":"))
+        shown = [s.snapshot() for s in sessions.values() if s.shown(stamp)]
+        shown.extend(external_sessions(stamp, IDLE * 1000, DONE_KEPT * 1000))
+        shown.sort(key=lambda session: (session["state"] == "done", -session["updatedAt"]))
+        out = json.dumps({"sessions": shown[:MAX_SESSIONS]}, separators=(",", ":"))
         if out != last:
             last = out
             try:
