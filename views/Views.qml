@@ -42,7 +42,8 @@ Item {
   // while the handle is held (-1 otherwise).
   readonly property real screenMargin: 60
   readonly property real screenLimit: Math.max(260, Window.height - screenMargin)
-  readonly property real editRoom: controlCenter.editMode ? 100 : 0
+  readonly property var controlCenter: controlsSurface.view?.controlCenter ?? null
+  readonly property real editRoom: controlCenter?.editMode ? 100 : 0
   property real dragMax: -1
   readonly property real chosenMax: dragMax >= 0 ? dragMax
     : views.host.settings.controlCenterMaxHeight > 0 ? views.host.settings.controlCenterMaxHeight : 780
@@ -53,12 +54,17 @@ Item {
     host: views.host
     viewName: "controls"
     // Follows the columns the control center shows.
-    fixedWidth: controlCenter.islandWidth
+    fixedWidth: views.controlCenter?.islandWidth ?? 0
+    // Keep the most frequently opened view ready after the first visit.
+    property bool opened: false
+    onActiveChanged: if (active) opened = true
+    retainContent: opened
     maxHeight: views.controlsMaxHeight
     // Taller than the island allows (many controls added): scrolls, so the
     // notifications under them stay in reach.
-    Flickable {
+    contentComponent: Flickable {
       id: controlsScroll
+      property alias controlCenter: controlCenter
       // Wider than the view by the island's padding, so what pokes out of the
       // control center (a notification's × sits on its corner) isn't cut.
       readonly property real bleed: 12
@@ -114,7 +120,7 @@ Item {
     host: views.host
     viewName: "wifi"
     fixedWidth: 480
-    WifiView { host: views.host; active: wifiSurface.active; anchors.fill: parent }
+    contentComponent: WifiView { host: views.host; active: wifiSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -122,7 +128,8 @@ Item {
     host: views.host
     viewName: "bluetooth"
     fixedWidth: 480
-    BluetoothView { host: views.host; active: bluetoothSurface.active; anchors.fill: parent }
+    retainContent: view?.owesDiscoveryStop ?? false
+    contentComponent: BluetoothView { host: views.host; active: bluetoothSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -131,7 +138,8 @@ Item {
     viewName: "themes"
     fixedWidth: 820
     padding: 20
-    ThemeSwitcher { host: views.host; active: themesSurface.active; anchors.fill: parent }
+    retainContent: view?.applying ?? false
+    contentComponent: ThemeSwitcher { host: views.host; active: themesSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -140,7 +148,8 @@ Item {
     viewName: "wallpapers"
     fixedWidth: 820
     padding: 20
-    WallpaperSwitcher { host: views.host; active: wallpapersSurface.active; anchors.fill: parent }
+    retainContent: view?.applying ?? false
+    contentComponent: WallpaperSwitcher { host: views.host; active: wallpapersSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -148,7 +157,13 @@ Item {
     host: views.host
     viewName: "apps"
     fixedWidth: 600
-    AppLauncher { id: appLauncher; host: views.host; active: appsSurface.active; anchors.fill: parent }
+    retainContent: menuSurface.visible
+    contentComponent: AppLauncher {
+      host: views.host
+      active: appsSurface.active
+      showResults: appsSurface.visible
+      anchors.fill: parent
+    }
   }
 
   Surface {
@@ -156,7 +171,7 @@ Item {
     host: views.host
     viewName: "emoji"
     fixedWidth: 600
-    EmojiPicker { host: views.host; active: emojiSurface.active; anchors.fill: parent }
+    contentComponent: EmojiPicker { host: views.host; active: emojiSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -164,7 +179,7 @@ Item {
     host: views.host
     viewName: "keybinds"
     fixedWidth: 700
-    KeybindList { host: views.host; active: keybindsSurface.active; anchors.fill: parent }
+    contentComponent: KeybindList { host: views.host; active: keybindsSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -172,7 +187,7 @@ Item {
     host: views.host
     viewName: "clipboard"
     fixedWidth: 780
-    ClipboardList { host: views.host; active: clipboardSurface.active; anchors.fill: parent }
+    contentComponent: ClipboardList { host: views.host; active: clipboardSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -180,7 +195,7 @@ Item {
     host: views.host
     viewName: "menu"
     fixedWidth: 520
-    OmarchyMenu { host: views.host; launcher: appLauncher; active: menuSurface.active; anchors.fill: parent }
+    contentComponent: OmarchyMenu { host: views.host; launcher: appsSurface.view; active: menuSurface.active; anchors.fill: parent }
   }
 
   // A tray app's menu, opened from the hover capsules (see HoverCapsules)
@@ -190,7 +205,7 @@ Item {
     host: views.host
     viewName: "trayMenu"
     fixedWidth: 440
-    TrayList { host: views.host; active: trayMenuSurface.active; anchors.fill: parent }
+    contentComponent: TrayList { host: views.host; active: trayMenuSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -199,7 +214,8 @@ Item {
     viewName: "player"
     fixedWidth: 440
     padding: 24
-    PlayerView { host: views.host; active: playerSurface.active; anchors.fill: parent }
+    retainContent: view?.completingAction ?? false
+    contentComponent: PlayerView { host: views.host; active: playerSurface.active; anchors.fill: parent }
   }
 
   // Just the notification history, opened from the hover capsules' bell.
@@ -208,7 +224,7 @@ Item {
     host: views.host
     viewName: "notifications"
     fixedWidth: 440
-    NotificationsView { host: views.host; active: notificationsSurface.active; anchors.fill: parent }
+    contentComponent: NotificationsView { host: views.host; active: notificationsSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -218,7 +234,11 @@ Item {
     fixedWidth: 780
     // SettingsView pads itself, so its sidebar can run to the island's edge.
     padding: 0
-    SettingsView { host: views.host; active: settingsSurface.active; anchors.fill: parent }
+    // Restore the last settings page when opening it again in this session.
+    property bool opened: false
+    onActiveChanged: if (active) opened = true
+    retainContent: opened
+    contentComponent: SettingsView { host: views.host; active: settingsSurface.active; anchors.fill: parent }
   }
 
   Surface {
@@ -226,7 +246,7 @@ Item {
     host: views.host
     viewName: "power"
     padding: 18
-    PowerMenu { host: views.host; active: powerSurface.active; anchors.fill: parent }
+    contentComponent: PowerMenu { host: views.host; active: powerSurface.active; anchors.fill: parent }
   }
 
   Repeater {
@@ -235,14 +255,14 @@ Item {
     delegate: Surface {
       required property var modelData
       // Its item's own size, if it has one, over its entry's.
-      readonly property var own: view && view.item
+      readonly property Item own: view
       host: views.host
       viewName: modelData.name
       fixedWidth: own && own.surfaceWidth !== undefined ? own.surfaceWidth : modelData.width || 0
       padding: own && own.surfacePadding !== undefined ? own.surfacePadding
         : modelData.padding === undefined ? 16 : modelData.padding
       cornerRadius: own && own.surfaceRadius !== undefined ? own.surfaceRadius : 0
-      Loader { anchors.fill: parent; sourceComponent: modelData.component }
+      contentComponent: modelData.component
     }
   }
 
@@ -268,7 +288,7 @@ Item {
       width: 36; height: 5; radius: 2.5
       color: grip.containsMouse || grip.pressed ? views.host.theme.fill("stronger") : views.host.theme.fill("strong")
       Behavior on color { MotionColorAnimation { theme: views.host.theme } }
-      opacity: grip.containsMouse || grip.pressed || controlCenter.editMode ? 1 : 0
+      opacity: grip.containsMouse || grip.pressed || views.controlCenter?.editMode ? 1 : 0
       Behavior on opacity { MotionAnimation { theme: views.host.theme; pace: "fade"; curve: "fade" } }
     }
     MouseArea {

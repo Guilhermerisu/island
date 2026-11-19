@@ -21,6 +21,7 @@ Item {
   readonly property bool canSeek: !!(mpris && mpris.canSeek && length > 0)
   property real position: 0
   property bool dragging: false
+  readonly property bool completingAction: focusTimer.running
 
   readonly property bool canShuffle: !!(mpris && mpris.canControl && mpris.shuffleSupported)
   // Electron apps and sites installed as apps can all go by the engine's name
@@ -72,10 +73,9 @@ Item {
     Qt.callLater(function() { player.forceActiveFocus() })
   }
   // Mpris only reports position on seeks; re-read it while open and playing
-  // so the bar and times glide. 30 Hz is smooth for a bar that moves a pixel
-  // or two a second, without redrawing the island every display frame.
+  // so the bar and times glide. Long tracks need fewer position updates.
   Timer {
-    interval: 33
+    interval: player.length > 45 ? 120 : 33
     repeat: true
     running: player.active && player.playing && !player.dragging
     onTriggered: player.position = player.mpris ? player.mpris.position : 0

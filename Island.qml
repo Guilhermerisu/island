@@ -769,13 +769,13 @@ Item {
           readonly property real glanceWidth: glanceBar && glanceBar.neededWidth > 0
             ? Math.min(baseGlanceWidth + clockExtra, Math.max(180, glanceBar.neededWidth))
             : baseGlanceWidth + clockExtra
-          readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
+          readonly property real targetWidth: activeSurface ? (activeSurface.view || activeSurface.fixedWidth > 0 ? activeSurface.islandWidth : widthSpring.target)
             : island.isGlanceExpanded ? island.glanceWidth
             : activePill ? activePill.pillWidth + (activePill.keepsClock ? clockExtra : 0)
             : root.view === "feedback" ? 280
             : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
             : 100 + clockExtra
-          readonly property real targetHeight: activeSurface ? activeSurface.islandHeight
+          readonly property real targetHeight: activeSurface ? (activeSurface.view ? activeSurface.islandHeight : heightSpring.target)
             : island.isGlanceExpanded ? (root.mediaPill ? root.pillHeight : root.clockHeight)
             : activePill ? activePill.pillHeight
             : root.view === "rest" ? root.clockHeight : 52

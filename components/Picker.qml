@@ -62,7 +62,7 @@ Item {
   property string lastSelectedKey: ""
   onSelectedChanged: if (selected) lastSelectedKey = selected.key
   onItemsChanged: {
-    if (!active) return
+    if (!active || !filtered) return
     for (var i = 0; i < filtered.length; i++)
       if (filtered[i].key === lastSelectedKey) { jumpTo(i); return }
     selectCurrent()
@@ -86,6 +86,7 @@ Item {
   // ---------- Applying ----------
 
   property var pendingEntry: null
+  readonly property bool applying: pendingEntry !== null
   function apply() {
     if (!selected || applier.running) return
     if (selected.key === currentKey || !applyCommand) { close(); return }
@@ -98,6 +99,7 @@ Item {
     onExited: {
       picker.applied(picker.pendingEntry)
       picker.close()
+      picker.pendingEntry = null
     }
   }
 
