@@ -30,6 +30,7 @@ Item {
   // theirs but a pill or a one-off answer is on screen to put in a column.
   readonly property var entries: [
     { id: "weather", name: "Weather", icon: "󰖐", color: "#1f8ef1", default: false, source: "weather/WeatherAddon.qml",
+      searchAliases: ["forecast"],
       zone: { minWidth: 320 },
       iconLayers: [
         { circle: true, color: "#ffd60a", x: 0.65, y: 0.37, size: 0.36 },
@@ -45,6 +46,7 @@ Item {
           choices: [{ label: "°C", value: false }, { label: "°F", value: true }] }
       ] },
     { id: "calendar", name: "Calendar", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
+      searchAliases: ["events"],
       zone: { minWidth: 400 },
       iconLayers: [
         { rect: true, color: "#f2564f", x: 0.5, y: 0.13, width: 1, height: 0.36 },
@@ -57,6 +59,7 @@ Item {
       ] },
     // Before the timer, so a call holds the island over a countdown.
     { id: "meetings", name: "Meetings", icon: "󰏲", color: "#30d158", default: false, source: "meetings/MeetingsAddon.qml",
+      searchAliases: ["calls"],
       description: "Calls on the island, with mute and hang up",
       options: [
         { key: "teams", label: "Teams", detail: "Calls and meetings, in the app or a browser", type: "switch", default: true },
@@ -66,6 +69,7 @@ Item {
         { key: "slack", label: "Slack", detail: "Huddles, in the app or a browser", type: "switch", default: true }
       ] },
     { id: "timer", name: "Timer", icon: "󰔛", color: "#1c1c1e", default: false, source: "timer/TimerAddon.qml",
+      searchAliases: ["countdown"],
       zone: { minWidth: 340 },
       iconLayers: [
         { rect: true, color: "#ff9f0a", x: 0.5, y: 0.13, width: 0.2, height: 0.08, radius: 0.5 },
@@ -76,6 +80,7 @@ Item {
       ],
       description: "A countdown on the island" },
     { id: "stats", name: "System Stats", icon: "󰓅", color: "#232325", default: true, source: "stats/StatsAddon.qml",
+      searchAliases: ["activity monitor", "system monitor"],
       zone: { minWidth: 300 },
       // Activity Monitor's: a red and a blue wave either side of a line,
       // over a faint grid.
@@ -92,6 +97,7 @@ Item {
       ]),
       description: "Live CPU, memory, GPU, and disk use" },
     { id: "displays", name: "Displays", icon: "󰖨", color: "#0a84ff", default: true, source: "displays/DisplaysAddon.qml",
+      searchAliases: ["monitors", "screens"],
       zone: { minWidth: 480 },
       // macOS's: a white sun, a disc ringed by eight rounded rays.
       iconLayers: [{ circle: true, color: "#ffffff", x: 0.5, y: 0.5, size: 0.32 }]
@@ -101,6 +107,7 @@ Item {
         })),
       description: "Arrange monitors and set their modes" },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
+      searchAliases: ["tray"],
       zone: { minWidth: 260 },
       iconLayers: [
         { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
@@ -127,6 +134,7 @@ Item {
       ],
       description: "Open and switch Omarchy plugins" },
     { id: "keyboard", name: "Keyboard Layout", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
+      searchAliases: ["layout"],
       iconLayers: [{ rect: true, color: "#ffffff", x: 0.5, y: 0.55, width: 0.8, height: 0.5, radius: 0.16 }]
         .concat([0.41, 0.55].reduce(function(keys, y) {
           return keys.concat([0.23, 0.365, 0.5, 0.635, 0.77].map(function(x) {
@@ -137,6 +145,7 @@ Item {
       description: "Show the layout on the pill when it changes" },
     // All Models' robot; its Settings pane takes the picked agent's logo.
     { id: "agents", name: "Agents", icon: "󰚩", color: "#5e5ce6", default: false, source: "agents/AgentsAddon.qml",
+      searchAliases: ["ai agents"],
       zone: { minWidth: 340 },
       description: "Agent limits, daily tokens, and Claude Code at work",
       options: [
@@ -145,6 +154,7 @@ Item {
           choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "All Models", value: "all" }] }
       ] },
     { id: "ask", name: "Ask AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
+      searchAliases: ["ask ai"],
       // Siri's: a glass sphere on black, with a ribbon of light across it,
       // white in the middle and tinted orange and blue at its edges.
       iconLayers: [
@@ -271,6 +281,7 @@ Item {
 
   // The enabled addons' roots, in registry order.
   property var loaded: []
+  onLoadedChanged: queueAddonOpen()
   function collect() {
     var roots = []
     for (var i = 0; i < slots.count; i++) {
@@ -305,6 +316,7 @@ Item {
         })
       }
       onItemChanged: addons.collect()
+      onStatusChanged: if (status === Loader.Error) addons.queueAddonOpen()
     }
   }
 
@@ -314,15 +326,76 @@ Item {
     return null
   }
 
-  // The enabled addons' launcher rows for the typed text (see Addon.qml),
-  // and what they add to its placeholder.
-  function launcherRows(text) {
-    var rows = []
-    for (var i = 0; i < loaded.length; i++) {
-      var row = loaded[i].launcherRow(text)
-      if (row) rows.push(Object.assign({ addonRow: true }, row))
+  property string requestedAddon: ""
+  Connections {
+    target: addons.host
+    function onSurfaceNamesChanged() { addons.queueAddonOpen() }
+    function onViewChanged() { addons.requestedAddon = "" }
+  }
+  function queueAddonOpen() {
+    if (requestedAddon) Qt.callLater(finishAddonOpen)
+  }
+  function openAddon(id) {
+    requestedAddon = id
+    if (!isEnabled(id)) setEnabled(id, true)
+    queueAddonOpen()
+  }
+  function finishAddonOpen() {
+    var id = requestedAddon
+    if (!id) return
+    var addon = root(id)
+    if (!addon) {
+      var slot = slots.itemAt(entries.findIndex(entry => entry.id === id))
+      if (slot?.status === Loader.Error) {
+        requestedAddon = ""
+        host.openSettings("Addons", id)
+      }
+      return
     }
-    return rows
+    // A view sharing the addon's ID is its entry point. Ask AI's answer,
+    // for example, needs a question and is opened by its own action.
+    if (addon.views.some(view => view.name === id)) {
+      if (!host.surfaceOpenFor(id)) return
+      requestedAddon = ""
+      host.view = id
+    } else {
+      requestedAddon = ""
+      if (addon.settingsPages.length) host.openSettings(addon.settingsPages[0].title)
+      else host.openSettings("Addons", id)
+    }
+  }
+
+  function addonSearchRow(entry, query) {
+    var names = [entry.id, entry.name].concat(entry.searchAliases || []).map(name => name.toLowerCase())
+    if (!names.some(name => name.includes(query))) return null
+    return {
+      addonRow: true, label: entry.name, glyph: entry.icon, tile: entry.color,
+      detail: entry.id && !isEnabled(entry.id) ? "Enable and Open" : "Island Addon",
+      first: names.includes(query),
+      run: function() {
+        if (entry.id) addons.openAddon(entry.id)
+        else host.openSettings("Addons")
+      }
+    }
+  }
+
+  function searchResults(text, results, includeQuestions, includeAddons) {
+    var query = text.trim().toLowerCase()
+    if (!query) return results
+    var rows = []
+    if (includeAddons) {
+      var catalog = { id: "", name: "Addons", icon: "󰐕", color: "#0a84ff",
+        searchAliases: ["addon", "add-ons", "extensions"] }
+      rows = [catalog].concat(entries).map(entry => addonSearchRow(entry, query)).filter(Boolean)
+    }
+    if (includeQuestions) {
+      for (var i = 0; i < loaded.length; i++) {
+        var row = loaded[i].launcherRow(text)
+        if (row) rows.push(Object.assign({ addonRow: true }, row))
+      }
+    }
+    var first = rows.filter(row => row.first)
+    return first.concat(results, rows.filter(row => !row.first))
   }
   readonly property var launcherHints: loaded.map(function(own) { return own.launcherHint })
     .filter(function(hint) { return hint !== "" })

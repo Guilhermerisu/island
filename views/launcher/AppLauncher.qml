@@ -17,14 +17,7 @@ ListPicker {
   id: launcher
   placeholder: ["Search"].concat(host.addons.launcherHints).join(" or ")
   emptyText: "No apps match"
-  items: {
-    var text = query.trim()
-    if (!text) return results
-    var rows = host.addons.launcherRows(text)
-    var first = rows.filter(function(row) { return row.first || !results.length })
-    var last = rows.filter(function(row) { return first.indexOf(row) === -1 })
-    return first.concat(results, last)
-  }
+  items: host.addons.searchResults(query, results, true, true)
   onChosen: function(entry) { if (entry.addonRow) entry.run(); else launch(entry) }
   onActiveChanged: if (active) hiddenScan.running = true
 

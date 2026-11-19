@@ -46,6 +46,10 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+Search for addons by name in the app launcher or the root Omarchy menu.
+Selecting a result opens the addon or its settings. A disabled addon is
+labeled **Enable and Open**.
+
 <h2 align="center">FAQ</h2>
 
 <details>
