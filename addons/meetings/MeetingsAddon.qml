@@ -17,7 +17,7 @@ import "../../components/IconSource.js" as IconSource
 Addon {
   id: meetingsAddon
   pill: Component { CallPill { meetings: meetingsAddon } }
-  ongoing: inCall
+  ongoing: (inCall) && !host.liveActivities.isHidden("meetings")
   // Grown, as it starts, and as it ends, it hides the clock and takes the
   // island to itself.
   pillAsks: expanded || intro || ended

@@ -47,10 +47,8 @@ Item {
   }
 
   // Which columns take room: all of them while editing, else those holding a zone.
-  readonly property var shown: {
-    var arrangement = zones.arrangement
-    return arrangement.map(function(column) { return center.editMode || column.length > 0 })
-  }
+  readonly property var layout: center.editMode ? zones.arrangement : zones.visibleArrangement
+  readonly property var shown: layout.map(column => center.editMode || column.length > 0)
   // The shares as dragged, until the handle is let go and they are saved.
   property var liveShares: null
   // Each column's width once the island has reached its width, which is
@@ -137,7 +135,7 @@ Item {
         // another is added or removed.
         KeyedListModel {
           id: rows
-          values: board.zones.arrangement[column.index] || []
+          values: board.layout[column.index] || []
         }
 
         // Where a drop at `y` in the column goes: before the first zone whose

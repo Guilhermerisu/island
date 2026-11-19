@@ -79,7 +79,7 @@ Item {
       // Its columns (1–3) and, per column, the zones in it (JSON, see
       // views/control-center/Zones.qml).
       property int controlCenterColumns: 1
-      property string controlCenterZones: "[[\"controls\",\"notifications\"]]"
+      property string controlCenterZones: "{\"columns\":[[\"controls\",\"activities\",\"notifications\"]]}"
       // Each column's share of the width, per column count (JSON, e.g.
       // {"3":[0.3,0.4,0.3]}); unset counts split evenly.
       property string controlCenterColumnWidths: ""

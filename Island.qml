@@ -29,13 +29,22 @@ Item {
   // addon's ongoing activity (see addonPill), a download or system update,
   // then the media playing. None shows while the companion needs setting up.
   readonly property bool resting: view === "rest" && !setup.needsSetup
+  readonly property var agentSessions: addons.root("agents")?.sessions || []
+  readonly property LiveActivities liveActivities: LiveActivities { host: root }
+  readonly property bool visibleFileActivity: settings.downloads && !liveActivities.isHidden("downloads")
+    && (downloads.active || downloads.finishedName !== "")
+  readonly property bool visibleUpdateActivity: settings.systemUpdates && !liveActivities.isHidden("updates")
+    && (packages.active || packages.finishedTitle !== "")
+  readonly property bool mediaActivityVisible: !liveActivities.isHidden(liveActivities.mediaKey)
+
   readonly property bool recordingPill: resting && settings.screenRecordingActivity && recorder.active
+    && !liveActivities.isHidden("recording")
   readonly property bool restingFree: resting && !recordingPill && !addons.ongoing
-  readonly property bool downloadDone: restingFree
-    && (downloads.finishedName !== "" || packages.finishedTitle !== "")
-  readonly property bool downloadActive: restingFree && (downloads.active || packages.active) && !downloadDone
+  readonly property bool fileDownloadDone: visibleFileActivity && downloads.finishedName !== ""
+  readonly property bool downloadDone: restingFree && (fileDownloadDone || (visibleUpdateActivity && packages.finishedTitle !== ""))
+  readonly property bool downloadActive: restingFree && (visibleFileActivity || visibleUpdateActivity) && !downloadDone
   readonly property bool downloadPill: downloadDone || downloadActive
-  readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
+  readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill && mediaActivityVisible
   // The live-activity pills' height, and the resting clock's.
   readonly property real pillHeight: settings.notch ? 40 : 44
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
@@ -50,11 +59,11 @@ Item {
   PackageUpdateTracker { id: packageTracker; enabled: root.settings.systemUpdates }
   Process { id: downloadOpener }
   function openDownloads() {
-    if (!downloads.active && downloads.finishedName === "") {
+    if (!visibleFileActivity) {
       packages.dismissFinished()
       return
     }
-    var path = downloadDone ? downloads.finishedPath : downloads.folder
+    var path = downloads.finishedName !== "" ? downloads.finishedPath : downloads.folder
     downloads.dismissFinished()
     downloadOpener.command = ["sh", "-c", '[ -e "$1" ] && exec xdg-open "$1"; exec xdg-open "$(dirname "$1")"', "sh", path]
     downloadOpener.startDetached()

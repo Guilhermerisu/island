@@ -4,7 +4,7 @@
 // is a list of columns, each a list of zone ids. Every function returns a new
 // model.
 
-var fallback = [["controls", "notifications"]]
+var fallback = [["controls", "activities", "notifications"]]
 // What the island is wide for 1, 2 and 3 columns, each column taking its
 // share of it (and the gaps between them).
 var islandWidths = [0, 540, 440, 380]
@@ -15,16 +15,28 @@ function clampColumns(value) {
   return n >= 1 ? Math.min(3, n) : 1
 }
 
-// The saved JSON as `columns` lists of known, distinct ids. Invalid or empty
-// JSON gives the default. Columns beyond `columns` are folded into the last
-// one, so shrinking never loses a zone. `aliases` ({ old: new }) renames ids
-// saved under an earlier name.
-function normalize(json, columns, known, aliases) {
+function readLayout(json) {
   var saved
   try { saved = JSON.parse(json) } catch (e) { saved = null }
-  var valid = Array.isArray(saved) && saved.length > 0
-    && saved.every(function(column) { return Array.isArray(column) })
-  if (!valid) saved = fallback
+  var legacy = Array.isArray(saved)
+  var layout = legacy ? saved : saved && saved.columns
+  if (!Array.isArray(layout) || !layout.length || !layout.every(Array.isArray)) return fallback
+  if (legacy && !layout.some(column => column.includes("activities"))) {
+    // Activities used to follow the controls, or the last column with a zone.
+    var column = layout.find(column => column.includes("controls"))
+    if (column) column.splice(column.indexOf("controls") + 1, 0, "activities")
+    else (layout.slice().reverse().find(column => column.length > 0) || layout[0]).push("activities")
+  }
+  return layout
+}
+
+function serialize(model) {
+  return JSON.stringify({ columns: model })
+}
+
+// Fold excess columns without losing zones, and resolve saved aliases.
+function normalize(json, columns, known, aliases) {
+  var saved = readLayout(json)
   var result = []
   var seen = {}
   for (var c = 0; c < columns; c++) result.push([])
@@ -46,9 +58,8 @@ function normalize(json, columns, known, aliases) {
 // joined. Zones stay in the order they have on screen, so one moved ahead of
 // its old column takes what follows it along.
 function unfold(json, next) {
-  var saved
-  try { saved = JSON.parse(json) } catch (e) { return next }
-  if (!Array.isArray(saved) || saved.length <= next.length) return next
+  var saved = readLayout(json)
+  if (saved.length <= next.length) return next
   var last = next.length - 1
   var from = {}
   for (var c = last; c < saved.length; c++)

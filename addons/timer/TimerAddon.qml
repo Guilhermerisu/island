@@ -11,7 +11,7 @@ Addon {
   views: [{ name: "timer", width: 440, padding: 20, component: timerView }]
   tiles: [{ key: "timer", title: "Timer", component: timerTile }]
   pill: Component { TimerPill { timer: timerAddon } }
-  ongoing: phase !== "idle"
+  ongoing: (phase !== "idle") && !host.liveActivities.isHidden("timer")
   pillWidth: 240
   function pillClicked() { host.view = "timer" }
 

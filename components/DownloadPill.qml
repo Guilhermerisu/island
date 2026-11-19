@@ -13,7 +13,7 @@ IslandPill {
   readonly property var tracker: host.downloads
   // Package updates share this pill; file downloads take precedence.
   readonly property var packages: host.packages
-  readonly property bool packageMode: !tracker.active && tracker.finishedName === ""
+  readonly property bool packageMode: host.downloadDone ? !host.fileDownloadDone : !host.visibleFileActivity
   readonly property bool downloading: host.downloadActive
   readonly property bool done: host.downloadDone
   readonly property color activityAccent: host.settings.colorfulLiveActivities ? pill.host.theme.system.green : host.theme.accent
@@ -25,7 +25,10 @@ IslandPill {
   // The finished file, or while downloading either side, opens it (or its
   // folder); a finished update just goes.
   function clicked(mouse) {
-    if (done || mouse.x < 56 || mouse.x > width - 90) host.openDownloads()
+    if (done || mouse.x < 56 || mouse.x > width - 90) {
+      if (packageMode) packages.dismissFinished()
+      else host.openDownloads()
+    }
     else host.view = "controls"
   }
 
