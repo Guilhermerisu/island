@@ -94,8 +94,18 @@ Item {
       property bool screenRecordControl: false
       property bool dictateControl: false
       property bool reminderControl: false
+      property bool autoHideEnabled: true
       property bool autoHideFullscreen: false
+      property bool autoHideMaximized: false
       property bool autoHideTiling: false
+      property bool autoHideFloating: false
+      property bool autoHideEmpty: false
+      property int autoHideIdleSeconds: 0
+      property bool autoHideScreensaver: true
+      property bool autoHideWithBar: true
+      property bool hideOnRightClick: true
+      property bool revealOnHover: true
+      property bool revealOnFeedback: true
       property bool menuApps: false
       // Before Ask AI was an addon; carried over and cleared (see Addons.qml).
       property string askAi: ""

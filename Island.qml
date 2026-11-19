@@ -237,27 +237,33 @@ Item {
     showHidden: true
   }
 
-  // Auto-hide. The screensaver and fullscreen come live from Wayland and
-  // Quickshell's own tracking; only "floating" lives in Hyprland's client
-  // list, which Quickshell refetches on request. So while Hide on Tiling is
-  // on, a burst of window events asks for it once.
+  // Window modes come from Hyprland's client list. Coalesce bursts of
+  // compositor events before asking Quickshell to refresh that metadata.
   readonly property bool screensaverActive: ToplevelManager.toplevels.values
     .some(function(t) { return t.appId === "org.omarchy.screensaver" })
-  readonly property bool autoHideTiling: settings.autoHideTiling
-  onAutoHideTilingChanged: if (autoHideTiling) tilingRefreshTimer.restart()
+  readonly property bool hidesForScreensaver: settings.autoHideEnabled && settings.autoHideScreensaver && screensaverActive
+  readonly property bool hidesWithBar: settings.autoHideEnabled && settings.autoHideWithBar && barHidden
+  readonly property bool trackWindowModes: settings.autoHideEnabled && (settings.autoHideFullscreen
+    || settings.autoHideMaximized || settings.autoHideTiling || settings.autoHideFloating || settings.autoHideEmpty)
+  onTrackWindowModesChanged: if (trackWindowModes) windowModeRefresh.restart()
   Connections {
     target: Hyprland
-    enabled: root.autoHideTiling
+    enabled: root.trackWindowModes
     function onRawEvent(event) {
       var n = String((event && event.name) || "")
-      if (["changefloatingmode", "openwindow", "closewindow", "movewindowv2"].indexOf(n) >= 0)
-        tilingRefreshTimer.restart()
+      if (["fullscreen", "changefloatingmode", "openwindow", "closewindow", "movewindowv2"].indexOf(n) >= 0)
+        windowModeRefresh.restart()
     }
   }
   Timer {
-    id: tilingRefreshTimer
+    id: windowModeRefresh
     interval: 60
     onTriggered: Hyprland.refreshToplevels()
+  }
+  IdleMonitor {
+    id: idleHide
+    enabled: root.settings.autoHideEnabled && root.settings.autoHideIdleSeconds > 0
+    timeout: Math.max(1, root.settings.autoHideIdleSeconds)
   }
 
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
@@ -313,7 +319,7 @@ Item {
   onSinkReadyChanged: volumeFeedback()
   Component.onCompleted: {
     initialized = true
-    if (autoHideTiling) tilingRefreshTimer.restart()
+    if (trackWindowModes) windowModeRefresh.restart()
   }
 
   // The media service handles the media keys and summons the stock OSD, which
@@ -535,6 +541,13 @@ Item {
   // An open view closes on a click outside the island (see outsideArea),
   // armed a moment after it opens so the click that opened it can't count.
   property bool outsideClickArmed: false
+  property bool manuallyHidden: false
+  Connections {
+    target: root.settings
+    function onHideOnRightClickChanged() {
+      if (!root.settings.hideOnRightClick) root.manuallyHidden = false
+    }
+  }
   readonly property bool closesOnOutsideClick: surfaceOpen && outsideClickArmed
   Timer {
     interval: 120
@@ -563,48 +576,72 @@ Item {
         readonly property var monitor: Hyprland.monitorFor(screen)
         readonly property var activeWorkspace: (monitor && monitor.activeWorkspace) ? monitor.activeWorkspace : Hyprland.focusedWorkspace
 
-        readonly property bool hasFullscreen: {
-          var ws = activeWorkspace
-          if (!ws) return false
-          if (ws.hasFullscreen) return true
-          var tl = ws.toplevels.values
-          for (var i = 0; i < tl.length; i++)
-            if (tl[i].wayland && tl[i].wayland.fullscreen) return true
-          return false
+        readonly property var windows: !root.trackWindowModes || !activeWorkspace ? []
+          : activeWorkspace.toplevels.values.filter(toplevel => {
+            var ipc = toplevel.lastIpcObject
+            return ipc?.mapped !== false && !ipc?.hidden
+              && (toplevel.wayland?.appId || ipc?.class) !== "org.omarchy.screensaver"
+          })
+        readonly property bool autoHideCondition: {
+          var cfg = root.settings
+          if (!cfg.autoHideEnabled) return false
+          if (root.hidesForScreensaver || root.hidesWithBar || (idleHide.enabled && idleHide.isIdle)) return true
+          if (!activeWorkspace) return false
+          if (cfg.autoHideEmpty && !windows.length) return true
+          return windows.some(toplevel => {
+            var ipc = toplevel.lastIpcObject
+            var mode = ipc?.fullscreen
+            return (cfg.autoHideFullscreen && (typeof mode === "number" ? mode >= 2 : mode || toplevel.wayland?.fullscreen))
+              || (cfg.autoHideMaximized && mode === 1)
+              || (cfg.autoHideTiling && ipc?.floating === false)
+              || (cfg.autoHideFloating && ipc?.floating === true)
+          })
         }
-        readonly property bool hasScreensaver: root.screensaverActive
-
-        readonly property bool hasTiled: {
-          var ws = activeWorkspace
-          var tl = ws ? ws.toplevels.values : []
-          for (var i = 0; i < tl.length; i++) {
-            var ipc = tl[i].lastIpcObject
-            if (ipc && ipc.mapped !== false && !ipc.hidden && !ipc.floating) return true
-          }
-          return false
-        }
-
-        readonly property bool autoHideCondition: (
-          (root.settings.autoHideFullscreen && hasFullscreen) ||
-          hasScreensaver ||
-          (root.settings.autoHideTiling && hasTiled)
-        )
 
         property bool edgeRevealed: false
+        onIsEffectivelyHiddenChanged: if (!isEffectivelyHidden) edgeRevealed = false
         Timer {
           id: edgeLeaveTimer
           interval: 400
-          onTriggered: window.edgeRevealed = false
+          onTriggered: if (!revealHover.hovered && !islandPointerHover.hovered) window.edgeRevealed = false
         }
 
-        readonly property bool isEffectivelyHidden: (root.barHidden || autoHideCondition)
-          && (root.view === "rest" || hasScreensaver)
+        readonly property bool hideableView: root.view === "rest" || (root.view === "feedback" && !root.settings.revealOnFeedback)
+        readonly property bool isEffectivelyHidden: autoHideCondition && hideableView
+        readonly property bool manuallyHiddenAtRest: root.manuallyHidden && hideableView
+        readonly property bool edgeClickAllowed: visible && root.settings.hideOnRightClick
+          && !root.hidesForScreensaver && root.view === "rest"
+        readonly property bool clickRevealArmed: edgeClickAllowed && islandHidden
+        readonly property bool revealArmed: isEffectivelyHidden && root.settings.revealOnHover
+          && !root.hidesForScreensaver && !root.manuallyHidden
+        readonly property bool autoHidden: root.hidesForScreensaver || (isEffectivelyHidden && !edgeRevealed && !root.manuallyHidden)
+        readonly property bool islandHidden: autoHidden || manuallyHiddenAtRest
 
-        // Hover at the top edge can bring a hidden island back.
-        readonly property bool revealArmed: isEffectivelyHidden && !hasScreensaver
+        MotionSpring {
+          id: manualMotion
+          theme: root.theme
+          pace: root.manuallyHidden ? "collapse" : "expressive"
+          bounce: root.manuallyHidden ? 0 : 0.27
+          target: window.manuallyHiddenAtRest ? 100 : 0
+        }
 
-        readonly property bool islandHidden: isEffectivelyHidden
-          && !(revealArmed && edgeRevealed)
+        component EdgeClick: MouseArea {
+          required property bool revealing
+          anchors.fill: parent
+          z: 10
+          acceptedButtons: Qt.RightButton
+          onClicked: {
+            if (revealing && window.isEffectivelyHidden) {
+              window.edgeRevealed = true
+              edgeLeaveTimer.restart()
+            }
+            if (!revealing) {
+              island.glanceActive = false
+              island.capsulesActive = false
+            }
+            root.manuallyHidden = !revealing
+          }
+        }
 
         // Only the island takes input, except while a view is open: then the
         // whole screen does, so outsideArea can close it. While the island can
@@ -613,6 +650,7 @@ Item {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
             Region { item: window.revealArmed ? revealStrip : null },
+            Region { item: window.clickRevealArmed ? clickRevealStrip : null },
             Region { item: satellitePill && satellitePill.shown ? satellitePill : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.leftGroup : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.rightGroup : null }
@@ -627,6 +665,16 @@ Item {
           onPressed: function(mouse) {
             if (!island.contains(mapToItem(island, mouse.x, mouse.y))) root.view = "rest"
           }
+        }
+
+        Item {
+          id: clickRevealStrip
+          anchors.top: parent.top
+          anchors.horizontalCenter: parent.horizontalCenter
+          width: Math.max(100, Math.min(280, island.targetWidth))
+          height: 6
+          visible: window.clickRevealArmed
+          EdgeClick { revealing: true; enabled: window.clickRevealArmed }
         }
 
         Item {
@@ -700,10 +748,16 @@ Item {
         Rectangle {
           id: island
           x: (parent.width - width) / 2
-          // On a spring like the shape, so hiding and showing again quickly
-          // turns around smoothly.
-          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.settings.notch ? 0 : 8 }
-          y: ySpring.value
+          AutoHideMotion {
+            id: hideMotion
+            theme: root.theme
+            hidden: window.autoHidden
+            edgeProgress: manualMotion.value / 100
+            expandedWidth: Math.max(40, widthSpring.value)
+            expandedHeight: Math.max(28, heightSpring.value)
+            restY: root.settings.notch ? 0 : 8
+          }
+          y: hideMotion.renderY
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
           readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
@@ -760,7 +814,7 @@ Item {
             }
           }
           readonly property bool hasNonMediaActivePill: pills.active !== null && pills.active !== mediaPillItem
-          readonly property bool isGlanceExpanded: island.glanceActive && (root.hoverMode === "expand") && island.hasGlanceItems && root.restingFree && !root.downloadPill && !island.hasNonMediaActivePill
+          readonly property bool isGlanceExpanded: !window.islandHidden && island.glanceActive && (root.hoverMode === "expand") && island.hasGlanceItems && root.restingFree && !root.downloadPill && !island.hasNonMediaActivePill
           readonly property bool capsulesShown: island.capsulesActive && (root.hoverMode === "capsules") && (root.resting || root.volumePill)
           // How much wider than a bare time the chosen clock format is; the
           // resting pill and the pills that keep the clock in the middle grow by it.
@@ -872,13 +926,14 @@ Item {
             widthSpring.target = widthSpring.value = targetWidth
             heightSpring.target = heightSpring.value = targetHeight
           }
-          width: Math.max(40, widthSpring.value)
-          height: Math.max(28, heightSpring.value)
+          width: hideMotion.renderWidth
+          height: hideMotion.renderHeight
+          EdgeClick { revealing: false; enabled: window.edgeClickAllowed && !window.islandHidden }
 
           MouseArea {
             id: islandTap
             anchors.fill: parent
-            enabled: root.view === "rest" || root.view === "feedback"
+            enabled: !window.islandHidden && (root.view === "rest" || root.view === "feedback")
             onPressed: squishHold.restart()
             onClicked: function(mouse) {
               feedbackTimer.stop()
@@ -892,6 +947,7 @@ Item {
           Item {
             id: pills
             anchors.fill: parent
+            opacity: hideMotion.contentOpacity
             readonly property Item active: {
               for (var i = 0; i < children.length; i++) if (children[i].shown) return children[i]
               return null
@@ -916,7 +972,7 @@ Item {
             anchors.fill: parent
           }
 
-          IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
+          IslandLabel { id: clockLabel; host: root; pill: island.activePill; opacity: hideMotion.contentOpacity; anchors.centerIn: parent }
           TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockStacked ? root.clockWidestText : root.clockText }
 
           Views { id: views; host: root; anchors.fill: parent }
@@ -969,7 +1025,7 @@ Item {
       // change of focus would re-tile two monitors.
       PanelWindow {
         screen: window.screen
-        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition
+        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !window.autoHideCondition && !root.manuallyHidden
         color: "transparent"
         anchors { top: true; left: true; right: true }
         exclusionMode: ExclusionMode.Normal

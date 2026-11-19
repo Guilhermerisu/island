@@ -46,6 +46,10 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+Use Settings → Island Visibility to choose when Island hides and how it
+returns. Right-click the collapsed pill to hide it, or right-click its
+position at the top edge to bring it back.
+
 <h2 align="center">FAQ</h2>
 
 <details>

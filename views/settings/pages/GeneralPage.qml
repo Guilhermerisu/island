@@ -356,36 +356,6 @@ ColumnLayout {
 
   SettingsGroup {
     view: page.view
-    title: "Hide automatically"
-    SettingsRow {
-      view: page.view
-      icon: "󰊓"
-      iconTint: page.system.blue
-      label: "When a window is fullscreen"
-      detail: "Slides the island away during fullscreen apps and video"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.autoHideFullscreen
-        onToggled: function(on) { page.view.settings.autoHideFullscreen = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󱇙"
-      iconTint: page.system.green
-      label: "When windows are tiled"
-      detail: "Hides the island while tiled windows fill the workspace"
-      last: true
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.autoHideTiling
-        onToggled: function(on) { page.view.settings.autoHideTiling = on }
-      }
-    }
-  }
-
-  SettingsGroup {
-    view: page.view
     title: "Omarchy Menu"
     SettingsRow {
       view: page.view
