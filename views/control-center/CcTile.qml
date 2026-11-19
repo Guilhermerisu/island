@@ -12,6 +12,7 @@ Rectangle {
   property string icon: ""
   // The icon's font, when it isn't the island's (a plugin's own).
   property string iconFamily: ""
+  property bool centerIconInk: false
   property string title: ""
   property string subtitle: ""
   property bool checked: false
@@ -47,8 +48,12 @@ Rectangle {
     width: t.badgeSize; height: t.badgeSize; radius: t.badgeSize / 2
     color: t.checked ? center.accent : center.well
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
+    TextMetrics { id: iconMetrics; font: badgeGlyph.font; text: t.centerIconInk ? badgeGlyph.text : "" }
     Text {
-      anchors.centerIn: parent
+      id: badgeGlyph
+      anchors.centerIn: t.centerIconInk ? null : parent
+      x: t.centerIconInk ? (badge.width - iconMetrics.tightBoundingRect.width) / 2 - iconMetrics.tightBoundingRect.x : 0
+      y: t.centerIconInk ? (badge.height - iconMetrics.tightBoundingRect.height) / 2 - iconMetrics.tightBoundingRect.y - baselineOffset : 0
       text: t.icon
       color: t.checked ? center.badgeOnInk : center.text
       Behavior on color { MotionColorAnimation { theme: center.host.theme } }

@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import "../../../components"
 import "../controls"
+import "../../../addons/todos" as TodoControls
 
 ColumnLayout {
   id: page
@@ -47,11 +48,14 @@ ColumnLayout {
           required property var modelData
           required property int index
           readonly property bool on: page.addons.isEnabled(modelData.id)
+          readonly property bool hasTodoReminder: modelData.id === "todos"
+          property bool customReminderOpen: false
           readonly property var options: modelData.options || []
           readonly property var shortcuts: page.view.keybinds ? page.view.keybinds.addonEntries(modelData.id) : []
           // Only an enabled addon has its options and shortcuts to open.
           readonly property bool hasOptions: on && (options.length > 0 || shortcuts.length > 0)
           readonly property bool open: hasOptions && page.expanded === modelData.id
+          onOpenChanged: if (!open) customReminderOpen = false
           Layout.fillWidth: true
           readonly property bool last: index === group.items.length - 1
           spacing: 0
@@ -176,14 +180,22 @@ ColumnLayout {
                   id: optionRow
                   required property var modelData
                   required property int index
-                  readonly property var value: page.addons.option(addon.modelData.id, modelData.key)
+                  readonly property bool isReminder: addon.hasTodoReminder && modelData.key === "reminderMinutes"
+                  readonly property var value: isReminder && addon.customReminderOpen ? "custom"
+                    : page.addons.option(addon.modelData.id, modelData.key)
                   // An option for one choice of "with" (Ask AI's model for its AI).
                   visible: !modelData.visibleWith || page.addons.option(addon.modelData.id, "with") === modelData.visibleWith
-                  function pick(value) { page.addons.setOption(addon.modelData.id, modelData.key, value) }
+                  function pick(value) {
+                    if (isReminder) {
+                      addon.customReminderOpen = value === "custom"
+                      if (addon.customReminderOpen) return
+                    }
+                    page.addons.setOption(addon.modelData.id, modelData.key, value)
+                  }
                   view: page.view
                   label: modelData.label || modelData.key
                   detail: modelData.detail || ""
-                  last: index === addon.options.length - 1 && addon.shortcuts.length === 0
+                  last: index === addon.options.length - 1 && addon.shortcuts.length === 0 && !addon.customReminderOpen
                   Loader {
                     sourceComponent: optionRow.modelData.type === "popup" ? popUpOption
                       : optionRow.modelData.type === "segmented" ? segmentedOption
@@ -230,6 +242,17 @@ ColumnLayout {
                   }
                 }
               }
+              Loader {
+                active: addon.open && addon.customReminderOpen && !!page.addons.root("todos")
+                visible: active
+                Layout.fillWidth: true
+                Layout.preferredHeight: item ? item.implicitHeight : 0
+                sourceComponent: TodoControls.TodoReminderForm {
+                  view: page.view
+                  todos: page.addons.root("todos")
+                  last: addon.shortcuts.length === 0
+                }
+              }
               // Its shortcuts, recorded by the Keybinds page (which leaves them out).
               Repeater {
                 model: addon.open ? addon.shortcuts : []
@@ -238,9 +261,11 @@ ColumnLayout {
                   required property int index
                   view: page.view
                   keybinds: page.view.keybinds
-                  entry: addon.shortcuts.length === 1 ? Object.assign({}, modelData, { label: "Keyboard shortcut" }) : modelData
+                  entry: addon.shortcuts.length === 1 && !addon.hasTodoReminder
+                    ? Object.assign({}, modelData, { label: "Keyboard shortcut" }) : modelData
                   // What it opens; the boxed keys show they can be clicked to change.
-                  detail: (modelData.command.indexOf("addonSettings") !== -1 ? "Opens its Settings pane" : "Opens the " + addon.modelData.name.toLowerCase() + " view")
+                  detail: modelData.command.indexOf("addonSettings") !== -1 ? "Opens its Settings pane"
+                    : "Opens the " + addon.modelData.name.toLowerCase() + " view"
                   boxed: true
                   fieldWidth: page.optionWidth
                   last: index === addon.shortcuts.length - 1

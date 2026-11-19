@@ -46,6 +46,10 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+Enable **Priority Todos** in Settings → Addons and add its tile to the
+Control Center. Its addon options let you assign an optional shortcut and
+create a one-time notification under **Task reminders → Custom reminder…**.
+
 <h2 align="center">FAQ</h2>
 
 <details>
