@@ -30,12 +30,17 @@ ListPicker {
     else if (empty && event.key === Qt.Key_Right && selected && (selected.kind === "menu" || selected.kind === "link")) { activate(selected); event.accepted = true }
   }
   onActiveChanged: {
-    if (!active) return
+    if (!active) {
+      providerQueue = []
+      return
+    }
     var route = MenuModel.resolveRoute(items_, itemOrder, host.menuRoute || "root")
     activeMenu = MenuModel.item(items_, route) ? route : "root"
     navStack = []
     evaluateGuards()
+    loadProvider(activeMenu, true)
   }
+  onQueryChanged: if (active && query.trim()) loadProvidersForSearch()
 
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
   property var launcher: null
@@ -68,11 +73,18 @@ ListPicker {
   }
 
   function rebuild() {
+    providerRevision++
+    loadedProviders = Object.create(null)
+    providerQueue = []
     var merged = MenuModel.mergeMenuSources(defaultItems, userItems)
     items_ = merged.items
     itemOrder = merged.itemOrder
     mergeApps()
     evaluateGuards()
+    if (active) {
+      loadProvider(activeMenu)
+      if (query.trim()) loadProvidersForSearch()
+    }
   }
 
   readonly property bool searchApps: !!host.settings.menuApps && !!launcher && typeof MenuModel.mergeAppRows === "function"
@@ -159,15 +171,19 @@ ListPicker {
 
   // ---------- Providers (submenus filled at runtime) ----------
 
+  property int providerRevision: 0
+  property var providerQueue: []
+  property var loadedProviders: Object.create(null)
+
   function shellQuote(value) { return "'" + String(value).replace(/'/g, "'\\''") + "'" }
   readonly property var providers: ({
     "fonts": {
-      script: "current=$(omarchy-font-current 2>/dev/null); omarchy-font-list 2>/dev/null | while read -r f; do [[ -z $f ]] && continue; printf '%s\\t%s\\t%s\\n' \"$f\" \"$f\" \"$current\"; done",
+      script: "set -o pipefail; current=$(omarchy-font-current 2>/dev/null); omarchy-font-list 2>/dev/null | while read -r f; do [[ -z $f ]] && continue; printf '%s\\t%s\\t%s\\n' \"$f\" \"$f\" \"$current\"; done",
       icon: "",
       actionFor: function(value) { return "omarchy-font-set " + menu.shellQuote(value) }
     },
     "power-profiles": {
-      script: "current=$(powerprofilesctl get 2>/dev/null); omarchy-powerprofiles-list 2>/dev/null | while read -r p; do [[ -z $p ]] && continue; printf '%s\\t%s\\t%s\\n' \"$p\" \"$p\" \"$current\"; done",
+      script: "set -o pipefail; current=$(powerprofilesctl get 2>/dev/null); omarchy-powerprofiles-list 2>/dev/null | while read -r p; do [[ -z $p ]] && continue; printf '%s\\t%s\\t%s\\n' \"$p\" \"$p\" \"$current\"; done",
       icon: "󰐋",
       actionFor: function(value) { return "omarchy-powerprofiles-set autodetect " + menu.shellQuote(value) }
     }
@@ -176,19 +192,45 @@ ListPicker {
     id: providerProc
     property string menuId: ""
     property string providerKey: ""
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: menu.mergeProviderRows(text, providerProc.menuId, providerProc.providerKey)
+    property int revision: 0
+    property string collected: ""
+    stdout: SplitParser { onRead: function(line) { providerProc.collected += line + "\n" } }
+    onExited: function(code, status) {
+      if (code === 0 && status === 0 && providerProc.revision === menu.providerRevision) {
+        menu.loadedProviders[providerProc.menuId] = true
+        menu.mergeProviderRows(providerProc.collected, providerProc.menuId, providerProc.providerKey)
+      }
+      Qt.callLater(menu.startNextProvider)
     }
   }
-  function loadProvider(id) {
+  function loadProvider(id, refresh) {
     var entry = MenuModel.item(items_, id)
-    var spec = entry && entry.provider ? providers[entry.provider] : null
-    if (!spec || providerProc.running) return
+    if (!entry || !Object.prototype.hasOwnProperty.call(providers, entry.provider)) return
+    if (refresh) delete loadedProviders[id]
+    if (loadedProviders[id] || providerQueue.indexOf(id) !== -1) return
+    if (providerProc.running && providerProc.menuId === id && providerProc.revision === providerRevision) return
+    providerQueue = providerQueue.concat([id])
+    startNextProvider()
+  }
+  function startNextProvider() {
+    if (providerProc.running || !providerQueue.length) return
+    var id = providerQueue[0]
+    providerQueue = providerQueue.slice(1)
+    var entry = MenuModel.item(items_, id)
     providerProc.menuId = id
     providerProc.providerKey = entry.provider
-    providerProc.command = ["bash", "-lc", spec.script]
+    providerProc.revision = providerRevision
+    providerProc.collected = ""
+    providerProc.command = ["bash", "-lc", providers[entry.provider].script]
     providerProc.running = true
+  }
+  function loadProvidersForSearch() {
+    var scope = MenuModel.item(items_, activeMenu) ? activeMenu : "root"
+    for (var i = 0; i < itemOrder.length; i++) {
+      var entry = MenuModel.item(items_, itemOrder[i])
+      if (!entry || !entry.provider || !isVisible(entry)) continue
+      if (entry.id === scope || MenuModel.isDescendantOf(items_, entry.id, scope)) loadProvider(entry.id)
+    }
   }
   function mergeProviderRows(raw, menuId, providerKey) {
     var spec = providers[providerKey]
@@ -264,8 +306,7 @@ ListPicker {
     if (push && id !== activeMenu) navStack = navStack.concat([activeMenu])
     activeMenu = id
     clearSearch()
-    var entry = MenuModel.item(items_, id)
-    if (entry && entry.provider) loadProvider(id)
+    loadProvider(id, true)
   }
   function goBack() {
     if (navStack.length) {
