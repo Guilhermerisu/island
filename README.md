@@ -49,6 +49,16 @@ omarchy bar use guilhermerisu.island
 <h2 align="center">FAQ</h2>
 
 <details>
+<summary><b>Can I jump back to the Claude Code session?</b></summary>
+<br>
+
+With the Agents addon's Live Activity enabled, a brief banner appears when
+Claude Code asks a question or completes a turn. Click it to focus the
+session's window when Island can identify a single matching Hyprland client.
+Use Settings → Addons → Agents to turn Claude Code banners off.
+</details>
+
+<details>
 <summary><b>Do my other Omarchy plugins still work?</b></summary>
 <br>
 

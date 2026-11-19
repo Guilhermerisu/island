@@ -9,6 +9,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import "addons"
+import "addons/agents" as Agents
 import "components"
 import "services"
 import "views"
@@ -613,6 +614,7 @@ Item {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
             Region { item: window.revealArmed ? revealStrip : null },
+            Region { item: claudeBanner.notice ? claudeBanner : null },
             Region { item: satellitePill && satellitePill.shown ? satellitePill : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.leftGroup : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.rightGroup : null }
@@ -696,6 +698,14 @@ Item {
 
         NotchEar { shape: island }
         NotchEar { shape: island; mirrored: true }
+
+        Agents.SessionBanner {
+          id: claudeBanner
+          theme: root.theme
+          agents: root.addons.root("agents")
+          allowed: window.visible && root.resting && !window.islandHidden && !window.hasScreensaver
+          notch: root.settings.notch
+        }
 
         Rectangle {
           id: island

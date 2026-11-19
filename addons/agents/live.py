@@ -5,7 +5,7 @@ Follows the transcripts Claude Code writes as it goes (<config>/projects/
 <project>/<session>.jsonl, for ~/.claude and any ~/.claude-* profile) and
 prints one JSON line whenever what's worth showing changes:
 
-  {"sessions": [{"id", "state", "startedAt", "doneAt"}]}
+  {"sessions": [{"id", "state", "startedAt", "askedAt", "doneAt", "interrupted"}]}
 
 newest first. `state` is "thinking", "tool" (a step is running), "asking"
 (it's waiting on your answer to a question or its plan), or "done"
@@ -50,10 +50,11 @@ class Session:
         self.path = path
         self.id = os.path.splitext(os.path.basename(path))[0]
         self.offset = 0
-        self.running = {}      # the turn's running steps by id: whether it's asking
+        self.running = {}      # steps by id: question timestamp, or 0 for another tool
         self.state = ""        # "", thinking, tool, asking, done
         self.started = 0
         self.done_at = 0
+        self.interrupted = False
         self.updated = 0
 
     def read(self):
@@ -94,10 +95,11 @@ class Session:
                 text = content if isinstance(content, str) else " ".join(
                     b.get("text", "") for b in content or [] if b.get("type") == "text")
                 if text.startswith("[Request interrupted"):
-                    self.finish(stamp)
+                    self.finish(stamp, interrupted=True)
                 elif not entry.get("isMeta") and text.strip() and not text.lstrip().startswith("<"):
                     # A new turn.
                     self.running, self.state, self.started, self.done_at = {}, "thinking", stamp, 0
+                    self.interrupted = False
                 return
             for block in content:
                 if block.get("type") == "tool_result":
@@ -107,7 +109,7 @@ class Session:
             return
         for block in content or []:
             if block.get("type") == "tool_use":
-                self.running[block.get("id")] = block.get("name") in ASKING_TOOLS
+                self.running.setdefault(block.get("id"), stamp if block.get("name") in ASKING_TOOLS else 0)
                 self.started = self.started or stamp
         if (entry.get("message") or {}).get("stop_reason") == "end_turn":
             self.finish(stamp)
@@ -120,10 +122,11 @@ class Session:
             return "asking"
         return "tool" if self.running else "thinking"
 
-    def finish(self, stamp):
+    def finish(self, stamp, interrupted=False):
         self.running = {}
         self.state = "done"
         self.done_at = stamp
+        self.interrupted = interrupted
 
     def shown(self, now):
         if not self.state:
@@ -135,7 +138,9 @@ class Session:
         return now - max(self.updated, mtime_ms(self.path)) < idle * 1000
 
     def snapshot(self):
-        return {"id": self.id, "state": self.state, "startedAt": self.started, "doneAt": self.done_at}
+        return {"id": self.id, "state": self.state, "startedAt": self.started,
+                "askedAt": max(self.running.values(), default=0), "doneAt": self.done_at,
+                "interrupted": self.interrupted}
 
 
 def mtime_ms(path):
