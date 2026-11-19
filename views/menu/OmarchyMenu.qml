@@ -196,9 +196,12 @@ ListPicker {
     property string collected: ""
     stdout: SplitParser { onRead: function(line) { providerProc.collected += line + "\n" } }
     onExited: function(code, status) {
-      if (code === 0 && status === 0 && providerProc.revision === menu.providerRevision) {
+      if (providerProc.revision === menu.providerRevision) {
+        // A failed run counts as loaded too, so search doesn't retry it on
+        // every keystroke; opening its submenu still refreshes it.
         menu.loadedProviders[providerProc.menuId] = true
-        menu.mergeProviderRows(providerProc.collected, providerProc.menuId, providerProc.providerKey)
+        if (code === 0 && status === 0)
+          menu.mergeProviderRows(providerProc.collected, providerProc.menuId, providerProc.providerKey)
       }
       Qt.callLater(menu.startNextProvider)
     }
