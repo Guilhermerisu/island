@@ -41,6 +41,12 @@ Item {
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
 
   readonly property var nowPlaying: nowPlayingData
+  readonly property var audioSpectrum: cavaSpectrum
+  AudioSpectrum {
+    id: cavaSpectrum
+    wanted: root.nowPlaying.playing && (root.view === "player" || root.mediaPill
+      || (root.restingFree && !root.downloadPill && root.hoverMode === "expand" && root.settings.glanceMediaSatellite))
+  }
   NowPlaying { id: nowPlayingData; shell: root.shell; theme: root.theme }
   readonly property var recorder: screenRecorder
   ScreenRecorder { id: screenRecorder }

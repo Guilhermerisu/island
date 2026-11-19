@@ -28,6 +28,7 @@ IslandPill {
   }
 
   SoundWave {
+    spectrum: media.host.audioSpectrum
     opacity: reveal.trailingIn
     PillPart { progress: reveal.trailingIn }
     anchors.right: parent.right
