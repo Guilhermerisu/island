@@ -3,7 +3,7 @@ import "zones.js" as ZoneModel
 
 // The control center's zones: what each column holds, saved in the island's
 // settings (controlCenterZones, one list of zone ids per column). A zone is
-// the control grid ("controls"), the notifications ("notifications"), or an
+// the controls, activities, notifications, or an
 // addon's ("addon:<id>", or "addon:<id>/<key>" for one of several, for the
 // entries in addons/Addons.qml that declare a `zone` or `zones`, read whether
 // or not the addon is on; what a zone shows comes from the addon, see ZoneCard).
@@ -16,6 +16,7 @@ Item {
   readonly property int columns: ZoneModel.clampColumns(settings.controlCenterColumns)
   readonly property var definitions: [
     { id: "controls", title: "Controls", icon: String.fromCodePoint(0xF062E), about: "Your switches and sliders" },
+    { id: "activities", title: "Activities", icon: "󰨚", about: "Current activities and running tasks" },
     { id: "notifications", title: "Notifications", icon: String.fromCodePoint(0xF009A), about: "Your notification history" }
   ].concat(host.addons.entries.reduce(function(list, entry) {
     // `zone: true` is a zone named for the addon, sized by what it shows.
@@ -33,11 +34,13 @@ Item {
   // Shrinking the columns only folds them on screen: the saved lists stay
   // (see save), so going back to more columns puts them back.
   readonly property var arrangement: ZoneModel.normalize(settings.controlCenterZones, columns, ids, aliases)
+  readonly property var visibleArrangement: host.liveActivities.entries.length ? arrangement
+    : ZoneModel.remove(arrangement, "activities")
   readonly property var absent: ZoneModel.absent(arrangement, ids)
   // How many columns hold something; the island is no wider than that
   // outside edit mode.
-  readonly property int occupied: Math.max(1, arrangement.filter(function(column) { return column.length > 0 }).length)
-  readonly property bool empty: arrangement.every(function(column) { return column.length === 0 })
+  readonly property int occupied: Math.max(1, visibleArrangement.filter(function(column) { return column.length > 0 }).length)
+  readonly property bool empty: visibleArrangement.every(function(column) { return column.length === 0 })
 
   // Each column's share of the width, one per column; written with
   // setShares (null for an even split), per column count so that changing the
@@ -49,7 +52,7 @@ Item {
     return null
   }
   function save(next) {
-    var json = JSON.stringify(ZoneModel.unfold(settings.controlCenterZones, next))
+    var json = ZoneModel.serialize(ZoneModel.unfold(settings.controlCenterZones, next))
     if (json !== settings.controlCenterZones) settings.controlCenterZones = json
   }
   function setShares(values) {

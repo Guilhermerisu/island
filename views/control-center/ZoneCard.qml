@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import "../../addons"
 import "../../components"
+import "../activities"
 
 // One zone of the control center, in its column: what it holds (the control
 // grid, the notifications, or an addon's zone, see addons/Addon.qml) and, in
@@ -141,10 +142,19 @@ ColumnLayout {
     // The notifications sit a little off the grid above them.
     Layout.topMargin: zone.zoneId === "notifications" ? 4 : 0
     Layout.preferredHeight: item ? item.implicitHeight : 0
-    sourceComponent: zone.zoneId === "controls" ? controlsZone : notificationsZone
+    sourceComponent: zone.zoneId === "controls" ? controlsZone
+      : zone.zoneId === "activities" ? activitiesZone : notificationsZone
   }
   Component { id: controlsZone; ControlLayout { center: zone.center } }
   Component { id: notificationsZone; NotificationHistory { center: zone.center } }
+  Component {
+    id: activitiesZone
+    ActivityHub {
+      host: zone.center.host
+      active: zone.center.active && shown
+      shown: !zone.center.editMode
+    }
+  }
 
   // An addon's zone: made in this loader, so the component's parent has
   // `center` and `zoneActive`; as wide as the column, as tall as it is.

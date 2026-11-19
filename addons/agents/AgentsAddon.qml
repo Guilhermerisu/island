@@ -16,7 +16,7 @@ import ".."
 Addon {
   id: agentsAddon
   pill: Component { AgentsPill { agents: agentsAddon } }
-  ongoing: working || finished
+  ongoing: !!live && (working || finished)
   pillWidth: 236
   // Claude's orange, or the theme's accent when live activities aren't
   // colorful; amber while it waits on you.
@@ -115,9 +115,10 @@ Addon {
   // Claude Code's sessions at work, newest first (see live.py); the pill
   // shows the newest.
   property var sessions: []
-  readonly property var session: sessions.length ? sessions[0] : null
-  readonly property bool working: sessions.some(function(s) { return s.state !== "done" })
-  readonly property var live: working ? sessions.filter(function(s) { return s.state !== "done" })[0] : session
+  readonly property var visibleSessions: sessions.filter(session => !host.liveActivities.isHidden(host.liveActivities.agentKey(session)))
+  readonly property var session: visibleSessions.length ? visibleSessions[0] : null
+  readonly property bool working: visibleSessions.some(function(s) { return s.state !== "done" })
+  readonly property var live: working ? visibleSessions.filter(function(s) { return s.state !== "done" })[0] : session
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
 
