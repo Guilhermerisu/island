@@ -46,6 +46,16 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+### YouTube controls in Chromium
+
+The optional bridge lets the player control a YouTube playlist and focus its
+playing tab. Run
+`python3 ~/.config/omarchy/plugins/guilhermerisu.island/browser/bridge.py install-host`.
+In `chrome://extensions`, enable Developer mode and select **Load unpacked**,
+then pick the plugin's `browser/chromium` directory. Reload your existing
+YouTube tabs once. The extension only operates on `www.youtube.com` and uses a
+local socket.
+
 <h2 align="center">FAQ</h2>
 
 <details>
