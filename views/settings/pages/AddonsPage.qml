@@ -13,6 +13,7 @@ ColumnLayout {
   spacing: 20
 
   property string expanded: ""
+  property string requestedAddon: ""
   // An addon option's control, whatever kind, so they line up in its card.
   readonly property int optionWidth: 200
   // An addon asked to be shown (host.openSettings("Addons", id)) opens with
@@ -24,7 +25,7 @@ ColumnLayout {
   Component.onCompleted: takeAddon()
   function takeAddon() {
     if (view.host.settingsAddon === "") return
-    expanded = view.host.settingsAddon
+    expanded = requestedAddon = view.host.settingsAddon
     view.host.settingsAddon = ""
   }
 
@@ -56,10 +57,29 @@ ColumnLayout {
           readonly property bool last: index === group.items.length - 1
           spacing: 0
 
+          Timer {
+            // A search result can open Settings from cold. Wait for its
+            // page and row geometry before scrolling to the requested card.
+            interval: page.view.host.theme.motionDuration("standard")
+            running: page.visible && page.view.active && page.requestedAddon === addon.modelData.id
+            onTriggered: {
+              page.view.revealSettingsItem(entryRow)
+              page.requestedAddon = ""
+            }
+          }
+
           Item {
             id: entryRow
             Layout.fillWidth: true
             implicitHeight: Math.max(54, entryText.implicitHeight + 20)
+
+            Rectangle {
+              anchors.fill: parent
+              anchors.margins: 4
+              radius: page.view.host.theme.radii.large
+              visible: !addon.on && page.expanded === addon.modelData.id
+              color: page.view.host.theme.accentFill("soft")
+            }
 
             HoverHandler { id: rowHover }
             MouseArea {

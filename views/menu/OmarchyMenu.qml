@@ -251,13 +251,7 @@ ListPicker {
     }
     if (q) list.sort(function(a, b) { return a.score !== b.score ? a.score - b.score : a.path.localeCompare(b.path) })
     var results = list.map(function(r) { r.key = r.itemId; return r })
-    if (q && host.addons.option("ask", "menuSearch")) {
-      var addonRows = host.addons.launcherRows(q)
-      var first = addonRows.filter(function(row) { return row.first || !results.length })
-      var last = addonRows.filter(function(row) { return first.indexOf(row) === -1 })
-      return first.concat(results, last)
-    }
-    return results
+    return host.addons.searchResults(q, results, host.addons.option("ask", "menuSearch"), active === "root")
   }
 
   function openMenu(id, push) {
