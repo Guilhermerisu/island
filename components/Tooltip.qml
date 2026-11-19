@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // macOS-style tooltip for an icon-only button: put it inside the button with
 // the button's name. It appears under the button (above, with `above`) after
@@ -64,7 +65,7 @@ Item {
     Text {
       id: label
       anchors.centerIn: parent
-      text: tip.text
+      text: Locale.I18n.tr(tip.text)
       width: tip.maxWidth > 0 ? Math.min(implicitWidth, tip.maxWidth) : implicitWidth
       wrapMode: tip.maxWidth > 0 ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
       color: "#f2f2f7"

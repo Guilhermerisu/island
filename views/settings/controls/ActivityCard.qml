@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 import "../../../components"
 
@@ -95,7 +96,7 @@ FocusScope {
         spacing: 2
         Text {
           width: parent.width
-          text: card.title
+          text: Locale.I18n.tr(card.title)
           elide: Text.ElideRight
           color: card.view.text
           font.family: card.view.host.theme.textFontFamily
@@ -105,7 +106,7 @@ FocusScope {
         }
         Text {
           width: parent.width
-          text: card.description
+          text: Locale.I18n.tr(card.description)
           elide: Text.ElideRight
           color: card.view.textMuted
           font.family: card.view.host.theme.textFontFamily

@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // The resting pill's clock, plus the plain-text feedback and setup warning
 // that share its spot. Supports both single-line and stacked two-line typography.
@@ -34,9 +35,9 @@ Item {
     horizontalAlignment: Text.AlignHCenter
     elide: Text.ElideRight
     textFormat: Text.PlainText
-    text: host.view === "feedback" && !host.notificationPill && !host.volumePill ? host.feedback
+    text: Locale.I18n.tr(host.view === "feedback" && !host.notificationPill && !host.volumePill ? host.feedback
       : host.setup.needsSetup ? "󰀦  " + host.setup.warning
-      : host.clockText
+      : host.clockText)
     color: host.view === "rest" && host.setup.needsSetup ? host.theme.urgent : labelRoot.host.theme.text
     font.family: host.theme.textFontFamily
     font.pixelSize: host.theme.size.title3
@@ -49,11 +50,11 @@ Item {
     anchors.centerIn: parent
     visible: !labelRoot.isWarningOrFeedback && !labelRoot.isStacked
     theme: labelRoot.host.theme
-    text: labelRoot.host.clockText
+    text: Locale.I18n.tr(labelRoot.host.clockText)
     color: labelRoot.host.theme.text
     font: singleText.font
   }
-  TextMetrics { id: singleMetrics; font: singleText.font; text: singleText.text }
+  TextMetrics { id: singleMetrics; font: singleText.font; text: Locale.I18n.tr(singleText.text) }
 
   // Two-line stacked column (time on top, day/date on bottom)
   Column {
@@ -66,7 +67,7 @@ Item {
       theme: labelRoot.host.theme
       id: stackedTimeText
       anchors.horizontalCenter: parent.horizontalCenter
-      text: labelRoot.host.clockTimeText
+      text: Locale.I18n.tr(labelRoot.host.clockTimeText)
       color: labelRoot.host.theme.text
       font.family: labelRoot.host.theme.textFontFamily
       font.pixelSize: labelRoot.host.theme.size.body
@@ -77,7 +78,7 @@ Item {
     Text {
       id: stackedSubText
       anchors.horizontalCenter: parent.horizontalCenter
-      text: labelRoot.host.clockSubText
+      text: Locale.I18n.tr(labelRoot.host.clockSubText)
       color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.7)
       font.family: labelRoot.host.theme.textFontFamily
       font.pixelSize: labelRoot.host.theme.size.footnote
@@ -85,8 +86,8 @@ Item {
       font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
     }
   }
-  TextMetrics { id: stackedTimeMetrics; font: stackedTimeText.font; text: stackedTimeText.text }
-  TextMetrics { id: stackedSubMetrics; font: stackedSubText.font; text: stackedSubText.text }
+  TextMetrics { id: stackedTimeMetrics; font: stackedTimeText.font; text: Locale.I18n.tr(stackedTimeText.text) }
+  TextMetrics { id: stackedSubMetrics; font: stackedSubText.font; text: Locale.I18n.tr(stackedSubText.text) }
 
   Behavior on opacity { MotionAnimation { theme: labelRoot.host.theme; pace: labelRoot.shown && labelRoot.fits ? "fade" : "exit"; curve: "fade" } }
 }

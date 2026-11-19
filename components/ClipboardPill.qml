@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell.Widgets
 import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" as ClipboardHistory
 
@@ -61,7 +62,7 @@ IslandPill {
     Text {
       anchors.centerIn: parent
       visible: !pill.thumbnailReady
-      text: pill.isFiles ? "󰈔" : "󰆏"
+      text: Locale.I18n.tr(pill.isFiles ? "󰈔" : "󰆏")
       color: pill.host.theme.accent
       font.family: pill.host.theme.fontFamily
       font.pixelSize: pill.host.theme.px(19)
@@ -80,15 +81,15 @@ IslandPill {
     text: {
       if (!pill.entry) return ""
       // Omarchy labels every PNG "Screenshot from …", even a copied image.
-      if (pill.entry.type === "image") return "Image"
-      if (pill.isFiles) return pill.files.length === 1 ? ClipboardHistory.fileName(pill.files[0]) : pill.files.length + " files"
+      if (pill.entry.type === "image") return Locale.I18n.tr("Image")
+      if (pill.isFiles) return pill.files.length === 1 ? ClipboardHistory.fileName(pill.files[0]) : Locale.I18n.tr(pill.files.length + " files")
       var preview = ClipboardHistory.previewText(pill.entry)
       if (pill.entry.type !== "text" || !pill.host.clipboard.isHtml(pill.entry.text)) return preview
       // Rich text from a browser arrives as HTML; show its words, not tags.
       var plain = String(pill.entry.text).replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
         .replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/\s+/g, " ").trim()
-      return plain || "Rich text"
+      return plain || Locale.I18n.tr("Rich text")
     }
     textFormat: Text.PlainText
     elide: Text.ElideRight
@@ -106,7 +107,7 @@ IslandPill {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: "Copied"
+    text: Locale.I18n.tr("Copied")
     color: pill.host.theme.accent
     font.family: pill.host.theme.textFontFamily
     font.pixelSize: pill.host.theme.size.body

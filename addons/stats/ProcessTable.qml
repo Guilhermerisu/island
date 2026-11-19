@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import "../../components"
 import "../../components/IconSource.js" as IconSource
@@ -190,7 +191,7 @@ Item {
             Text {
               anchors.verticalCenter: parent.verticalCenter
               visible: head.sorted
-              text: table.ascending ? "󰅃" : "󰅀"
+              text: Locale.I18n.tr(table.ascending ? "󰅃" : "󰅀")
               color: table.view.text
               font.family: table.view.host.theme.fontFamily
               font.pixelSize: table.view.host.theme.px(10)
@@ -370,7 +371,7 @@ Item {
                   table.quitRequested(row.modelData)
                 }
               }
-              Tooltip { theme: table.view.host.theme; text: "Quit Process" }
+              Tooltip { theme: table.view.host.theme; text: Locale.I18n.tr("Quit Process") }
             }
             readonly property bool isCpu: modelData.key === "cpu"
             // CPU: a small bar of the share before it.
@@ -397,7 +398,7 @@ Item {
               anchors.rightMargin: 6
               anchors.verticalCenter: parent.verticalCenter
               readonly property real cpu: table.share(row.modelData)
-              text: cellItem.isName ? "" : table.cell(row.modelData, cellItem.modelData.key)
+              text: Locale.I18n.tr(cellItem.isName ? "" : table.cell(row.modelData, cellItem.modelData.key))
               color: row.selected ? row.ink : cellItem.isCpu ? table.cpuColor(cpu) : table.view.text
               font.family: table.view.host.theme.textFontFamily
               font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.size.callout)
@@ -414,7 +415,7 @@ Item {
   Text {
     anchors.centerIn: list
     visible: table.rows.length === 0
-    text: table.stats.latest ? "No Processes" : "Loading…"
+    text: Locale.I18n.tr(table.stats.latest ? "No Processes" : "Loading…")
     color: table.view.textMuted
     font.family: table.view.host.theme.textFontFamily
     font.letterSpacing: table.view.host.theme.tracking(table.view.host.theme.textFontFamily, table.view.host.theme.size.body)

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 import QtQuick.Layouts
 
@@ -36,7 +37,7 @@ Rectangle {
     }
     Text {
       Layout.fillWidth: true
-      text: side.title
+      text: Locale.I18n.tr(side.title)
       elide: Text.ElideRight
       // A size up from the rows, semibold for the open pane and a touch dimmer
       // for the rest, as macOS's sidebars.

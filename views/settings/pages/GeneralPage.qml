@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 import "../controls"
 
@@ -10,6 +11,28 @@ ColumnLayout {
   visible: view.currentPage === "General"
   Layout.fillWidth: true
   spacing: 20
+
+  SettingsGroup {
+    view: page.view
+    title: "Language"
+    SettingsRow {
+      view: page.view
+      icon: "󰗊"
+      label: "Interface language"
+      detail: "Choose the language used by Island"
+      last: true
+      SettingsPopUp {
+        view: page.view
+        options: [
+          {label: "Русский", value: "ru"},
+          {label: "English", value: "en"},
+          {label: "System language", value: "auto"}
+        ]
+        value: page.view.settings.language
+        onPicked: function(value) { page.view.settings.language = value }
+      }
+    }
+  }
 
   SettingsGroup {
     view: page.view
@@ -62,7 +85,7 @@ ColumnLayout {
         })
         view: page.view
         options: page.view.host.clockFormats.map(function(format) {
-          var name = names[format] || format
+          var name = Locale.I18n.tr(names[format] || format)
           var preview = page.view.host.isStackedClock(format)
             ? page.view.host.formatClockTime(page.view.host.clockDate) + " / " + page.view.host.formatClockSub(page.view.host.clockDate, format)
             : page.view.host.formatClock(page.view.host.clockDate, format)

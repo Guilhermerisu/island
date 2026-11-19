@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -41,7 +42,7 @@ Item {
       spacing: 8
       Text {
         Layout.fillWidth: true
-        text: "Scale"
+        text: Locale.I18n.tr("Scale")
         color: cards.view.text
         font.family: cards.view.host.theme.textFontFamily
         font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailFontSize)
@@ -49,7 +50,7 @@ Item {
       }
       Text {
         visible: !!cards.current
-        text: cards.current ? "Looks like " + cards.size(cards.current) : ""
+        text: Locale.I18n.tr(cards.current ? "Looks like " + cards.size(cards.current) : "")
         color: cards.view.textMuted
         font.family: cards.view.host.theme.textFontFamily
         font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailCaptionFontSize)
@@ -114,7 +115,7 @@ Item {
                     border.color: Qt.rgba(1, 1, 1, 0.14)
                     Text {
                       anchors.centerIn: parent
-                      text: "Aa"
+                      text: Locale.I18n.tr("Aa")
                       color: cards.view.text
                       font.family: cards.view.host.theme.textFontFamily
                       font.pixelSize: Math.max(6, Math.round(Math.min(14 * desk.zoom, window.height * 0.5)))
@@ -145,7 +146,7 @@ Item {
             Text {
               width: parent.width
               horizontalAlignment: Text.AlignHCenter
-              text: cards.scaleName(card.modelData.scale)
+              text: Locale.I18n.tr(cards.scaleName(card.modelData.scale))
               color: card.current ? cards.view.text : cards.view.textMuted
               font.family: cards.view.host.theme.textFontFamily
               font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailCaptionFontSize)
@@ -169,7 +170,7 @@ Item {
           required property int index
           Layout.fillWidth: true
           horizontalAlignment: index === 0 ? Text.AlignLeft : Text.AlignRight
-          text: modelData
+          text: Locale.I18n.tr(modelData)
           color: cards.view.host.theme.withAlpha(cards.view.textMuted, 0.75)
           font.family: cards.view.host.theme.textFontFamily
           font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailCaptionFontSize)

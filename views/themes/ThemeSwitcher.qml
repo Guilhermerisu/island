@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
@@ -8,8 +9,8 @@ import "../../components"
 // and palette. Applying runs omarchy-theme-set.
 Picker {
   id: ts
-  placeholder: "Search themes"
-  emptyText: "No themes match"
+  placeholder: Locale.I18n.tr("Search themes")
+  emptyText: Locale.I18n.tr("No themes match")
   currentKey: host.theme.name
   applyCommand: function(entry) { return ["omarchy-theme-set", entry.name] }
 

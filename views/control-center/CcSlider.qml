@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Effects
 import "../../components"
 import QtQuick.Layouts
@@ -74,7 +75,7 @@ Item {
       anchors.left: parent.left
       anchors.leftMargin: 7
       anchors.verticalCenter: parent.verticalCenter
-      text: s.icon
+      text: Locale.I18n.tr(s.icon)
       color: sliderFill.width > x + width ? "#5c5c60" : center.textMuted
       font.family: center.iconFont
       font.pixelSize: center.host.theme.px(15)
@@ -125,7 +126,7 @@ Item {
         x: 4
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
-        text: s.title
+        text: Locale.I18n.tr(s.title)
         color: pillFill.y < pillLabels.y + y + height / 2 ? "#5c5c60" : center.textMuted
         font.family: center.host.theme.textFontFamily
         font.pixelSize: center.host.theme.size.footnote
@@ -136,7 +137,7 @@ Item {
         x: 4
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
-        text: s.detail
+        text: Locale.I18n.tr(s.detail)
         color: pillFill.y < pillLabels.y + y + height / 2 ? "#5c5c60" : center.textMuted
         font.family: center.host.theme.textFontFamily
         font.features: { "tnum": 1 }
@@ -147,7 +148,7 @@ Item {
     Text {
       x: (parent.width - width) / 2
       y: parent.height - height - 14
-      text: s.icon
+      text: Locale.I18n.tr(s.icon)
       color: pillFill.y < y + height ? "#5c5c60" : center.textMuted
       font.family: center.iconFont
       font.pixelSize: center.host.theme.px(20)

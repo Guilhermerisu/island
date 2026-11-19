@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 import QtQuick.Layouts
 
@@ -20,7 +21,7 @@ Rectangle {
   Text {
     id: buttonText
     anchors.centerIn: parent
-    text: button.label
+    text: Locale.I18n.tr(button.label)
     color: button.primary ? button.view.accentInk : button.view.text
     font.family: button.view.host.theme.textFontFamily
     font.letterSpacing: button.view.host.theme.tracking(button.view.host.theme.textFontFamily, button.view.detailFontSize)

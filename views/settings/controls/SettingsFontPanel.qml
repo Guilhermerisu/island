@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import Quickshell.Io
 import "../../../components"
 
@@ -76,7 +77,7 @@ Popover {
       anchors.leftMargin: 28
       anchors.verticalCenter: parent.verticalCenter
       visible: fontInput.text === ""
-      text: "Search fonts"
+      text: Locale.I18n.tr("Search fonts")
       color: panel.view.textMuted
       font.family: panel.view.host.theme.textFontFamily
       font.letterSpacing: panel.view.host.theme.tracking(panel.view.host.theme.textFontFamily, panel.view.detailFontSize)
@@ -145,7 +146,7 @@ Popover {
         anchors.right: parent.right
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
-        text: fontRow.modelData
+        text: Locale.I18n.tr(fontRow.modelData)
         elide: Text.ElideRight
         color: fontMouse.containsMouse || fontRow.current ? panel.view.accentInk : panel.view.text
         font.family: panel.view.host.theme.textFontFamily
@@ -164,7 +165,7 @@ Popover {
     Text {
       anchors.centerIn: parent
       visible: panel.filteredFonts.length === 0
-      text: "No fonts match"
+      text: Locale.I18n.tr("No fonts match")
       color: panel.view.textMuted
       font.family: panel.view.host.theme.textFontFamily
       font.letterSpacing: panel.view.host.theme.tracking(panel.view.host.theme.textFontFamily, panel.view.host.theme.size.callout)

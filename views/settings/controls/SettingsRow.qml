@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 
 // One row of a group: an optional icon, label (and optional detail) on the
@@ -42,7 +43,9 @@ Item {
     spacing: 2
     Text {
       width: parent.width
-      text: row.label
+      text: Locale.I18n.tr(row.label)
+      wrapMode: Text.WordWrap
+      maximumLineCount: 2
       elide: Text.ElideRight
       color: row.view.text
       font.family: row.view.host.theme.textFontFamily
@@ -52,7 +55,9 @@ Item {
     Text {
       width: parent.width
       visible: row.detail !== ""
-      text: row.detail
+      text: Locale.I18n.tr(row.detail)
+      wrapMode: Text.WordWrap
+      maximumLineCount: 3
       elide: Text.ElideRight
       color: row.view.textMuted
       font.family: row.view.host.theme.textFontFamily

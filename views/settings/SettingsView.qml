@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 import QtQuick.Layouts
 import "controls"
@@ -56,7 +57,17 @@ Item {
     }
     var addonPage = host.addons.settingsPage(page)
     if (addonPage) terms[page] = page + " " + (addonPage.search || "")
-    return String(terms[page] || page).toLowerCase().indexOf(query) !== -1
+    var russian = {
+      "General": "язык русский английский интерфейс основные часы время дата шрифт размер текст фон тема оформление анимация скорость скрытие полноэкранный наведение островок меню поиск приложения",
+      "Live Activities": "активности музыка плеер воспроизведение буфер обмена загрузки запись экран обновления батарея зарядка устройства сеть громкость яркость рабочий стол",
+      "Notifications": "уведомления баннеры длительность группировка кнопки сообщения",
+      "Network": "сеть подключение вайфай интернет пароль адрес маршрутизатор имя компьютера впн",
+      "Addons": "дополнения расширения плагины календарь погода таймер агенты",
+      "Keybinds": "клавиатура клавиши сочетания комбинации горячие клавиши"
+    }
+    var translated = Locale.I18n.tr(page) + " " + Locale.I18n.tr((pageInfo[page] || {}).about || "")
+    return Locale.I18n.normalize(String(terms[page] || page) + " " + translated + " " + (russian[page] || ""))
+      .indexOf(Locale.I18n.normalize(query)) !== -1
   }
   readonly property bool hasSearchResults: {
     var query = searchQuery
@@ -191,7 +202,7 @@ Item {
             anchors.leftMargin: 30
             anchors.verticalCenter: parent.verticalCenter
             visible: searchInput.text === ""
-            text: "Search"
+            text: Locale.I18n.tr("Search")
             color: settingsView.textMuted
             font.family: settingsView.host.theme.textFontFamily
             font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
@@ -235,7 +246,7 @@ Item {
         }
         Text {
           visible: settingsView.searchQuery !== "" && !settingsView.hasSearchResults
-          text: "No Results"
+          text: Locale.I18n.tr("No Results")
           color: settingsView.textMuted
           font.family: settingsView.host.theme.textFontFamily
           font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)

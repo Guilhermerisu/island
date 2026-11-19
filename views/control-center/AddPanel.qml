@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -56,10 +57,10 @@ Rectangle {
       Layout.fillWidth: true
       Layout.leftMargin: 4
       Layout.rightMargin: 4
-      SectionTitle { text: "Add"; Layout.leftMargin: 0 }
+      SectionTitle { text: Locale.I18n.tr("Add"); Layout.leftMargin: 0 }
       Item { Layout.fillWidth: true }
       Text {
-        text: panel.removing ? "Release to remove" : "Drag in or click +"
+        text: Locale.I18n.tr(panel.removing ? "Release to remove" : "Drag in or click +")
         color: panel.center.textMuted
         font.family: panel.center.host.theme.textFontFamily
         font.letterSpacing: panel.center.host.theme.tracking(panel.center.host.theme.textFontFamily, panel.center.host.theme.size.subheadline)
@@ -79,11 +80,11 @@ Rectangle {
         id: sections
         width: scroll.width
         spacing: 8
-        SectionTitle { visible: panel.hasControls; text: "Controls" }
+        SectionTitle { visible: panel.hasControls; text: Locale.I18n.tr("Controls") }
         ControlGallery { visible: panel.hasControls; Layout.fillWidth: true; panel: panel }
-        SectionTitle { Layout.topMargin: 8; text: "Plugins" }
+        SectionTitle { Layout.topMargin: 8; text: Locale.I18n.tr("Plugins") }
         PluginGallery { Layout.fillWidth: true; panel: panel }
-        SectionTitle { Layout.topMargin: 8; text: "Zones" }
+        SectionTitle { Layout.topMargin: 8; text: Locale.I18n.tr("Zones") }
         ZoneGallery { Layout.fillWidth: true; panel: panel }
       }
     }

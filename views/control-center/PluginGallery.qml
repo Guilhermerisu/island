@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -176,7 +177,7 @@ ColumnLayout {
             onClicked: gallery.add(card.modelData.id)
           }
         }
-        Tooltip { theme: gallery.cc.host.theme; text: "Drag to Controls or Plugins, or " + (gallery.canGrid(card.modelData.id) ? "add " : "pin ") + card.modelData.name }
+        Tooltip { theme: gallery.cc.host.theme; text: Locale.I18n.tr("Drag to Controls or Plugins, or " + (gallery.canGrid(card.modelData.id) ? "add " : "pin ") + card.modelData.name) }
       }
     }
   }
@@ -186,9 +187,9 @@ ColumnLayout {
     Layout.topMargin: 8
     Layout.bottomMargin: 8
     horizontalAlignment: Text.AlignHCenter
-    text: !gallery.addon ? "Turn on the Plugins addon to add plugins"
+    text: Locale.I18n.tr(!gallery.addon ? "Turn on the Plugins addon to add plugins"
       : gallery.addon.all.length ? "All plugins have been added"
-      : gallery.addon.loading ? "Loading…" : "No plugins added"
+      : gallery.addon.loading ? "Loading…" : "No plugins added")
     color: gallery.cc.textMuted
     font.family: gallery.cc.host.theme.textFontFamily
     font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.size.body)

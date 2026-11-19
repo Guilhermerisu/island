@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // Plugins added with `omarchy plugin add` (every third-party plugin but the
@@ -12,8 +13,8 @@ import "../../components"
 // the right; clicking the keys opens Settings → Keybinds, where it is set.
 ListPicker {
   id: plugins
-  placeholder: "Search plugins"
-  emptyText: all.length ? "Nothing matches" : loading ? "Loading…" : "No plugins added"
+  placeholder: Locale.I18n.tr("Search plugins")
+  emptyText: Locale.I18n.tr(all.length ? "Nothing matches" : loading ? "Loading…" : "No plugins added")
   rowHeight: 46
   visibleRows: 9
   items: {
@@ -57,7 +58,7 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         width: 24
         horizontalAlignment: Text.AlignHCenter
-        text: plugins.addon.iconOf(pluginRow.entry.id).text
+        text: Locale.I18n.tr(plugins.addon.iconOf(pluginRow.entry.id).text)
         color: pluginRow.entry.enabled ? plugins.host.theme.accent : plugins.host.theme.muted
         font.family: plugins.addon.iconOf(pluginRow.entry.id).family || plugins.host.theme.fontFamily
         font.pixelSize: plugins.host.theme.px(17)
@@ -71,7 +72,7 @@ ListPicker {
         spacing: 1
         Text {
           width: parent.width
-          text: String(pluginRow.entry.name || "")
+          text: Locale.I18n.tr(String(pluginRow.entry.name || ""))
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: plugins.host.theme.text
@@ -82,7 +83,7 @@ ListPicker {
         }
         Text {
           width: parent.width
-          text: String(pluginRow.entry.id || "") + " · " + (pluginRow.entry.kinds || []).join(", ")
+          text: Locale.I18n.tr(String(pluginRow.entry.id || "") + " · " + (pluginRow.entry.kinds || []).join(", "))
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: plugins.host.theme.muted
@@ -112,7 +113,7 @@ ListPicker {
           id: keysText
           anchors.centerIn: parent
           readonly property string keys: plugins.keysById[pluginRow.entry.id] || ""
-          text: plugins.keyText(keys)
+          text: Locale.I18n.tr(plugins.keyText(keys))
           color: keys === "" ? plugins.host.theme.muted : plugins.host.theme.text
           font.family: plugins.host.theme.textFontFamily
           font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.size.subheadline)
@@ -124,7 +125,7 @@ ListPicker {
         id: stateLabel
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        text: pluginRow.entry.enabled ? (pluginRow.entry.openable ? "Open" : "On") : "Off"
+        text: Locale.I18n.tr(pluginRow.entry.enabled ? (pluginRow.entry.openable ? "Open" : "On") : "Off")
         color: pluginRow.entry.enabled ? plugins.host.theme.text : plugins.host.theme.muted
         font.family: plugins.host.theme.textFontFamily
         font.letterSpacing: plugins.host.theme.tracking(plugins.host.theme.textFontFamily, plugins.host.theme.size.callout)

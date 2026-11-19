@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell
 
 // Download live activity, as iOS's, fed by DownloadTracker.qml (browser
@@ -111,7 +112,7 @@ IslandPill {
       }
       Text {
         anchors.centerIn: parent
-        text: pill.packageMode ? "󰏗" : "󰁅"
+        text: Locale.I18n.tr(pill.packageMode ? "󰏗" : "󰁅")
         color: pill.activityAccent
         font.family: pill.host.theme.fontFamily
         font.pixelSize: pill.host.theme.px(13)
@@ -126,7 +127,7 @@ IslandPill {
       spacing: 5
       Text {
         visible: !pill.packageMode && pill.tracker.items.length > 1
-        text: pill.tracker.items.length
+        text: Locale.I18n.tr(pill.tracker.items.length)
         color: Qt.rgba(1, 1, 1, 0.5)
         font.family: pill.host.theme.textFontFamily
         font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
@@ -135,11 +136,11 @@ IslandPill {
         font.features: { "tnum": 1 }
       }
       Text {
-        text: pill.packageMode ? pill.packages.status
+        text: Locale.I18n.tr(pill.packageMode ? pill.packages.status
           : pill.tracker.timeLeft >= 0 ? pill.formatTimeLeft(pill.tracker.timeLeft)
           : pill.tracker.awaitingSize || pill.tracker.bytes === 0 ? "0 sec"
           : pill.tracker.speed > 0 ? pill.formatBytes(pill.tracker.speed) + "/s"
-          : pill.formatBytes(pill.tracker.bytes)
+          : pill.formatBytes(pill.tracker.bytes))
         textFormat: Text.PlainText
         color: pill.host.theme.text
         font.family: pill.host.theme.textFontFamily
@@ -203,7 +204,7 @@ IslandPill {
       PillPart { progress: reveal.middleIn; scaleFrom: 1 }
       Text {
         width: parent.width
-        text: pill.packageMode ? pill.packages.finishedTitle : pill.tracker.finishedName
+        text: pill.packageMode ? Locale.I18n.tr(pill.packages.finishedTitle) : pill.tracker.finishedName
         textFormat: Text.PlainText
         elide: Text.ElideMiddle
         color: pill.host.theme.text
@@ -215,9 +216,9 @@ IslandPill {
       }
       Text {
         width: parent.width
-        text: pill.packageMode ? pill.packages.finishedDetail
+        text: Locale.I18n.tr(pill.packageMode ? pill.packages.finishedDetail
           : (pill.tracker.finishedBytes > 0 ? pill.formatBytes(pill.tracker.finishedBytes) + " · " : "")
-            + pill.folderName(pill.tracker.folder)
+            + pill.folderName(pill.tracker.folder))
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: Qt.rgba(1, 1, 1, 0.55)

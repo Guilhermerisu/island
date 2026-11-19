@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../addons"
 import "../../components"
@@ -96,7 +97,7 @@ ColumnLayout {
     Text {
       anchors.verticalCenter: parent.verticalCenter
       x: 32
-      text: zone.info ? zone.info.icon : ""
+      text: Locale.I18n.tr(zone.info ? zone.info.icon : "")
       color: zone.center.textMuted
       font.family: zone.center.iconFont
       font.pixelSize: zone.center.host.theme.px(14)
@@ -104,7 +105,7 @@ ColumnLayout {
     Text {
       anchors.verticalCenter: parent.verticalCenter
       x: 54
-      text: zone.info ? zone.info.title : zone.zoneId
+      text: Locale.I18n.tr(zone.info ? zone.info.title : zone.zoneId)
       color: zone.center.text
       font.family: zone.center.host.theme.textFontFamily
       font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.callout)
@@ -178,9 +179,9 @@ ColumnLayout {
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        text: zone.addonOff ? zone.info.name + " is off"
+        text: Locale.I18n.tr(zone.addonOff ? zone.info.name + " is off"
           : zone.tooNarrow ? zone.info.name + " needs a wider column"
-          : zone.addonRoot && !zone.bodyComponent ? "Nothing to show" : "Loading…"
+          : zone.addonRoot && !zone.bodyComponent ? "Nothing to show" : "Loading…")
         color: zone.addonOff || zone.tooNarrow ? zone.center.text : zone.center.textMuted
         font.family: zone.center.host.theme.textFontFamily
         font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.callout)
@@ -191,7 +192,7 @@ ColumnLayout {
         visible: zone.addonOff || zone.tooNarrow
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
-        text: zone.addonOff ? "Turn On" : "Use fewer columns"
+        text: Locale.I18n.tr(zone.addonOff ? "Turn On" : "Use fewer columns")
         color: zone.addonOff ? zone.center.accent : zone.center.textMuted
         font.family: zone.center.host.theme.textFontFamily
         font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.subheadline)

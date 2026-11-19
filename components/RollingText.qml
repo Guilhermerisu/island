@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // Text whose digits roll when they change, as SwiftUI's numeric text
 // transition: only the digits that differ move, out through a blur while the
@@ -60,7 +61,7 @@ Item {
 
         Text {
           id: incoming
-          text: slot.current
+          text: Locale.I18n.tr(slot.current)
           color: roller.color
           font: roller.font
           y: slot.direction * (1 - slot.progress) * slot.travel
@@ -70,7 +71,7 @@ Item {
         }
         Text {
           visible: run.running
-          text: slot.previous
+          text: Locale.I18n.tr(slot.previous)
           color: roller.color
           font: roller.font
           y: -slot.direction * slot.progress * slot.travel

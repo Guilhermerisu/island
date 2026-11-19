@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 
 // A colour weather icon for a WMO code, built from layers: the sun (or the
 // moon at night) peeking out, a front cloud and a darker one behind it, and
@@ -72,7 +73,7 @@ Item {
     Text {
       visible: !icon.day
       anchors.centerIn: parent
-      text: icon.moonGlyph
+      text: Locale.I18n.tr(icon.moonGlyph)
       color: "#b9a3ff"
       font.family: icon.fontFamily
       font.pixelSize: Math.round(parent.width * (parent.alone ? 1.5 : 1.15))
@@ -82,20 +83,20 @@ Item {
   Layer {
     visible: icon.kind === "fog"
     cx: 0.5; cy: 0.5; share: 0.82
-    text: icon.fogGlyph
+    text: Locale.I18n.tr(icon.fogGlyph)
     color: "#aeb4bf"
   }
 
   Layer {
     visible: icon.hasBackCloud
     cx: 0.62; cy: icon.cloudY - 0.12; share: 0.66
-    text: icon.cloudGlyph
+    text: Locale.I18n.tr(icon.cloudGlyph)
     color: icon.kind === "storm" ? "#5d6370" : "#8a909c"
   }
   Layer {
     visible: icon.hasCloud
     cx: 0.44; cy: icon.cloudY; share: 0.8
-    text: icon.cloudGlyph
+    text: Locale.I18n.tr(icon.cloudGlyph)
     color: icon.kind === "storm" ? "#a3a9b4" : icon.hasBackCloud ? "#dfe3ea" : "#f2f4f8"
     opacity: icon.hasOrb ? 0.94 : 1
   }
@@ -119,14 +120,14 @@ Item {
     delegate: Layer {
       required property real modelData
       cx: modelData; cy: 0.86; share: 0.2
-      text: icon.snowGlyph
+      text: Locale.I18n.tr(icon.snowGlyph)
       color: "#e6f2ff"
     }
   }
   Layer {
     visible: icon.kind === "storm"
     cx: 0.46; cy: 0.8; share: 0.4
-    text: icon.boltGlyph
+    text: Locale.I18n.tr(icon.boltGlyph)
     color: "#ffd60a"
   }
 }

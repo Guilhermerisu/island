@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 
 // Segmented control, as macOS's: every choice side by side in a well, the
@@ -28,7 +29,7 @@ Rectangle {
   }
   readonly property real chipWidth: {
     var widest = 0
-    for (var i = 0; i < options.length; i++) widest = Math.max(widest, segFont.advanceWidth(options[i].label))
+    for (var i = 0; i < options.length; i++) widest = Math.max(widest, segFont.advanceWidth(Locale.I18n.tr(options[i].label)))
     return Math.max(30, Math.ceil(widest) + 22, options.length ? (seg.minWidth - 4) / options.length : 0)
   }
   implicitWidth: choices.implicitWidth + 4
@@ -78,7 +79,7 @@ Rectangle {
         Text {
           id: choiceText
           anchors.centerIn: parent
-          text: choice.modelData.label
+          text: Locale.I18n.tr(choice.modelData.label)
           color: choice.selected ? seg.view.text : seg.view.textMuted
           Behavior on color { MotionColorAnimation { theme: seg.view.host.theme } }
           font.family: seg.view.host.theme.textFontFamily

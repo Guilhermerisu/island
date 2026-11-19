@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell.Io
 import ".."
 
@@ -221,7 +222,7 @@ Addon {
 
   // WMO weather codes, as Open-Meteo reports them (see WeatherIcon too).
   function describe(code) {
-    if (code === 0) return "Clear"
+    if (code === 0) return Locale.I18n.tr("Clear weather")
     if (code === 1) return "Mainly clear"
     if (code === 2) return "Partly cloudy"
     if (code === 3) return "Overcast"

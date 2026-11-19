@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import QtQuick.Layouts
 
 // A view with nothing to list, as macOS draws it: a large dimmed symbol over
@@ -14,7 +15,7 @@ ColumnLayout {
     Layout.fillWidth: true
     horizontalAlignment: Text.AlignHCenter
     Layout.topMargin: 18
-    text: empty.glyph
+    text: Locale.I18n.tr(empty.glyph)
     color: empty.host.theme.fill("strong")
     font.family: empty.host.theme.fontFamily
     font.pixelSize: empty.host.theme.px(34)
@@ -23,7 +24,7 @@ ColumnLayout {
     Layout.fillWidth: true
     horizontalAlignment: Text.AlignHCenter
     Layout.bottomMargin: 18
-    text: empty.text
+    text: Locale.I18n.tr(empty.text)
     color: empty.host.theme.secondary
     font.family: empty.host.theme.textFontFamily
     font.letterSpacing: empty.host.theme.tracking(empty.host.theme.textFontFamily, empty.host.theme.size.body)

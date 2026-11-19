@@ -46,6 +46,10 @@ omarchy bar use guilhermerisu.island
 <br>
 
 <a id="faq"></a>
+Change the interface language in **Settings → General → Language**. The
+setting offers English, Russian, and automatic selection based on the system
+locale. Menu and app search can match Russian aliases.
+
 <h2 align="center">FAQ</h2>
 
 <details>

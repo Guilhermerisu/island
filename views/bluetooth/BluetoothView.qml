@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 import Quickshell
@@ -208,12 +209,12 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: height / 2
       color: backMouse.containsMouse ? bt.well : bt.card
-      Tooltip { theme: bt.host.theme; text: "Control Center" }
+      Tooltip { theme: bt.host.theme; text: Locale.I18n.tr("Control Center") }
       Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(17) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
     Text {
-      text: "Bluetooth"
+      text: Locale.I18n.tr("Bluetooth")
       color: bt.text
       font.family: bt.host.theme.textFontFamily
       font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.title2)
@@ -244,7 +245,7 @@ ColumnLayout {
         Layout.fillWidth: true
         host: bt.host
         glyph: !bt.adapter || !bt.powered ? "󰂲" : "󰂯"
-        text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
+        text: Locale.I18n.tr(!bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…")
       }
 
       ListView {
@@ -335,7 +336,7 @@ ColumnLayout {
               anchors.left: parent.left
               anchors.leftMargin: 10
               anchors.verticalCenter: parent.verticalCenter
-              text: row.modelData.header || ""
+              text: Locale.I18n.tr(row.modelData.header || "")
               color: bt.textMuted
               font.family: bt.host.theme.textFontFamily
               font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.body)
@@ -427,7 +428,7 @@ ColumnLayout {
                   : row.modelData.pending === "forgetting" ? "Forgetting…"
                   : ""
                 visible: status !== ""
-                text: status
+                text: Locale.I18n.tr(status)
                 color: bt.textMuted
                 font.family: bt.host.theme.textFontFamily
                 font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.callout)
@@ -456,7 +457,7 @@ ColumnLayout {
                 readonly property bool low: row.modelData.battery <= 20
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
-                  text: row.modelData.battery + "%"
+                  text: Locale.I18n.tr(row.modelData.battery + "%")
                   color: parent.low ? bt.host.theme.system.red : bt.textMuted
                   font.family: bt.host.theme.textFontFamily
                   font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.body)
@@ -484,7 +485,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? bt.wellHover : "transparent"
-                Tooltip { theme: bt.host.theme; text: "Forget This Device" }
+                Tooltip { theme: bt.host.theme; text: Locale.I18n.tr("Forget This Device") }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"

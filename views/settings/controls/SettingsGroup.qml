@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 
 // A group of rows under a grey section title (and an optional count after
@@ -18,7 +19,7 @@ ColumnLayout {
     Layout.leftMargin: 14
     spacing: 7
     Text {
-      text: group.title
+      text: Locale.I18n.tr(group.title)
       color: group.view.textMuted
       font.family: group.view.host.theme.textFontFamily
       font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, group.view.detailFontSize)
@@ -27,7 +28,7 @@ ColumnLayout {
     }
     Text {
       visible: group.count !== ""
-      text: group.count
+      text: Locale.I18n.tr(group.count)
       color: group.view.host.theme.withAlpha(group.view.textMuted, 0.7)
       font.family: group.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
@@ -54,7 +55,7 @@ ColumnLayout {
     Layout.fillWidth: true
     Layout.leftMargin: 14
     Layout.rightMargin: 14
-    text: group.footer
+    text: Locale.I18n.tr(group.footer)
     wrapMode: Text.WordWrap
     color: group.view.textMuted
     font.family: group.view.host.theme.textFontFamily

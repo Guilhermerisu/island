@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
 import "../../components"
@@ -108,7 +109,7 @@ CcSection {
   }
   Text {
     visible: !galleryPreview && !card.controls.controlPresent("sound")
-    text: "No audio output available"
+    text: Locale.I18n.tr("No audio output available")
     wrapMode: Text.WordWrap
     color: card.center.textMuted
     font.family: card.center.host.theme.textFontFamily

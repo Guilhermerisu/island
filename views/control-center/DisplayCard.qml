@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 
 // The Display card: the brightness slider. Loaded by the ControlCenter (and
@@ -25,7 +26,7 @@ CcSection {
   }
   Text {
     visible: !galleryPreview && !card.controls.brightnessAvailable
-    text: "No brightness control available"
+    text: Locale.I18n.tr("No brightness control available")
     wrapMode: Text.WordWrap
     color: card.center.textMuted
     font.family: card.center.host.theme.textFontFamily

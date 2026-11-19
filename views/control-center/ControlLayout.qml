@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import QtQuick.Effects
 import "../../components"
@@ -214,7 +215,7 @@ ColumnLayout {
       parent: controlLayoutScroll
       anchors.centerIn: parent
       visible: layout.center.editMode && layout.visibleControlKeys.length === 0
-      text: "Drag a control here"
+      text: Locale.I18n.tr("Drag a control here")
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
       font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.size.body)
@@ -352,7 +353,7 @@ ColumnLayout {
     border.color: layout.center.edge
     Text {
       anchors.centerIn: parent
-      text: "Click the pencil to add controls"
+      text: Locale.I18n.tr("Click the pencil to add controls")
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
       font.letterSpacing: layout.center.host.theme.tracking(layout.center.host.theme.textFontFamily, layout.center.host.theme.size.callout)

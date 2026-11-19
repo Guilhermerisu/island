@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // Screen recording live activity, fed by ScreenRecorder.qml: a pulsing red
 // dot left of the clock and the time recorded on the right, then "Saving…"
@@ -39,7 +40,7 @@ IslandPill {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.recorder.recording ? pill.recorder.timeText(pill.recorder.elapsed) : "Saving…"
+    text: Locale.I18n.tr(pill.recorder.recording ? pill.recorder.timeText(pill.recorder.elapsed) : "Saving…")
     color: pill.ink
     font.family: pill.host.theme.textFontFamily
     font.pixelSize: pill.host.theme.size.body

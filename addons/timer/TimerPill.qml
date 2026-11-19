@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // The timer on the resting island while it's set, as iOS's live activity:
@@ -38,7 +39,7 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.timer.timeText(pill.timer.remaining)
+    text: Locale.I18n.tr(pill.timer.timeText(pill.timer.remaining))
     color: pill.ink
     font.family: pill.host.theme.textFontFamily
     font.pixelSize: pill.host.theme.size.body

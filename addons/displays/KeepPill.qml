@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import QtQuick.Shapes
 import "../../components"
@@ -62,7 +63,7 @@ Item {
         spacing: 0
         Text {
           width: parent.width
-          text: "Keep these display settings?"
+          text: Locale.I18n.tr("Keep these display settings?")
           elide: Text.ElideRight
           color: pill.theme.text
           font.family: pill.theme.textFontFamily
@@ -72,7 +73,7 @@ Item {
         }
         Text {
           width: parent.width
-          text: "Reverting in " + pill.displays.secondsLeft + (pill.displays.secondsLeft === 1 ? " second" : " seconds")
+          text: Locale.I18n.tr("Reverting in " + pill.displays.secondsLeft + (pill.displays.secondsLeft === 1 ? " second" : " seconds"))
           elide: Text.ElideRight
           color: pill.theme.secondary
           font.family: pill.theme.textFontFamily
@@ -108,7 +109,7 @@ Item {
         }
         Text {
           anchors.centerIn: parent
-          text: pill.displays.secondsLeft
+          text: Locale.I18n.tr(pill.displays.secondsLeft)
           color: pill.theme.text
           font.family: pill.theme.textFontFamily
           font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.subheadline)
@@ -136,7 +137,7 @@ Item {
           Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: buttonMouse.pressed ? "press" : "standard" } }
           Text {
             anchors.centerIn: parent
-            text: button.modelData.label
+            text: Locale.I18n.tr(button.modelData.label)
             color: button.modelData.primary ? pill.theme.accentText : pill.theme.text
             font.family: pill.theme.textFontFamily
             font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)

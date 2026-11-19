@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell.Io
 
 // Shared picker surface for the island's switchers: a search field over a
@@ -146,7 +147,7 @@ Item {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    placeholder: picker.placeholder
+    placeholder: Locale.I18n.tr(picker.placeholder)
     onKeyPressed: function(event) {
       if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) {
         picker.move(1); event.accepted = true
@@ -266,7 +267,7 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: picker.filtered.length === 0 && picker.items.length > 0
-      text: picker.emptyText
+      text: Locale.I18n.tr(picker.emptyText)
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
       font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.size.body)

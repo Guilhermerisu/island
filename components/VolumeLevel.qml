@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // Shared by the live HUD and its static settings preview.
 Item {
@@ -23,8 +24,8 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 24
     horizontalAlignment: Text.AlignHCenter
-    text: volume.icon !== "" ? volume.icon
-      : volume.effectiveLevel <= 0 ? "󰖁" : volume.effectiveLevel < 0.34 ? "󰕿" : volume.effectiveLevel < 0.67 ? "󰖀" : "󰕾"
+    text: Locale.I18n.tr(volume.icon !== "" ? volume.icon
+      : volume.effectiveLevel <= 0 ? "󰖁" : volume.effectiveLevel < 0.34 ? "󰕿" : volume.effectiveLevel < 0.67 ? "󰖀" : "󰕾")
     color: volume.theme.text
     font.family: volume.theme.fontFamily
     font.pixelSize: volume.theme.px(21)
@@ -55,7 +56,7 @@ Item {
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
     width: 36
-    text: Math.round(volume.effectiveLevel * 100) + "%"
+    text: Locale.I18n.tr(Math.round(volume.effectiveLevel * 100) + "%")
     color: volume.theme.text
     font.family: volume.theme.textFontFamily
     font.letterSpacing: volume.theme.tracking(volume.theme.textFontFamily, volume.theme.size.callout)

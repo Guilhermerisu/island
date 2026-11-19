@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Io
 import "../../components"
@@ -9,8 +10,8 @@ import "../../components"
 // list does.
 ListPicker {
   id: keybinds
-  placeholder: "Search keybindings"
-  emptyText: "No keybindings match"
+  placeholder: Locale.I18n.tr("Search keybindings")
+  emptyText: Locale.I18n.tr("No keybindings match")
   rowHeight: 44
   visibleRows: 9
   items: {
@@ -18,7 +19,8 @@ ListPicker {
     if (!q) return all
     var terms = q.split(/\s+/)
     return all.filter(function(b) {
-      return terms.every(function(t) { return b.search.indexOf(t) !== -1 })
+      var searchable = Locale.I18n.normalize(b.search + " " + Locale.I18n.tr(b.name))
+      return terms.every(function(t) { return searchable.indexOf(Locale.I18n.normalize(t)) !== -1 })
     })
   }
   onChosen: function(entry) { run(entry) }
@@ -86,7 +88,7 @@ ListPicker {
         anchors.right: caps.left
         anchors.rightMargin: 12
         anchors.verticalCenter: parent.verticalCenter
-        text: String(bindRow.entry.name || "")
+        text: Locale.I18n.tr(String(bindRow.entry.name || ""))
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: keybinds.host.theme.text
@@ -115,7 +117,7 @@ ListPicker {
             Text {
               id: capLabel
               anchors.centerIn: parent
-              text: String(cap.modelData)
+              text: Locale.I18n.tr(String(cap.modelData))
               textFormat: Text.PlainText
               color: keybinds.host.theme.text
               font.family: keybinds.host.theme.textFontFamily

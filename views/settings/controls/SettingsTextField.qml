@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 
 // One-line text field, inset as macOS's, with its focus ring. `committed` fires with the trimmed text on Enter or
@@ -61,7 +62,7 @@ Rectangle {
     anchors.fill: input
     verticalAlignment: Text.AlignVCenter
     visible: input.text === ""
-    text: field.placeholder
+    text: Locale.I18n.tr(field.placeholder)
     elide: Text.ElideRight
     color: field.view.textMuted
     font: input.font
@@ -72,7 +73,7 @@ Rectangle {
     anchors.left: parent.left
     anchors.leftMargin: 9
     anchors.verticalCenter: parent.verticalCenter
-    text: field.icon
+    text: Locale.I18n.tr(field.icon)
     color: field.view.textMuted
     font.family: field.view.host.theme.fontFamily
     font.pixelSize: field.view.host.theme.px(14)

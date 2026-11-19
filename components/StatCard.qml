@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../i18n" as Locale
 import QtQuick.Layouts
 
 // A System Stats card: its title with the reading's meaning in a tinted
@@ -35,7 +36,7 @@ Card {
       spacing: 8
       Text {
         Layout.fillWidth: true
-        text: card.title
+        text: Locale.I18n.tr(card.title)
         elide: Text.ElideRight
         color: card.view.text
         font.family: card.view.host.theme.textFontFamily
@@ -62,7 +63,7 @@ Card {
           }
           Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: card.status
+            text: Locale.I18n.tr(card.status)
             color: card.statusColor
             font.family: card.view.host.theme.textFontFamily
             font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailCaptionFontSize)
@@ -81,7 +82,7 @@ Card {
         value: card.value
         color: card.ringColor
         thickness: 8
-        text: card.ringText
+        text: Locale.I18n.tr(card.ringText)
         caption: card.caption
         Layout.preferredWidth: 78
         Layout.preferredHeight: 78
@@ -104,7 +105,7 @@ Card {
             Text {
               anchors.left: parent.left
               anchors.verticalCenter: parent.verticalCenter
-              text: figure.modelData.label
+              text: Locale.I18n.tr(figure.modelData.label)
               color: card.view.host.theme.withAlpha(card.view.text, 0.85)
               font.family: card.view.host.theme.textFontFamily
               font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)
@@ -114,7 +115,7 @@ Card {
             Text {
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
-              text: figure.modelData.value
+              text: Locale.I18n.tr(figure.modelData.value)
               color: figure.modelData.color || card.view.text
               font.family: card.view.host.theme.textFontFamily
               font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailFontSize)

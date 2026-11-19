@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
@@ -13,8 +14,8 @@ import "../../components"
 Picker {
   id: ws
   cardHeight: 110
-  placeholder: "Search wallpapers"
-  emptyText: "No wallpapers match"
+  placeholder: Locale.I18n.tr("Search wallpapers")
+  emptyText: Locale.I18n.tr("No wallpapers match")
   currentKey: currentPath
   applyCommand: function(entry) { return ["omarchy-theme-bg-set", entry.path] }
   onApplied: linkReader.running = true

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Effects
 import "../../components"
 
@@ -58,7 +59,7 @@ Item {
   Text {
     visible: b.glyph !== ""
     anchors.centerIn: parent
-    text: b.glyph
+    text: Locale.I18n.tr(b.glyph)
     color: b.center.host.theme.background
     font.family: b.center.iconFont
     font.pixelSize: b.center.host.theme.px(13)
@@ -72,5 +73,5 @@ Item {
     cursorShape: Qt.PointingHandCursor
     onClicked: b.clicked()
   }
-  Tooltip { theme: b.center.host.theme; text: b.interactive ? b.tip : "" }
+  Tooltip { theme: b.center.host.theme; text: Locale.I18n.tr(b.interactive ? b.tip : "") }
 }

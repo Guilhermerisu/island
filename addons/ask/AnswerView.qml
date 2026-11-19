@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -201,7 +202,7 @@ Item {
         // Plain text, like Siri; strip any Markdown the model slips in, and
         // Codex's web-search citation markers (wrapped in private-use
         // characters, e.g. "citeturn2search1").
-        text: answer.error || answer.text.replace(/[^]*/g, "").replace(/[-]/g, "")
+        text: answer.error ? Locale.I18n.tr(answer.error) : answer.text.replace(/[^]*/g, "").replace(/[-]/g, "")
           .replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1")
           .replace(/`([^`]+)`/g, "$1").replace(/^#+\s*/gm, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
           .replace(/[ \t]+$/gm, "").trim()
@@ -257,7 +258,7 @@ Item {
         Text {
           id: copyLabel
           anchors.centerIn: parent
-          text: "Copy"
+          text: Locale.I18n.tr("Copy")
           color: answer.host.theme.text
           font.family: answer.host.theme.textFontFamily
           font.letterSpacing: answer.host.theme.tracking(answer.host.theme.textFontFamily, answer.host.theme.size.callout)

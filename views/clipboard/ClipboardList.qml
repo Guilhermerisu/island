@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
@@ -13,8 +14,8 @@ import "file:///usr/share/omarchy/shell/plugins/clipboard/ClipboardHistory.js" a
 // removes it — the same keys and commands as Omarchy's picker.
 ListPicker {
   id: clipboard
-  placeholder: "Search clipboard"
-  emptyText: history.length ? "Nothing matches" : "Clipboard history is empty"
+  placeholder: Locale.I18n.tr("Search clipboard")
+  emptyText: Locale.I18n.tr(history.length ? "Nothing matches" : "Clipboard history is empty")
   rowHeight: 44
   visibleRows: 9
   // Room for the image preview even when only a few entries match.
@@ -170,7 +171,7 @@ ListPicker {
         Text {
           anchors.centerIn: parent
           visible: preview.isImage && previewImage.status === Image.Error
-          text: "Image unavailable"
+          text: Locale.I18n.tr("Image unavailable")
           color: clipboard.host.theme.muted
           font.family: clipboard.host.theme.textFontFamily
           font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.size.callout)
@@ -239,7 +240,7 @@ ListPicker {
         Text {
           anchors.centerIn: parent
           visible: !(clipRow.hasPreview && thumb.status === Image.Ready) && clipRow.swatch === null
-          text: clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : clipRow.isLink ? "󰌷" : "󰦨"
+          text: Locale.I18n.tr(clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : clipRow.isLink ? "󰌷" : "󰦨")
           color: clipRow.selected ? clipboard.host.theme.text : clipboard.host.theme.muted
           font.family: clipboard.host.theme.fontFamily
           font.pixelSize: clipboard.host.theme.px(18)

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../views/control-center"
 
 // The control center tile, a CcTile like the others: its badge holds
@@ -41,7 +42,7 @@ CcTile {
     spacing: -5
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: tile.weekday.slice(0, 3).toUpperCase()
+      text: Locale.I18n.tr(tile.weekday.slice(0, 3).toUpperCase())
       color: tile.checked ? tile.center.badgeOnInk : tile.center.accent
       font.family: tile.center.host.theme.textFontFamily
       font.pixelSize: tile.center.host.theme.size.footnote
@@ -50,7 +51,7 @@ CcTile {
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: tile.calendar.today.getDate()
+      text: Locale.I18n.tr(tile.calendar.today.getDate())
       color: tile.checked ? tile.center.badgeOnInk : tile.center.text
       font.family: tile.center.host.theme.textFontFamily
       font.letterSpacing: tile.center.host.theme.tracking(tile.center.host.theme.textFontFamily, tile.center.host.theme.size.title2)

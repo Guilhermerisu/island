@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 import "../../services"
@@ -248,12 +249,12 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: height / 2
       color: backMouse.containsMouse ? wf.well : wf.card
-      Tooltip { theme: wf.host.theme; text: "Control Center" }
+      Tooltip { theme: wf.host.theme; text: Locale.I18n.tr("Control Center") }
       Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(17) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
     }
     Text {
-      text: "Wi-Fi"
+      text: Locale.I18n.tr("Wi-Fi")
       color: wf.text
       font.family: wf.host.theme.textFontFamily
       font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title2)
@@ -284,7 +285,7 @@ ColumnLayout {
         Layout.fillWidth: true
         host: wf.host
         glyph: !wf.device || !wf.powered ? "󰖪" : "󰤨"
-        text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
+        text: Locale.I18n.tr(!wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…")
       }
 
       ListView {
@@ -376,7 +377,7 @@ ColumnLayout {
               anchors.left: parent.left
               anchors.leftMargin: 10
               anchors.verticalCenter: parent.verticalCenter
-              text: row.modelData.header || ""
+              text: Locale.I18n.tr(row.modelData.header || "")
               color: wf.textMuted
               font.family: wf.host.theme.textFontFamily
               font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.body)
@@ -440,7 +441,7 @@ ColumnLayout {
               // The same glyph as the Control Center's Wi-Fi tile.
               Text {
                 anchors.centerIn: parent
-                text: "\uf1eb"
+                text: Locale.I18n.tr("\uf1eb")
                 color: row.modelData.connected ? wf.accentInk : wf.text
                 font.family: wf.iconFont
                 font.pixelSize: wf.host.theme.px(18)
@@ -470,7 +471,7 @@ ColumnLayout {
                   : row.modelData.name === wf.failedName ? wf.failedReason
                   : ""
                 visible: status !== ""
-                text: status
+                text: Locale.I18n.tr(status)
                 color: wf.textMuted
                 font.family: wf.host.theme.textFontFamily
                 font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
@@ -542,10 +543,10 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 24; height: 24; radius: 12
                 color: revealMouse.containsMouse ? wf.wellHover : "transparent"
-                Tooltip { theme: wf.host.theme; text: wf.revealPassword ? "Hide Password" : "Show Password" }
+                Tooltip { theme: wf.host.theme; text: Locale.I18n.tr(wf.revealPassword ? "Hide Password" : "Show Password") }
                 Text {
                   anchors.centerIn: parent
-                  text: wf.revealPassword ? "󰈉" : "󰈈"
+                  text: Locale.I18n.tr(wf.revealPassword ? "󰈉" : "󰈈")
                   color: revealMouse.containsMouse ? wf.text : wf.textMuted
                   font.family: wf.iconFont
                   font.pixelSize: wf.host.theme.px(15)
@@ -581,7 +582,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
-                Tooltip { theme: wf.host.theme; text: "Forget This Network" }
+                Tooltip { theme: wf.host.theme; text: Locale.I18n.tr("Forget This Network") }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"
@@ -640,7 +641,7 @@ ColumnLayout {
             anchors.verticalCenter: parent.verticalCenter
             Text {
               width: parent.width
-              text: speed.phase === "down" ? "Measuring download…" : speed.phase === "up" ? "Measuring upload…" : "Speed Test"
+              text: Locale.I18n.tr(speed.phase === "down" ? "Measuring download…" : speed.phase === "up" ? "Measuring upload…" : "Speed Test")
               elide: Text.ElideRight
               color: wf.text
               font.family: wf.host.theme.textFontFamily
@@ -650,7 +651,7 @@ ColumnLayout {
             Text {
               width: parent.width
               visible: speed.error !== ""
-              text: speed.error
+              text: Locale.I18n.tr(speed.error)
               textFormat: Text.PlainText
               elide: Text.ElideRight
               color: wf.host.theme.urgent
@@ -664,7 +665,7 @@ ColumnLayout {
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
+            text: Locale.I18n.tr(speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start")
             color: wf.textMuted
             font.family: wf.host.theme.textFontFamily
             font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.body)
@@ -709,12 +710,12 @@ ColumnLayout {
                   height: 88
                   color: wf.accent
                   value: Math.min(100, dial.modelData.mbps / wf.speedScale * 100)
-                  text: dial.modelData.mbps <= 0 ? "–" : dial.modelData.mbps < 10 ? dial.modelData.mbps.toFixed(1) : String(Math.round(dial.modelData.mbps))
+                  text: Locale.I18n.tr(dial.modelData.mbps <= 0 ? "–" : dial.modelData.mbps < 10 ? dial.modelData.mbps.toFixed(1) : String(Math.round(dial.modelData.mbps)))
                   caption: "Mbps"
                 }
                 Text {
                   anchors.horizontalCenter: parent.horizontalCenter
-                  text: dial.modelData.label
+                  text: Locale.I18n.tr(dial.modelData.label)
                   color: wf.textMuted
                   font.family: wf.host.theme.textFontFamily
                   font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
@@ -745,7 +746,7 @@ ColumnLayout {
           anchors.left: parent.left
           anchors.leftMargin: 10
           anchors.verticalCenter: parent.verticalCenter
-          text: "Wi-Fi Settings…"
+          text: Locale.I18n.tr("Wi-Fi Settings…")
           color: wf.text
           font.family: wf.host.theme.textFontFamily
           font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title3)

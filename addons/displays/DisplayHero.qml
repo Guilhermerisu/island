@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // The top of the Displays pane, as macOS's. With two monitors on or more,
@@ -105,7 +106,7 @@ Rectangle {
                 Text {
                   anchors.centerIn: parent
                   anchors.verticalCenterOffset: 4
-                  text: "Aa"
+                  text: Locale.I18n.tr("Aa")
                   color: hero.view.text
                   font.family: hero.theme.textFontFamily
                   font.pixelSize: hero.theme.size.body
@@ -139,7 +140,7 @@ Rectangle {
         Item { visible: hero.single; width: 1; height: 12 }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          text: screen.modelData.title
+          text: Locale.I18n.tr(screen.modelData.title)
           color: screen.picked || !hero.several ? hero.view.text : hero.view.textMuted
           Behavior on color { MotionColorAnimation { theme: hero.theme } }
           readonly property int size: hero.single ? hero.theme.px(15) : hero.view.detailFontSize
@@ -151,12 +152,12 @@ Rectangle {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           // "27-inch · 2560 × 1440 · 360 Hz".
-          text: screen.modelData.disabled ? "Off"
+          text: Locale.I18n.tr(screen.modelData.disabled ? "Off"
             : [screen.inches > 0 ? Math.round(screen.inches) + "-inch" : "",
                screen.turned ? screen.modelData.height + " × " + screen.modelData.width
                              : screen.modelData.width + " × " + screen.modelData.height,
                screen.modelData.rate ? Math.round(Number(screen.modelData.rate)) + " Hz" : ""]
-              .filter(function(part) { return part !== "" }).join(" · ")
+              .filter(function(part) { return part !== "" }).join(" · "))
           color: hero.view.textMuted
           font.family: hero.theme.textFontFamily
           font.letterSpacing: hero.theme.tracking(hero.theme.textFontFamily, hero.view.detailCaptionFontSize)

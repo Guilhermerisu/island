@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 
 // App Store's capsule button: "+ Add" on a tint of the accent; "Remove"
@@ -31,7 +32,7 @@ Rectangle {
     }
     Text {
       anchors.verticalCenter: parent.verticalCenter
-      text: button.added ? "Remove" : "Add"
+      text: Locale.I18n.tr(button.added ? "Remove" : "Add")
       color: button.added ? (buttonMouse.containsMouse ? button.view.text : button.view.textMuted) : button.view.accent
       Behavior on color { MotionColorAnimation { theme: button.view.host.theme } }
       readonly property int size: button.view.host.theme.px(button.added ? 12 : 13)

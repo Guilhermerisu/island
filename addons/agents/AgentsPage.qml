@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Effects
 import QtQuick.Layouts
 import "../../components"
@@ -143,7 +144,7 @@ ColumnLayout {
     var rest = rows.slice(4).reduce(function(sum, m) { return sum + m.value }, 0)
     if (rest > 0) top.push({ label: "Other", value: rest, other: true })
     return top.map(function(m, i) {
-      return { label: m.label, value: m.value, color: m.other ? page.view.host.theme.system.gray : palette[i], text: tokens(m.value) }
+      return { label: m.label, value: m.value, color: m.other ? page.view.host.theme.system.gray : palette[i], text: Locale.I18n.tr(tokens(m.value)) }
     })
   }
   readonly property real modelTotal: models.reduce(function(sum, m) { return sum + m.value }, 0)
@@ -190,7 +191,7 @@ ColumnLayout {
       Text {
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
-        text: page.provider.name
+        text: Locale.I18n.tr(page.provider.name)
         elide: Text.ElideRight
         color: page.view.text
         font.family: page.view.host.theme.textFontFamily
@@ -203,8 +204,8 @@ ColumnLayout {
       Text {
         width: parent.width
         horizontalAlignment: Text.AlignHCenter
-        text: [page.allModels ? (page.record && page.record.sources || []).join(", ") : page.plan, page.updatedText()]
-          .filter(function(t) { return t !== "" }).join(" · ")
+        text: Locale.I18n.tr([page.allModels ? (page.record && page.record.sources || []).join(", ") : page.plan, page.updatedText()]
+          .filter(function(t) { return t !== "" }).join(" · "))
         visible: text !== ""
         elide: Text.ElideRight
         color: page.view.textMuted
@@ -253,7 +254,7 @@ ColumnLayout {
             spacing: 4
             Text {
               Layout.fillWidth: true
-              text: page.limitTitle(limit.modelData.label)
+              text: Locale.I18n.tr(page.limitTitle(limit.modelData.label))
               elide: Text.ElideRight
               color: page.view.text
               font.family: page.view.host.theme.textFontFamily
@@ -263,7 +264,7 @@ ColumnLayout {
             }
             // The figure stands out; "used" stays quiet beside it.
             Text {
-              text: Math.round(limit.used * 100) + "%"
+              text: Locale.I18n.tr(Math.round(limit.used * 100) + "%")
               color: limit.used >= 0.5 ? page.usedColor(limit.used) : page.view.text
               font.family: page.view.host.theme.textFontFamily
               font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -272,7 +273,7 @@ ColumnLayout {
               font.features: { "tnum": 1 }
             }
             Text {
-              text: "used"
+              text: Locale.I18n.tr("used")
               color: page.view.textMuted
               font.family: page.view.host.theme.textFontFamily
               font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -298,7 +299,7 @@ ColumnLayout {
           Text {
             Layout.fillWidth: true
             visible: text !== ""
-            text: page.resetText(limit.modelData.resetsAt)
+            text: Locale.I18n.tr(page.resetText(limit.modelData.resetsAt))
             elide: Text.ElideRight
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
@@ -346,7 +347,7 @@ ColumnLayout {
         spacing: 2
         Text {
           width: parent.width
-          text: page.record ? "Limits Unavailable" : "Reading Limits…"
+          text: Locale.I18n.tr(page.record ? "Limits Unavailable" : "Reading Limits…")
           color: page.view.text
           font.family: page.view.host.theme.textFontFamily
           font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -359,8 +360,8 @@ ColumnLayout {
           wrapMode: Text.WordWrap
           // The command in the text colour.
           textFormat: Text.StyledText
-          text: (page.record && page.record.usageStatusText ? page.record.usageStatusText + ". " : "")
-            + "Sign in with <font color=\"" + page.view.text + "\">" + page.provider.login + "</font> to see them."
+          text: Locale.I18n.tr((page.record && page.record.usageStatusText ? page.record.usageStatusText + ". " : "")
+            + "Sign in with <font color=\"" + page.view.text + "\">" + page.provider.login + "</font> to see them.")
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
           font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
@@ -391,7 +392,7 @@ ColumnLayout {
         Column {
           spacing: 2
           Text {
-            text: "Daily Average"
+            text: Locale.I18n.tr("Daily Average")
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
             font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -399,7 +400,7 @@ ColumnLayout {
             font.pixelSize: page.view.detailFontSize
           }
           Text {
-            text: page.record ? page.tokens(page.average) : "—"
+            text: Locale.I18n.tr(page.record ? page.tokens(page.average) : "—")
             color: page.view.text
             font.family: page.view.host.theme.textFontFamily
             font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.px(32))
@@ -415,14 +416,14 @@ ColumnLayout {
             Text {
               visible: page.vsDirection !== "even"
               anchors.verticalCenter: parent.verticalCenter
-              text: page.vsDirection === "up" ? "󰁝" : "󰁅"
+              text: Locale.I18n.tr(page.vsDirection === "up" ? "󰁝" : "󰁅")
               color: page.view.textMuted
               font.family: page.view.host.theme.fontFamily
               font.pixelSize: page.view.host.theme.px(12)
             }
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: page.vsAverage()
+              text: Locale.I18n.tr(page.vsAverage())
               color: page.view.textMuted
               font.family: page.view.host.theme.textFontFamily
               font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
@@ -451,7 +452,7 @@ ColumnLayout {
             visible: page.record !== null && page.busiest <= 0
             x: (chart.plotWidth - width) / 2
             y: (chart.plotHeight - height) / 2
-            text: "No usage in the last 7 days"
+            text: Locale.I18n.tr("No usage in the last 7 days")
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
             font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
@@ -486,7 +487,7 @@ ColumnLayout {
                 visible: page.busiest > 0
                 x: chart.plotWidth + 6
                 anchors.verticalCenter: parent.top
-                text: grid.modelData === 0 ? "0" : page.scaleLabel(page.scaleTop * grid.modelData)
+                text: Locale.I18n.tr(grid.modelData === 0 ? "0" : page.scaleLabel(page.scaleTop * grid.modelData))
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
                 font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.subheadline)
@@ -530,7 +531,7 @@ ColumnLayout {
               Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
-                text: page.dayName(day.modelData.date, day.today)
+                text: Locale.I18n.tr(page.dayName(day.modelData.date, day.today))
                 color: day.today ? page.view.text : page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
                 font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.subheadline)
@@ -571,7 +572,7 @@ ColumnLayout {
                   anchors.centerIn: parent
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: page.dayName(day.modelData.date, day.today, true)
+                    text: Locale.I18n.tr(page.dayName(day.modelData.date, day.today, true))
                     color: page.view.textMuted
                     font.family: page.view.host.theme.textFontFamily
                     font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.footnote)
@@ -580,7 +581,7 @@ ColumnLayout {
                   }
                   Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: page.tokens(day.count)
+                    text: Locale.I18n.tr(page.tokens(day.count))
                     color: page.view.text
                     font.family: page.view.host.theme.textFontFamily
                     font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.callout)
@@ -609,7 +610,7 @@ ColumnLayout {
       label: "Last 7 Days"
       last: !busiestRow.visible
       Text {
-        text: page.tokens(page.week)
+        text: Locale.I18n.tr(page.tokens(page.week))
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
         font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -624,7 +625,7 @@ ColumnLayout {
       label: "Busiest Day"
       last: true
       Text {
-        text: page.busiestText
+        text: Locale.I18n.tr(page.busiestText)
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
         font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -657,7 +658,7 @@ ColumnLayout {
           spacing: 1
           Text {
             width: parent.width
-            text: modelRow.modelData.label
+            text: Locale.I18n.tr(modelRow.modelData.label)
             elide: Text.ElideRight
             color: page.view.text
             font.family: page.view.host.theme.textFontFamily
@@ -668,7 +669,7 @@ ColumnLayout {
           Text {
             width: parent.width
             visible: text !== ""
-            text: modelRow.modelData.source
+            text: Locale.I18n.tr(modelRow.modelData.source)
             elide: Text.ElideRight
             color: page.view.textMuted
             font.family: page.view.host.theme.textFontFamily
@@ -682,7 +683,7 @@ ColumnLayout {
           anchors.right: parent.right
           anchors.rightMargin: 14
           anchors.verticalCenter: parent.verticalCenter
-          text: page.tokens(modelRow.modelData.value)
+          text: Locale.I18n.tr(page.tokens(modelRow.modelData.value))
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
           font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)

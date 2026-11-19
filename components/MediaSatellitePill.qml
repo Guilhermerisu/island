@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell.Widgets
 
 // Dynamic Island secondary satellite pill:
@@ -112,7 +113,7 @@ Rectangle {
     }
 
     Text {
-      text: satellite.track !== "" ? (satellite.artist ? satellite.track + " · " + satellite.artist : satellite.track) : "Now Playing"
+      text: satellite.track !== "" ? (satellite.artist ? satellite.track + " · " + satellite.artist : satellite.track) : Locale.I18n.tr("Now Playing")
       color: satellite.host.theme.withAlpha(satellite.host.theme.text, 0.95)
       font.family: satellite.host.theme.textFontFamily
       font.pixelSize: satellite.host.theme.size.subheadline

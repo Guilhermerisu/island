@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 import "../controls"
 
@@ -36,7 +37,7 @@ ColumnLayout {
     Layout.bottomMargin: -12
     Text {
       Layout.fillWidth: true
-      text: "Activities"
+      text: Locale.I18n.tr("Activities")
       color: page.view.textMuted
       font.family: page.view.host.theme.textFontFamily
       font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
@@ -44,7 +45,7 @@ ColumnLayout {
       font.weight: Font.Medium
     }
     Text {
-      text: page.enabledCount + " of " + page.activities.length + " on"
+      text: Locale.I18n.tr(page.enabledCount + " of " + page.activities.length + " on")
       color: page.view.textMuted
       font.family: page.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
