@@ -233,6 +233,7 @@ ColumnLayout {
                         view: page.view
                         minWidth: page.optionWidth
                         options: optionRow.modelData.choices || []
+                        multiSelect: optionRow.modelData.multiSelect === true
                         value: optionRow.value
                         onPicked: function(v) { optionRow.pick(v) }
                       }

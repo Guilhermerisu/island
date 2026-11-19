@@ -13,9 +13,25 @@ Rectangle {
   // the current choice's short label when it has one.
   property var options: []
   property var value
+  property bool multiSelect: false
+  readonly property var selectedValues: typeof value === "string" ? [value] : Array.from(value || [])
+  function isSelected(candidate) {
+    return multiSelect ? selectedValues.indexOf(candidate) >= 0 : value === candidate
+  }
+  function pick(candidate, additive) {
+    if (!multiSelect) { picked(candidate); return }
+    var next = selectedValues.slice()
+    var index = next.indexOf(candidate)
+    if (!additive) next = [candidate]
+    else if (index < 0) next.push(candidate)
+    else if (next.length > 1) next.splice(index, 1)
+    picked(next)
+  }
   property real minWidth: view.controlWidth
   signal picked(var value)
   readonly property string currentLabel: {
+    if (multiSelect) return options.filter(function(o) { return pop.isSelected(o.value) })
+      .map(function(o) { return o.short || o.label }).join(" + ")
     for (var i = 0; i < options.length; i++) if (options[i].value === value) return options[i].short || options[i].label
     return ""
   }
@@ -35,6 +51,7 @@ Rectangle {
     anchors.leftMargin: 10
     anchors.verticalCenter: parent.verticalCenter
     text: pop.currentLabel
+    textFormat: Text.PlainText
     color: pop.view.text
     font.family: pop.view.host.theme.textFontFamily
     font.letterSpacing: pop.view.host.theme.tracking(pop.view.host.theme.textFontFamily, pop.view.detailFontSize)

@@ -79,6 +79,7 @@ Rectangle {
           id: choiceText
           anchors.centerIn: parent
           text: choice.modelData.label
+          textFormat: Text.PlainText
           color: choice.selected ? seg.view.text : seg.view.textMuted
           Behavior on color { MotionColorAnimation { theme: seg.view.host.theme } }
           font.family: seg.view.host.theme.textFontFamily
