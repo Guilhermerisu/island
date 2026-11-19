@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // The island's take on Omarchy's on-screen display: an icon with either a
 // progress bar and its reading, or a message. Fed by `host.showOsd` — the
@@ -27,7 +28,7 @@ IslandPill {
     anchors.verticalCenter: parent.verticalCenter
     width: 24
     horizontalAlignment: Text.AlignHCenter
-    text: osd.host.osdIcon
+    text: Locale.I18n.tr(osd.host.osdIcon)
     color: osd.host.theme.text
     font.family: osd.host.theme.fontFamily
     font.pixelSize: osd.host.theme.px(21)
@@ -64,7 +65,7 @@ IslandPill {
     anchors.verticalCenter: parent.verticalCenter
     width: Math.max(36, implicitWidth)
     horizontalAlignment: Text.AlignRight
-    text: osd.host.osdMessage
+    text: Locale.I18n.tr(osd.host.osdMessage)
     color: osd.host.theme.text
     font.family: osd.host.theme.textFontFamily
     font.letterSpacing: osd.host.theme.tracking(osd.host.theme.textFontFamily, osd.host.theme.size.callout)
@@ -82,7 +83,7 @@ IslandPill {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: osd.host.osdMessage
+    text: Locale.I18n.tr(osd.host.osdMessage)
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: osd.host.theme.text

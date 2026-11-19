@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 import QtQuick.Layouts
 
@@ -34,7 +35,7 @@ Rectangle {
     anchors.left: parent.left
     anchors.leftMargin: 10
     anchors.verticalCenter: parent.verticalCenter
-    text: pop.currentLabel
+    text: Locale.I18n.tr(pop.currentLabel)
     color: pop.view.text
     font.family: pop.view.host.theme.textFontFamily
     font.letterSpacing: pop.view.host.theme.tracking(pop.view.host.theme.textFontFamily, pop.view.detailFontSize)
@@ -49,7 +50,7 @@ Rectangle {
       model: ["󰅃", "󰅀"]
       delegate: Text {
         required property string modelData
-        text: modelData
+        text: Locale.I18n.tr(modelData)
         color: pop.view.textMuted
         font.family: pop.view.host.theme.fontFamily
         font.pixelSize: pop.view.host.theme.px(10)

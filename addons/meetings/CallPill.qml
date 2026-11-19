@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // The call on the island, as Apple's: a green phone and the call's length
@@ -109,7 +110,7 @@ Item {
       RollingText {
         theme: pill.theme
         anchors.verticalCenter: parent.verticalCenter
-        text: pill.meetings.timeText(pill.meetings.elapsed)
+        text: Locale.I18n.tr(pill.meetings.timeText(pill.meetings.elapsed))
         color: pill.meetings.ended ? pill.endInk : pill.ink
         Behavior on color { MotionColorAnimation { theme: pill.theme } }
         font.family: pill.theme.textFontFamily
@@ -200,7 +201,7 @@ Item {
       anchors.right: parent.right
       anchors.rightMargin: 16
       anchors.verticalCenter: parent.verticalCenter
-      text: "Call Ended"
+      text: Locale.I18n.tr("Call Ended")
       color: pill.endInk
       // In from the right after the dots, as they leave.
       property real shown: pill.meetings.ended ? 1 : 0
@@ -320,6 +321,6 @@ Item {
       cursorShape: Qt.PointingHandCursor
       onClicked: button.clicked()
     }
-    Tooltip { theme: pill.theme; text: button.tip }
+    Tooltip { theme: pill.theme; text: Locale.I18n.tr(button.tip) }
   }
 }

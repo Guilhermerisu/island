@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
 import "../../components"
@@ -35,7 +36,7 @@ CcSection {
     onMoved: function(v) {
       if (card.controls.microphoneReady) card.controls.microphoneSource.audio.volume = v
     }
-    Tooltip { theme: center.host.theme; text: "Microphone Input Volume" }
+    Tooltip { theme: center.host.theme; text: Locale.I18n.tr("Microphone Input Volume") }
   }
   // Input picker, as the Sound card's output picker: rows kept by source
   // name, fading in and out in place while the rest slide (the card's height

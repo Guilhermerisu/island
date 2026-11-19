@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Effects
 import "../../../components"
 
@@ -103,7 +104,7 @@ Item {
       Text {
         anchors.centerIn: parent
         visible: preview.glyph !== ""
-        text: preview.glyph
+        text: Locale.I18n.tr(preview.glyph)
         color: preview.sample.glyphColor || preview.accent
         font.family: preview.iconFont
         font.pixelSize: preview.kind === "bluetooth" ? preview.view.host.theme.px(27) : preview.transfer ? preview.view.host.theme.px(13) : preview.view.host.theme.px(17)
@@ -131,7 +132,7 @@ Item {
       x: clock ? (parent.width - width) / 2 : preview.kind === "battery" ? 47 : 43
       anchors.verticalCenter: parent.verticalCenter
       visible: !!preview.sample.label
-      text: preview.sample.label || ""
+      text: Locale.I18n.tr(preview.sample.label || "")
       color: preview.view.host.theme.text
       font.family: preview.view.host.theme.textFontFamily
       font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, clock ? preview.view.host.theme.px(12) : preview.view.host.theme.px(10))
@@ -143,7 +144,7 @@ Item {
       anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       visible: !!preview.sample.status
-      text: preview.sample.status || ""
+      text: Locale.I18n.tr(preview.sample.status || "")
       color: preview.sample.statusColor || "#ffffff"
       font.family: preview.view.host.theme.textFontFamily
       font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote)
@@ -156,13 +157,13 @@ Item {
       visible: preview.kind === "bluetooth"
       spacing: 1
       Text {
-        text: "Connected"
+        text: Locale.I18n.tr("Connected")
         color: "#888888"
         font.family: preview.view.host.theme.textFontFamily
         font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote)
         font.pixelSize: preview.view.host.theme.size.footnote
       }
-      Text { text: "Headphones"; color: preview.view.host.theme.text; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.callout); font.pixelSize: preview.view.host.theme.size.callout }
+      Text { text: Locale.I18n.tr("Headphones"); color: preview.view.host.theme.text; font.family: preview.view.host.theme.textFontFamily; font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.callout); font.pixelSize: preview.view.host.theme.size.callout }
     }
     Rectangle {
       anchors.right: parent.right

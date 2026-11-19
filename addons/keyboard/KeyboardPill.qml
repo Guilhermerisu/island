@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // Shown for a moment when the keyboard layout changes: the keyboard leading,
@@ -42,7 +43,7 @@ Item {
     anchors.right: trailing.left
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.layout.name
+    text: Locale.I18n.tr(pill.layout.name)
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: pill.host.theme.text
@@ -84,7 +85,7 @@ Item {
           height: trailing.height
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
-          text: modelData.toUpperCase()
+          text: Locale.I18n.tr(modelData.toUpperCase())
           color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: pill.host.theme.textFontFamily

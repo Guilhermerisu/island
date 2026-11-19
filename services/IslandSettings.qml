@@ -22,6 +22,7 @@ Item {
     }
     JsonAdapter {
       id: settingsData
+      property string language: "auto"
       property real motionScale: 1.5
       property bool clock24h: true
       property bool clockAmPm: false

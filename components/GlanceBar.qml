@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell.Widgets
 import "../addons/weather"
 
@@ -130,7 +131,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
-          text: String(glanceBar.host.focusedWorkspaceId > 0 ? glanceBar.host.focusedWorkspaceId : "1")
+          text: Locale.I18n.tr(String(glanceBar.host.focusedWorkspaceId > 0 ? glanceBar.host.focusedWorkspaceId : "1"))
           color: glanceBar.host.theme.text
           font.family: glanceBar.host.theme.textFontFamily
           font.pixelSize: glanceBar.host.theme.size.callout
@@ -176,7 +177,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
-          text: battItem.hasBattery ? battItem.level + "%" : "AC"
+          text: Locale.I18n.tr(battItem.hasBattery ? battItem.level + "%" : "AC")
           color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.8)
           font.family: glanceBar.host.theme.textFontFamily
           font.pixelSize: glanceBar.host.theme.size.subheadline
@@ -224,14 +225,14 @@ Item {
         spacing: 4
         anchors.verticalCenter: parent.verticalCenter
         Text {
-          text: !netItem.online ? "󰖪" : netItem.wired ? "󰈀" : "󰤨"
+          text: Locale.I18n.tr(!netItem.online ? "󰖪" : netItem.wired ? "󰈀" : "󰤨")
           color: !netItem.online ? glanceBar.host.theme.system.orange : glanceBar.host.theme.system.blue
           font.family: glanceBar.host.theme.fontFamily
           font.pixelSize: glanceBar.host.theme.px(13)
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
-          text: !netItem.online ? "Offline" : netItem.net[0].name || (netItem.wired ? "Ethernet" : "Wi-Fi")
+          text: !netItem.online ? Locale.I18n.tr("Offline") : netItem.net[0].name || (netItem.wired ? "Ethernet" : "Wi-Fi")
           color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.8)
           font.family: glanceBar.host.theme.textFontFamily
           font.pixelSize: glanceBar.host.theme.size.subheadline
@@ -277,7 +278,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
-          text: weatherItem.ready ? Math.round(weatherItem.weatherAddon.current.temperature) + "°" : "󰖐 --°"
+          text: Locale.I18n.tr(weatherItem.ready ? Math.round(weatherItem.weatherAddon.current.temperature) + "°" : "󰖐 --°")
           color: glanceBar.host.theme.text
           font.family: glanceBar.host.theme.textFontFamily
           font.pixelSize: glanceBar.host.theme.size.callout
@@ -398,14 +399,14 @@ Item {
         spacing: 4
         anchors.verticalCenter: parent.verticalCenter
         Text {
-          text: glanceBar.host.muted || glanceBar.host.volume <= 0 ? "󰖁" : glanceBar.host.volume < 0.5 ? "󰖀" : "󰕾"
+          text: Locale.I18n.tr(glanceBar.host.muted || glanceBar.host.volume <= 0 ? "󰖁" : glanceBar.host.volume < 0.5 ? "󰖀" : "󰕾")
           color: glanceBar.host.muted ? glanceBar.host.theme.system.orange : glanceBar.host.theme.text
           font.family: glanceBar.host.theme.fontFamily
           font.pixelSize: glanceBar.host.theme.px(13)
           anchors.verticalCenter: parent.verticalCenter
         }
         Text {
-          text: glanceBar.host.muted ? "Muted" : Math.round(glanceBar.host.volume * 100) + "%"
+          text: Locale.I18n.tr(glanceBar.host.muted ? "Muted" : Math.round(glanceBar.host.volume * 100) + "%")
           color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.8)
           font.family: glanceBar.host.theme.textFontFamily
           font.pixelSize: glanceBar.host.theme.size.subheadline

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -78,7 +79,7 @@ ColumnLayout {
             onClicked: gallery.zones.add(choice.modelData)
           }
         }
-        Tooltip { theme: gallery.center.host.theme; text: "Drag to a column, or add " + choice.title }
+        Tooltip { theme: gallery.center.host.theme; text: Locale.I18n.tr("Drag to a column, or add " + choice.title) }
       }
     }
   }
@@ -88,7 +89,7 @@ ColumnLayout {
     Layout.topMargin: 8
     Layout.bottomMargin: 8
     horizontalAlignment: Text.AlignHCenter
-    text: "All zones have been added"
+    text: Locale.I18n.tr("All zones have been added")
     color: gallery.center.textMuted
     font.family: gallery.center.host.theme.textFontFamily
     font.letterSpacing: gallery.center.host.theme.tracking(gallery.center.host.theme.textFontFamily, gallery.center.host.theme.size.body)

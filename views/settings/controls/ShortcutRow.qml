@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 import QtQuick.Layouts
 
@@ -54,7 +55,7 @@ Item {
     spacing: 2
     Text {
       width: parent.width
-      text: shortcutRow.entry.label
+      text: Locale.I18n.tr(shortcutRow.entry.label)
       elide: Text.ElideRight
       color: shortcutRow.view.text
       font.family: shortcutRow.view.host.theme.textFontFamily
@@ -65,7 +66,7 @@ Item {
     Text {
       width: parent.width
       visible: shortcutRow.detail !== ""
-      text: shortcutRow.detail
+      text: Locale.I18n.tr(shortcutRow.detail)
       elide: Text.ElideRight
       color: shortcutRow.view.textMuted
       font.family: shortcutRow.view.host.theme.textFontFamily
@@ -156,7 +157,7 @@ Item {
             Text {
               id: capText
               anchors.centerIn: parent
-              text: cap.modelData
+              text: Locale.I18n.tr(cap.modelData)
               color: shortcutRow.view.text
               font.family: shortcutRow.view.host.theme.textFontFamily
               font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailCaptionFontSize)
@@ -171,7 +172,7 @@ Item {
       id: keysText
       visible: !keysField.caps
       anchors.centerIn: parent
-      text: shortcutRow.recording ? (shortcutRow.keybinds.recordHint || "Type Shortcut") : shortcutRow.keybinds.shortcutText(shortcutRow.entry.keys)
+      text: Locale.I18n.tr(shortcutRow.recording ? (shortcutRow.keybinds.recordHint || "Type Shortcut") : shortcutRow.keybinds.shortcutText(shortcutRow.entry.keys))
       color: shortcutRow.recording ? shortcutRow.view.accent
         : shortcutRow.entry.keys === "" ? shortcutRow.view.textMuted : shortcutRow.view.text
       font.family: shortcutRow.view.host.theme.textFontFamily
@@ -214,7 +215,7 @@ Item {
       font.pixelSize: shortcutRow.view.host.theme.px(12)
     }
     Text {
-      text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict
+      text: Locale.I18n.tr(shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict)
       color: shortcutRow.view.textMuted
       font.family: shortcutRow.view.host.theme.textFontFamily
       font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailCaptionFontSize)

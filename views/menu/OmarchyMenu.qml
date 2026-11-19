@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Io
 import "../../components"
@@ -15,10 +16,10 @@ import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 // everything under it, showing where each result lives.
 ListPicker {
   id: menu
-  placeholder: activeMenu === "root"
+  placeholder: Locale.I18n.tr(activeMenu === "root"
     ? (host.addons.option("ask", "menuSearch") ? ["Search"].concat(host.addons.launcherHints).join(" or ") : "Search")
-    : MenuModel.pathFor(items_, activeMenu)
-  emptyText: "Nothing matches"
+    : MenuModel.pathFor(items_, activeMenu))
+  emptyText: Locale.I18n.tr("Nothing matches")
   rowHeight: 46
   visibleRows: 9
   items: rows
@@ -88,7 +89,7 @@ ListPicker {
     var rows = []
     if (searchApps) {
       var hidden = hiddenApps
-      AppSearch.sortedEntries(DesktopEntries.applications.values || [], "", function(entry) {
+      AppSearch.sortedEntries((DesktopEntries.applications.values || []).map(function(entry) { return Locale.I18n.appEntry(entry) }), "", function(entry) {
         return !!hidden[String(entry.id || "")]
       }).forEach(function(row) {
         var app = row.entry
@@ -242,8 +243,9 @@ ListPicker {
       if (!entry || entry.id === "root") continue
       if (q) {
         if (!MenuModel.isDescendantOf(items_, entry.id, active)) continue
-        if (!MenuModel.matchesQuery(entry, q, isVisible(entry) && !entryDisabled(entry))) continue
-        list.push(displayRow(entry, MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, entry, q)))
+        var searchable = Locale.I18n.menuEntry(entry)
+        if (!MenuModel.matchesQuery(searchable, Locale.I18n.normalize(q), isVisible(entry) && !entryDisabled(entry))) continue
+        list.push(displayRow(entry, MenuModel.parentPathFor(items_, entry.id), MenuModel.searchScore(items_, searchable, q)))
       } else {
         if (entry.parent !== active || !isVisible(entry)) continue
         list.push(displayRow(entry, "", entry.order))
@@ -314,7 +316,7 @@ ListPicker {
         Text {
           anchors.centerIn: parent
           visible: menuRow.isAddon
-          text: menuRow.isAddon ? String(menuRow.entry.glyph || "") : ""
+          text: Locale.I18n.tr(menuRow.isAddon ? String(menuRow.entry.glyph || "") : "")
           color: (menuRow.entry && menuRow.entry.ink) || "#ffffff"
           font.family: menu.host.theme.fontFamily
           font.pixelSize: menu.host.theme.px(15)
@@ -338,7 +340,7 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         width: 24
         horizontalAlignment: Text.AlignHCenter
-        text: menuRow.isApp ? "󰀻" : String(menuRow.entry.icon || "")
+        text: Locale.I18n.tr(menuRow.isApp ? "󰀻" : String(menuRow.entry.icon || ""))
         opacity: appIcon.visible ? 0 : 1
         color: menu.host.theme.muted
         font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
@@ -353,7 +355,7 @@ ListPicker {
         spacing: 1
         Text {
           width: parent.width
-          text: String(menuRow.entry.label || "")
+          text: menuRow.isApp ? String(menuRow.entry.label || "") : Locale.I18n.tr(String(menuRow.entry.label || ""))
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: menu.host.theme.text
@@ -365,7 +367,7 @@ ListPicker {
         Text {
           width: parent.width
           visible: text !== ""
-          text: String(menuRow.entry.detail || "")
+          text: Locale.I18n.tr(String(menuRow.entry.detail || ""))
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: menu.host.theme.muted

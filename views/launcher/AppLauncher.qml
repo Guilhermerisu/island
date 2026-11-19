@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
@@ -15,8 +16,8 @@ import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 // so or no app matches.
 ListPicker {
   id: launcher
-  placeholder: ["Search"].concat(host.addons.launcherHints).join(" or ")
-  emptyText: "No apps match"
+  placeholder: Locale.I18n.tr(["Search"].concat(host.addons.launcherHints).join(" or "))
+  emptyText: Locale.I18n.tr("No apps match")
   items: {
     var text = query.trim()
     if (!text) return results
@@ -36,8 +37,8 @@ ListPicker {
   }
   readonly property var results: {
     appsRevision; hiddenIds
-    var values = DesktopEntries.applications.values || []
-    return AppSearch.sortedEntries(values, query, function(entry) { return !!hiddenIds[String(entry.id || "")] })
+    var values = (DesktopEntries.applications.values || []).map(function(entry) { return Locale.I18n.appEntry(entry) })
+    return AppSearch.sortedEntries(values, Locale.I18n.normalize(query), function(entry) { return !!hiddenIds[String(entry.id || "")] })
       .map(function(row) { return row.entry })
   }
 
@@ -60,7 +61,7 @@ ListPicker {
         Text {
           anchors.centerIn: parent
           visible: appRow.isAddon
-          text: appRow.isAddon ? appRow.entry.glyph || "" : ""
+          text: Locale.I18n.tr(appRow.isAddon ? appRow.entry.glyph || "" : "")
           color: appRow.isAddon && appRow.entry.ink ? appRow.entry.ink : launcher.host.theme.text
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: launcher.host.theme.px(22)
@@ -111,7 +112,7 @@ ListPicker {
         spacing: 8
         Text {
           id: askLabel
-          text: appRow.isAddon ? appRow.entry.label || "" : ""
+          text: Locale.I18n.tr(appRow.isAddon ? appRow.entry.label || "" : "")
           color: launcher.host.theme.text
           font.family: launcher.host.theme.textFontFamily
           font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
@@ -120,7 +121,7 @@ ListPicker {
         }
         Text {
           width: parent.width - askLabel.width - parent.spacing
-          text: appRow.isAddon ? appRow.entry.detail || "" : ""
+          text: Locale.I18n.tr(appRow.isAddon ? appRow.entry.detail || "" : "")
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: launcher.host.theme.muted

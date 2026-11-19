@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // Device live activities. Battery and network are laid out like the clipboard
 // pill on one line: the battery or network mark leading, what's happening in
@@ -60,7 +61,7 @@ IslandPill {
     Text {
       anchors.centerIn: parent
       visible: !pill.isBattery
-      text: pill.leadingGlyph
+      text: Locale.I18n.tr(pill.leadingGlyph)
       color: pill.activity.connected ? pill.connectedColor : Qt.rgba(1, 1, 1, 0.55)
       font.family: pill.host.theme.fontFamily
       font.pixelSize: pill.host.theme.px(19)
@@ -77,7 +78,7 @@ IslandPill {
     anchors.right: trailing.left
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.activity.title || ""
+    text: Locale.I18n.tr(pill.activity.title || "")
     textFormat: Text.PlainText
     elide: Text.ElideRight
     color: pill.host.theme.text
@@ -100,7 +101,7 @@ IslandPill {
     opacity: reveal.trailingIn
     Text {
       anchors.verticalCenter: parent.verticalCenter
-      text: pill.activity.status || ""
+      text: Locale.I18n.tr(pill.activity.status || "")
       color: pill.statusColor
       font.family: pill.host.theme.textFontFamily
       font.pixelSize: pill.host.theme.size.body
@@ -141,7 +142,7 @@ IslandPill {
     anchors.left: parent.left
     anchors.leftMargin: 22
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.deviceGlyph
+    text: Locale.I18n.tr(pill.deviceGlyph)
     color: pill.activity.connected ? "#ffffff" : Qt.rgba(1, 1, 1, 0.55)
     font.family: pill.host.theme.fontFamily
     font.pixelSize: pill.host.theme.px(32)
@@ -160,7 +161,7 @@ IslandPill {
     spacing: 1
     Text {
       width: parent.width
-      text: pill.activity.status || ""
+      text: Locale.I18n.tr(pill.activity.status || "")
       color: "#888888"
       font.family: pill.host.theme.textFontFamily
       font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)
@@ -170,7 +171,7 @@ IslandPill {
     }
     Text {
       width: parent.width
-      text: pill.activity.title || ""
+      text: Locale.I18n.tr(pill.activity.title || "")
       textFormat: Text.PlainText
       elide: Text.ElideRight
       color: pill.host.theme.text
@@ -232,7 +233,7 @@ IslandPill {
       }
       Text {
         anchors.centerIn: parent
-        text: ring.reporting ? pill.deviceBattery : ""
+        text: Locale.I18n.tr(ring.reporting ? pill.deviceBattery : "")
         color: pill.ringColor
         font.family: pill.host.theme.textFontFamily
         font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.body)

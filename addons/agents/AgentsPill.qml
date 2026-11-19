@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Shapes
 import "../../components"
 
@@ -62,7 +63,7 @@ Item {
         theme: pill.theme
         id: restTime
         anchors.right: parent.right
-        text: pill.agents.timeText(pill.agents.turnTime)
+        text: Locale.I18n.tr(pill.agents.timeText(pill.agents.turnTime))
         color: pill.ink
         font.family: pill.theme.textFontFamily
         font.pixelSize: pill.theme.size.body
@@ -120,7 +121,7 @@ Item {
         Text {
           id: doneWord
           anchors.verticalCenter: parent.verticalCenter
-          text: "Done"
+          text: Locale.I18n.tr("Done")
           color: pill.doneInk
           property real shown: pill.done ? 1 : 0
           Behavior on shown {

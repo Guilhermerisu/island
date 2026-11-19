@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import QtQuick.Shapes
 
 // A usage ring: a faint track and an arc from the top, clockwise, with the
@@ -46,7 +47,7 @@ Item {
     anchors.centerIn: parent
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: ring.text
+      text: Locale.I18n.tr(ring.text)
       color: ring.view.text
       font.family: ring.view.host.theme.textFontFamily
       font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, Math.round(ring.width * 0.2))
@@ -57,7 +58,7 @@ Item {
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       visible: ring.caption !== ""
-      text: ring.caption
+      text: Locale.I18n.tr(ring.caption)
       color: ring.view.textMuted
       font.family: ring.view.host.theme.textFontFamily
       font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, Math.round(ring.width * 0.13))

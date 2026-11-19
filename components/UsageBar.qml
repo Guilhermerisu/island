@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import QtQuick.Effects
 import QtQuick.Layouts
 
@@ -81,7 +82,7 @@ ColumnLayout {
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
-          text: parent.modelData.label
+          text: Locale.I18n.tr(parent.modelData.label)
           color: usage.squareLegend ? usage.view.textMuted : usage.view.text
           font.family: usage.view.host.theme.textFontFamily
           font.letterSpacing: usage.view.host.theme.tracking(usage.view.host.theme.textFontFamily, usage.view.detailCaptionFontSize)
@@ -90,7 +91,7 @@ ColumnLayout {
         }
         Text {
           anchors.verticalCenter: parent.verticalCenter
-          text: parent.modelData.text || ""
+          text: Locale.I18n.tr(parent.modelData.text || "")
           color: usage.squareLegend ? usage.view.text : usage.view.textMuted
           font.family: usage.view.host.theme.textFontFamily
           font.letterSpacing: usage.view.host.theme.tracking(usage.view.host.theme.textFontFamily, usage.view.detailCaptionFontSize)

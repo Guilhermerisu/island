@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import ".."
 import "../../components"
@@ -218,7 +219,7 @@ Item {
     Text {
       width: parent.width
       horizontalAlignment: Text.AlignHCenter
-      text: zone.editing ? "Drag a plugin here" : zone.addon.pinnedIds.length && zone.addon.loading ? "Loading…" : "No plugins pinned"
+      text: Locale.I18n.tr(zone.editing ? "Drag a plugin here" : zone.addon.pinnedIds.length && zone.addon.loading ? "Loading…" : "No plugins pinned")
       color: zone.center.textMuted
       font.family: zone.center.host.theme.textFontFamily
       font.letterSpacing: zone.center.host.theme.tracking(zone.center.host.theme.textFontFamily, zone.center.host.theme.size.callout)

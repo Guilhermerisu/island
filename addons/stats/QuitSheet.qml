@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 import "../../views/settings/controls"
@@ -86,7 +87,7 @@ Item {
         Layout.fillWidth: true
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        text: "Are you sure you want to quit “" + (sheet.shownRow ? sheet.shownRow.name : "") + "”?"
+        text: Locale.I18n.tr("Are you sure you want to quit “" + (sheet.shownRow ? sheet.shownRow.name : "") + "”?")
         color: sheet.view.text
         font.family: sheet.view.host.theme.textFontFamily
         font.letterSpacing: sheet.view.host.theme.tracking(sheet.view.host.theme.textFontFamily, sheet.view.detailFontSize)
@@ -97,9 +98,9 @@ Item {
         Layout.fillWidth: true
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        text: sheet.shownRow && sheet.shownRow.children > 0
+        text: Locale.I18n.tr(sheet.shownRow && sheet.shownRow.children > 0
           ? "Its " + (sheet.shownRow.children + 1) + " processes will be asked to end. Force Quit ends them at once, losing unsaved work."
-          : "Force Quit ends it at once, losing unsaved work."
+          : "Force Quit ends it at once, losing unsaved work.")
         color: sheet.view.textMuted
         font.family: sheet.view.host.theme.textFontFamily
         font.letterSpacing: sheet.view.host.theme.tracking(sheet.view.host.theme.textFontFamily, sheet.view.detailCaptionFontSize)

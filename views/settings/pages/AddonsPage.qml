@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 import "../../../components"
 import "../controls"
@@ -90,7 +91,7 @@ ColumnLayout {
               spacing: 2
               Text {
                 width: parent.width
-                text: addon.modelData.name
+                text: Locale.I18n.tr(addon.modelData.name)
                 elide: Text.ElideRight
                 color: page.view.text
                 font.family: page.view.host.theme.textFontFamily
@@ -103,7 +104,7 @@ ColumnLayout {
                 visible: text !== ""
                 readonly property var describedWith: addon.modelData.describedWith
                 readonly property string shown: describedWith ? String(page.addons.option(addon.modelData.id, describedWith.key) || "") : ""
-                text: shown !== "" ? describedWith.text.arg(shown) : addon.modelData.description || ""
+                text: Locale.I18n.tr(shown !== "" ? describedWith.text.arg(shown) : addon.modelData.description || "")
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
@@ -201,7 +202,7 @@ ColumnLayout {
                       SettingsTextField {
                         view: page.view
                         value: optionRow.value === undefined ? "" : String(optionRow.value)
-                        placeholder: optionRow.modelData.placeholder || ""
+                        placeholder: Locale.I18n.tr(optionRow.modelData.placeholder || "")
                         icon: optionRow.modelData.icon || ""
                         implicitWidth: page.optionWidth
                         onCommitted: function(v) { optionRow.pick(v) }
@@ -265,7 +266,7 @@ ColumnLayout {
     Layout.fillWidth: true
     Layout.topMargin: 12
     horizontalAlignment: Text.AlignHCenter
-    text: "No addons available"
+    text: Locale.I18n.tr("No addons available")
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
     font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)

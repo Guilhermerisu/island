@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell
 import Quickshell.Wayland
 
@@ -74,7 +75,7 @@ Item {
     for (var i = 0; i < entries.length; i++)
       if (entries[i].id === id) {
         var slot = repeater.itemAt(i)
-        return slot && slot.glyph && slot.glyph.visible ? { text: slot.glyph.text, family: slot.glyph.font.family } : null
+        return slot && slot.glyph && slot.glyph.visible ? { text: Locale.I18n.tr(slot.glyph.text), family: slot.glyph.font.family } : null
       }
     return null
   }

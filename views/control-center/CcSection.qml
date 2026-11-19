@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -39,7 +40,7 @@ Rectangle {
     anchors.leftMargin: 16
     anchors.top: parent.top
     anchors.topMargin: 13
-    text: sec.title
+    text: Locale.I18n.tr(sec.title)
     color: center.text
     font.family: center.host.theme.textFontFamily
     font.features: { "tnum": 1 }
@@ -54,7 +55,7 @@ Rectangle {
     anchors.rightMargin: sec.headerRight
     anchors.top: parent.top
     anchors.topMargin: 14
-    text: sec.detail
+    text: Locale.I18n.tr(sec.detail)
     color: center.textMuted
     font.family: center.host.theme.textFontFamily
     font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.subheadline)
@@ -73,7 +74,7 @@ Rectangle {
     width: 22; height: 22; radius: 11
     color: chevronTip.hovered || sec.chevronOpen ? center.well : "transparent"
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
-    Tooltip { id: chevronTip; theme: center.host.theme; text: sec.chevronOpen ? sec.chevronHideLabel : sec.chevronLabel }
+    Tooltip { id: chevronTip; theme: center.host.theme; text: Locale.I18n.tr(sec.chevronOpen ? sec.chevronHideLabel : sec.chevronLabel) }
     Chevron {
       anchors.centerIn: parent
       theme: center.host.theme
@@ -94,10 +95,10 @@ Rectangle {
     width: 22; height: 22; radius: 11
     color: sec.toggleOn ? center.host.theme.system.red : toggleTip.hovered ? center.well : "transparent"
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
-    Tooltip { id: toggleTip; theme: center.host.theme; text: sec.toggleTip }
+    Tooltip { id: toggleTip; theme: center.host.theme; text: Locale.I18n.tr(sec.toggleTip) }
     Text {
       anchors.centerIn: parent
-      text: sec.toggleIcon
+      text: Locale.I18n.tr(sec.toggleIcon)
       color: sec.toggleOn ? "#ffffff" : center.textMuted
       font.family: center.iconFont
       font.pixelSize: center.host.theme.px(13)

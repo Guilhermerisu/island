@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import Quickshell.Widgets
 import "../../components"
@@ -66,7 +67,7 @@ ColumnLayout {
     Layout.leftMargin: 8
     Layout.rightMargin: 2
     Text {
-      text: "Notifications"
+      text: Locale.I18n.tr("Notifications")
       color: history.center.text
       font.family: history.center.host.theme.textFontFamily
       font.pixelSize: history.center.host.theme.size.body
@@ -105,7 +106,7 @@ ColumnLayout {
         id: clearLabel
         anchors.centerIn: parent
         opacity: clearMouse.containsMouse ? 1 : 0
-        text: "Clear All"
+        text: Locale.I18n.tr("Clear All")
         color: history.center.text
         font.family: history.center.host.theme.textFontFamily
         font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.subheadline)
@@ -133,7 +134,7 @@ ColumnLayout {
     Layout.topMargin: 10
     Layout.bottomMargin: 12
     horizontalAlignment: Text.AlignHCenter
-    text: "No Notifications"
+    text: Locale.I18n.tr("No Notifications")
     color: history.center.textMuted
     font.family: history.center.host.theme.textFontFamily
     font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.body)
@@ -300,7 +301,7 @@ ColumnLayout {
           Text {
             anchors.centerIn: parent
             visible: noteIcon.status !== Image.Ready
-            text: avatar.brand ? avatar.brand.glyph : "󰂚"
+            text: Locale.I18n.tr(avatar.brand ? avatar.brand.glyph : "󰂚")
             color: avatar.brand ? avatar.brand.ink : history.center.host.theme.accentText
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: history.center.host.theme.px(20)
@@ -339,7 +340,7 @@ ColumnLayout {
               id: noteAge
               anchors.right: parent.right
               anchors.baseline: noteTitle.baseline
-              text: history.center.host.notifications.age(note.modelData.timestamp, history.now)
+              text: Locale.I18n.tr(history.center.host.notifications.age(note.modelData.timestamp, history.now))
               textFormat: Text.PlainText
               color: history.center.textMuted
               font.family: history.center.host.theme.textFontFamily
@@ -382,7 +383,7 @@ ColumnLayout {
                   anchors.centerIn: parent
                   width: parent.width - 16
                   horizontalAlignment: Text.AlignHCenter
-                  text: String(modelData.label || "")
+                  text: Locale.I18n.tr(String(modelData.label || ""))
                   textFormat: Text.PlainText
                   elide: Text.ElideRight
                   color: history.center.text
@@ -409,7 +410,7 @@ ColumnLayout {
               id: stackToggle
               anchors.left: parent.left
               anchors.bottom: parent.bottom
-              text: note.modelData.stackOpen ? "Show Less" : "Show " + (note.modelData.stackSize - 1) + " More"
+              text: Locale.I18n.tr(note.modelData.stackOpen ? "Show Less" : "Show " + (note.modelData.stackSize - 1) + " More")
               color: history.center.host.theme.accent
               font.family: history.center.host.theme.textFontFamily
               font.pixelSize: history.center.host.theme.size.subheadline
@@ -454,7 +455,7 @@ ColumnLayout {
           anchors.margins: -3
           onClicked: history.center.host.notifications.dismiss(note.modelData)
         }
-        Tooltip { theme: history.center.host.theme; text: "Dismiss" }
+        Tooltip { theme: history.center.host.theme; text: Locale.I18n.tr("Dismiss") }
       }
     }
   }

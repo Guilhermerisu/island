@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import QtQuick.Shapes
 import "../../components"
@@ -104,7 +105,7 @@ ColumnLayout {
       }
       Text {
         anchors.horizontalCenter: parent.horizontalCenter
-        text: "Loading…"
+        text: Locale.I18n.tr("Loading…")
         color: cards.view.textMuted
         font.family: cards.view.host.theme.textFontFamily
         font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailCaptionFontSize)
@@ -270,7 +271,7 @@ ColumnLayout {
               // The volume's name as the file manager shows it (its label,
               // else its folder's), then where it's mounted.
               Text {
-                text: volume.modelData.mount === "/" ? "Startup Disk" : volume.modelData.label || cards.capitalized(volume.modelData.mount.split("/").pop() || volume.modelData.mount)
+                text: Locale.I18n.tr(volume.modelData.mount === "/" ? "Startup Disk" : volume.modelData.label || cards.capitalized(volume.modelData.mount.split("/").pop() || volume.modelData.mount))
                 elide: Text.ElideRight
                 Layout.maximumWidth: implicitWidth
                 color: cards.view.text
@@ -284,7 +285,7 @@ ColumnLayout {
               // alone reads as a stray mark.
               Text {
                 Layout.fillWidth: true
-                text: volume.modelData.mount === "/" ? "" : volume.modelData.mount
+                text: Locale.I18n.tr(volume.modelData.mount === "/" ? "" : volume.modelData.mount)
                 elide: Text.ElideMiddle
                 color: cards.view.textMuted
                 font.family: cards.view.host.theme.textFontFamily
@@ -293,7 +294,7 @@ ColumnLayout {
                 font.pixelSize: cards.view.detailCaptionFontSize
               }
               Text {
-                text: cards.bytes(volume.modelData.used) + " of " + cards.bytes(volume.modelData.size) + " used"
+                text: Locale.I18n.tr(cards.bytes(volume.modelData.used) + " of " + cards.bytes(volume.modelData.size) + " used")
                 color: cards.view.textMuted
                 font.family: cards.view.host.theme.textFontFamily
                 font.letterSpacing: cards.view.host.theme.tracking(cards.view.host.theme.textFontFamily, cards.view.detailCaptionFontSize)
@@ -309,9 +310,9 @@ ColumnLayout {
               total: volume.modelData.size
               segments: [
                 { label: "Used", value: volume.modelData.used, color: volume.full ? cards.red : cards.blue,
-                  text: cards.bytes(volume.modelData.used) },
+                  text: Locale.I18n.tr(cards.bytes(volume.modelData.used)) },
                 { label: "Available", value: 0, color: cards.view.host.theme.fill("stronger"),
-                  text: cards.bytes(volume.free) }
+                  text: Locale.I18n.tr(cards.bytes(volume.free)) }
               ]
             }
           }

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 import QtQuick.Layouts
 
@@ -49,7 +50,7 @@ Rectangle {
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
     Text {
       anchors.centerIn: parent
-      text: t.icon
+      text: Locale.I18n.tr(t.icon)
       color: t.checked ? center.badgeOnInk : center.text
       Behavior on color { MotionColorAnimation { theme: center.host.theme } }
       font.family: t.iconFamily || center.iconFont
@@ -65,7 +66,7 @@ Rectangle {
     spacing: 1
     Text {
       width: parent.width
-      text: t.title
+      text: Locale.I18n.tr(t.title)
       elide: Text.ElideRight
       color: center.text
       font.family: center.host.theme.textFontFamily
@@ -76,7 +77,7 @@ Rectangle {
     Text {
       width: parent.width
       visible: t.subtitle !== ""
-      text: t.subtitle
+      text: Locale.I18n.tr(t.subtitle)
       textFormat: Text.PlainText
       elide: Text.ElideRight
       color: center.textMuted

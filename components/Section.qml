@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import QtQuick.Layouts
 
 // A System Settings group for the widget panes (System Stats, Agents): a
@@ -25,7 +26,7 @@ ColumnLayout {
     Layout.minimumHeight: 20
     spacing: 6
     Text {
-      text: section.title
+      text: Locale.I18n.tr(section.title)
       elide: Text.ElideRight
       color: section.view.text
       font.family: section.view.host.theme.textFontFamily
@@ -36,7 +37,7 @@ ColumnLayout {
     Text {
       visible: section.count !== ""
       Layout.leftMargin: 1
-      text: section.count
+      text: Locale.I18n.tr(section.count)
       color: section.view.textMuted
       font.family: section.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
@@ -54,7 +55,7 @@ ColumnLayout {
     }
     Text {
       visible: section.status !== ""
-      text: section.status
+      text: Locale.I18n.tr(section.status)
       color: section.view.textMuted
       font.family: section.view.host.theme.textFontFamily
       font.letterSpacing: section.view.host.theme.tracking(section.view.host.theme.textFontFamily, section.view.detailCaptionFontSize)

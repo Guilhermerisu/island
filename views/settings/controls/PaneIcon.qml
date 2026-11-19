@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Effects
 import QtQuick.Shapes
 
@@ -57,12 +58,12 @@ Item {
     }
     // Centred on what it draws, not on its text box: an icon font's glyph
     // (Wi-Fi's) sits off its box's middle.
-    TextMetrics { id: ink; font: flatGlyph.font; text: paneIcon.glyph }
+    TextMetrics { id: ink; font: flatGlyph.font; text: Locale.I18n.tr(paneIcon.glyph) }
     Text {
       id: flatGlyph
       x: (parent.width - ink.tightBoundingRect.width) / 2 - ink.tightBoundingRect.x
       y: (parent.height - ink.tightBoundingRect.height) / 2 - ink.tightBoundingRect.y - baselineOffset
-      text: paneIcon.glyph
+      text: Locale.I18n.tr(paneIcon.glyph)
       color: paneIcon.ink
       font.family: paneIcon.view.host.theme.fontFamily
       font.pixelSize: Math.round(paneIcon.width * 0.62)
@@ -118,7 +119,7 @@ Item {
       anchors.centerIn: parent
       anchors.verticalCenterOffset: paneIcon.large ? 1 : 0.5
       visible: !paneIcon.neutral && !paneIcon.layered
-      text: paneIcon.glyph
+      text: Locale.I18n.tr(paneIcon.glyph)
       color: Qt.rgba(0, 0, 0, 0.18)
       font.family: paneIcon.view.host.theme.fontFamily
       font.pixelSize: glyphText.font.pixelSize
@@ -127,7 +128,7 @@ Item {
       id: glyphText
       anchors.centerIn: parent
       visible: !paneIcon.layered
-      text: paneIcon.glyph
+      text: Locale.I18n.tr(paneIcon.glyph)
       color: paneIcon.ink
       font.family: paneIcon.view.host.theme.fontFamily
       font.pixelSize: Math.round(paneIcon.width * 0.6)
@@ -199,10 +200,10 @@ Item {
             id: layerGlyph
             visible: !layer.shaped && !layer.lined
             anchors.centerIn: parent
-            text: layer.modelData.date === "month"
+            text: Locale.I18n.tr(layer.modelData.date === "month"
               ? ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][layer.today.getMonth()]
               : layer.modelData.date === "day" ? String(layer.today.getDate())
-              : layer.modelData.glyph || ""
+              : layer.modelData.glyph || "")
             color: layer.modelData.color
             font.family: layer.modelData.date ? paneIcon.view.host.theme.textFontFamily : paneIcon.view.host.theme.fontFamily
             font.letterSpacing: paneIcon.view.host.theme.tracking(layer.modelData.date ? paneIcon.view.host.theme.textFontFamily : paneIcon.view.host.theme.fontFamily, Math.round(layer.size))

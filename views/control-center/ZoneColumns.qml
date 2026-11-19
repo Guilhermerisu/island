@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 import "zones.js" as ZoneModel
@@ -165,7 +166,7 @@ Item {
           border.color: board.dropColumn === column.index ? board.center.accent : board.center.host.theme.fill("strong")
           Text {
             anchors.centerIn: parent
-            text: "Drag a zone here"
+            text: Locale.I18n.tr("Drag a zone here")
             color: board.center.textMuted
             font.family: board.center.host.theme.textFontFamily
             font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.size.body)
@@ -296,14 +297,14 @@ Item {
       spacing: 8
       Text {
         anchors.verticalCenter: parent.verticalCenter
-        text: board.ghostIcon
+        text: Locale.I18n.tr(board.ghostIcon)
         color: board.center.textMuted
         font.family: board.center.iconFont
         font.pixelSize: board.center.host.theme.px(14)
       }
       Text {
         anchors.verticalCenter: parent.verticalCenter
-        text: board.ghostTitle
+        text: Locale.I18n.tr(board.ghostTitle)
         color: board.center.text
         font.family: board.center.host.theme.textFontFamily
         font.letterSpacing: board.center.host.theme.tracking(board.center.host.theme.textFontFamily, board.center.host.theme.size.callout)

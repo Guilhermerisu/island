@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 
 // The header System Settings puts at the top of a pane: the pane's icon,
@@ -37,7 +38,7 @@ Rectangle {
     Text {
       width: parent.width
       horizontalAlignment: header.compact ? Text.AlignLeft : Text.AlignHCenter
-      text: header.page
+      text: Locale.I18n.tr(header.page)
       color: header.view.text
       font.family: header.view.host.theme.textFontFamily
       font.pixelSize: header.compact ? header.view.host.theme.px(22) : header.view.detailTitleFontSize
@@ -49,7 +50,7 @@ Rectangle {
       width: parent.width
       visible: text !== ""
       horizontalAlignment: header.compact ? Text.AlignLeft : Text.AlignHCenter
-      text: header.info.about || ""
+      text: Locale.I18n.tr(header.info.about || "")
       wrapMode: Text.WordWrap
       lineHeight: 1.1
       color: header.view.textMuted

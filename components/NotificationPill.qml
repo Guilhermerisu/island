@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import QtQuick.Window
 import Quickshell.Widgets
 
@@ -72,7 +73,7 @@ IslandPill {
     Text {
       anchors.centerIn: parent
       visible: appTileImage.status !== Image.Ready
-      text: pill.brand ? pill.brand.glyph : String(pill.row.glyph || "") || "󰂚"
+      text: Locale.I18n.tr(pill.brand ? pill.brand.glyph : String(pill.row.glyph || "") || "󰂚")
       color: pill.brand ? pill.brand.ink : host.theme.accentText
       font.family: pill.brand ? "JetBrainsMono Nerd Font" : host.theme.fontFamily
       font.pixelSize: pill.brand ? Math.round(parent.height * 0.6) : pill.host.theme.px(24)
@@ -94,7 +95,7 @@ IslandPill {
     Text {
       id: stackCount
       anchors.centerIn: parent
-      text: String(pill.row.stack || 0)
+      text: Locale.I18n.tr(String(pill.row.stack || 0))
       color: host.theme.accentText
       font.family: host.theme.textFontFamily
       font.pixelSize: host.theme.size.subheadline
@@ -139,7 +140,7 @@ IslandPill {
         id: age
         anchors.right: parent.right
         anchors.baseline: title.baseline
-        text: host.notifications.age(pill.row.timestamp)
+        text: Locale.I18n.tr(host.notifications.age(pill.row.timestamp))
         textFormat: Text.PlainText
         color: Qt.rgba(1, 1, 1, 0.45)
         font.family: host.theme.textFontFamily
@@ -192,7 +193,7 @@ IslandPill {
           anchors.rightMargin: 10
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
-          text: String(modelData.label || "")
+          text: Locale.I18n.tr(String(modelData.label || ""))
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: host.theme.text

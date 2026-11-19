@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Effects
 import "../../components"
 
@@ -56,7 +57,7 @@ Item {
     height: parent.height
     Text {
       anchors.centerIn: parent
-      text: slider.leading
+      text: Locale.I18n.tr(slider.leading)
       color: slider.view.textMuted
       font.family: slider.view.host.theme.textFontFamily
       font.letterSpacing: slider.view.host.theme.tracking(slider.view.host.theme.textFontFamily, slider.leadingSize)
@@ -72,7 +73,7 @@ Item {
     height: parent.height
     Text {
       anchors.centerIn: parent
-      text: slider.trailing
+      text: Locale.I18n.tr(slider.trailing)
       color: slider.view.textMuted
       font.family: slider.view.host.theme.textFontFamily
       font.letterSpacing: slider.view.host.theme.tracking(slider.view.host.theme.textFontFamily, slider.trailingSize)

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
@@ -15,8 +16,8 @@ ListPicker {
   // to it, and an app's menu (which Esc or ← leaves) takes it when entered.
   property bool inZone: false
   takeFocus: !inZone
-  placeholder: menuItem ? stack.map(function(s) { return s.title }).join(" › ") : "Search tray"
-  emptyText: menuItem ? "Empty menu" : SystemTray.items.values.length ? "Nothing matches" : "Nothing in the tray"
+  placeholder: Locale.I18n.tr(menuItem ? stack.map(function(s) { return s.title }).join(" › ") : "Search tray")
+  emptyText: Locale.I18n.tr(menuItem ? "Empty menu" : SystemTray.items.values.length ? "Nothing matches" : "Nothing in the tray")
   rowHeight: 44
   visibleRows: inZone ? 6 : 9
   items: menuItem ? menuRows : appRows
@@ -139,7 +140,7 @@ ListPicker {
       Text {
         anchors.centerIn: icon
         visible: !icon.visible
-        text: trayRow.entry.checked ? "󰄬" : trayRow.entry.kind === "open" ? "󰏌" : ""
+        text: Locale.I18n.tr(trayRow.entry.checked ? "󰄬" : trayRow.entry.kind === "open" ? "󰏌" : "")
         color: tray.host.theme.muted
         font.family: tray.host.theme.fontFamily
         font.pixelSize: tray.host.theme.px(16)
@@ -150,7 +151,7 @@ ListPicker {
         anchors.right: chevron.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
-        text: String(trayRow.entry.label || "")
+        text: Locale.I18n.tr(String(trayRow.entry.label || ""))
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: tray.host.theme.text

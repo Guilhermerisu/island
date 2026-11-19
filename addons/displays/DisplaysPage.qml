@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../views/settings/controls"
 
@@ -61,7 +62,7 @@ ColumnLayout {
     visible: page.displays.loaded && page.displays.draft.length === 0
     Layout.fillWidth: true
     Layout.leftMargin: 14
-    text: "No displays found."
+    text: Locale.I18n.tr("No displays found.")
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
     font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)

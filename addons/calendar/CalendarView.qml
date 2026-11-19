@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // The calendar view, as Apple's widget: on the left the selected day's
@@ -61,7 +62,7 @@ Item {
     spacing: 0
 
     Text {
-      text: view.weekdays[view.calendar.selected.getDay()].toUpperCase()
+      text: Locale.I18n.tr(view.weekdays[view.calendar.selected.getDay()].toUpperCase())
       color: view.accent
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.size.body
@@ -69,7 +70,7 @@ Item {
       font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
     }
     Text {
-      text: view.calendar.selected.getDate()
+      text: Locale.I18n.tr(view.calendar.selected.getDate())
       color: view.ink
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.px(52)
@@ -117,7 +118,7 @@ Item {
             }
             Text {
               width: parent.width
-              text: view.calendar.spanText(modelData)
+              text: Locale.I18n.tr(view.calendar.spanText(modelData))
               color: view.theme.withAlpha(Qt.lighter(modelData.color, 1.2), 0.7)
               font.family: view.theme.textFontFamily
               font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.callout)
@@ -131,7 +132,7 @@ Item {
       Text {
         visible: view.dayEvents.length > view.eventsShown
         readonly property int rest: view.dayEvents.length - view.eventsShown
-        text: rest + " more event" + (rest === 1 ? "" : "s")
+        text: Locale.I18n.tr(rest + " more event" + (rest === 1 ? "" : "s"))
         color: view.inkMuted
         font.family: view.theme.textFontFamily
         font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.callout)
@@ -146,10 +147,10 @@ Item {
         visible: view.dayEvents.length === 0
         width: parent.width
         wrapMode: Text.WordWrap
-        text: status === "missing" ? "Add a calendar in Settings"
+        text: Locale.I18n.tr(status === "missing" ? "Add a calendar in Settings"
           : status === "offline" ? "Couldn't reach your calendars"
           : status === "loading" ? "Loading…"
-          : "No events"
+          : "No events")
         color: actionable && noticeMouse.containsMouse ? view.ink : view.inkMuted
         font.family: view.theme.textFontFamily
         font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
@@ -205,8 +206,8 @@ Item {
     Text {
       id: monthName
       x: (view.cell - 14) / 2
-      text: view.months[view.calendar.shownMonth].toUpperCase()
-        + (view.calendar.shownYear !== view.calendar.today.getFullYear() ? " " + view.calendar.shownYear : "")
+      text: Locale.I18n.tr(view.months[view.calendar.shownMonth].toUpperCase()
+        + (view.calendar.shownYear !== view.calendar.today.getFullYear() ? " " + view.calendar.shownYear : ""))
       color: view.accent
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.size.body
@@ -226,7 +227,7 @@ Item {
           required property var modelData
           width: view.cell
           horizontalAlignment: Text.AlignHCenter
-          text: modelData.glyph
+          text: Locale.I18n.tr(modelData.glyph)
           color: chevronMouse.containsMouse ? view.ink : view.inkMuted
           font.family: view.theme.fontFamily
           font.pixelSize: view.theme.px(16)
@@ -252,7 +253,7 @@ Item {
           required property int index
           width: view.cell
           horizontalAlignment: Text.AlignHCenter
-          text: modelData
+          text: Locale.I18n.tr(modelData)
           color: index >= 5 ? view.inkMuted : view.ink
           font.family: view.theme.textFontFamily
           font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
@@ -295,7 +296,7 @@ Item {
           }
           Text {
             anchors.centerIn: parent
-            text: day.index + 1
+            text: Locale.I18n.tr(day.index + 1)
             color: day.isToday ? (day.isSelected ? view.theme.accentText : view.accent)
               : day.slot % 7 >= 5 ? view.inkMuted : view.ink
             font.family: view.theme.textFontFamily

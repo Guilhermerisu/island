@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
@@ -250,7 +251,7 @@ Item {
         text: capsules.nextEvent ? capsules.nextEvent.title : ""
       }
       Label {
-        text: capsules.eventWhen
+        text: Locale.I18n.tr(capsules.eventWhen)
         color: capsules.faint
       }
       TapHandler {
@@ -297,7 +298,7 @@ Item {
       }
       Glyph {
         visible: capsules.showUpdate
-        text: "\uf021"
+        text: Locale.I18n.tr("\uf021")
         onClicked: Quickshell.execDetached(["omarchy-launch-floating-terminal-with-presentation", "omarchy-update"])
       }
     }
@@ -313,7 +314,7 @@ Item {
         delegate: Glyph {
           required property var modelData
           readonly property var icon: capsules.pluginsAddon.iconOf(modelData.id)
-          text: icon.text
+          text: Locale.I18n.tr(icon.text)
           font.family: icon.family || capsules.theme.fontFamily
           onClicked: capsules.pluginsAddon.open(modelData)
           onRightClicked: capsules.host.view = "plugins"
@@ -347,7 +348,7 @@ Item {
             Behavior on color { MotionColorAnimation { theme: capsules.theme } }
             Label {
               anchors.horizontalCenter: parent.horizontalCenter
-              text: tile.modelData
+              text: Locale.I18n.tr(tile.modelData)
               color: tile.current || tile.occupied ? "#ffffff" : capsules.faint
             }
             MouseArea {
@@ -421,7 +422,7 @@ Item {
           id: playPause
           anchors.centerIn: parent
           anchors.verticalCenter: undefined
-          text: capsules.media.playing ? "󰏤" : "󰐊"
+          text: Locale.I18n.tr(capsules.media.playing ? "󰏤" : "󰐊")
           onClicked: capsules.media.player.togglePlaying()
         }
       }
@@ -451,7 +452,7 @@ Item {
         code: capsules.weatherReady ? capsules.weather.current.code : 0
         day: capsules.weatherReady ? capsules.weather.current.day : true
       }
-      Label { text: (capsules.weatherReady ? Math.round(capsules.weather.current.temperature) : "--") + "°" }
+      Label { text: Locale.I18n.tr((capsules.weatherReady ? Math.round(capsules.weather.current.temperature) : "--") + "°") }
       TapHandler { onTapped: capsules.host.view = "weather" }
     }
 
@@ -465,7 +466,7 @@ Item {
       // never saw a click on the bell: it opens the view itself.
       Glyph { text: "󰂚"; onClicked: capsules.host.view = "notifications" }
       // Anything over nine reads 9+.
-      Label { text: capsules.notificationCount >= 10 ? "9+" : capsules.notificationCount }
+      Label { text: Locale.I18n.tr(capsules.notificationCount >= 10 ? "9+" : capsules.notificationCount) }
       TapHandler { onTapped: capsules.host.view = "notifications" }
     }
 
@@ -475,18 +476,18 @@ Item {
       before: [weatherCapsule, notificationCapsule]
       Glyph {
         visible: !!controls.btAdapter
-        text: capsules.bluetoothOn ? "󰂯" : "󰂲"
+        text: Locale.I18n.tr(capsules.bluetoothOn ? "󰂯" : "󰂲")
         on: capsules.bluetoothOn
         onClicked: capsules.host.view = "bluetooth"
         onRightClicked: controls.toggleControl("bluetooth")
       }
       Glyph {
-        text: controls.wifiNetwork ? "󰤨" : capsules.wired ? "󰈀" : "󰤮"
+        text: Locale.I18n.tr(controls.wifiNetwork ? "󰤨" : capsules.wired ? "󰈀" : "󰤮")
         on: !!controls.wifiNetwork || capsules.wired
         onClicked: capsules.host.view = "wifi"
       }
       Glyph {
-        text: controls.muted || controls.volume <= 0 ? "󰖁" : controls.volume < 0.34 ? "󰕿" : controls.volume < 0.67 ? "󰖀" : "󰕾"
+        text: Locale.I18n.tr(controls.muted || controls.volume <= 0 ? "󰖁" : controls.volume < 0.34 ? "󰕿" : controls.volume < 0.67 ? "󰖀" : "󰕾")
         tint: controls.muted ? capsules.theme.system.orange : capsules.ink
         onClicked: capsules.host.view = "controls"
         onRightClicked: if (controls.sink && controls.sink.audio) controls.sink.audio.muted = !controls.muted
@@ -499,7 +500,7 @@ Item {
         visible: controls.hasBattery
         spacing: 5
         anchors.verticalCenter: parent.verticalCenter
-        Label { text: controls.batteryPercent + "%" }
+        Label { text: Locale.I18n.tr(controls.batteryPercent + "%") }
         BatteryIcon {
           anchors.verticalCenter: parent.verticalCenter
           level: controls.batteryPercent

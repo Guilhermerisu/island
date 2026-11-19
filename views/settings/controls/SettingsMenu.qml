@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import "../../../components"
 
 // Settings' pop-up menu, opened by a SettingsPopUp (`button`) with its
@@ -59,7 +60,7 @@ Popover {
         Text {
           x: 26
           anchors.verticalCenter: parent.verticalCenter
-          text: menuItem.modelData.label
+          text: Locale.I18n.tr(menuItem.modelData.label)
           color: itemMouse.containsMouse ? menu.view.accentInk : menu.view.text
           font.family: menu.view.host.theme.textFontFamily
           font.letterSpacing: menu.view.host.theme.tracking(menu.view.host.theme.textFontFamily, menu.view.detailFontSize)

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // The timer view. Unset, play and cancel buttons, and after a "Timer"
@@ -127,7 +128,7 @@ Item {
       anchors.right: well.left
       anchors.rightMargin: -2
       y: well.y + (drum.height - current.height) / 2 + current.baselineOffset - baselineOffset
-      text: "Timer"
+      text: Locale.I18n.tr("Timer")
       color: view.timer.tint
       font.family: view.host.theme.textFontFamily
       font.letterSpacing: view.host.theme.tracking(view.host.theme.textFontFamily, Math.round(view.host.theme.px(46) * 0.4))
@@ -189,13 +190,13 @@ Item {
       Face {
         id: previous
         visible: roller.roll > 0
-        text: view.leaving
+        text: Locale.I18n.tr(view.leaving)
         shift: -view.direction * (1 - roller.roll)
         opacity: roller.roll
       }
       Face {
         id: current
-        text: view.timer.durationText(view.minutes * 60000)
+        text: Locale.I18n.tr(view.timer.durationText(view.minutes * 60000))
         shift: view.direction * roller.roll
         opacity: 1 - roller.roll * 0.8
       }

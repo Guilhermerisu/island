@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 
 // A set timer's controls, as iOS's expanded live activity: leading, an
@@ -27,7 +28,7 @@ Item {
     Behavior on scale { MotionAnimation { theme: controls.theme; pace: mouse.pressed ? "press" : "standard" } }
     Text {
       anchors.centerIn: parent
-      text: button.glyph
+      text: Locale.I18n.tr(button.glyph)
       color: button.ink
       font.family: controls.theme.fontFamily
       font.pixelSize: Math.round(controls.buttonSize * 0.7)
@@ -62,7 +63,7 @@ Item {
     anchors.right: time.left
     anchors.rightMargin: 8
     y: time.y + time.baselineOffset - baselineOffset
-    text: controls.phase === "paused" ? "Paused" : "Timer"
+    text: Locale.I18n.tr(controls.phase === "paused" ? "Paused" : "Timer")
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
     font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, Math.round(controls.theme.px(controls.timeSize) * 0.4))
@@ -74,7 +75,7 @@ Item {
     id: time
     anchors.right: parent.right
     anchors.verticalCenter: parent.verticalCenter
-    text: controls.timer.timeText(controls.timer.remaining)
+    text: Locale.I18n.tr(controls.timer.timeText(controls.timer.remaining))
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
     font.pixelSize: controls.theme.px(controls.timeSize)

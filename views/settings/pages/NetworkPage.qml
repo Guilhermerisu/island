@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../i18n" as Locale
 import QtQuick.Layouts
 import "../controls"
 import "../../../services"
@@ -186,7 +187,7 @@ ColumnLayout {
     property string placeholder: "/path/to/file"
     signal committed(string value)
     spacing: 6
-    SettingsTextField { view: pathField.view; value: pathField.value; placeholder: pathField.placeholder; onCommitted: function(v) { pathField.committed(v) } }
+    SettingsTextField { view: pathField.view; value: pathField.value; placeholder: Locale.I18n.tr(pathField.placeholder); onCommitted: function(v) { pathField.committed(v) } }
     SettingsButton {
       visible: pathField.nmClient.filePickerAvailable
       view: pathField.view
@@ -221,7 +222,7 @@ ColumnLayout {
       anchors.right: dismiss.left
       anchors.rightMargin: 10
       anchors.verticalCenter: parent.verticalCenter
-      text: client.error
+      text: Locale.I18n.tr(client.error)
       textFormat: Text.PlainText
       wrapMode: Text.Wrap
       color: page.view.text
@@ -257,7 +258,7 @@ ColumnLayout {
         SettingsTextField {
           view: page.view
           value: client.hostname
-          placeholder: "hostname"
+          placeholder: Locale.I18n.tr("hostname")
           onCommitted: function(v) { if (v !== "") client.setHostname(v) }
         }
       }
@@ -350,7 +351,7 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         label: "Network Name"
-        SettingsTextField { view: page.view; value: page.newSsid; placeholder: "SSID"; onCommitted: function(v) { page.newSsid = v } }
+        SettingsTextField { view: page.view; value: page.newSsid; placeholder: Locale.I18n.tr("SSID"); onCommitted: function(v) { page.newSsid = v } }
       }
       SettingsRow {
         view: page.view
@@ -374,7 +375,7 @@ ColumnLayout {
         visible: page.newSec === "psk"
         label: "Password"
         last: true
-        SettingsTextField { view: page.view; secret: true; value: page.newKey; placeholder: "Password"; onCommitted: function(v) { page.newKey = v } }
+        SettingsTextField { view: page.view; secret: true; value: page.newKey; placeholder: Locale.I18n.tr("Password"); onCommitted: function(v) { page.newKey = v } }
       }
       SettingsRow {
         view: page.view
@@ -387,13 +388,13 @@ ColumnLayout {
         visible: wifiForm.enterprise
         label: "Identity"
         detail: "Your user name"
-        SettingsTextField { view: page.view; value: page.newIdentity; placeholder: "user@example.com"; onCommitted: function(v) { page.newIdentity = v } }
+        SettingsTextField { view: page.view; value: page.newIdentity; placeholder: Locale.I18n.tr("user@example.com"); onCommitted: function(v) { page.newIdentity = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap !== "tls"
         label: "Password"
-        SettingsTextField { view: page.view; secret: true; value: page.newEapPassword; placeholder: "Password"; onCommitted: function(v) { page.newEapPassword = v } }
+        SettingsTextField { view: page.view; secret: true; value: page.newEapPassword; placeholder: Locale.I18n.tr("Password"); onCommitted: function(v) { page.newEapPassword = v } }
       }
       SettingsRow {
         view: page.view
@@ -407,26 +408,26 @@ ColumnLayout {
         label: "CA Certificate"
         detail: "Empty: the system's certificates"
         last: page.newEap !== "tls"
-        PathField { view: page.view; nmClient: client; value: page.newCa; placeholder: "/path/to/ca.pem"; onCommitted: function(v) { page.newCa = v } }
+        PathField { view: page.view; nmClient: client; value: page.newCa; placeholder: Locale.I18n.tr("/path/to/ca.pem"); onCommitted: function(v) { page.newCa = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
         label: "Client Certificate"
-        PathField { view: page.view; nmClient: client; value: page.newClientCert; placeholder: "/path/to/client.pem"; onCommitted: function(v) { page.newClientCert = v } }
+        PathField { view: page.view; nmClient: client; value: page.newClientCert; placeholder: Locale.I18n.tr("/path/to/client.pem"); onCommitted: function(v) { page.newClientCert = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
         label: "Private Key"
-        PathField { view: page.view; nmClient: client; value: page.newPrivateKey; placeholder: "/path/to/key.pem"; onCommitted: function(v) { page.newPrivateKey = v } }
+        PathField { view: page.view; nmClient: client; value: page.newPrivateKey; placeholder: Locale.I18n.tr("/path/to/key.pem"); onCommitted: function(v) { page.newPrivateKey = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
         label: "Key Password"
         last: true
-        SettingsTextField { view: page.view; secret: true; value: page.newKeyPassword; placeholder: "Password"; onCommitted: function(v) { page.newKeyPassword = v } }
+        SettingsTextField { view: page.view; secret: true; value: page.newKeyPassword; placeholder: Locale.I18n.tr("Password"); onCommitted: function(v) { page.newKeyPassword = v } }
       }
       Item {
         Layout.fillWidth: true
@@ -485,7 +486,7 @@ ColumnLayout {
         label: "File"
         detail: "Path to the .conf or .ovpn file"
         last: true
-        SettingsTextField { view: page.view; value: page.vpnPath; placeholder: "~/vpn.conf"; onCommitted: function(v) { page.vpnPath = v } }
+        SettingsTextField { view: page.view; value: page.vpnPath; placeholder: Locale.I18n.tr("~/vpn.conf"); onCommitted: function(v) { page.vpnPath = v } }
       }
       Item {
         Layout.fillWidth: true
@@ -544,7 +545,7 @@ ColumnLayout {
         label: "State"
         last: !page.item || !page.item.active
         ValueText {
-          text: page.connecting ? "Connecting…" : page.item && page.item.active ? "Connected on " + page.item.device : "Not connected"
+          text: Locale.I18n.tr(page.connecting ? "Connecting…" : page.item && page.item.active ? "Connected on " + page.item.device : "Not connected")
           color: page.item && page.item.active ? page.green : page.view.textMuted
         }
       }
@@ -552,26 +553,26 @@ ColumnLayout {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.ip4
         label: "IP Address"
-        ValueText { text: client.live.ip4 || "" }
+        ValueText { text: Locale.I18n.tr(client.live.ip4 || "") }
       }
       SettingsRow {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.gateway
         label: "Router"
-        ValueText { text: client.live.gateway || "" }
+        ValueText { text: Locale.I18n.tr(client.live.gateway || "") }
       }
       SettingsRow {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.dns
         label: "DNS Servers"
-        ValueText { text: (client.live.dns || "").replace(/ \| /g, ", ") }
+        ValueText { text: Locale.I18n.tr((client.live.dns || "").replace(/ \| /g, ", ")) }
       }
       SettingsRow {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.mac
         label: "Hardware Address"
         last: true
-        ValueText { text: client.live.mac || "" }
+        ValueText { text: Locale.I18n.tr(client.live.mac || "") }
       }
     }
 
@@ -636,13 +637,13 @@ ColumnLayout {
           visible: ipGroup.manual
           label: "Address"
           detail: "With its prefix, like " + ipGroup.modelData.example
-          SettingsTextField { view: page.view; value: ipGroup.e.addr || ""; placeholder: ipGroup.modelData.example; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "addr", v) } }
+          SettingsTextField { view: page.view; value: ipGroup.e.addr || ""; placeholder: Locale.I18n.tr(ipGroup.modelData.example); onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "addr", v) } }
         }
         SettingsRow {
           view: page.view
           visible: ipGroup.manual
           label: "Router"
-          SettingsTextField { view: page.view; value: ipGroup.e.gw || ""; placeholder: ipGroup.modelData.gateway; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "gw", v) } }
+          SettingsTextField { view: page.view; value: ipGroup.e.gw || ""; placeholder: Locale.I18n.tr(ipGroup.modelData.gateway); onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "gw", v) } }
         }
         SettingsRow {
           view: page.view
@@ -650,7 +651,7 @@ ColumnLayout {
           label: "DNS Servers"
           detail: "Separated by commas"
           last: !(ipGroup.e.method === "auto" || ipGroup.e.method === "dhcp") && !page.dirty(ipGroup.modelData.proto)
-          SettingsTextField { view: page.view; value: ipGroup.e.dns || ""; placeholder: "Automatic"; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "dns", v) } }
+          SettingsTextField { view: page.view; value: ipGroup.e.dns || ""; placeholder: Locale.I18n.tr("Automatic"); onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "dns", v) } }
         }
         SettingsRow {
           view: page.view
@@ -690,7 +691,7 @@ ColumnLayout {
         label: "Security"
         detail: page.hasPassword ? "" : page.eap !== "" ? "Set up under 802.1X below" : "Other setups are edited in Advanced Settings"
         ValueText {
-          text: ({ "wpa-psk": "WPA/WPA2 Personal", "sae": "WPA3 Personal", "wpa-eap": "WPA Enterprise", "ieee8021x": "802.1X", "none": "WEP", "": "None" })[page.keyMgmt] || page.keyMgmt
+          text: Locale.I18n.tr(({ "wpa-psk": "WPA/WPA2 Personal", "sae": "WPA3 Personal", "wpa-eap": "WPA Enterprise", "ieee8021x": "802.1X", "none": "WEP", "": "None" })[page.keyMgmt] || page.keyMgmt)
         }
       }
       SettingsRow {
@@ -702,7 +703,7 @@ ColumnLayout {
           view: page.view
           secret: true
           writeOnly: true
-          placeholder: "Unchanged"
+          placeholder: Locale.I18n.tr("Unchanged")
           onCommitted: function(v) { if (v !== "") client.setSecret(client.detailUuid, "802-11-wireless-security.psk", v) }
         }
       }
@@ -756,7 +757,7 @@ ColumnLayout {
         visible: page.eap !== "tls"
         label: "Password"
         detail: "Type a new one to change it"
-        SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEapSecret("password", v) } }
+        SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: Locale.I18n.tr("Unchanged"); onCommitted: function(v) { if (v !== "") page.setEapSecret("password", v) } }
       }
       SettingsRow {
         view: page.view
@@ -768,7 +769,7 @@ ColumnLayout {
         view: page.view
         label: "CA Certificate"
         detail: "Checks the network is the right one"
-        PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.ca-cert"]); placeholder: "None"; onCommitted: function(v) { page.setEapPath("ca-cert", v) } }
+        PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.ca-cert"]); placeholder: Locale.I18n.tr("None"); onCommitted: function(v) { page.setEapPath("ca-cert", v) } }
       }
       SettingsRow {
         view: page.view
@@ -781,26 +782,26 @@ ColumnLayout {
         label: "Server Domain"
         detail: "The name its certificate must end with"
         last: page.eap !== "tls"
-        SettingsTextField { view: page.view; value: page.d["802-1x.domain-suffix-match"] || ""; placeholder: "corp.example.com"; onCommitted: function(v) { page.setEap("domain-suffix-match", v) } }
+        SettingsTextField { view: page.view; value: page.d["802-1x.domain-suffix-match"] || ""; placeholder: Locale.I18n.tr("corp.example.com"); onCommitted: function(v) { page.setEap("domain-suffix-match", v) } }
       }
       SettingsRow {
         view: page.view
         visible: page.eap === "tls"
         label: "Client Certificate"
-        PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.client-cert"]); placeholder: "None"; onCommitted: function(v) { page.setEapPath("client-cert", v) } }
+        PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.client-cert"]); placeholder: Locale.I18n.tr("None"); onCommitted: function(v) { page.setEapPath("client-cert", v) } }
       }
       SettingsRow {
         view: page.view
         visible: page.eap === "tls"
         label: "Private Key"
-        PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.private-key"]); placeholder: "None"; onCommitted: function(v) { page.setEapPath("private-key", v) } }
+        PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.private-key"]); placeholder: Locale.I18n.tr("None"); onCommitted: function(v) { page.setEapPath("private-key", v) } }
       }
       SettingsRow {
         view: page.view
         visible: page.eap === "tls"
         label: "Key Password"
         last: true
-        SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEapSecret("private-key-password", v) } }
+        SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: Locale.I18n.tr("Unchanged"); onCommitted: function(v) { if (v !== "") page.setEapSecret("private-key-password", v) } }
       }
     }
 

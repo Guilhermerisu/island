@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // Search row shared by the switchers and list views, styled like the one in
 // Settings' sidebar: a rounded grey field with a magnifier glyph and a text
@@ -50,7 +51,7 @@ Rectangle {
       anchors.leftMargin: 2
       verticalAlignment: Text.AlignVCenter
       visible: input.text === ""
-      text: field.placeholder
+      text: Locale.I18n.tr(field.placeholder)
       color: field.host.theme.placeholder
       font: input.font
       elide: Text.ElideRight

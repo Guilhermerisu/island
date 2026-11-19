@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Effects
 import QtQuick.Shapes
 import "../../components"
@@ -78,7 +79,7 @@ Item {
         Text {
           anchors.centerIn: parent
           anchors.verticalCenterOffset: 0.5
-          text: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][pill.day.getMonth()]
+          text: Locale.I18n.tr(["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][pill.day.getMonth()])
           color: pill.host.theme.text
           font.family: pill.host.theme.textFontFamily
           font.features: { "tnum": 1 }
@@ -92,7 +93,7 @@ Item {
         anchors.top: band.bottom
         anchors.bottom: parent.bottom
         verticalAlignment: Text.AlignVCenter
-        text: pill.day.getDate()
+        text: Locale.I18n.tr(pill.day.getDate())
         color: "#2c2c2e"
         font.family: pill.host.theme.textFontFamily
         font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.title2)
@@ -128,7 +129,7 @@ Item {
     }
     Text {
       width: parent.width
-      text: pill.event ? pill.calendar.spanText(pill.event) : ""
+      text: Locale.I18n.tr(pill.event ? pill.calendar.spanText(pill.event) : "")
       elide: Text.ElideRight
       // Apple's secondary label.
       color: Qt.rgba(235 / 255, 235 / 255, 245 / 255, 0.6)
@@ -147,7 +148,7 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.calendar.reminderMs / 60000 + " min"
+    text: Locale.I18n.tr(pill.calendar.reminderMs / 60000 + " min")
     color: pill.host.theme.text
     font.family: pill.host.theme.textFontFamily
     font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.title3)

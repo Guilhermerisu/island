@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import Quickshell.Services.UPower
 import "../../addons"
@@ -123,7 +124,8 @@ ColumnLayout {
     StaggerIn { step: 0 }
     // Today's date as the title ("Wed, Oct 21"); Edit while editing.
     Text {
-      text: cc.editMode ? "Edit" : Qt.locale("en_US").toString(cc.host.clockDate, "ddd, MMM d")
+      text: Locale.I18n.tr(cc.editMode ? "Edit" : Qt.locale(Locale.I18n.localeName).toString(cc.host.clockDate,
+        Locale.I18n.effectiveLanguage === "ru" ? "ddd, d MMM" : "ddd, MMM d"))
       color: cc.text
       font.family: cc.host.theme.textFontFamily
       font.features: { "tnum": 1 }
@@ -154,10 +156,10 @@ ColumnLayout {
           radius: 12
           color: current ? cc.well : choiceMouse.containsMouse ? cc.wellHover : "transparent"
           Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
-          Tooltip { theme: cc.host.theme; text: modelData === 1 ? "1 column" : modelData + " columns" }
+          Tooltip { theme: cc.host.theme; text: Locale.I18n.tr(modelData === 1 ? "1 column" : modelData + " columns") }
           Text {
             anchors.centerIn: parent
-            text: choice.modelData
+            text: Locale.I18n.tr(choice.modelData)
             color: choice.current ? cc.text : cc.textMuted
             font.family: cc.host.theme.textFontFamily
             font.features: { "tnum": 1 }
@@ -186,7 +188,7 @@ ColumnLayout {
       // not while opening, when edit mode is reset.
       Behavior on Layout.preferredWidth { enabled: cc.settled; MotionAnimation { theme: cc.host.theme; pace: "standard" } }
       Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
-      Tooltip { id: editTip; theme: cc.host.theme; text: cc.editMode ? "" : "Edit" }
+      Tooltip { id: editTip; theme: cc.host.theme; text: Locale.I18n.tr(cc.editMode ? "" : "Edit") }
       Text {
         anchors.centerIn: parent
         opacity: cc.editMode ? 0 : 1
@@ -201,7 +203,7 @@ ColumnLayout {
         anchors.centerIn: parent
         opacity: cc.editMode ? 1 : 0
         visible: opacity > 0.01
-        text: "Done"
+        text: Locale.I18n.tr("Done")
         color: cc.text
         font.family: cc.host.theme.textFontFamily
         font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.callout)
@@ -225,7 +227,7 @@ ColumnLayout {
       radius: 14
       color: settingsTip.hovered ? cc.well : "transparent"
       Behavior on color { MotionColorAnimation { theme: cc.host.theme } }
-      Tooltip { id: settingsTip; theme: cc.host.theme; text: "Island Settings" }
+      Tooltip { id: settingsTip; theme: cc.host.theme; text: Locale.I18n.tr("Island Settings") }
       Text {
         anchors.centerIn: parent
         text: "󰒓"
@@ -256,10 +258,10 @@ ColumnLayout {
       Text {
         visible: !cc.editMode && parent.secondsLeft > 0
         anchors.verticalCenter: parent.verticalCenter
-        text: {
+        text: Locale.I18n.tr((function() {
           var m = Math.round(parent.secondsLeft / 60)
           return m >= 60 ? Math.floor(m / 60) + "h " + m % 60 + "m" : m + "m"
-        }
+        })())
         color: cc.textMuted
         font.family: cc.host.theme.textFontFamily
         font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.body)
@@ -269,7 +271,7 @@ ColumnLayout {
       }
       Text {
         anchors.verticalCenter: parent.verticalCenter
-        text: cc.controls.batteryPercent + "%"
+        text: Locale.I18n.tr(cc.controls.batteryPercent + "%")
         color: parent.low ? cc.host.theme.system.red : cc.text
         font.family: cc.host.theme.textFontFamily
         font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.body)
@@ -301,7 +303,7 @@ ColumnLayout {
     border.color: cc.edge
     Text {
       anchors.centerIn: parent
-      text: "Click the pencil to add zones"
+      text: Locale.I18n.tr("Click the pencil to add zones")
       color: cc.textMuted
       font.family: cc.host.theme.textFontFamily
       font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.callout)

@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell.Hyprland
 
 // Shown for a moment when the workspace changes: a dot for each workspace
@@ -61,7 +62,7 @@ IslandPill {
       Behavior on x { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
       Text {
         anchors.centerIn: parent
-        text: pill.host.focusedWorkspaceId
+        text: Locale.I18n.tr(pill.host.focusedWorkspaceId)
         color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
         font.family: pill.host.theme.textFontFamily
         font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.callout)

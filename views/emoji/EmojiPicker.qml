@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import Quickshell
 import Quickshell.Io
 import "../../components"
@@ -11,8 +12,8 @@ import "file:///usr/share/omarchy/shell/plugins/emojis/EmojiSearch.js" as EmojiS
 // picker does).
 ListPicker {
   id: emojis
-  placeholder: "Search emoji"
-  emptyText: "No emoji match"
+  placeholder: Locale.I18n.tr("Search emoji")
+  emptyText: Locale.I18n.tr("No emoji match")
   columns: 10
   rowHeight: 54
   visibleRows: 6
@@ -34,7 +35,7 @@ ListPicker {
       property bool selected: false
       Text {
         anchors.centerIn: parent
-        text: String(cell.entry.e || "")
+        text: Locale.I18n.tr(String(cell.entry.e || ""))
         font.family: "Noto Color Emoji"
         font.pixelSize: emojis.host.theme.px(28)
       }

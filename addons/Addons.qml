@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 import Quickshell.Io
 
 // Addons: niche features kept out of the core, each switched on in Settings →
@@ -36,9 +37,9 @@ Item {
         { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
       ],
       description: "Current conditions for your city, or where you are (found from your IP address)",
-      describedWith: { key: "city", text: "Current conditions in %1" },
+      describedWith: { key: "city", text: Locale.I18n.tr("Current conditions in %1") },
       options: [
-        { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon", icon: "󰟙" },
+        { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: Locale.I18n.tr("e.g. Lisbon"), icon: "󰟙" },
         // Off to keep an empty City from asking a third party where you are.
         { key: "autoLocate", label: "Detect my location", detail: "No city set: asks get.geojs.io (or ipwho.is) once, with your IP", type: "switch", default: false },
         { key: "fahrenheit", label: "Temperature", detail: "Unit shown on the pill", type: "segmented", default: false,
@@ -53,7 +54,7 @@ Item {
       ],
       description: "Your month and the day's events",
       options: [
-        { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: "https://…/basic.ics" }
+        { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: Locale.I18n.tr("https://…/basic.ics") }
       ] },
     // Before the timer, so a call holds the island over a countdown.
     { id: "meetings", name: "Meetings", icon: "󰏲", color: "#30d158", default: false, source: "meetings/MeetingsAddon.qml",

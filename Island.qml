@@ -1,4 +1,5 @@
 import QtQuick
+import "i18n" as Locale
 import Qt.labs.folderlistmodel
 import QtQuick.Effects
 import QtQuick.Shapes
@@ -86,6 +87,7 @@ Item {
   Theme { id: themeData; settings: root.settings; home: root.home }
   readonly property QtObject settings: islandSettings.values
   IslandSettings { id: islandSettings; home: root.home }
+  Binding { target: Locale.I18n; property: "language"; value: root.settings.language || "auto" }
 
   readonly property var clockDate: clock.date
   // The resting pill's text in the chosen Settings → Clock Format (one of
@@ -99,17 +101,17 @@ Item {
   }
   readonly property bool clockStacked: isStackedClock(settings.clockFormat)
   function formatClockTime(date) {
-    var en = Qt.locale("en_US")
-    return settings.clock24h ? en.toString(date, "HH:mm")
-      : settings.clockAmPm ? en.toString(date, "h:mm AP")
-      : en.toString(date, "h:mm AP").replace(/\s*[AP]M$/i, "")
+    var locale = Qt.locale(Locale.I18n.localeName)
+    return settings.clock24h ? locale.toString(date, "HH:mm")
+      : settings.clockAmPm ? locale.toString(date, "h:mm AP")
+      : locale.toString(date, "h:mm AP").replace(/\s*[AP]M$/i, "")
   }
   function formatClockSub(date, format) {
-    var en = Qt.locale("en_US")
+    var locale = Qt.locale(Locale.I18n.localeName)
     switch (format) {
-    case "stackedDay": return en.toString(date, "dddd")
-    case "stackedDate": return en.toString(date, "d MMM")
-    case "stackedFull": return en.toString(date, "ddd d MMM")
+    case "stackedDay": return locale.toString(date, "dddd")
+    case "stackedDate": return locale.toString(date, "d MMM")
+    case "stackedFull": return locale.toString(date, "ddd d MMM")
     default: return ""
     }
   }
@@ -118,19 +120,19 @@ Item {
   readonly property string clockWidestText: clockTimeText.length > clockSubText.length ? clockTimeText : clockSubText
   readonly property string clockText: formatClock(clockDate, settings.clockFormat)
   function formatClock(date, format) {
-    var en = Qt.locale("en_US")
+    var locale = Qt.locale(Locale.I18n.localeName)
     var time = formatClockTime(date)
     switch (format) {
     case "stackedDay":
     case "stackedDate":
     case "stackedFull":
       return time + "\n" + formatClockSub(date, format)
-    case "day": return en.toString(date, "ddd") + " " + time
-    case "date": return en.toString(date, "d MMM") + " " + time
-    case "short": return en.toString(date, "ddd d MMM") + " " + time
-    case "weekday": return en.toString(date, "dddd") + " " + time
-    case "full": return en.toString(date, "ddd d MMM yyyy") + " " + time
-    case "numeric": return en.toString(date, "dd/MM/yyyy") + " " + time
+    case "day": return locale.toString(date, "ddd") + " " + time
+    case "date": return locale.toString(date, "d MMM") + " " + time
+    case "short": return locale.toString(date, "ddd d MMM") + " " + time
+    case "weekday": return locale.toString(date, "dddd") + " " + time
+    case "full": return locale.toString(date, "ddd d MMM yyyy") + " " + time
+    case "numeric": return locale.toString(date, "dd/MM/yyyy") + " " + time
     default: return time
     }
   }
@@ -917,7 +919,7 @@ Item {
           }
 
           IslandLabel { id: clockLabel; host: root; pill: island.activePill; anchors.centerIn: parent }
-          TextMetrics { id: clockMetrics; font: clockLabel.font; text: root.clockStacked ? root.clockWidestText : root.clockText }
+          TextMetrics { id: clockMetrics; font: clockLabel.font; text: Locale.I18n.tr(root.clockStacked ? root.clockWidestText : root.clockText) }
 
           Views { id: views; host: root; anchors.fill: parent }
         }

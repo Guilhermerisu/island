@@ -1,4 +1,5 @@
 import QtQuick
+import "../i18n" as Locale
 
 // Shared list view for the island: a search field over a scrolling list, with
 // the selected row marked by a soft highlight and an accent bar. With
@@ -90,7 +91,7 @@ Item {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    placeholder: picker.placeholder
+    placeholder: Locale.I18n.tr(picker.placeholder)
     onKeyPressed: function(event) {
       picker.keyFilter(event)
       if (event.accepted) return
@@ -232,7 +233,7 @@ Item {
     Text {
       anchors.centerIn: parent
       visible: picker.items.length === 0
-      text: picker.emptyText
+      text: Locale.I18n.tr(picker.emptyText)
       color: picker.host.theme.muted
       font.family: picker.host.theme.textFontFamily
       font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.size.body)

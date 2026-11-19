@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 
 // A device in a card's picker, as macOS's Sound output list: a round badge,
@@ -28,7 +29,7 @@ Rectangle {
     color: row.selected ? row.center.accent : row.center.well
     Text {
       anchors.centerIn: parent
-      text: /head|ear|buds|airpods/i.test(row.name) ? "󰋋" : row.icon
+      text: Locale.I18n.tr(/head|ear|buds|airpods/i.test(row.name) ? "󰋋" : row.icon)
       color: row.selected ? row.center.badgeOnInk : row.center.text
       font.family: row.center.iconFont
       font.pixelSize: row.center.host.theme.px(14)

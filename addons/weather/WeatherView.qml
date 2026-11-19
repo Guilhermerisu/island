@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -85,7 +86,7 @@ Item {
         spacing: 1
         Text {
           width: parent.width
-          text: view.weather.place
+          text: Locale.I18n.tr(view.weather.place)
           elide: Text.ElideRight
           color: view.ink
           font.family: view.theme.textFontFamily
@@ -97,7 +98,7 @@ Item {
         Text {
           id: condition
           width: parent.width
-          text: view.now ? view.weather.describe(view.now.code) : ""
+          text: Locale.I18n.tr(view.now ? view.weather.describe(view.now.code) : "")
           elide: Text.ElideRight
           color: view.inkMuted
           font.family: view.theme.textFontFamily
@@ -112,7 +113,7 @@ Item {
         anchors.right: parent.right
         // On the condition's baseline, the bottom of the place block.
         y: place.y + condition.y + condition.baselineOffset - baselineOffset
-        text: view.now ? view.degrees(view.now.temperature) : ""
+        text: Locale.I18n.tr(view.now ? view.degrees(view.now.temperature) : "")
         color: view.ink
         font.family: view.theme.textFontFamily
         font.features: { "tnum": 1 }
@@ -137,7 +138,7 @@ Item {
           spacing: 4
           Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: modelData.now ? "Now" : view.hourText(modelData.hour)
+            text: Locale.I18n.tr(modelData.now ? "Now" : view.hourText(modelData.hour))
             color: view.inkMuted
             font.family: view.theme.textFontFamily
             font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
@@ -163,7 +164,7 @@ Item {
               visible: modelData.rain >= view.rainShown
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
-              text: modelData.rain + "%"
+              text: Locale.I18n.tr(modelData.rain + "%")
               color: "#5ac8fa"
               font.family: view.theme.textFontFamily
               font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.footnote)
@@ -174,7 +175,7 @@ Item {
           }
           Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Math.round(modelData.temperature)
+            text: Locale.I18n.tr(Math.round(modelData.temperature))
             color: view.ink
             font.family: view.theme.textFontFamily
             font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
@@ -207,11 +208,11 @@ Item {
       Layout.fillWidth: true
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
-      text: notice.status === "loading" ? "Loading weather…"
+      text: Locale.I18n.tr(notice.status === "loading" ? "Loading weather…"
         : notice.status === "missing" ? "Set a city, or turn on Detect my location, in Settings → Addons"
         : notice.status === "unknown" ? "Couldn't find “" + view.weather.city + "”"
         : !view.weather.located && view.weather.detecting ? "Couldn't detect your location"
-        : "Couldn't reach Open-Meteo"
+        : "Couldn't reach Open-Meteo")
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily
       font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
@@ -231,7 +232,7 @@ Item {
       Text {
         id: buttonText
         anchors.centerIn: parent
-        text: notice.needsCity ? "Open Settings" : "Try Again"
+        text: Locale.I18n.tr(notice.needsCity ? "Open Settings" : "Try Again")
         color: view.theme.accentText
         font.family: view.theme.textFontFamily
         font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)

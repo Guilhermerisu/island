@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
@@ -159,7 +160,7 @@ Item {
         spacing: 2
         Text {
           Layout.fillWidth: true
-          text: player.mpris ? String(player.mpris.trackTitle || "Unknown track") : "Nothing playing"
+          text: player.mpris ? String(player.mpris.trackTitle || Locale.I18n.tr("Unknown track")) : Locale.I18n.tr("Nothing playing")
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: player.host.theme.text
@@ -199,7 +200,7 @@ Item {
       visible: player.length > 0
 
       Text {
-        text: player.clock(player.position)
+        text: Locale.I18n.tr(player.clock(player.position))
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
         font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.callout)
@@ -235,7 +236,7 @@ Item {
         }
       }
       Text {
-        text: "−" + player.clock(player.length - player.position)
+        text: Locale.I18n.tr("−" + player.clock(player.length - player.position))
         color: Qt.rgba(1, 1, 1, 0.55)
         font.family: player.host.theme.textFontFamily
         font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.callout)
@@ -271,7 +272,7 @@ Item {
           cursorShape: Qt.PointingHandCursor
           onClicked: control.activated()
         }
-        Tooltip { theme: player.host.theme; text: control.name; above: true }
+        Tooltip { theme: player.host.theme; text: Locale.I18n.tr(control.name); above: true }
       }
 
       // Shuffle and open-app hang off the sides of the transport row, so
@@ -314,7 +315,7 @@ Item {
         }
         Control {
           anchors.verticalCenter: parent.verticalCenter
-          text: player.playing ? "󰏤" : "󰐊"
+          text: Locale.I18n.tr(player.playing ? "󰏤" : "󰐊")
           name: player.playing ? "Pause" : "Play"
           font.pixelSize: player.host.theme.px(42)
           available: !!player.mpris

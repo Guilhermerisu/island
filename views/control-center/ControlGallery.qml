@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -48,7 +49,7 @@ ColumnLayout {
       spacing: 4
       Text {
         Layout.leftMargin: 6
-        text: section.modelData.title
+        text: Locale.I18n.tr(section.modelData.title)
         color: gallery.cc.textMuted
         font.family: gallery.cc.host.theme.textFontFamily
         font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.size.callout)
@@ -118,7 +119,7 @@ ColumnLayout {
               }
             }
             Tooltip { theme: gallery.cc.host.theme;
-              text: (gallery.layout ? "Drag to Add " : "Add ") + gallery.controls.controlTitle(choice.modelData)
+              text: Locale.I18n.tr((gallery.layout ? "Drag to Add " : "Add ") + gallery.controls.controlTitle(choice.modelData))
             }
           }
         }
@@ -131,7 +132,7 @@ ColumnLayout {
     Layout.topMargin: 8
     Layout.bottomMargin: 8
     horizontalAlignment: Text.AlignHCenter
-    text: "All controls have been added"
+    text: Locale.I18n.tr("All controls have been added")
     color: gallery.cc.textMuted
     font.family: gallery.cc.host.theme.textFontFamily
     font.letterSpacing: gallery.cc.host.theme.tracking(gallery.cc.host.theme.textFontFamily, gallery.cc.host.theme.size.body)

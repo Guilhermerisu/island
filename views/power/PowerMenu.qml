@@ -1,4 +1,5 @@
 import QtQuick
+import "../../i18n" as Locale
 import "../../components"
 import Quickshell.Io
 
@@ -138,14 +139,14 @@ Item {
             spacing: 8
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
-              text: slot.modelData.icon
+              text: Locale.I18n.tr(slot.modelData.icon)
               color: power.host.theme.text
               font.family: power.host.theme.fontFamily
               font.pixelSize: power.host.theme.px(26)
             }
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
-              text: slot.modelData.label
+              text: Locale.I18n.tr(slot.modelData.label)
               color: power.host.theme.text
               opacity: slot.isSelected ? 1 : 0.8
               Behavior on opacity { MotionAnimation { theme: power.host.theme; pace: "fade"; curve: "fade" } }

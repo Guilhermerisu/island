@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../i18n" as Locale
 import QtQuick.Layouts
 import "../../components"
 
@@ -70,7 +71,7 @@ ColumnLayout {
           x: 26
           anchors.verticalCenter: parent.verticalCenter
           visible: filter.text === ""
-          text: "Filter processes"
+          text: Locale.I18n.tr("Filter processes")
           color: page.view.textMuted
           font.family: page.view.host.theme.textFontFamily
           font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.body)
