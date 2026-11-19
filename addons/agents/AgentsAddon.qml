@@ -151,12 +151,35 @@ Addon {
   function takeSessions(next) {
     var wasWorking = working
     sessions = next
-    if (wasWorking && !working && next.length && next[0].state === "done") {
+    // A turn you stopped isn't a finished one: the pill just goes.
+    if (wasWorking && !working && next.length && next[0].state === "done" && !next[0].interrupted) {
       finished = true
       finishedTimer.restart()
     } else if (working) {
       finished = false
       finishedTimer.stop()
+    }
+  }
+  // Waiting on you or just done, a click goes to the session's window
+  // (see focus-session.py) instead of the control center; done, the pill
+  // then goes too.
+  function pillClicked() {
+    var target = asking || finished ? live : null
+    if (!target) { host.view = "controls"; return }
+    if (focusProc.running) return
+    focusProc.wasDone = !asking
+    focusProc.command = ["python3", localPath("focus-session.py"), target.id]
+    focusProc.running = true
+  }
+  Process {
+    id: focusProc
+    property bool wasDone: false
+    onExited: function(code) {
+      if (code !== 0) agentsAddon.host.view = "controls"
+      else if (wasDone && !agentsAddon.working) {
+        agentsAddon.finished = false
+        finishedTimer.stop()
+      }
     }
   }
   Timer {

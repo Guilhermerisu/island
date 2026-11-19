@@ -50,6 +50,16 @@ omarchy bar use guilhermerisu.island
 <h2 align="center">FAQ</h2>
 
 <details>
+<summary><b>Can I jump back to the Claude Code session?</b></summary>
+<br>
+
+Yes. While the Agents pill shows Claude Code waiting on you or a finished
+turn, click it to focus the session's window. This works when Island can
+match the session to a single Hyprland window, so it may not work for
+sessions inside a terminal multiplexer.
+</details>
+
+<details>
 <summary><b>Do my other Omarchy plugins still work?</b></summary>
 <br>
 
