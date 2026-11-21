@@ -821,9 +821,8 @@ Item {
           clip: true
           readonly property var cornerRadii: ({ topLeft: topLeftRadius, topRight: topRightRadius, bottomLeft: radius, bottomRight: radius })
           readonly property string outline: Squircle.path(width, height, cornerRadii, 0.6)
-          // The same outline inset half a pixel, so a 1px edge stroke lands
-          // inside the shape. Only built while the edge shows, so a resting
-          // pill's morphs redraw one outline, not two.
+          // Inset the outline by half a pixel to keep its 1px stroke inside
+          // the shape.
           readonly property string edgeOutline: !islandEdge.visible ? ""
             : root.settings.notch ? Squircle.notchPath(width - 1, height - 1, Math.max(0, radius - 0.5), 10, 0.6)
             : Squircle.path(width - 1, height - 1, ({
@@ -922,9 +921,8 @@ Item {
 
           Views { id: views; host: root; anchors.fill: parent }
         }
-        // A faint light edge around the open island (and banners like
-        // notifications), so the fill still reads against a matching
-        // wallpaper; fainter on the resting pill while it's lifted.
+        // The resting pill also needs an edge against a matching wallpaper.
+        // Brighten the outline when the Island expands.
         Item {
           id: islandEdge
           x: island.x
@@ -934,7 +932,7 @@ Item {
           scale: island.scale
           transformOrigin: island.transformOrigin
           readonly property bool prominent: root.surfaceOpen || root.view === "feedback"
-          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
+          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.9 : 0.75
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
           Shape {
@@ -943,9 +941,7 @@ Item {
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
               strokeWidth: 1
-              // Same hairline as open-view chrome (cards, wells), so banners
-              // don't read brighter than an expanded island.
-              strokeColor: root.theme.hairline
+              strokeColor: root.theme.outlineColor
               fillColor: "transparent"
               PathSvg { path: island.edgeOutline }
             }
@@ -1030,7 +1026,7 @@ Item {
       visible: opacity > 0.01
       ShapePath {
         strokeWidth: 1
-        strokeColor: root.theme.hairline
+        strokeColor: root.theme.outlineColor
         fillColor: "transparent"
         PathSvg {
           readonly property real r: ear.r

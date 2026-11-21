@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell.Io
-import qs.Commons
+import qs.Commons as Commons
 
 // The island's colours, font and motion speed. The fill is classic black
 // unless the Theme background setting follows Omarchy's theme. Text and
@@ -16,7 +16,7 @@ Item {
   readonly property string pluginFont: "Adwaita Sans"
   readonly property string textFontFamily: {
     var mode = settings.textFontMode || "island"
-    if (mode === "omarchy") return Style.font.menuFamily || Style.font.family || pluginFont
+    if (mode === "omarchy") return Commons.Style.font.menuFamily || Commons.Style.font.family || pluginFont
     var custom = String(settings.customFont || "").trim()
     if (mode === "custom" && custom) return custom
     return pluginFont
@@ -38,7 +38,7 @@ Item {
     if (family !== pluginFont || !(size > 0)) return 0
     return size * (-0.0223 + 0.185 * Math.exp(-0.1745 * size))
   }
-  readonly property color background: settings.themeBackground === true ? Color.background : "#000000"
+  readonly property color background: settings.themeBackground === true ? Commons.Color.background : "#000000"
   // A neutral label rather than the theme's foreground, which is often
   // tinted; every grey below is derived from it. Flip light/dark ink so
   // light theme backgrounds stay readable.
@@ -47,15 +47,17 @@ Item {
   // not the theme's muted colour, which is often tinted and looks dirty
   // next to the neutral cards. The accent alone carries the theme.
   readonly property color muted: secondary
-  readonly property color accent: Color.accent
+  // Accented labels appear on both the Island fill and its raised controls.
+  readonly property color accent: contrastRatio(Commons.Color.accent, background) >= 4.5
+    && contrastRatio(Commons.Color.accent, wellHover) >= 4.5 ? Commons.Color.accent : text
   // Apple's dark-mode system colours, for what keeps its meaning whatever
   // the Omarchy theme: status, colourful live activities, charts.
   readonly property var system: ({
     red: "#ff453a", orange: "#ff9f0a", yellow: "#ffd60a", green: "#30d158", cyan: "#64d2ff",
     blue: "#0a84ff", indigo: "#5e5ce6", purple: "#bf5af2", gray: "#8e8e93"
   })
-  readonly property color accentText: contrastOn(Color.accent)
-  readonly property color urgent: Color.urgent
+  readonly property color accentText: contrastOn(accent)
+  readonly property color urgent: Commons.Color.urgent
   readonly property color surface: card
   // The island's greys: a few text-tint levels every view shares, so a card,
   // a hover or a divider is the same grey everywhere. `fill()` is see-through
@@ -74,6 +76,7 @@ Item {
   readonly property color well: solid("strong")
   readonly property color wellHover: solid("stronger")
   readonly property color hairline: fill("subtle")
+  readonly property color outlineColor: withAlpha(text, 0.28)
   // Corner radii, so a corner is the same size everywhere. A box sitting
   // directly in an open view (a card, a group, a list) is concentric with
   // the island: its 30 radius minus the usual 16 padding.
@@ -114,9 +117,20 @@ Item {
 
   function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
   function luminance(x) { return 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b }
+  function linearChannel(c) {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  }
+  function relativeLuminance(c) {
+    return 0.2126 * linearChannel(c.r) + 0.7152 * linearChannel(c.g) + 0.0722 * linearChannel(c.b)
+  }
+  function contrastRatio(a, b) {
+    var first = relativeLuminance(a)
+    var second = relativeLuminance(b)
+    return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
+  }
   function contrastOn(c) {
-    var l = luminance(c)
-    return Math.abs(l - luminance(background)) > Math.abs(l - luminance(text)) ? background : text
+    return contrastRatio(c, Qt.color("#000000")) >= contrastRatio(c, Qt.color("#ffffff"))
+      ? "#000000" : "#ffffff"
   }
 
   FileView {
