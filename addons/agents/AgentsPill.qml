@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import "../../components"
 
-// Claude Code at work, as Apple's live activities: Clawd leading and the
+// Claude Code or Codex at work, as Apple's live activities: its mascot (see AgentAvatar) leading and the
 // turn's time trailing, the clock between them; once the turn's done, a
 // green check and "Done" in the time's place, and "Waiting" while it waits
 // on your answer. `agents` is the AgentsAddon.
@@ -15,6 +15,7 @@ Item {
   readonly property color doneInk: pill.theme.system.green
   readonly property string phase: agents.live ? agents.live.state : ""
   readonly property bool done: phase === "done"
+  readonly property bool codex: !!agents.live && agents.live.provider === "codex"
 
   opacity: agents.pillShown ? 1 : 0
   visible: opacity > 0.01
@@ -30,10 +31,16 @@ Item {
 
   // Clawd, walking while it takes a step, thinking between them, and
   // hopping once it's done. Whole pixels, so it stays crisp.
-  AgentsMascot {
+  AgentAvatar {
     anchors.left: parent.left
-    anchors.leftMargin: 14
-    y: Math.round((parent.height - height) / 2) + 1
+    anchors.leftMargin: pill.codex ? 8 : 10
+    // Clawd's thought bubbles rise above him, so he stands a little low.
+    y: Math.round((parent.height - height) / 2) + (original ? 3 : 1)
+    provider: pill.agents.live ? pill.agents.live.provider || "claude" : "claude"
+    clawd: pill.agents.clawd
+    sheet: pill.agents.petSheet
+    cols: pill.agents.petCols
+    rows: pill.agents.petRows
     color: pill.ink
     mood: ({ done: "done", asking: "wave", tool: "walk" })[pill.phase] || "think"
     running: pill.agents.pillShown

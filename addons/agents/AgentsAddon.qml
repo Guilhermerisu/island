@@ -10,9 +10,11 @@ import ".."
 // regenerated then and every few minutes while it stays open; the collectors
 // reuse their recent transcript scans, so only the limits go over the wire.
 //
-// While Claude Code works, it's a live activity too (see AgentsPill): its
-// turn as it goes, read from its transcripts by live.py, with Clawd
-// (AgentsMascot) acting it out. It says when a turn's done.
+// While Claude Code or Codex works, it's a live activity too (see AgentsPill):
+// its turn as it goes, read from its transcripts by live.py, with its mascot
+// (AgentAvatar) acting it out: Clawd for Claude Code, and for Codex the pet
+// picked in Codex or the ChatGPT desktop app (pet.py), Clawd standing in
+// when none's found. It says when a turn's done.
 Addon {
   id: agentsAddon
   pill: Component { AgentsPill { agents: agentsAddon } }
@@ -129,6 +131,43 @@ Addon {
   readonly property var live: working ? sessions.filter(function(s) { return s.state !== "done" })[0] : session
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
+
+  // Codex's pet, looked for once there's a Codex session to show (and at
+  // the start, so it's loaded by then); Clawd is drawn until it's found.
+  property url petSheet: ""
+  property int petCols: 8
+  property int petRows: 9
+  readonly property bool hasCodexSession: sessions.some(function(s) { return s.provider === "codex" })
+  onHasCodexSessionChanged: if (hasCodexSession && !String(petSheet)) petFinder.running = true
+  // Clawd's sheet, painted out of the Claude desktop app's sprites (see
+  // clawd.py): null until it is, or without the app, and the built-in one's
+  // drawn.
+  property var clawd: null
+  Process {
+    id: clawdFinder
+    running: agentsAddon.addon.option("live") !== false
+    command: ["python3", agentsAddon.localPath("clawd.py")]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try { agentsAddon.clawd = JSON.parse(text) } catch (e) {}
+      }
+    }
+  }
+  Process {
+    id: petFinder
+    running: agentsAddon.addon.option("live") !== false
+    command: ["python3", agentsAddon.localPath("pet.py")]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          var pet = JSON.parse(text)
+          agentsAddon.petCols = pet.cols
+          agentsAddon.petRows = pet.rows
+          agentsAddon.petSheet = pet.source
+        } catch (e) {}
+      }
+    }
+  }
 
   Process {
     id: liveWatch
