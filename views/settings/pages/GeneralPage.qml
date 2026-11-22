@@ -86,6 +86,18 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰄮"
+      iconTint: page.system.gray
+      label: "Outline"
+      detail: "A thin light outline around the resting island"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.restingOutline
+        onToggled: function(on) { page.view.settings.restingOutline = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰹑"
       iconTint: page.system.cyan
       label: "Reserve space for the island"

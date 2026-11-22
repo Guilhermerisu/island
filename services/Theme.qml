@@ -74,6 +74,9 @@ Item {
   readonly property color well: solid("strong")
   readonly property color wellHover: solid("stronger")
   readonly property color hairline: fill("subtle")
+  // The island's own outline, brighter than the chrome's hairlines so the
+  // black pill stays visible against a black wallpaper.
+  readonly property color outlineColor: withAlpha(text, 0.28)
   // Corner radii, so a corner is the same size everywhere. A box sitting
   // directly in an open view (a card, a group, a list) is concentric with
   // the island: its 30 radius minus the usual 16 padding.
