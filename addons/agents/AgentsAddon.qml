@@ -18,10 +18,11 @@ Addon {
   pill: Component { AgentsPill { agents: agentsAddon } }
   ongoing: working || finished
   pillWidth: 236
-  // Claude's orange, or the theme's accent when live activities aren't
-  // colorful; amber while it waits on you.
+  // The agent's color (Claude's orange, Codex's lavender), or the theme's
+  // accent when live activities aren't colorful; amber while it waits on you.
   readonly property color ink: asking ? host.theme.system.orange
-    : host.settings.colorfulLiveActivities ? "#d97757" : host.theme.accent
+    : host.settings.colorfulLiveActivities ? (live && live.provider === "codex" ? "#aca1c8" : "#d97757")
+    : host.theme.accent
   // Drawn with the picked agent's logo, not the addon's, at its size; the
   // pane leads with the agent as its own header (see AgentsPage).
   settingsPages: [{
@@ -168,7 +169,7 @@ Addon {
     if (!target) { host.view = "controls"; return }
     if (focusProc.running) return
     focusProc.wasDone = !asking
-    focusProc.command = ["python3", localPath("focus-session.py"), target.id]
+    focusProc.command = ["python3", localPath("focus-session.py"), target.id, target.provider || "claude", target.transcript || ""]
     focusProc.running = true
   }
   Process {
