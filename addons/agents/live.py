@@ -112,7 +112,9 @@ class Session:
             if block.get("type") == "tool_use":
                 self.running[block.get("id")] = block.get("name") in ASKING_TOOLS
                 self.started = self.started or stamp
-        if (entry.get("message") or {}).get("stop_reason") == "end_turn":
+        # end_turn, but also stop_sequence (API errors such as an expired
+        # login), max_tokens or refusal: anything but a step still to run.
+        if (entry.get("message") or {}).get("stop_reason") not in (None, "tool_use"):
             self.finish(stamp)
         elif self.state != "done" or self.running:
             self.state = self.working()
