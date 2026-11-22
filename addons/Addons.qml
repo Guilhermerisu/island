@@ -150,6 +150,7 @@ Item {
       description: "Agent limits, daily tokens, and Claude Code at work",
       options: [
         { key: "live", label: "Live Activity", detail: "Claude Code's and Codex's steps on the island while they work", type: "switch", default: true },
+        { key: "banners", label: "Banners", detail: "A notification when an agent finishes or waits for your answer, even while the island is hidden", type: "switch", default: true },
         { key: "agent", label: "Agent", detail: "Ctrl+click to add or remove agents shown as tabs", type: "popup", multiSelect: true, default: "claude",
           choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "All Models", value: "all" }] }
       ] },
