@@ -61,6 +61,19 @@ sessions inside a terminal multiplexer.
 </details>
 
 <details>
+<summary><b>Which mascot does the agents pill show?</b></summary>
+<br>
+
+Claude Code's is Clawd, with the animations Anthropic made for him: standing
+and now and then having a thought, working at his laptop, waving when he
+waits on you, dancing when a turn is done. Island paints them from the sprites
+inside the Claude desktop app, if it is installed. Codex's is the pet picked
+in Codex or the ChatGPT desktop app (`~/.codex/pets/<id>/` for a custom one),
+from the sheet that app ships. Nothing is downloaded or bundled, and a small
+built-in Clawd stands in when the apps are not there.
+</details>
+
+<details>
 <summary><b>Do my other Omarchy plugins still work?</b></summary>
 <br>
 
