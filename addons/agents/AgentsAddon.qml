@@ -188,7 +188,56 @@ Addon {
   // call that ends does (see AgentsPill); it stays while the pointer's on
   // it.
   property bool finished: false
+
+  // Each session's last state, to see what changed: a turn that ends, or
+  // one that starts waiting on you, is announced with a banner dropping
+  // from the top (see AgentActivityBanner), which comes up even while the
+  // island is hidden (in fullscreen, say). The first look only learns the
+  // states.
+  property var lastStates: null
+  // What's waiting to be announced, and the one on screen.
+  property var pending: []
+  property var notice: null
+  function announce(next) {
+    var before = lastStates
+    var states = {}
+    next.forEach(function(s) { states[s.id] = s.state })
+    lastStates = states
+    if (!before || addon.option("banners") === false) return
+    var events = []
+    next.forEach(function(s) {
+      var was = before[s.id]
+      if (was === s.state) return
+      var ended = s.state === "done" && !s.interrupted && was && was !== "done"
+      if (ended || (s.state === "asking" && was !== "asking"))
+        events.push(Object.assign({}, s, { noticeKind: s.state, noticeAt: Date.now() }))
+    })
+    if (!events.length) return
+    pending = pending.concat(events).slice(-6)
+    if (!notice) advanceNotice()
+  }
+  function advanceNotice() {
+    if (!pending.length) { notice = null; noticeTimer.stop(); return }
+    notice = pending[0]
+    pending = pending.slice(1)
+    noticeTimer.restart()
+  }
+  Timer {
+    id: noticeTimer
+    interval: 3000
+    onTriggered: agentsAddon.advanceNotice()
+  }
+  // A click on the banner goes to the session's window.
+  function focusNotice() {
+    if (!notice || focusProc.running) return
+    focusProc.wasDone = false
+    focusProc.command = ["python3", localPath("focus-session.py"), notice.id, notice.provider || "claude", notice.transcript || ""]
+    focusProc.running = true
+    advanceNotice()
+  }
+
   function takeSessions(next) {
+    announce(next)
     var wasWorking = working
     sessions = next
     // A turn you stopped isn't a finished one: the pill just goes.

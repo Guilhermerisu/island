@@ -611,9 +611,10 @@ Item {
         // whole screen does, so outsideArea can close it. While the island can
         // auto-hide, revealStrip takes hover input at the edge to slide it back.
         mask: Region {
-          item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
+          item: root.closesOnOutsideClick ? outsideArea : window.islandHidden || agentBanner.shown ? null : island
           regions: [
             Region { item: window.revealArmed ? revealStrip : null },
+            Region { item: agentBanner.shown ? agentBanner : null },
             Region { item: satellitePill && satellitePill.shown ? satellitePill : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.leftGroup : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.rightGroup : null }
@@ -705,6 +706,8 @@ Item {
           // turns around smoothly.
           MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.settings.notch ? 0 : 8 }
           y: ySpring.value
+          // Giving way to an agent's banner dropping over it.
+          opacity: agentBanner.visible && !root.surfaceOpen ? 1 - agentBanner.opacity : 1
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
           readonly property bool glanceHovered: clockHover.hovered || islandPointerHover.hovered || (satellitePill && satellitePill.isHovered)
@@ -922,6 +925,15 @@ Item {
 
           Views { id: views; host: root; anchors.fill: parent }
         }
+        // An agent's turn ending or waiting on you (see AgentActivityBanner),
+        // over the island whether it's hidden or not.
+        AgentActivityBanner {
+          id: agentBanner
+          host: root
+          agents: root.addons.isEnabled("agents") && !root.surfaceOpen && !root.screensaverActive
+            ? root.addons.root("agents") : null
+        }
+
         // A faint light edge around the open island (and banners like
         // notifications), so the fill still reads against a matching
         // wallpaper; fainter on the resting pill while it's lifted.

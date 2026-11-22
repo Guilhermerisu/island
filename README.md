@@ -74,6 +74,18 @@ built-in Clawd stands in when the apps are not there.
 </details>
 
 <details>
+<summary><b>Does Island tell me when an agent is done?</b></summary>
+<br>
+
+Yes. When a Claude Code or Codex turn finishes, or starts waiting on your
+answer, a banner drops from the top edge over the island (which fades behind
+it), with the agent's mascot acting it out, and a check drawing itself in or a
+"?" that beats. It comes up while the island is hidden too (in fullscreen, or
+hidden with a right-click). Click it to jump to the agent's window. Turn it
+off in Settings → Addons → Agents → **Banners**.
+</details>
+
+<details>
 <summary><b>Do my other Omarchy plugins still work?</b></summary>
 <br>
 
