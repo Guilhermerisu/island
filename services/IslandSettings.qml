@@ -94,6 +94,7 @@ Item {
       property bool screenRecordControl: false
       property bool dictateControl: false
       property bool reminderControl: false
+      property bool hideOnRightClick: true
       property bool autoHideFullscreen: false
       property bool autoHideTiling: false
       property bool menuApps: false
