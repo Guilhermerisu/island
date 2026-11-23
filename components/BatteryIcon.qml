@@ -30,15 +30,7 @@ Item {
       radius: height * 0.22
       color: battery.charging ? battery.chargingColor : battery.low ? battery.lowColor : battery.color
     }
-    Text {
-      anchors.centerIn: parent
-      visible: battery.charging
-      text: "󱐋"
-      color: "#ffffff"
-      style: Text.Outline
-      styleColor: Qt.rgba(0, 0, 0, 0.5)
-      font.pixelSize: Math.round(parent.height * 0.8)
-    }
+    
   }
   Rectangle {
     anchors.left: body.right

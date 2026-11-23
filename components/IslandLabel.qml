@@ -16,14 +16,31 @@ Item {
 
   readonly property bool isWarningOrFeedback: (host.view === "feedback" && !host.notificationPill && !host.volumePill) || host.setup.needsSetup
   readonly property bool isStacked: host.clockStacked && !isWarningOrFeedback
+  readonly property bool showLanguage: host.view === "rest" && !host.setup.needsSetup
+  readonly property string languageCode: {
+    var codes = host.keyboard.codes || []
+    if (codes.length > 0) {
+      var index = host.keyboard.index
+      if (index >= 0 && index < codes.length) return String(codes[index]).toUpperCase()
+    }
+    var name = String(host.keyboard.name || "").trim()
+    return name ? name : ""
+  }
 
   readonly property font font: singleText.font
-  readonly property real advanceWidth: isStacked
-    ? Math.max(stackedTimeMetrics.advanceWidth, stackedSubMetrics.advanceWidth)
-    : singleMetrics.advanceWidth
+  readonly property real advanceWidth: isWarningOrFeedback
+    ? singleMetrics.advanceWidth
+    : isStacked ? stackedClockRow.implicitWidth
+    : clockRow.implicitWidth
 
-  width: Math.max(singleText.implicitWidth, stackedCol.implicitWidth)
-  height: isStacked ? stackedCol.implicitHeight : singleText.implicitHeight
+  width: isWarningOrFeedback
+    ? singleText.implicitWidth
+    : isStacked ? stackedClockRow.implicitWidth
+    : clockRow.implicitWidth
+  height: isWarningOrFeedback
+    ? singleText.implicitHeight
+    : isStacked ? stackedClockRow.implicitHeight
+    : clockRow.implicitHeight
 
   // Single-line text (for feedback, warning, or single-line clock styles)
   Text {
@@ -45,43 +62,74 @@ Item {
     font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.title3)
   }
   // The clock itself, its digits rolling as the minute turns.
-  RollingText {
+  Row {
+    id: clockRow
     anchors.centerIn: parent
-    visible: !labelRoot.isWarningOrFeedback && !labelRoot.isStacked
-    theme: labelRoot.host.theme
-    text: labelRoot.host.clockText
-    color: labelRoot.host.theme.text
-    font: singleText.font
+    spacing: 8
+    visible: labelRoot.showLanguage && !labelRoot.isWarningOrFeedback && !labelRoot.isStacked
+
+    RollingText {
+      theme: labelRoot.host.theme
+      text: labelRoot.host.clockText
+      color: labelRoot.host.theme.text
+      font: singleText.font
+    }
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      text: labelRoot.languageCode
+      textFormat: Text.PlainText
+      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.55)
+      font.family: labelRoot.host.theme.textFontFamily
+      font.pixelSize: labelRoot.host.theme.size.footnote
+      font.weight: Font.Bold
+      font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
+    }
   }
   TextMetrics { id: singleMetrics; font: singleText.font; text: singleText.text }
 
   // Two-line stacked column (time on top, day/date on bottom)
-  Column {
-    id: stackedCol
+  Row {
+    id: stackedClockRow
     anchors.centerIn: parent
-    visible: labelRoot.isStacked
-    spacing: 0
+    spacing: 8
+    visible: labelRoot.showLanguage && labelRoot.isStacked
 
-    RollingText {
-      theme: labelRoot.host.theme
-      id: stackedTimeText
-      anchors.horizontalCenter: parent.horizontalCenter
-      text: labelRoot.host.clockTimeText
-      color: labelRoot.host.theme.text
-      font.family: labelRoot.host.theme.textFontFamily
-      font.pixelSize: labelRoot.host.theme.size.body
-      font.weight: Font.DemiBold
-      font.features: { "tnum": 1, "case": 1 }
-      font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.body)
+    Column {
+      id: stackedCol
+      anchors.verticalCenter: parent.verticalCenter
+      spacing: 0
+
+      RollingText {
+        theme: labelRoot.host.theme
+        id: stackedTimeText
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: labelRoot.host.clockTimeText
+        color: labelRoot.host.theme.text
+        font.family: labelRoot.host.theme.textFontFamily
+        font.pixelSize: labelRoot.host.theme.size.body
+        font.weight: Font.DemiBold
+        font.features: { "tnum": 1, "case": 1 }
+        font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.body)
+      }
+      Text {
+        id: stackedSubText
+        anchors.horizontalCenter: parent.horizontalCenter
+        text: labelRoot.host.clockSubText
+        color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.7)
+        font.family: labelRoot.host.theme.textFontFamily
+        font.pixelSize: labelRoot.host.theme.size.footnote
+        font.weight: Font.Medium
+        font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
+      }
     }
     Text {
-      id: stackedSubText
-      anchors.horizontalCenter: parent.horizontalCenter
-      text: labelRoot.host.clockSubText
-      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.7)
+      anchors.verticalCenter: parent.verticalCenter
+      text: labelRoot.languageCode
+      textFormat: Text.PlainText
+      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.55)
       font.family: labelRoot.host.theme.textFontFamily
       font.pixelSize: labelRoot.host.theme.size.footnote
-      font.weight: Font.Medium
+      font.weight: Font.Bold
       font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
     }
   }
