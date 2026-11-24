@@ -78,12 +78,12 @@ built-in Clawd stands in when the apps are not there.
 <br>
 
 Yes. When a Claude Code or Codex turn finishes, or starts waiting on your
-answer, the agents pill grows for a moment into a notice of it, with the
-agent's mascot acting it out, and a check drawing itself in or a "?" that
-beats. It comes up while the island is hidden too (in fullscreen, or hidden
-with a right-click), and skips turns whose window you're already in. Click it
-to jump to the agent's window. Turn it off in Settings → Addons → Agents →
-**Banners**.
+answer, the agents pill grows into a notice of it, with the agent's mascot
+acting it out, and a check drawing itself in or a "?" that beats. A finished
+turn shows for a moment; a question stays until you answer it. It comes up
+while the island is hidden too (in fullscreen, or hidden with a right-click),
+and skips turns whose window you're already in. Click it to jump to the
+agent's window. It comes with the Agents addon's **Live Activity**.
 </details>
 
 <details>
