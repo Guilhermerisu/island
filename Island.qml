@@ -243,15 +243,6 @@ Item {
   // on, a burst of window events asks for it once.
   readonly property bool screensaverActive: ToplevelManager.toplevels.values
     .some(function(t) { return t.appId === "org.omarchy.screensaver" })
-  // Hidden by a right-click on the island (see EdgeClick), until one on the
-  // top edge brings it back.
-  property bool manuallyHidden: false
-  Connections {
-    target: root.settings
-    function onHideOnRightClickChanged() {
-      if (!root.settings.hideOnRightClick) root.manuallyHidden = false
-    }
-  }
   readonly property bool autoHideTiling: settings.autoHideTiling
   onAutoHideTilingChanged: if (autoHideTiling) tilingRefreshTimer.restart()
   Connections {
@@ -559,6 +550,15 @@ Item {
       required property var modelData
       PanelWindow {
         id: window
+        // Hidden by a right-click on this screen's island (see EdgeClick),
+        // until a right-click on its top edge brings it back.
+        property bool manuallyHidden: false
+        Connections {
+          target: root.settings
+          function onHideOnRightClickChanged() {
+            if (!root.settings.hideOnRightClick) window.manuallyHidden = false
+          }
+        }
         screen: perScreen.modelData
         visible: perScreen.modelData.name === root.outputName
         color: "transparent"
@@ -612,12 +612,12 @@ Item {
 
         // Hover at the top edge can bring a hidden island back, unless a
         // right-click hid it: then a right-click on the edge does.
-        readonly property bool revealArmed: isEffectivelyHidden && !hasScreensaver && !root.manuallyHidden
+        readonly property bool revealArmed: isEffectivelyHidden && !hasScreensaver && !window.manuallyHidden
 
-        readonly property bool manuallyHiddenAtRest: root.manuallyHidden && root.view === "rest"
+        readonly property bool manuallyHiddenAtRest: window.manuallyHidden && root.view === "rest"
         readonly property bool edgeClickAllowed: visible && root.settings.hideOnRightClick
           && !hasScreensaver && root.view === "rest"
-        readonly property bool clickRevealArmed: edgeClickAllowed && root.manuallyHidden
+        readonly property bool clickRevealArmed: edgeClickAllowed && window.manuallyHidden
 
         readonly property bool islandHidden: manuallyHiddenAtRest || (isEffectivelyHidden
           && !(revealArmed && edgeRevealed))
@@ -639,7 +639,7 @@ Item {
               island.capsulesActive = false
               capsulesEnterTimer.stop()
             }
-            root.manuallyHidden = !revealing
+            window.manuallyHidden = !revealing
           }
         }
 
@@ -1022,7 +1022,7 @@ Item {
       // change of focus would re-tile two monitors.
       PanelWindow {
         screen: window.screen
-        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition && !root.manuallyHidden
+        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition && !window.manuallyHidden
         color: "transparent"
         anchors { top: true; left: true; right: true }
         exclusionMode: ExclusionMode.Normal
