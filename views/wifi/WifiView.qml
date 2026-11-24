@@ -427,8 +427,13 @@ ColumnLayout {
             visible: !row.isHeader
             anchors.fill: parent
             radius: 8
-            color: rowMouse.pressed ? wf.well : rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected || row.askingPassword ? wf.tile : "transparent"
+            color: rowMouse.pressed ? wf.well : rowHover.hovered || row.isSelected || row.askingPassword ? wf.tile : "transparent"
             Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
+            // One passive hover for the whole row, × included. The row's and the
+            // ×'s MouseAreas (and the ×'s Tooltip) each took the hover from the
+            // other, so the × kept fading out and back in and a click could land
+            // on the row instead of the × (or the other way round).
+            HoverHandler { id: rowHover; blocking: false }
 
             Rectangle {
               id: badge
@@ -574,20 +579,18 @@ ColumnLayout {
                 // Fades in on hover and out quicker, and takes no clicks
                 // while it fades out.
                 readonly property bool shown: row.modelData.section !== "nearby" && !row.modelData.pending
-                  && (rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected)
+                  && (rowHover.hovered || row.isSelected)
                 opacity: shown ? 1 : 0
                 visible: opacity > 0.01
                 Behavior on opacity { MotionAnimation { theme: wf.host.theme; pace: forgetButton.shown ? "fade" : "exit"; curve: forgetButton.shown ? "fade" : "exit" } }
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
-                color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
-                Tooltip { theme: wf.host.theme; text: "Forget This Network" }
-                Text {
+                color: forgetTip.hovered ? wf.wellHover : "transparent"
+                Tooltip { id: forgetTip; theme: wf.host.theme; text: "Forget This Network" }
+                Cross {
                   anchors.centerIn: parent
-                  text: "󰅖"
-                  color: forgetMouse.containsMouse ? wf.text : wf.textMuted
-                  font.family: wf.iconFont
-                  font.pixelSize: wf.host.theme.px(15)
+                  color: forgetTip.hovered ? wf.text : wf.textMuted
+                  pixelSize: wf.host.theme.px(15)
                 }
                 MouseArea {
                   id: forgetMouse
