@@ -50,13 +50,40 @@ omarchy bar use guilhermerisu.island
 <h2 align="center">FAQ</h2>
 
 <details>
-<summary><b>Can I jump back to the Claude Code session?</b></summary>
+<summary><b>Can I jump back to the Claude Code or Codex session?</b></summary>
 <br>
 
-Yes. While the Agents pill shows Claude Code waiting on you or a finished
-turn, click it to focus the session's window. This works when Island can
-match the session to a single Hyprland window, so it may not work for
+Yes. While the Agents pill shows Claude Code or Codex waiting on you or a
+finished turn, click it to focus the session's window. This works when Island
+can match the session to a single Hyprland window (for Codex, through the
+process that has the session's transcript open), so it may not work for
 sessions inside a terminal multiplexer.
+</details>
+
+<details>
+<summary><b>Which mascot does the agents pill show?</b></summary>
+<br>
+
+Claude Code's is Clawd, with the animations Anthropic made for him: standing
+and now and then having a thought, working at his laptop, waving when he
+waits on you, dancing when a turn is done. Island paints them from the sprites
+inside the Claude desktop app, if it is installed. Codex's is the pet picked
+in Codex or the ChatGPT desktop app (`~/.codex/pets/<id>/` for a custom one),
+from the sheet that app ships. Nothing is downloaded or bundled, and a small
+built-in Clawd stands in when the apps are not there.
+</details>
+
+<details>
+<summary><b>Does Island tell me when an agent is done?</b></summary>
+<br>
+
+Yes. When a Claude Code or Codex turn finishes, or starts waiting on your
+answer, the agents pill grows into a notice of it, with the agent's mascot
+acting it out, and a check drawing itself in or a "?" that beats. A finished
+turn shows for a moment; a question stays until you answer it. It comes up
+while the island is hidden too (in fullscreen, or hidden with a right-click),
+and skips turns whose window you're already in. Click it to jump to the
+agent's window. It comes with the Agents addon's **Live Activity**.
 </details>
 
 <details>

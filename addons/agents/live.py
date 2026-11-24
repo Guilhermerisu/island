@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Claude Code's sessions at work, for the Agents addon's live activity.
+"""Claude Code's and Codex's sessions at work, for the Agents addon's live activity.
 
 Follows the transcripts Claude Code writes as it goes (<config>/projects/
 <project>/<session>.jsonl, for ~/.claude and any ~/.claude-* profile) and
-prints one JSON line whenever what's worth showing changes:
+Codex's (~/.codex/sessions/<year>/<month>/<day>/rollout-*.jsonl, the CLI, the
+IDE extension and the ChatGPT desktop app alike) and prints one JSON line
+whenever what's worth showing changes:
 
-  {"sessions": [{"id", "state", "startedAt", "doneAt", "interrupted"}]}
+  {"sessions": [{"id", "provider", "name", "state", "startedAt", "doneAt",
+                 "interrupted", "transcript"}]}
 
 newest first. `state` is "thinking", "tool" (a step is running), "asking"
 (it's waiting on your answer to a question or its plan), or "done"
@@ -20,18 +23,27 @@ added to it. A session nothing's written to for IDLE seconds is dropped
 while it waits on your answer.
 """
 import calendar
+from datetime import date, timedelta
 import glob
 import json
 import os
+from pathlib import Path
 import time
 
 POLL = 0.5          # seconds between looks at the sessions in play
 RELIST = 3          # seconds between looks for new transcripts
+RESCAN = 30         # ...and between looks through all of Codex's days
 IDLE = 10 * 60      # a session silent this long is no longer shown
 ASKING_IDLE = 60 * 60  # ...unless it's waiting on your answer
 DONE_KEPT = 30      # seconds a finished turn stays listed
 TAIL = 1 << 20      # bytes read of a transcript first seen
+CODEX_TAIL = 16 << 20  # tool output can fill several MiB of one Codex turn
 MAX_SESSIONS = 4
+CODEX_START = ("task_started", "turn_started")
+CODEX_FINISH = ("task_complete", "turn_completed")
+CODEX_EVENTS = tuple(f'"{kind}"' for kind in CODEX_START + CODEX_FINISH + ("turn_aborted",))
+CODEX_TOOL_IN = ("function_call", "custom_tool_call")
+CODEX_TOOL_OUT = ("function_call_output", "custom_tool_call_output")
 ASKING_TOOLS = ("AskUserQuestion", "ExitPlanMode")  # the tools that wait on your answer
 
 
@@ -47,8 +59,13 @@ def iso_ms(ts):
 
 
 class Session:
-    def __init__(self, path):
+    def __init__(self, path, provider="claude"):
         self.path = path
+        self.provider = provider
+        self.name = "Claude Code" if provider == "claude" else "Codex"
+        self.meta_read = False
+        self.hidden = False    # a Codex sub-agent's: its parent's turn covers it
+        self.turn = None
         self.id = os.path.splitext(os.path.basename(path))[0]
         self.offset = 0
         self.running = {}      # the turn's running steps by id: whether it's asking
@@ -68,10 +85,16 @@ class Session:
         if size == self.offset:
             return
         first = self.offset == 0
-        start = max(0, size - TAIL) if first else self.offset
-        with open(self.path, "rb") as f:
-            f.seek(start)
-            data = f.read(size - start)
+        limit = CODEX_TAIL if self.provider == "codex" else TAIL
+        start = max(0, size - limit) if first else self.offset
+        try:
+            with open(self.path, "rb") as f:
+                if self.provider == "codex" and not self.meta_read:
+                    self.read_meta(f.readline(CODEX_TAIL))
+                f.seek(start)
+                data = f.read(size - start)
+        except OSError:
+            return
         # A line still being written waits for the next look.
         end = data.rfind(b"\n") + 1
         self.offset = start + end
@@ -79,12 +102,81 @@ class Session:
         if first and start > 0:
             chunk = chunk[1:]
         for line in chunk:
+            if self.provider == "codex" and not self.codex_line(line):
+                continue
             try:
                 self.take(json.loads(line))
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, TypeError):
                 pass
 
+    # Codex's transcripts are mostly output nobody here needs: only a turn's
+    # start and end and its tool calls are parsed.
+    @staticmethod
+    def codex_line(line):
+        if '"event_msg"' in line:
+            return any(kind in line for kind in CODEX_EVENTS)
+        return '"response_item"' in line and ('"function_call' in line or '"custom_tool_call' in line)
+
+    # Its first line says where the session runs. Read once it's whole, even
+    # if it turns out not to be the session's meta.
+    def read_meta(self, line):
+        if not line.endswith(b"\n"):
+            return
+        self.meta_read = True
+        try:
+            entry = json.loads(line)
+            if entry.get("type") != "session_meta":
+                return
+            meta = entry.get("payload") or {}
+            source, origin = meta.get("source"), str(meta.get("originator", "")).lower()
+            self.id = meta.get("id") or self.id
+            if isinstance(source, dict) and "subagent" in source:
+                self.hidden = True
+            elif "desktop" in origin or "chatgpt" in origin:
+                self.name = "Codex Desktop"
+            elif source == "vscode":
+                self.name = "Codex IDE"
+            elif source in ("cli", "exec"):
+                self.name = "Codex CLI"
+        except (ValueError, AttributeError, TypeError):
+            return
+
+    def take_codex(self, entry):
+        payload = entry.get("payload") or {}
+        kind = payload.get("type")
+        stamp = iso_ms(entry.get("timestamp"))
+        if entry.get("type") == "response_item":
+            call = payload.get("call_id")
+            if call and self.state not in ("", "done"):
+                if kind in CODEX_TOOL_IN:
+                    asking = str(payload.get("name", "")).endswith(("request_user_input", "request_user_input_async"))
+                    self.running[call] = asking
+                elif kind in CODEX_TOOL_OUT:
+                    self.running.pop(call, None)
+                else:
+                    return
+                self.updated = max(self.updated, stamp)
+                self.state = self.working()
+            return
+        if entry.get("type") != "event_msg":
+            return
+        if kind in CODEX_START:
+            self.updated = max(self.updated, stamp)
+            self.turn = payload.get("turn_id")
+            self.running, self.state, self.started, self.done_at = {}, "thinking", stamp, 0
+            self.interrupted = False
+        elif kind in CODEX_FINISH + ("turn_aborted",):
+            turn = payload.get("turn_id")
+            if self.turn and turn and self.turn != turn:
+                return
+            self.updated = max(self.updated, stamp)
+            if self.state and self.state != "done":
+                self.finish(stamp, interrupted=kind == "turn_aborted")
+
     def take(self, entry):
+        if self.provider == "codex":
+            self.take_codex(entry)
+            return
         kind = entry.get("type")
         if kind not in ("user", "assistant") or entry.get("isSidechain"):
             return
@@ -141,8 +233,9 @@ class Session:
         return now - max(self.updated, mtime_ms(self.path)) < idle * 1000
 
     def snapshot(self):
-        return {"id": self.id, "state": self.state, "startedAt": self.started,
-                "doneAt": self.done_at, "interrupted": self.interrupted}
+        return {"id": self.id, "provider": self.provider, "name": self.name, "state": self.state,
+                "startedAt": self.started, "doneAt": self.done_at, "interrupted": self.interrupted,
+                "transcript": self.path}
 
 
 def mtime_ms(path):
@@ -163,8 +256,21 @@ def roots():
     return out
 
 
+# Today's and yesterday's rollouts (a turn can run across midnight), and, now
+# and then, every day's: a resumed session goes on in the rollout of the day
+# it began.
+def codex_paths(everywhere=False):
+    root = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "sessions"
+    if everywhere:
+        yield from (str(p) for p in root.glob("*/*/*/rollout-*.jsonl"))
+        return
+    today = date.today()
+    for day in (today, today - timedelta(days=1)):
+        yield from (str(p) for p in (root / day.strftime("%Y/%m/%d")).glob("rollout-*.jsonl"))
+
+
 def main():
-    sessions, hot, last, listed = {}, [], None, 0
+    sessions, hot, last, listed, scanned, resumed = {}, [], None, 0, 0, []
     while True:
         if os.getppid() == 1:
             return
@@ -173,14 +279,21 @@ def main():
             listed = now
             # Followed as long as one could still be shown: a question can
             # wait on you longer than a session may otherwise sit quiet.
-            hot = [p for r in roots() for p in glob.glob(os.path.join(r, "*", "*.jsonl"))
-                   if now - os.path.getmtime(p) < max(IDLE, ASKING_IDLE)]
-        for path in hot:
+            found = [(p, "claude") for r in roots() for p in glob.glob(os.path.join(r, "*", "*.jsonl"))]
+            found.extend((p, "codex") for p in codex_paths())
+            if now - scanned >= RESCAN:
+                scanned = now
+                recent = {p for p, _ in found}
+                resumed = [p for p in codex_paths(everywhere=True)
+                           if p not in recent and now - mtime_ms(p) / 1000 < max(IDLE, ASKING_IDLE)]
+            found.extend((p, "codex") for p in resumed)
+            hot = [(p, provider) for p, provider in found if now - mtime_ms(p) / 1000 < max(IDLE, ASKING_IDLE)]
+        for path, provider in hot:
             if path not in sessions:
-                sessions[path] = Session(path)
+                sessions[path] = Session(path, provider)
             sessions[path].read()
         stamp = now_ms()
-        shown = sorted((s for s in sessions.values() if s.shown(stamp)), key=lambda s: -s.updated)
+        shown = sorted((s for s in sessions.values() if not s.hidden and s.shown(stamp)), key=lambda s: -s.updated)
         out = json.dumps({"sessions": [s.snapshot() for s in shown[:MAX_SESSIONS]]}, separators=(",", ":"))
         if out != last:
             last = out
@@ -189,7 +302,8 @@ def main():
             except BrokenPipeError:
                 os._exit(0)
         # Forgotten once they've gone quiet, so the next look reads them afresh.
-        for path in [p for p in sessions if p not in hot]:
+        followed = {p for p, _ in hot}
+        for path in [p for p in sessions if p not in followed]:
             del sessions[path]
         time.sleep(POLL)
 

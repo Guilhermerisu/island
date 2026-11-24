@@ -35,13 +35,20 @@ Item {
   property var stacks: []
   property bool stacked: false
   onStackedChanged: rebuild()
-  // Claude's own notifications (the desktop app's, or Claude Code's) are left
-  // out, from the pill and the history, while the agents addon's live
-  // activity already shows its turns.
+  // Claude's and Codex's own notifications (the desktop app's, or the CLIs')
+  // are left out, from the pill and the history, while the agents addon's
+  // live activity already shows its turns and announces when they end.
   property bool hideClaude: false
   onHideClaudeChanged: rebuild()
   function hidden(row) {
-    return hideClaude && (String(row.app || "") === "Claude" || agent(row) === "claude")
+    return hideClaude && (String(row.app || "") === "Claude" || agent(row) === "claude" || fromCodex(row))
+  }
+  // Codex's own: titled Codex, or, sent through the terminal (which titles
+  // it with its own name, as it does any program's), in Codex's words.
+  function fromCodex(row) {
+    if (agent(row) !== "codex") return false
+    return String(row.summary || "") === "Codex"
+      || /^(Agent turn complete|Approval requested|Codex wants to edit|Plan mode prompt|Needs input)|needs your approval\./.test(String(row.body || ""))
   }
   // A notification new to the feed.
   signal arrived(var row)

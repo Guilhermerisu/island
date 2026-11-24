@@ -10,18 +10,27 @@ import ".."
 // regenerated then and every few minutes while it stays open; the collectors
 // reuse their recent transcript scans, so only the limits go over the wire.
 //
-// While Claude Code works, it's a live activity too (see AgentsPill): its
-// turn as it goes, read from its transcripts by live.py, with Clawd
-// (AgentsMascot) acting it out. It says when a turn's done.
+// While Claude Code or Codex works, it's a live activity too (see AgentsPill):
+// its turn as it goes, read from its transcripts by live.py, with its mascot
+// (AgentAvatar) acting it out: Clawd for Claude Code, and for Codex the pet
+// picked in Codex or the ChatGPT desktop app (pet.py), Clawd standing in
+// when none's found. It says when a turn's done.
 Addon {
   id: agentsAddon
   pill: Component { AgentsPill { agents: agentsAddon } }
-  ongoing: working || finished
-  pillWidth: 236
-  // Claude's orange, or the theme's accent when live activities aren't
-  // colorful; amber while it waits on you.
+  ongoing: working
+  pillWidth: noticeShown ? 328 : 236
+  // Grown into a notice (see AgentNotice): room for the mascot's tile, the
+  // name over what happened, and the badge, with corners concentric with
+  // the tile's (its radius plus the inset around it).
+  readonly property real noticeHeight: 62
+  pillHeight: noticeShown ? noticeHeight : restHeight
+  pillRadius: noticeShown ? 13 + (noticeHeight - 39) / 2 : 0
+  // The agent's color (Claude's orange, Codex's lavender), or the theme's
+  // accent when live activities aren't colorful; amber while it waits on you.
   readonly property color ink: asking ? host.theme.system.orange
-    : host.settings.colorfulLiveActivities ? "#d97757" : host.theme.accent
+    : host.settings.colorfulLiveActivities ? (live && live.provider === "codex" ? "#aca1c8" : "#d97757")
+    : host.theme.accent
   // Drawn with the picked agent's logo, not the addon's, at its size; the
   // pane leads with the agent as its own header (see AgentsPage).
   settingsPages: [{
@@ -129,6 +138,43 @@ Addon {
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
 
+  // Codex's pet, looked for once there's a Codex session to show (and at
+  // the start, so it's loaded by then); Clawd is drawn until it's found.
+  property url petSheet: ""
+  property int petCols: 8
+  property int petRows: 9
+  readonly property bool hasCodexSession: sessions.some(function(s) { return s.provider === "codex" })
+  onHasCodexSessionChanged: if (hasCodexSession && !String(petSheet)) petFinder.running = true
+  // Clawd's sheet, painted out of the Claude desktop app's sprites (see
+  // clawd.py): null until it is, or without the app, and the built-in one's
+  // drawn.
+  property var clawd: null
+  Process {
+    id: clawdFinder
+    running: agentsAddon.addon.option("live") !== false
+    command: ["python3", agentsAddon.localPath("clawd.py")]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try { agentsAddon.clawd = JSON.parse(text) } catch (e) {}
+      }
+    }
+  }
+  Process {
+    id: petFinder
+    running: agentsAddon.addon.option("live") !== false
+    command: ["python3", agentsAddon.localPath("pet.py")]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          var pet = JSON.parse(text)
+          agentsAddon.petCols = pet.cols
+          agentsAddon.petRows = pet.rows
+          agentsAddon.petSheet = pet.source
+        } catch (e) {}
+      }
+    }
+  }
+
   Process {
     id: liveWatch
     running: agentsAddon.addon.option("live") !== false
@@ -144,48 +190,146 @@ Addon {
     onRunningChanged: if (!running) agentsAddon.sessions = []
   }
 
-  // A turn that ends while it's shown says so on the pill a moment, as a
-  // call that ends does (see AgentsPill); it stays while the pointer's on
-  // it.
-  property bool finished: false
-  function takeSessions(next) {
-    var wasWorking = working
-    sessions = next
-    // A turn you stopped isn't a finished one: the pill just goes.
-    if (wasWorking && !working && next.length && next[0].state === "done" && !next[0].interrupted) {
-      finished = true
-      finishedTimer.restart()
-    } else if (working) {
-      finished = false
-      finishedTimer.stop()
+  // Each session's last state, to see what changed: a turn that ends, or
+  // one that starts waiting on you, is announced by the pill growing into a
+  // notice of it (see AgentNotice), which comes up even while the island is
+  // hidden (in fullscreen, say). A turn's end shows for a moment; a question
+  // stays until it's answered, giving way a moment to any other notice. The
+  // first look only learns the states.
+  property var lastStates: null
+  // What's waiting to be announced, and the one on screen.
+  property var pending: []
+  property var notice: null
+  function announce(next) {
+    var before = lastStates
+    var states = {}
+    next.forEach(function(s) { states[s.id] = s.state })
+    lastStates = states
+    if (!before) return
+    var events = []
+    next.forEach(function(s) {
+      var was = before[s.id]
+      if (was === s.state) return
+      var ended = s.state === "done" && !s.interrupted && was && was !== "done"
+      if (ended || (s.state === "asking" && was !== "asking"))
+        events.push(Object.assign({}, s, { noticeKind: s.state, noticeAt: Date.now() }))
+    })
+    if (!events.length) return
+    pending = pending.concat(events).slice(-6)
+    if (!notice) advanceNotice()
+  }
+  // A question already answered isn't announced any more.
+  function stale(event) {
+    if (!event || event.noticeKind !== "asking") return false
+    var now = sessions.find(function(s) { return s.id === event.id })
+    return !now || now.state !== "asking"
+  }
+  // The next one, unless its window is the one you're in (see
+  // focus-session.py --focused): the one on screen stays while that's
+  // looked up, so the pill goes straight from one to the next.
+  function advanceNotice() {
+    noticeTimer.stop()
+    if (noticeCheck.running) return
+    while (pending.length) {
+      var next = pending[0]
+      pending = pending.slice(1)
+      if (stale(next)) continue
+      noticeCheck.event = next
+      noticeCheck.command = ["python3", localPath("focus-session.py"), "--focused", next.id, next.provider || "claude", next.transcript || ""]
+      noticeCheck.running = true
+      return
+    }
+    // The last one: its content leaves first, then the pill shrinks back.
+    if (noticeShown) { noticeLeaving = true; noticeLeave.restart(); return }
+    endNotice()
+  }
+  function endNotice() {
+    noticeLeaving = false
+    notice = null
+    if (host.view === "feedback" && host.feedbackKind === noticeFeedback) host.dismissFeedback()
+    // One that came in meanwhile.
+    if (pending.length) advanceNotice()
+  }
+  property bool noticeLeaving: false
+  Timer {
+    id: noticeLeave
+    // As long as AgentNotice's parts take to leave (see PillReveal).
+    interval: Math.round(agentsAddon.host.theme.motionDuration("exit") * 4 / 3) + 20
+    onTriggered: agentsAddon.endNotice()
+  }
+  Process {
+    id: noticeCheck
+    property var event: null
+    onExited: function(code) {
+      var next = event
+      event = null
+      if (code === 0 || agentsAddon.stale(next)) { agentsAddon.advanceNotice(); return }
+      agentsAddon.notice = next
+      agentsAddon.present()
     }
   }
-  // Waiting on you or just done, a click goes to the session's window
-  // (see focus-session.py) instead of the control center; done, the pill
-  // then goes too.
+  // The notice is the pill grown, shown through the island's feedback (so it
+  // comes up while the island's hidden too); the island's own momentary
+  // pills, an open surface, or the screensaver hold it back, and the one
+  // waiting keeps its turn.
+  readonly property string noticeFeedback: "addon:" + addon.id
+  readonly property bool noticeShown: !!notice && host.view === "feedback" && host.feedbackKind === noticeFeedback
+  readonly property bool noticeHeld: host.surfaceOpen || host.screensaverActive
+    || (host.view === "feedback" && host.feedbackKind !== noticeFeedback)
+  function present() {
+    if (!notice || noticeHeld) return
+    host.showFeedback("", 600000, noticeFeedback)
+    noticeTimer.restart()
+  }
+  readonly property bool noticeWaits: !!notice && notice.noticeKind === "asking"
+  onNoticeHeldChanged: {
+    if (!notice || noticeLeaving) return
+    if (noticeHeld) noticeTimer.stop()
+    else if (stale(notice)) advanceNotice()
+    else present()
+  }
+  Timer {
+    id: noticeTimer
+    interval: 3000
+    // It stays while the pointer's on it. A question stays till it's
+    // answered (see takeSessions), giving way to the others waiting, then
+    // coming back after them.
+    onTriggered: {
+      if (agentsAddon.hovered) { restart(); return }
+      if (agentsAddon.noticeWaits && !agentsAddon.stale(agentsAddon.notice)) {
+        if (!agentsAddon.pending.length) { restart(); return }
+        agentsAddon.pending = agentsAddon.pending.concat([agentsAddon.notice])
+      }
+      agentsAddon.advanceNotice()
+    }
+  }
+  // A click on the notice goes to the session's window.
+  function focusNotice() {
+    if (!notice || focusProc.running) return
+    focusProc.command = ["python3", localPath("focus-session.py"), notice.id, notice.provider || "claude", notice.transcript || ""]
+    focusProc.running = true
+    // A question stays until it's answered.
+    if (!noticeWaits) advanceNotice()
+  }
+
+  function takeSessions(next) {
+    sessions = next
+    announce(next)
+    // A question answered: its notice goes.
+    if (notice && !noticeLeaving && stale(notice)) advanceNotice()
+  }
+  // Waiting on you, a click goes to the session's window (see
+  // focus-session.py) instead of the control center.
   function pillClicked() {
-    var target = asking || finished ? live : null
-    if (!target) { host.view = "controls"; return }
+    if (noticeShown) { focusNotice(); return }
+    if (!asking) { host.view = "controls"; return }
     if (focusProc.running) return
-    focusProc.wasDone = !asking
-    focusProc.command = ["python3", localPath("focus-session.py"), target.id]
+    focusProc.command = ["python3", localPath("focus-session.py"), live.id, live.provider || "claude", live.transcript || ""]
     focusProc.running = true
   }
   Process {
     id: focusProc
-    property bool wasDone: false
-    onExited: function(code) {
-      if (code !== 0) agentsAddon.host.view = "controls"
-      else if (wasDone && !agentsAddon.working) {
-        agentsAddon.finished = false
-        finishedTimer.stop()
-      }
-    }
-  }
-  Timer {
-    id: finishedTimer
-    interval: 4000
-    onTriggered: if (agentsAddon.hovered) restart(); else agentsAddon.finished = false
+    onExited: function(code) { if (code !== 0) agentsAddon.host.view = "controls" }
   }
 
   // The turn's time, by the second while it's on screen; done, it stops
@@ -208,6 +352,6 @@ Addon {
     return h > 0 ? h + ":" + ("0" + m).slice(-2) + ":" + ss : m + ":" + ss
   }
 
-  // Held by the pointer, a finished turn's "Done" stays (see finishedTimer).
+  // Held by the pointer, a notice stays (see noticeTimer).
   property bool hovered: false
 }
