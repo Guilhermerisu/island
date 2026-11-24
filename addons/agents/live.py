@@ -32,6 +32,7 @@ import time
 
 POLL = 0.5          # seconds between looks at the sessions in play
 RELIST = 3          # seconds between looks for new transcripts
+RESCAN = 30         # ...and between looks through all of Codex's days
 IDLE = 10 * 60      # a session silent this long is no longer shown
 ASKING_IDLE = 60 * 60  # ...unless it's waiting on your answer
 DONE_KEPT = 30      # seconds a finished turn stays listed
@@ -89,7 +90,7 @@ class Session:
         try:
             with open(self.path, "rb") as f:
                 if self.provider == "codex" and not self.meta_read:
-                    self.read_meta(f.readline(TAIL))
+                    self.read_meta(f.readline(CODEX_TAIL))
                 f.seek(start)
                 data = f.read(size - start)
         except OSError:
@@ -116,8 +117,12 @@ class Session:
             return any(kind in line for kind in CODEX_EVENTS)
         return '"response_item"' in line and ('"function_call' in line or '"custom_tool_call' in line)
 
-    # Its first line says where the session runs.
+    # Its first line says where the session runs. Read once it's whole, even
+    # if it turns out not to be the session's meta.
     def read_meta(self, line):
+        if not line.endswith(b"\n"):
+            return
+        self.meta_read = True
         try:
             entry = json.loads(line)
             if entry.get("type") != "session_meta":
@@ -135,7 +140,6 @@ class Session:
                 self.name = "Codex CLI"
         except (ValueError, AttributeError, TypeError):
             return
-        self.meta_read = True
 
     def take_codex(self, entry):
         payload = entry.get("payload") or {}
@@ -250,16 +254,21 @@ def roots():
     return out
 
 
-# Today's and yesterday's rollouts: a turn can run across midnight.
-def codex_paths():
+# Today's and yesterday's rollouts (a turn can run across midnight), and, now
+# and then, every day's: a resumed session goes on in the rollout of the day
+# it began.
+def codex_paths(everywhere=False):
     root = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "sessions"
+    if everywhere:
+        yield from (str(p) for p in root.glob("*/*/*/rollout-*.jsonl"))
+        return
     today = date.today()
     for day in (today, today - timedelta(days=1)):
         yield from (str(p) for p in (root / day.strftime("%Y/%m/%d")).glob("rollout-*.jsonl"))
 
 
 def main():
-    sessions, hot, last, listed = {}, [], None, 0
+    sessions, hot, last, listed, scanned, resumed = {}, [], None, 0, 0, []
     while True:
         if os.getppid() == 1:
             return
@@ -270,6 +279,12 @@ def main():
             # wait on you longer than a session may otherwise sit quiet.
             found = [(p, "claude") for r in roots() for p in glob.glob(os.path.join(r, "*", "*.jsonl"))]
             found.extend((p, "codex") for p in codex_paths())
+            if now - scanned >= RESCAN:
+                scanned = now
+                recent = {p for p, _ in found}
+                resumed = [p for p in codex_paths(everywhere=True)
+                           if p not in recent and now - mtime_ms(p) / 1000 < max(IDLE, ASKING_IDLE)]
+            found.extend((p, "codex") for p in resumed)
             hot = [(p, provider) for p, provider in found if now - mtime_ms(p) / 1000 < max(IDLE, ASKING_IDLE)]
         for path, provider in hot:
             if path not in sessions:
@@ -285,7 +300,8 @@ def main():
             except BrokenPipeError:
                 os._exit(0)
         # Forgotten once they've gone quiet, so the next look reads them afresh.
-        for path in [p for p in sessions if p not in {h[0] for h in hot}]:
+        followed = {p for p, _ in hot}
+        for path in [p for p in sessions if p not in followed]:
             del sessions[path]
         time.sleep(POLL)
 
