@@ -18,6 +18,8 @@ import re
 import struct
 import sys
 
+from appasar import Asar, cache, cache_dir
+
 CELL_W, CELL_H = 192, 208
 SHEET = re.compile(r"^(?P<id>.+)-spritesheet-v(?P<version>\d+)(?:\.[0-9a-f]+)?\.webp$")
 APP_DIRS = ("/usr/lib/chatgpt", "/opt/chatgpt", "/opt/ChatGPT", "/usr/lib/codex", "/opt/codex")
@@ -51,7 +53,10 @@ def selected_pet():
     return found[-1] if found else "codex"
 
 
-def webp_size(data):
+def sheet_size(data):
+    """A WebP's or PNG's width and height, from its header."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n" and data[12:16] == b"IHDR":
+        return struct.unpack(">II", data[16:24])
     if data[:4] != b"RIFF" or data[8:12] != b"WEBP":
         return None
     kind = data[12:16]
@@ -61,7 +66,8 @@ def webp_size(data):
     if kind == b"VP8X":
         return int.from_bytes(data[24:27], "little") + 1, int.from_bytes(data[27:30], "little") + 1
     if kind == b"VP8 ":
-        return struct.unpack("<HH", data[26:30])[0] & 0x3FFF, struct.unpack("<HH", data[28:32])[1] & 0x3FFF
+        width, height = struct.unpack("<HH", data[26:30])
+        return width & 0x3FFF, height & 0x3FFF
     return None
 
 
@@ -87,23 +93,16 @@ def custom_sheet(pet):
 
 def asar_sheet(archive, pet):
     """The newest `<pet>-spritesheet-v*.webp` in an app.asar: (name, bytes)."""
-    with open(archive, "rb") as f:
-        head = f.read(16)
-        pickle, length = struct.unpack("<II", head[4:8] + head[12:16])
-        header = json.loads(f.read(length))
-        base = 8 + pickle
-        node = header.get("files", {})
+    with Asar(archive) as asar:
+        node = asar.files
         for part in ("webview", "assets"):
-            node = node.get(part, {}).get("files", {})
+            node = node.get("files", {}).get(part, {})
         best = None
-        for name, meta in node.items():
-            m = SHEET.match(name)
-            if m and m["id"] == pet and "offset" in meta and (best is None or int(m["version"]) > best[0]):
-                best = (int(m["version"]), name, meta)
-        if not best:
-            return None
-        f.seek(base + int(best[2]["offset"]))
-        return best[1], f.read(min(int(best[2]["size"]), MAX_SHEET))
+        for path, meta in asar.walk(node):
+            m = SHEET.match(path.lstrip("/"))
+            if m and m["id"] == pet and int(meta["size"]) <= MAX_SHEET and (best is None or int(m["version"]) > best[0]):
+                best = (int(m["version"]), path.lstrip("/"), meta)
+        return (best[1], asar.read(best[2])) if best else None
 
 
 def app_archives():
@@ -116,44 +115,31 @@ def app_archives():
             yield archive
 
 
-def cache_dir():
-    root = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
-    return root / "guilhermerisu.island" / "pet"
-
-
-def find(pet):
+def sheets(pet):
+    """The pet's sheet wherever it's found, as (path, bytes)."""
     path = custom_sheet(pet)
     if path:
-        return path, path.read_bytes()
+        yield path, path.read_bytes()
     for archive in app_archives():
         try:
             found = asar_sheet(archive, pet)
         except (OSError, ValueError, struct.error, KeyError):
             continue
         if found:
-            name, data = found
-            target = cache_dir() / name
-            if not target.exists() or target.stat().st_size != len(data):
-                target.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
-                partial = target.with_suffix(".part")
-                partial.write_bytes(data)
-                partial.replace(target)
-            return target, data
-    return None
+            yield cache(cache_dir("pet") / found[0], found[1]), found[1]
 
 
 def main():
     pet = selected_pet()
-    # The pet picked may not ship with the app (an older one, say): Codex's own.
-    found = find(pet) or (find("codex") if pet != "codex" else None)
-    if not found:
-        return
-    path, data = found
-    size = webp_size(data)
-    cols, rows = (size[0] // CELL_W, size[1] // CELL_H) if size else (0, 0)
-    if cols < 1 or rows < 9:
-        return
-    print(json.dumps({"id": pet, "source": path.resolve().as_uri(), "cols": cols, "rows": rows}), flush=True)
+    # The pet picked may not ship with the app (an older one, say), or its
+    # sheet may not be one that can be read: Codex's own then.
+    for name in dict.fromkeys((pet, "codex")):
+        for path, data in sheets(name):
+            size = sheet_size(data)
+            cols, rows = (size[0] // CELL_W, size[1] // CELL_H) if size else (0, 0)
+            if cols >= 1 and rows >= 9:
+                print(json.dumps({"id": name, "source": path.resolve().as_uri(), "cols": cols, "rows": rows}), flush=True)
+                return
 
 
 if __name__ == "__main__":

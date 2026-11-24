@@ -14,12 +14,13 @@ its rows, and `body` the box his standing body fills in a cell. It prints nothin
 addon then keeps its built-in Clawd. Nothing is downloaded.
 """
 import json
-import os
 from pathlib import Path
 import re
 import struct
 import sys
 import zlib
+
+from appasar import Asar, cache, cache_dir
 
 # The animations in the sheet's row order.
 ANIMATIONS = ("Thinking", "Laptop", "LookingAround", "Swaying", "Lightbulb", "Waving", "DancingHappy")
@@ -36,25 +37,11 @@ def archives():
             yield archive
 
 
-def walk(node, prefix=""):
-    for name, meta in (node.get("files") or {}).items():
-        path = f"{prefix}/{name}"
-        if "files" in meta:
-            yield from walk(meta, path)
-        else:
-            yield path, meta
-
-
 def engine_source(archive):
-    with open(archive, "rb") as f:
-        head = f.read(16)
-        pickle, length = struct.unpack("<II", head[4:8] + head[12:16])
-        header = json.loads(f.read(length))
-        base = 8 + pickle
-        for path, meta in walk(header):
-            if ENGINE.match(path) and "offset" in meta and int(meta["size"]) <= MAX_SOURCE:
-                f.seek(base + int(meta["offset"]))
-                return f.read(int(meta["size"])).decode("utf-8", "replace"), path
+    with Asar(archive) as asar:
+        for path, meta in asar.walk():
+            if ENGINE.match(path) and int(meta["size"]) <= MAX_SOURCE:
+                return asar.read(meta).decode("utf-8", "replace"), path
     return None
 
 
@@ -150,28 +137,36 @@ def build(table):
     return png(width, height, pixels), cell_w, cell_h, cols, body
 
 
-def cache_dir():
-    root = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
-    return root / "guilhermerisu.island" / "clawd"
-
-
 def main():
     for archive in archives():
-        found = engine_source(archive)
-        table = sprite_table(found[0]) if found else None
+        try:
+            found = engine_source(archive)
+        except (OSError, ValueError, struct.error, KeyError):
+            continue
+        if not found:
+            continue
+        # Named for the engine file, so a newer app's sprites make a new sheet;
+        # one already painted is reused as it is.
+        stem = re.sub(r"\W+", "-", Path(found[1]).stem)
+        target, line = cache_dir("clawd") / (stem + ".png"), cache_dir("clawd") / (stem + ".json")
+        if target.is_file():
+            try:
+                print(json.dumps(json.loads(line.read_text())), flush=True)
+                return
+            except (OSError, ValueError):
+                pass  # its line's missing: painted again below
+        try:
+            table = sprite_table(found[0])
+        except ValueError:
+            continue
         if not table or any(name not in table for name in ANIMATIONS):
             continue
         sheet, cell_w, cell_h, cols, body = build(table)
-        # Named for the engine file, so a newer app's sprites make a new sheet.
-        name = re.sub(r"\W+", "-", Path(found[1]).stem) + ".png"
-        target = cache_dir() / name
-        if not target.exists() or target.stat().st_size != len(sheet):
-            target.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
-            partial = target.with_suffix(".part")
-            partial.write_bytes(sheet)
-            partial.replace(target)
-        print(json.dumps({"source": target.resolve().as_uri(), "cellW": cell_w, "cellH": cell_h,
-                          "cols": cols, "rows": list(ANIMATIONS), "body": body}), flush=True)
+        cache(target, sheet)
+        out = json.dumps({"source": target.resolve().as_uri(), "cellW": cell_w, "cellH": cell_h,
+                          "cols": cols, "rows": list(ANIMATIONS), "body": body})
+        cache(line, out.encode())
+        print(out, flush=True)
         return
 
 

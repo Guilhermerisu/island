@@ -103,7 +103,20 @@ def focus(window):
             or hyprctl("dispatch", "focuswindow", address) == "ok")
 
 
+def focused(window):
+    try:
+        active = json.loads(hyprctl("-j", "activewindow") or "{}")
+    except ValueError:
+        return False
+    return isinstance(active, dict) and active.get("address") == window["address"]
+
+
+# With --focused first, it only says (by its exit code) whether the session's
+# window is the focused one.
 if __name__ == "__main__":
+    check = sys.argv[1:2] == ["--focused"]
+    if check:
+        sys.argv.pop(1)
     args = sys.argv[1:] + [""] * (3 - len(sys.argv[1:]))
     target = resolve(args[0], hypr_list("clients"), args[1] or "claude", args[2]) if len(sys.argv) in (2, 4) else None
-    sys.exit(0 if target and focus(target) else 1)
+    sys.exit(0 if target and (focused(target) if check else focus(target)) else 1)
