@@ -19,7 +19,12 @@ Addon {
   id: agentsAddon
   pill: Component { AgentsPill { agents: agentsAddon } }
   ongoing: working || finished
-  pillWidth: 236
+  pillWidth: noticeShown ? 328 : 236
+  // Grown into a notice (see AgentNotice): room for the mascot's tile, the
+  // name over what happened, and the badge, with corners concentric with
+  // the tile's (its radius plus the inset around it).
+  pillHeight: noticeShown ? 62 : restHeight
+  pillRadius: noticeShown ? 13 + (62 - 39) / 2 : 0
   // The agent's color (Claude's orange, Codex's lavender), or the theme's
   // accent when live activities aren't colorful; amber while it waits on you.
   readonly property color ink: asking ? host.theme.system.orange
@@ -190,10 +195,9 @@ Addon {
   property bool finished: false
 
   // Each session's last state, to see what changed: a turn that ends, or
-  // one that starts waiting on you, is announced with a banner dropping
-  // from the top (see AgentActivityBanner), which comes up even while the
-  // island is hidden (in fullscreen, say). The first look only learns the
-  // states.
+  // one that starts waiting on you, is announced by the pill growing into a
+  // notice of it (see AgentNotice), which comes up even while the island is
+  // hidden (in fullscreen, say). The first look only learns the states.
   property var lastStates: null
   // What's waiting to be announced, and the one on screen.
   property var pending: []
@@ -216,18 +220,67 @@ Addon {
     pending = pending.concat(events).slice(-6)
     if (!notice) advanceNotice()
   }
+  // A question already answered isn't announced any more.
+  function stale(event) {
+    if (!event || event.noticeKind !== "asking") return false
+    var now = sessions.find(function(s) { return s.id === event.id })
+    return !now || now.state !== "asking"
+  }
+  // The next one, unless its window is the one you're in (see
+  // focus-session.py --focused): the one on screen stays while that's
+  // looked up, so the pill goes straight from one to the next.
   function advanceNotice() {
-    if (!pending.length) { notice = null; noticeTimer.stop(); return }
-    notice = pending[0]
-    pending = pending.slice(1)
+    noticeTimer.stop()
+    if (noticeCheck.running) return
+    while (pending.length) {
+      var next = pending[0]
+      pending = pending.slice(1)
+      if (stale(next)) continue
+      noticeCheck.event = next
+      noticeCheck.command = ["python3", localPath("focus-session.py"), "--focused", next.id, next.provider || "claude", next.transcript || ""]
+      noticeCheck.running = true
+      return
+    }
+    notice = null
+    if (host.view === "feedback" && host.feedbackKind === noticeFeedback) host.dismissFeedback()
+  }
+  Process {
+    id: noticeCheck
+    property var event: null
+    onExited: function(code) {
+      var next = event
+      event = null
+      if (code === 0 || agentsAddon.stale(next)) { agentsAddon.advanceNotice(); return }
+      agentsAddon.notice = next
+      agentsAddon.present()
+    }
+  }
+  // The notice is the pill grown, shown through the island's feedback (so it
+  // comes up while the island's hidden too); the island's own momentary
+  // pills, an open surface, or the screensaver hold it back, and the one
+  // waiting keeps its turn.
+  readonly property string noticeFeedback: "addon:" + addon.id
+  readonly property bool noticeShown: !!notice && host.view === "feedback" && host.feedbackKind === noticeFeedback
+  readonly property bool noticeHeld: host.surfaceOpen || host.screensaverActive
+    || (host.view === "feedback" && host.feedbackKind !== noticeFeedback)
+  function present() {
+    if (!notice || noticeHeld) return
+    host.showFeedback("", 600000, noticeFeedback)
     noticeTimer.restart()
+  }
+  onNoticeHeldChanged: {
+    if (!notice) return
+    if (noticeHeld) noticeTimer.stop()
+    else if (stale(notice)) advanceNotice()
+    else present()
   }
   Timer {
     id: noticeTimer
     interval: 3000
-    onTriggered: agentsAddon.advanceNotice()
+    // It stays while the pointer's on it.
+    onTriggered: if (agentsAddon.hovered) restart(); else agentsAddon.advanceNotice()
   }
-  // A click on the banner goes to the session's window.
+  // A click on the notice goes to the session's window.
   function focusNotice() {
     if (!notice || focusProc.running) return
     focusProc.wasDone = false
@@ -237,9 +290,9 @@ Addon {
   }
 
   function takeSessions(next) {
-    announce(next)
     var wasWorking = working
     sessions = next
+    announce(next)
     // A turn you stopped isn't a finished one: the pill just goes.
     if (wasWorking && !working && next.length && next[0].state === "done" && !next[0].interrupted) {
       finished = true
@@ -253,6 +306,7 @@ Addon {
   // (see focus-session.py) instead of the control center; done, the pill
   // then goes too.
   function pillClicked() {
+    if (noticeShown) { focusNotice(); return }
     var target = asking || finished ? live : null
     if (!target) { host.view = "controls"; return }
     if (focusProc.running) return

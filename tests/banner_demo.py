@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Plays a fake agent turn and films the island's banner, to see its animations.
+"""Plays a fake agent turn and films the island's agents pill and its notices, to see their animations.
 
   python3 tests/banner_demo.py codex|claude [out-dir]
 
 The turn is written as a transcript the agents addon follows: it thinks for a
 second, asks a question, then finishes. Needs the island with the Agents addon
-on, and grim; the frames of the banner (the top middle of the first monitor,
+on, and grim; the frames of the island (the top middle of the first monitor,
 GRIM_REGION to change it) land in out-dir, named by their second. The fake
 transcript is removed at the end.
 """

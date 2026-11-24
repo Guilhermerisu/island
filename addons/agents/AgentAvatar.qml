@@ -3,8 +3,8 @@ import QtQuick
 // The mascot of the agent at work: Clawd for Claude Code, as Anthropic
 // animates him (see clawd.py and ClawdSprite), and for Codex the pet picked in
 // Codex or the ChatGPT desktop app (see pet.py), acted out from its
-// spritesheet. The built-in pixel Clawd (AgentsMascot) stands in, in Codex's
-// color for Codex, until a sheet is found or loaded. `mood` is the same as AgentsMascot's: "walk" (taking a
+// spritesheet. Until a sheet is found or loaded, the built-in pixel Clawd
+// (AgentsMascot) stands in for Claude Code, and Codex's logo for Codex. `mood` is the same as AgentsMascot's: "walk" (taking a
 // step), "think", "wave" (waiting on you), "done" or "rest".
 Item {
   id: avatar
@@ -20,6 +20,8 @@ Item {
   property var clawd: null
   // The size of Clawd's pixels, when the built-in one is drawn.
   property real unit: 1
+  // The icon font Codex's logo is drawn in, without a pet.
+  property string fontFamily: ""
   // Frames each row of the sheet holds (they differ by row), then what the
   // pet does in each mood: rows idle, running-right/left, waving, jumping,
   // failed, waiting (a hand to its chin, then a wave: asking), running,
@@ -27,6 +29,8 @@ Item {
   readonly property var frameCounts: [7, 8, 8, 4, 5, 8, 6, 6, 6]
   readonly property bool pet: provider === "codex" && sheet.toString() !== "" && atlas.status === Image.Ready
   readonly property bool original: provider === "claude" && clawdSprite.ready
+  // Codex's logo drawn, for want of a pet.
+  readonly property bool logo: provider === "codex" && !pet
 
   // Clawd's size is his body's, not his sheet's cell, which has room around
   // him for bubbles and props, so he sits centered where the avatar's put.
@@ -75,9 +79,11 @@ Item {
     property int frame: 0
     onRowChanged: frame = 0
 
+    function restart() { loops = 0; gesture = false; idleLoops = 2; frame = 0 }
     Connections {
       target: avatar
-      function onMoodChanged() { sprite.loops = 0; sprite.gesture = false; sprite.idleLoops = 2 }
+      function onMoodChanged() { sprite.restart() }
+      function onRunningChanged() { if (avatar.running) sprite.restart() }
     }
     // A frame every 125 ms (resting, slower), the island not repainting
     // between them; hopping when done a couple of times, then settling.
@@ -130,10 +136,23 @@ Item {
   AgentsMascot {
     anchors.centerIn: parent
     transform: Translate { y: avatar.hop }
-    visible: !avatar.pet && !avatar.original
+    visible: avatar.provider !== "codex" && !avatar.original
     color: avatar.color
     unit: avatar.unit
     mood: avatar.mood
     running: avatar.running && visible
+  }
+
+  // Codex's logo, bobbing and hopping like a pet would. Its ink sits a pixel
+  // right of the glyph's box (measured on screen), so it's drawn that much left.
+  Text {
+    anchors.centerIn: parent
+    anchors.horizontalCenterOffset: -1
+    transform: Translate { y: avatar.hop }
+    visible: avatar.logo
+    text: "\uec81"
+    color: avatar.color
+    font.family: avatar.fontFamily
+    font.pixelSize: Math.round(Math.min(avatar.width, avatar.height) * 0.62)
   }
 }
