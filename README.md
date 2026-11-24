@@ -128,15 +128,6 @@ top edge of the screen.
 </details>
 
 <details>
-<summary><b>Can I turn off the outline around the island?</b></summary>
-<br>
-
-Yes. The resting island has a thin light outline, so the black pill doesn't
-vanish against a dark wallpaper. Turn it off in Settings → General →
-**Outline**.
-</details>
-
-<details>
 <summary><b>How do I uninstall it?</b></summary>
 <br>
 
