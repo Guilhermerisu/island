@@ -120,6 +120,16 @@ the message tries again.
 </details>
 
 <details>
+<summary><b>Can I hide the island?</b></summary>
+<br>
+
+Yes. Right-click the island to hide it, even when no window is fullscreen. A
+right-click on the thin strip at the top edge, where it was, brings it back.
+Notifications and other views that open over the island still show for a
+moment. Turn it off in Settings → General → Hide → **Right-click to hide**.
+</details>
+
+<details>
 <summary><b>Can it look like a MacBook notch?</b></summary>
 <br>
 
