@@ -5,7 +5,8 @@ import "../../components"
 // Claude Code or Codex at work, as Apple's live activities: its mascot (see AgentAvatar) leading and the
 // turn's time trailing, the clock between them; once the turn's done, a
 // green check and "Done" in the time's place, and "Waiting" while it waits
-// on your answer. `agents` is the AgentsAddon.
+// on your answer. When a turn ends or starts waiting on you, it grows for a
+// moment into a notice of it (AgentNotice). `agents` is the AgentsAddon.
 Item {
   id: pill
   required property var agents
@@ -21,8 +22,9 @@ Item {
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.theme; pace: "fade"; curve: "fade" } }
 
-  // Clawd and the time come in from a blur in turn, as the other pills.
-  PillReveal { id: reveal; theme: pill.theme; shown: pill.agents.pillShown }
+  // Clawd and the time come in from a blur in turn, as the other pills, and
+  // give way while the pill's grown into a notice.
+  PillReveal { id: reveal; theme: pill.theme; shown: pill.agents.pillShown && !pill.agents.noticeShown }
 
   HoverHandler {
     enabled: pill.agents.pillShown
@@ -33,17 +35,20 @@ Item {
   // hopping once it's done. Whole pixels, so it stays crisp.
   AgentAvatar {
     anchors.left: parent.left
-    anchors.leftMargin: pill.codex ? 8 : 10
-    // Clawd's thought bubbles rise above him, so he stands a little low.
-    y: Math.round((parent.height - height) / 2) + (original ? 3 : 1)
+    // Codex's logo sits centered in the pill's rounded end.
+    anchors.leftMargin: logo ? Math.round((parent.height - width) / 2) : pill.codex ? 8 : 10
+    // Clawd (his body) and Codex's logo sit centered; the stand-in pixel
+    // Clawd's box has a row of room under his feet.
+    y: Math.round((parent.height - height) / 2) + (original || logo ? 0 : 1)
     provider: pill.agents.live ? pill.agents.live.provider || "claude" : "claude"
     clawd: pill.agents.clawd
     sheet: pill.agents.petSheet
     cols: pill.agents.petCols
     rows: pill.agents.petRows
     color: pill.ink
+    fontFamily: pill.theme.fontFamily
     mood: ({ done: "done", asking: "wave", tool: "walk" })[pill.phase] || "think"
-    running: pill.agents.pillShown
+    running: pill.agents.pillShown && !pill.agents.noticeShown
     opacity: reveal.leadingIn
     PillPart { progress: reveal.leadingIn }
   }
@@ -162,5 +167,10 @@ Item {
     readonly property real second: Math.max(0, draw * 2 - 1)
     PathLine { x: tick.startX + (tick.corner.x - tick.startX) * tick.first; y: tick.startY + (tick.corner.y - tick.startY) * tick.first }
     PathLine { x: tick.corner.x + (tick.end.x - tick.corner.x) * tick.second; y: tick.corner.y + (tick.end.y - tick.corner.y) * tick.second }
+  }
+
+  AgentNotice {
+    anchors.fill: parent
+    agents: pill.agents
   }
 }

@@ -61,6 +61,8 @@ Item {
     else stand(-1)
   }
   onMoodChanged: begin()
+  // Starting again (a new banner, the pill back), he acts it out afresh.
+  onRunningChanged: if (running) begin()
   Component.onCompleted: begin()
 
   Timer {
