@@ -986,18 +986,23 @@ Item {
           scale: island.scale
           transformOrigin: island.transformOrigin
           readonly property bool prominent: root.surfaceOpen || root.view === "feedback"
-          // A thin outline at rest too (unless turned off), so the black pill
-          // doesn't vanish against a black wallpaper.
-          opacity: (prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.9 : root.settings.restingOutline ? 0.75 : 0)
+          readonly property bool raised: island.lifted || island.isGlanceExpanded
+          // With Outline on, a brighter edge on the resting pill too, so it
+          // doesn't vanish against a black wallpaper. Open and lifted, the
+          // edge stays the chrome's hairline, so banners don't read brighter
+          // than an expanded island.
+          readonly property bool restingEdge: !prominent && !raised && root.settings.restingOutline
+          opacity: prominent ? 1 : raised ? 0.6 : restingEdge ? 0.75 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || islandEdge.raised ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
               strokeWidth: 1
-              strokeColor: root.theme.outlineColor
+              strokeColor: islandEdge.restingEdge ? root.theme.outlineColor : root.theme.hairline
+              Behavior on strokeColor { MotionColorAnimation { theme: root.theme } }
               fillColor: "transparent"
               PathSvg { path: island.edgeOutline }
             }
