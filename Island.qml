@@ -986,7 +986,9 @@ Item {
           scale: island.scale
           transformOrigin: island.transformOrigin
           readonly property bool prominent: root.surfaceOpen || root.view === "feedback"
-          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
+          // A thin outline at rest too (unless turned off), so the black pill
+          // doesn't vanish against a black wallpaper.
+          opacity: (prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.9 : root.settings.restingOutline ? 0.75 : 0)
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
           Shape {
@@ -995,9 +997,7 @@ Item {
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
               strokeWidth: 1
-              // Same hairline as open-view chrome (cards, wells), so banners
-              // don't read brighter than an expanded island.
-              strokeColor: root.theme.hairline
+              strokeColor: root.theme.outlineColor
               fillColor: "transparent"
               PathSvg { path: island.edgeOutline }
             }

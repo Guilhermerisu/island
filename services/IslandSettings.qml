@@ -51,6 +51,7 @@ Item {
       property bool notificationButtons: false
       property bool notificationFullText: false
       property bool notch: false
+      property bool restingOutline: false
       // Windows start under the resting island (the reserve window in Island.qml).
       property bool reserveSpace: false
       property bool downloads: true
