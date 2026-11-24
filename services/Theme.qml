@@ -42,15 +42,18 @@ Item {
   // A neutral label rather than the theme's foreground, which is often
   // tinted; every grey below is derived from it. Flip light/dark ink so
   // light theme backgrounds stay readable.
-  readonly property color text: luminance(background) > 0.45 ? "#1a1a1a" : "#e6e6e6"
+  readonly property color text: contrastRatio(background, "#1a1a1a") > contrastRatio(background, "#e6e6e6") ? "#1a1a1a" : "#e6e6e6"
   // Secondary text and glyphs: a neutral grey, as macOS's secondary label,
   // not the theme's muted colour, which is often tinted and looks dirty
   // next to the neutral cards. The accent alone carries the theme.
   readonly property color muted: secondary
-  // Accent labels also sit on raised cards. Use neutral ink when a theme's
-  // accent is too dark (or too light) to read on either surface.
-  readonly property color accent: contrastRatio(Commons.Color.accent, background) >= 4.5
-    && contrastRatio(Commons.Color.accent, wellHover) >= 4.5 ? Commons.Color.accent : text
+  // The accent is mostly a fill (bars, switches, selections), so it needs
+  // WCAG's 3:1 for non-text against the island. A theme accent that is
+  // missing or too close to the island falls back to the neutral label.
+  readonly property color accent: {
+    var a = Commons.Color.accent
+    return a !== undefined && a !== null && contrastRatio(a, background) >= 3 ? a : text
+  }
   // Apple's dark-mode system colours, for what keeps its meaning whatever
   // the Omarchy theme: status, colourful live activities, charts.
   readonly property var system: ({
@@ -116,18 +119,19 @@ Item {
   property string name: ""
 
   function withAlpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
-  function luminance(x) { return 0.2126 * x.r + 0.7152 * x.g + 0.0722 * x.b }
   function linearChannel(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4) }
   function relativeLuminance(c) {
+    c = Qt.color(c)
     return 0.2126 * linearChannel(c.r) + 0.7152 * linearChannel(c.g) + 0.0722 * linearChannel(c.b)
   }
   function contrastRatio(a, b) {
     var first = relativeLuminance(a), second = relativeLuminance(b)
     return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
   }
-  // Black or white ink, whichever reads better on `c` (WCAG contrast).
+  // The island's fill or its label, whichever reads better on `c` (WCAG
+  // contrast), so ink on the accent keeps the theme's own surfaces.
   function contrastOn(c) {
-    return contrastRatio(c, Qt.color("#000000")) >= contrastRatio(c, Qt.color("#ffffff")) ? "#000000" : "#ffffff"
+    return contrastRatio(c, background) >= contrastRatio(c, text) ? background : text
   }
 
   FileView {
