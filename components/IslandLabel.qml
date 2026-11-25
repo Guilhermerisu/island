@@ -18,7 +18,7 @@ Item {
   readonly property bool isStacked: host.clockStacked && !isWarningOrFeedback
   // The active layout's code ("US"), beside the bare resting clock, when the
   // Keyboard Layout addon asks for it and there are layouts to switch between.
-  readonly property bool languageWanted: host.addons.isEnabled("keyboard") && host.addons.option("keyboard", "clockCode") !== false
+  readonly property bool languageWanted: host.addons.isEnabled("keyboard") && !!host.addons.option("keyboard", "clockCode")
   readonly property string languageCode: {
     var codes = host.keyboard.codes || []
     var index = host.keyboard.index
