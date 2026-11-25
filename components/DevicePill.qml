@@ -189,7 +189,7 @@ IslandPill {
     visible: pill.isDevice
     readonly property bool reporting: pill.deviceBattery >= 0
     property real present: reporting ? 1 : 0
-    Behavior on present { MotionAnimation { theme: pill.host.theme; pace: ring.reporting ? "fade" : "exit"; curve: "fade" } }
+    Behavior on present { id: presentMotion; MotionAnimation { theme: pill.host.theme; pace: towards(presentMotion.targetValue, ring.reporting ? "fade" : "exit"); curve: "fade" } }
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter

@@ -14,14 +14,14 @@ Rectangle {
   function clear() { input.text = "" }
   function focusInput() { input.forceActiveFocus() }
 
-  height: Math.max(36, host.theme.px(14) + 22)
-  radius: height / 2
-  color: host.theme.fill("subtle")
+  height: 36
+  radius: 10
+  color: host.theme.card
 
   Text {
     id: icon
     anchors.left: parent.left
-    anchors.leftMargin: 11
+    anchors.leftMargin: 12
     anchors.verticalCenter: parent.verticalCenter
     text: "󰍉"
     color: field.host.theme.placeholder
@@ -39,15 +39,15 @@ Rectangle {
     selectionColor: field.host.theme.accentFill("ring")
     selectedTextColor: field.host.theme.text
     font.family: field.host.theme.textFontFamily
-    font.letterSpacing: field.host.theme.tracking(field.host.theme.textFontFamily, field.host.theme.size.body)
-    font.pixelSize: field.host.theme.size.body
+    font.letterSpacing: field.host.theme.tracking(field.host.theme.textFontFamily, field.host.theme.px(14))
+    font.pixelSize: field.host.theme.px(14)
     clip: true
     Keys.onPressed: function(event) { field.keyPressed(event) }
-    // Starts a hair right of the caret so the caret doesn't sit on the
-    // first letter.
+    // Starts clear of the caret (1 px wide at the text's start) so the
+    // caret doesn't sit on the first letter.
     Text {
       anchors.fill: parent
-      anchors.leftMargin: 2
+      anchors.leftMargin: 3
       verticalAlignment: Text.AlignVCenter
       visible: input.text === ""
       text: field.placeholder

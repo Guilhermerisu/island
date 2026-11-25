@@ -28,7 +28,7 @@ Item {
   height: 20
   scale: shown ? (badgeMouse.pressed ? 0.85 : 1) : 0
   visible: scale > 0
-  Behavior on scale { MotionAnimation { theme: b.center.host.theme; pace: badgeMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: b.center.host.theme; pace: towards(scaleMotion.targetValue, badgeMouse.pressed ? "press" : "standard") } }
 
   Rectangle {
     anchors.fill: parent
@@ -39,7 +39,8 @@ Item {
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.55)
-      shadowBlur: 0.4
+      blurMax: 16
+      shadowBlur: 0.8
       shadowVerticalOffset: 1
     }
   }

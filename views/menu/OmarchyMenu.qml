@@ -19,7 +19,12 @@ ListPicker {
     ? (host.addons.option("ask", "menuSearch") ? ["Search"].concat(host.addons.launcherHints).join(" or ") : "Search")
     : MenuModel.pathFor(items_, activeMenu)
   emptyText: "Nothing matches"
-  rowHeight: 46
+  // 36 px rows, 2 px apart, lit one at a time: the pointer moves the
+  // keyboard's selection rather than lighting a second row.
+  rowHeight: 36
+  rowGap: 2
+  rowRadius: 8
+  hoverSelects: true
   visibleRows: 9
   items: rows
   onChosen: function(entry) { if (entry && entry.addonRow) entry.run(); else activate(entry) }
@@ -338,7 +343,8 @@ ListPicker {
       id: menuRow
       property var entry: ({})
       property bool selected: false
-      readonly property bool isMenu: entry.kind === "menu" || entry.kind === "link"
+      // Apps opens the launcher's list, so it reads as a submenu too.
+      readonly property bool isMenu: entry.kind === "menu" || entry.kind === "link" || entry.provider === "apps"
       readonly property bool isAddon: !!(entry && entry.addonRow)
       readonly property bool isApp: entry.kind === "app"
 
@@ -361,7 +367,7 @@ ListPicker {
       Image {
         id: appIcon
         anchors.centerIn: icon
-        width: 24; height: 24
+        width: 20; height: 20
         visible: menuRow.isApp && status === Image.Ready
         source: menuRow.isApp ? IconSource.source(menuRow.entry.appIcon) : ""
         sourceSize.width: 48
@@ -374,18 +380,18 @@ ListPicker {
         visible: !menuRow.isAddon
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 24
+        width: 18
         horizontalAlignment: Text.AlignHCenter
         text: menuRow.isApp ? "󰀻" : String(menuRow.entry.icon || "")
         opacity: appIcon.visible ? 0 : 1
-        color: menu.host.theme.muted
+        color: menu.host.theme.secondary
         font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
         font.pixelSize: menu.host.theme.px(17)
       }
       Column {
         anchors.left: menuRow.isAddon ? addonTile.right : icon.right
         anchors.leftMargin: 12
-        anchors.right: chevron.left
+        anchors.right: trailing.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         spacing: 1
@@ -396,9 +402,8 @@ ListPicker {
           elide: Text.ElideRight
           color: menu.host.theme.text
           font.family: menu.host.theme.textFontFamily
-          font.letterSpacing: menu.host.theme.tracking(menu.host.theme.textFontFamily, menu.host.theme.size.title3)
-          font.pixelSize: menu.host.theme.size.title3
-          font.weight: Font.Medium
+          font.letterSpacing: menu.host.theme.tracking(menu.host.theme.textFontFamily, menu.host.theme.px(14))
+          font.pixelSize: menu.host.theme.px(14)
         }
         Text {
           width: parent.width
@@ -412,15 +417,49 @@ ListPicker {
           font.pixelSize: menu.host.theme.size.subheadline
         }
       }
-      Text {
-        id: chevron
+      // A hairline over About, apart from the rest of the top menu.
+      Rectangle {
+        visible: menuRow.entry.itemId === "about" && menu.query.trim() === "" && menu.activeMenu === "root"
+        x: -menu.rowPadding + 10
+        y: -1
+        width: parent.width + 2 * menu.rowPadding - 20
+        height: 1
+        color: menu.host.theme.hairline
+      }
+      // The selected row's ↵ keycap; else a chevron on rows that open a
+      // submenu (one that runs an action has none).
+      Item {
+        id: trailing
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        visible: menuRow.isMenu
-        text: "󰅂"
-        color: menu.host.theme.muted
-        font.family: menu.host.theme.fontFamily
-        font.pixelSize: menu.host.theme.px(16)
+        width: keycap.visible ? keycap.width : chevron.visible ? chevron.width : 0
+        height: parent.height
+        Chevron {
+          id: chevron
+          theme: menu.host.theme
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          visible: menuRow.isMenu && !keycap.visible
+          pixelSize: 14
+          color: menu.host.theme.tertiary
+        }
+        Rectangle {
+          id: keycap
+          visible: menuRow.selected && !menuRow.entry.disabled
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          width: 24
+          height: 20
+          radius: 5
+          color: menu.host.theme.fill("strong")
+          Text {
+            anchors.centerIn: parent
+            text: "↵"
+            color: menu.host.theme.secondary
+            font.family: menu.host.theme.textFontFamily
+            font.pixelSize: menu.host.theme.px(11)
+          }
+        }
       }
     }
   }

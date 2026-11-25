@@ -38,9 +38,8 @@ Item {
   readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
   // The live-activity pills' height, and the resting clock's.
   // The gap between the screen's top edge and the island; none with the notch,
-  // which hangs from the edge. Clamped as Settings does (1–32; flush with the
-  // edge is the notch's), since island.json can be hand-edited.
-  readonly property real islandTop: settings.notch ? 0 : Math.max(1, Math.min(32, settings.topGap))
+  // which hangs from the edge.
+  readonly property real islandTop: settings.notch ? 0 : islandSettings.topGap
   readonly property real pillHeight: settings.notch ? 40 : 44
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
 
@@ -89,6 +88,8 @@ Item {
   readonly property var theme: themeData
   Theme { id: themeData; settings: root.settings; home: root.home }
   readonly property QtObject settings: islandSettings.values
+  // The file behind them, and whether it read.
+  readonly property var settingsStore: islandSettings
   IslandSettings { id: islandSettings; home: root.home }
 
   readonly property var clockDate: clock.date
@@ -162,7 +163,8 @@ Item {
   // ---------- Workspace switches ----------
 
   // Omarchy's bar's workspaces: 1–5 always, and any other up to 10 that
-  // exists. Switching shows them for a moment (see WorkspacePill).
+  // exists, for the hover capsules (see HoverCapsules). The switch
+  // indicator (WorkspacePill) has its own fixed 1–10.
   readonly property var workspaceIds: {
     var ids = [1, 2, 3, 4, 5]
     var values = Hyprland.workspaces.values
@@ -174,7 +176,7 @@ Item {
   }
   readonly property int focusedWorkspaceId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
   onFocusedWorkspaceIdChanged: {
-    if (activities.ready && settings.workspaceHud && focusedWorkspaceId > 0) showFeedback("", 1200, "workspaces")
+    if (activities.ready && settings.workspaceHud && focusedWorkspaceId > 0 && focusedWorkspaceId <= 10) showFeedback("", 1200, "workspaces")
   }
 
   // ---------- Device live activities: battery, Bluetooth ----------
@@ -267,8 +269,7 @@ Item {
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   // Going straight from one view to another, the new one starts halfway
-  // through the old one's fade: both are blurred by then (see Surface), so
-  // there's no legible overlap and no empty moment.
+  // through the old one's fade, so there's no empty moment (see Surface).
   property string previousView: "rest"
   property bool switchingSurface: false
 
@@ -448,10 +449,20 @@ Item {
     // Keeps the pill in step when the notification is dismissed elsewhere.
     onDismissedElsewhere: if (root.notificationPill) root.dismissFeedback()
     onArrived: function(row) {
-      // One with buttons stays long enough to press one.
+      root.playNotificationSound()
+      // One with buttons stays long enough to press one; 0 seconds keeps it
+      // up until it's dismissed (a day, the longest a timer here runs).
+      var seconds = Number(root.settings.bannerSeconds)
+      var duration = seconds > 0 ? seconds * 1000 : 86400000
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"),
-        Math.max(root.settings.bannerSeconds * 1000, root.settings.notificationButtons && (row.actions || []).length > 0 ? 8000 : 0), "notification")
+        Math.max(duration, root.settings.notificationButtons && (row.actions || []).length > 0 ? 8000 : 0), "notification")
     }
+  }
+  // The sound picked in Settings → Notifications, from the freedesktop theme.
+  function playNotificationSound(name) {
+    var sound = String(name || root.settings.notificationSound || "none")
+    if (sound === "none" || !/^[a-z0-9-]+$/.test(sound)) return
+    Quickshell.execDetached(["pw-play", "/usr/share/sounds/freedesktop/stereo/" + sound + ".oga"])
   }
   // The island's own banners (setup, updates) in the notification pill.
   function showBanner(row, duration) {
@@ -464,18 +475,13 @@ Item {
     feedbackKind = ""
     view = "rest"
   }
-  function dismissPillNotification() {
-    var row = notifications.last
-    dismissFeedback()
-    if (row) notifications.command("dismissKey", row)
-  }
 
   property string menuRoute: "root"
 
   // A tray app whose own menu the tray view opens straight to (see
   // TrayList), set by a right click on it in the hover capsules.
   property var trayMenuFor: null
-  readonly property string hoverMode: settings.hoverStyle ? settings.hoverStyle : settings.hoverCapsules ? "capsules" : settings.hoverExpand ? "expand" : "none"
+  readonly property string hoverMode: settings.hoverStyle || "none"
 
   function toggleView(name) {
     view = view === name ? "rest" : name
@@ -504,6 +510,12 @@ Item {
       // Already open: SettingsView takes the page itself (or closes).
       if (root.view === "settings") root.settingsPage = pages[0].title
       else root.openSettings(pages[0].title)
+      return root.view
+    }
+    // Settings at one of its panes, by name ("Appearance", "Notifications").
+    function settings(page: string): string {
+      if (root.view === "settings") root.settingsPage = page
+      else root.openSettings(page)
       return root.view
     }
     function toggle(): string { return root.toggleView("controls") }
@@ -719,7 +731,7 @@ Item {
           transformOrigin: island.transformOrigin
           opacity: root.surfaceOpen ? 1 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { id: opacityMotion; MotionAnimation { theme: root.theme; pace: towards(opacityMotion.targetValue, root.surfaceOpen ? "morph" : "exit"); curve: "fade" } }
           layer.enabled: visible
           layer.effect: MultiEffect { blurEnabled: true; blurMax: 8; blur: 1 }
           Shape {
@@ -834,10 +846,18 @@ Item {
           readonly property real targetRadius: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
             : activePill && activePill.pillRadius > 0 ? activePill.pillRadius
             : root.surfaceOpen ? 30 : 38
-          readonly property real radiusCap: radiusSpring.value
-          radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
-          topLeftRadius: root.settings.notch ? 0 : radius
-          topRightRadius: root.settings.notch ? 0 : radius
+          // The shape's size and corners for this frame, from the springs
+          // all at once (see morphDriver), so the outlines are built once a
+          // frame rather than once for each spring that moved.
+          property var morph: ({ width: 0, height: 0, radius: 0 })
+          readonly property var frame: {
+            var h = Math.max(28, morph.height)
+            var r = Math.min(h / 2, root.settings.notch && !root.surfaceOpen ? Math.min(morph.radius, 16) : morph.radius)
+            return { width: Math.max(40, morph.width), height: h, radius: r, top: root.settings.notch ? 0 : r }
+          }
+          radius: frame.radius
+          topLeftRadius: frame.top
+          topRightRadius: frame.top
           readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.isGlanceExpanded && !island.capsulesShown
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
@@ -870,16 +890,16 @@ Item {
           // the radius and clipping the pills and views rely on.
           color: "transparent"
           clip: true
-          readonly property var cornerRadii: ({ topLeft: topLeftRadius, topRight: topRightRadius, bottomLeft: radius, bottomRight: radius })
-          readonly property string outline: Squircle.path(width, height, cornerRadii, 0.6)
+          readonly property string outline: Squircle.path(frame.width, frame.height,
+            ({ topLeft: frame.top, topRight: frame.top, bottomLeft: frame.radius, bottomRight: frame.radius }), 0.6)
           // The same outline inset half a pixel, so a 1px edge stroke lands
           // inside the shape. Only built while the edge shows, so a resting
           // pill's morphs redraw one outline, not two.
           readonly property string edgeOutline: !islandEdge.visible ? ""
-            : root.settings.notch ? Squircle.notchPath(width - 1, height - 1, Math.max(0, radius - 0.5), 10, 0.6)
-            : Squircle.path(width - 1, height - 1, ({
-                topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
-                bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
+            : root.settings.notch ? Squircle.notchPath(frame.width - 1, frame.height - 1, Math.max(0, frame.radius - 0.5), 10, 0.6)
+            : Squircle.path(frame.width - 1, frame.height - 1, ({
+                topLeft: Math.max(0, frame.top - 0.5), topRight: Math.max(0, frame.top - 0.5),
+                bottomLeft: Math.max(0, frame.radius - 0.5), bottomRight: Math.max(0, frame.radius - 0.5) }), 0.6)
           Shape {
             anchors.fill: parent
             preferredRendererType: Shape.CurveRenderer
@@ -899,9 +919,23 @@ Item {
           // Going from one view to a smaller one is a way back, as quick as a close.
           readonly property bool shrinkingToView: root.switchingSurface && (targetHeight < heightSpring.value - 1 || targetWidth < widthSpring.value - 1)
           readonly property string morphPace: root.surfaceOpen && !shrinkingToView ? "morph" : "collapse"
-          MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace }
-          MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace }
-          MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; target: island.targetRadius }
+          MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace; driven: true }
+          MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace; driven: true }
+          MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; driven: true; target: island.targetRadius }
+          // Steps the three together and hands the shape over once a frame.
+          FrameAnimation {
+            id: morphDriver
+            running: !widthSpring.settled || !heightSpring.settled || !radiusSpring.settled
+            onTriggered: {
+              if (!widthSpring.settled) widthSpring.step(frameTime)
+              if (!heightSpring.settled) heightSpring.step(frameTime)
+              if (!radiusSpring.settled) radiusSpring.step(frameTime)
+              island.commitMorph()
+            }
+          }
+          function commitMorph() {
+            morph = { width: widthSpring.value, height: heightSpring.value, radius: radiusSpring.value }
+          }
           Timer { id: widthLag; interval: root.theme.morphLag; onTriggered: widthSpring.target = island.targetWidth }
           Timer { id: heightLag; interval: root.theme.morphLag; onTriggered: heightSpring.target = island.targetHeight }
           // A view settles its height over a few frames as it lays out; a
@@ -923,9 +957,12 @@ Item {
           Component.onCompleted: {
             widthSpring.target = widthSpring.value = targetWidth
             heightSpring.target = heightSpring.value = targetHeight
+            radiusSpring.value = radiusSpring.target
+            widthSpring.settled = heightSpring.settled = radiusSpring.settled = true
+            commitMorph()
           }
-          width: Math.max(40, widthSpring.value)
-          height: Math.max(28, heightSpring.value)
+          width: frame.width
+          height: frame.height
 
           EdgeClick {
             revealing: false
@@ -998,7 +1035,7 @@ Item {
           readonly property bool restingEdge: !prominent && !raised && root.settings.restingOutline
           opacity: prominent ? 1 : raised ? 0.6 : restingEdge ? 0.75 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || islandEdge.raised ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: root.theme; pace: towards(opacityMotion2.targetValue, islandEdge.prominent || islandEdge.raised ? "morph" : "exit"); curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
@@ -1055,7 +1092,7 @@ Item {
     radius: shape.radius
     opacity: root.surfaceOpen ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion3; MotionAnimation { theme: root.theme; pace: towards(opacityMotion3.targetValue, root.surfaceOpen ? "morph" : "exit"); curve: "fade" } }
   }
 
   // With the notch, a concave corner either side of the island where it
@@ -1071,7 +1108,7 @@ Item {
     width: r + 0.5
     height: r
     property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
-    Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+    Behavior on edgeOpacity { id: edgeOpacityMotion; MotionAnimation { theme: root.theme; pace: towards(edgeOpacityMotion.targetValue, root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"); curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer
     ShapePath {

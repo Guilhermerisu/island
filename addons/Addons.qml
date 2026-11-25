@@ -36,13 +36,13 @@ Item {
         { circle: true, color: "#ffd60a", x: 0.65, y: 0.37, size: 0.36 },
         { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
       ],
-      description: "Current conditions for your city, or where you are (found from your IP address)",
+      description: "Current conditions for your city, or for where you are",
       describedWith: { key: "city", text: "Current conditions in %1" },
       options: [
         { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon", icon: "󰟙" },
         // Off to keep an empty City from asking a third party where you are.
-        { key: "autoLocate", label: "Detect my location", detail: "No city set: asks get.geojs.io (or ipwho.is) once, with your IP", type: "switch", default: false },
-        { key: "fahrenheit", label: "Temperature", detail: "Unit shown on the pill", type: "segmented", default: false,
+        { key: "autoLocate", label: "Find my location", detail: "With no city set, asks get.geojs.io (or ipwho.is) once, using your IP address", type: "switch", default: false },
+        { key: "fahrenheit", label: "Temperature", detail: "The unit shown on the island", type: "segmented", default: false,
           choices: [{ label: "°C", value: false }, { label: "°F", value: true }] }
       ] },
     { id: "calendar", name: "Calendar", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
@@ -53,14 +53,14 @@ Item {
         { date: "month", color: "#ffffff", weight: Font.Bold, x: 0.5, y: 0.17, size: 0.2 },
         { date: "day", color: "#2c2c2e", weight: Font.Light, x: 0.5, y: 0.63, size: 0.56 }
       ],
-      description: "Your month and the day's events",
+      description: "This month and today's events",
       options: [
         { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: "https://…/basic.ics" }
       ] },
     // Before the timer, so a call holds the island over a countdown.
     { id: "meetings", name: "Meetings", icon: "󰏲", color: "#30d158", default: false, source: "meetings/MeetingsAddon.qml",
       searchAliases: ["calls"],
-      description: "Calls on the island, with mute and hang up",
+      description: "Your calls on the island, with mute and hang up",
       options: [
         { key: "teams", label: "Teams", detail: "Calls and meetings, in the app or a browser", type: "switch", default: true },
         { key: "zoom", label: "Zoom", detail: "Meetings, in the app or a browser", type: "switch", default: true },
@@ -105,7 +105,7 @@ Item {
           var a = i * Math.PI / 4, c = Math.cos(a), s = Math.sin(a)
           return { line: [[0.5 + 0.25 * c, 0.5 + 0.25 * s], [0.5 + 0.33 * c, 0.5 + 0.33 * s]], color: "#ffffff", width: 0.075 }
         })),
-      description: "Arrange monitors and set their modes" },
+      description: "Arrange your monitors and set their resolution and scale" },
     { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
       searchAliases: ["tray"],
       zone: { minWidth: 260 },
@@ -120,7 +120,7 @@ Item {
         { rect: true, color: "#ffffff", x: 0.66, y: 0.61, width: 0.34, height: 0.05, radius: 0.5 },
         { rect: true, color: "#c7c7cc", x: 0.66, y: 0.75, width: 0.34, height: 0.05, radius: 0.5 }
       ],
-      description: "Apps tray icons and menus" },
+      description: "Your apps' tray icons and menus" },
     { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: true, source: "plugins/PluginsAddon.qml",
       zones: [
         { key: "pinned", title: "Plugins", about: "The plugins you pin, as tiles", minWidth: 260, editable: true }
@@ -132,7 +132,7 @@ Item {
         { rect: true, color: "#ffffff", opacity: 0.4, x: 0.67, y: 0.67, width: 0.3, height: 0.3, radius: 0.28 },
         { glyph: "󰐕", color: "#ffffff", x: 0.67, y: 0.67, size: 0.28 }
       ],
-      description: "Open and switch Omarchy plugins" },
+      description: "Open and switch between Omarchy plugins" },
     { id: "keyboard", name: "Keyboard Layout", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
       searchAliases: ["layout"],
       iconLayers: [{ rect: true, color: "#ffffff", x: 0.5, y: 0.55, width: 0.8, height: 0.5, radius: 0.16 }]
@@ -142,15 +142,18 @@ Item {
           }))
         }, []))
         .concat([{ rect: true, color: "#a9bcc2", x: 0.5, y: 0.69, width: 0.5, height: 0.09, radius: 0.4 }]),
-      description: "Show the layout on the pill when it changes" },
+      description: "Shows the layout on the island when it changes",
+      options: [
+        { key: "clockCode", label: "Layout beside the clock", detail: "Its code (\"US\") next to the resting clock, with 2+ layouts", type: "switch", default: false }
+      ] },
     // All Models' robot; its Settings pane takes the picked agent's logo.
     { id: "agents", name: "Agents", icon: "󰚩", color: "#5e5ce6", default: false, source: "agents/AgentsAddon.qml",
       searchAliases: ["ai agents"],
       zone: { minWidth: 340 },
-      description: "Agent limits, daily tokens, and Claude Code at work",
+      description: "Usage limits, tokens by day, and your coding agents at work",
       options: [
-        { key: "live", label: "Live Activity", detail: "Claude Code's and Codex's steps on the island while they work", type: "switch", default: true },
-        { key: "agent", label: "Agent", detail: "Ctrl+click to add or remove agents shown as tabs", type: "popup", multiSelect: true, default: "claude",
+        { key: "live", label: "Live activity", detail: "Shows Claude Code's and Codex's steps on the island while they work", type: "switch", default: true },
+        { key: "agent", label: "Agent", detail: "The tabs to show; Ctrl+click to pick more than one", type: "popup", multiSelect: true, default: "claude",
           choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "All Models", value: "all" }] }
       ] },
     { id: "ask", name: "Ask AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
@@ -168,17 +171,17 @@ Item {
         siriWave(0.24, 0.76, 0, "#ffffff", 0.55, 0.045),
         siriWave(0.34, 0.66, 0, "#ffffff", 0.95, 0.03)
       ],
-      description: "Answers launcher questions in the island",
+      description: "Answers questions from the app launcher on the island",
       options: [
-        { key: "with", label: "Ask With", detail: "Uses the command-line tool you're signed in to", type: "popup", default: "claude",
+        { key: "with", label: "Ask with", detail: "Uses the command-line tool you're signed in to", type: "popup", default: "claude",
           choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "Gemini", value: "gemini" }] },
-        { key: "geminiModel", label: "Gemini Model", detail: "Speed and reasoning profile", type: "popup", default: "gemini-3.8-flash-low", visibleWith: "gemini",
+        { key: "geminiModel", label: "Gemini model", detail: "Faster answers, or more reasoning", type: "popup", default: "gemini-3.8-flash-low", visibleWith: "gemini",
           choices: [
             { label: "Gemini 3.8 Flash Low (Fastest)", value: "gemini-3.8-flash-low" },
             { label: "Gemini 3.8 Flash Medium (Balanced)", value: "gemini-3.8-flash-medium" },
             { label: "Gemini 3.8 Flash High (Deep Thinking)", value: "gemini-3.8-flash-high" }
           ] },
-        { key: "claudeModel", label: "Claude Model", detail: "Model profile for Claude", type: "popup", default: "haiku", visibleWith: "claude",
+        { key: "claudeModel", label: "Claude model", detail: "Faster answers, or more reasoning", type: "popup", default: "haiku", visibleWith: "claude",
           choices: [
             { label: "Claude Haiku (Fastest)", value: "haiku" },
             { label: "Claude Sonnet (Balanced)", value: "sonnet" },
@@ -245,28 +248,13 @@ Item {
     settings.addonOptions = next
   }
 
-  // Ask AI was core, set by `askAi` ("claude", "chatgpt" for Codex, or
-  // "none" for off): carried over once to its addon, then cleared. Late,
-  // so the addon settings it fills in are loaded first.
-  Connections {
-    target: addons.settings
-    function onAskAiChanged() { Qt.callLater(addons.migrateAsk) }
-  }
-  function migrateAsk() {
-    var old = settings.askAi
-    if (!old) return
-    if ((settings.addons || {}).ask === undefined) setEnabled("ask", old !== "none")
-    if (old === "claude" && ((settings.addonOptions || {}).ask || {}).with === undefined) setOption("ask", "with", "claude")
-    settings.askAi = ""
-  }
-
   // A disabled addon's keybindings are switched off in island-bindings.lua,
   // their keys kept (see companion/bindings.sh). Synced on start and on
   // each change; the script does nothing when the list is unchanged.
   readonly property string enabledIds: entries.filter(function(e) { return addons.isEnabled(e.id) })
     .map(function(e) { return e.id }).join(",")
   onEnabledIdsChanged: syncBindings()
-  Component.onCompleted: { syncBindings(); Qt.callLater(migrateAsk) }
+  Component.onCompleted: syncBindings()
   property bool bindingsStale: false
   Process {
     id: bindingSync

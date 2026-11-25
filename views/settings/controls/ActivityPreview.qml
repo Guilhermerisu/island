@@ -61,28 +61,31 @@ Item {
     Row {
       anchors.centerIn: parent
       visible: preview.kind === "workspace"
-      spacing: 9
+      // As WorkspacePill: 18px slots 8 apart, 6px dots (the text colour at
+      // 0.75 with windows, 0.2 empty), and a capsule just past its slot.
+      spacing: 8
       Repeater {
         model: 5
         delegate: Item {
           id: workspace
           required property int index
-          width: 20; height: 20
+          width: 18; height: 18
           Rectangle {
             anchors.centerIn: parent
-            width: workspace.index === 1 ? 24 : 6
+            width: workspace.index === 1 ? 22 : 6
             height: workspace.index === 1 ? 18 : 6
             radius: height / 2
-            color: workspace.index === 1 ? (preview.colorfulActivities ? "#ffffff" : preview.accent) : workspace.index < 3 ? "#aaaaaa" : "#444444"
+            color: workspace.index === 1 ? (preview.colorfulActivities ? "#ffffff" : preview.accent) : preview.view.host.theme.withAlpha(preview.view.host.theme.text, workspace.index < 3 ? 0.75 : 0.2)
             Text {
               anchors.centerIn: parent
               visible: workspace.index === 1
               text: "2"
               color: preview.colorfulActivities ? "#000000" : preview.view.accentInk
               font.family: preview.view.host.theme.textFontFamily
-              font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.subheadline)
-              font.pixelSize: preview.view.host.theme.size.subheadline
-              font.weight: Font.Bold
+              font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.callout)
+              font.pixelSize: preview.view.host.theme.size.callout
+              font.weight: Font.Medium
+              font.features: { "tnum": 1 }
             }
           }
         }

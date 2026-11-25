@@ -2,9 +2,10 @@ import QtQuick
 import "../../components"
 import QtQuick.Layouts
 
-// A control tile, as macOS's: a rounded card (the same corners as the wide
-// cards) with a round badge for the icon at its start, and the title over a
-// status.
+// A control tile, as macOS's: a 60 px rounded card (the same corners as the
+// wide cards) with a 32 px round badge for the icon 14 px in, and the title
+// (semibold) over a 12 px status ("Connected", "Off") 12 px after it. On, the
+// badge is the accent with a dark accent icon; off, grey with a white one.
 // `center` is the ControlCenter, for its colours.
 Rectangle {
   id: t
@@ -22,7 +23,7 @@ Rectangle {
   property bool opens: false
   // The round icon badge's size; addon tiles that draw their own badge
   // (Calendar) line up with it.
-  readonly property real badgeSize: 38
+  readonly property real badgeSize: 32
   signal clicked()
   signal opened()
 
@@ -37,32 +38,32 @@ Rectangle {
   opacity: available ? 1 : 0.5
   Behavior on opacity { MotionAnimation { theme: center.host.theme; pace: "fade"; curve: "fade" } }
   scale: tileMouse.pressed || badgeMouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: center.host.theme; pace: tileMouse.pressed || badgeMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: center.host.theme; pace: towards(scaleMotion.targetValue, tileMouse.pressed || badgeMouse.pressed ? "press" : "standard") } }
 
   Rectangle {
     id: badge
     anchors.left: parent.left
-    anchors.leftMargin: (t.height - height) / 2
+    anchors.leftMargin: 14
     anchors.verticalCenter: parent.verticalCenter
     width: t.badgeSize; height: t.badgeSize; radius: t.badgeSize / 2
-    color: t.checked ? center.accent : center.well
+    color: t.checked ? center.accent : "#3a3a3c"
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
     Text {
       anchors.centerIn: parent
       text: t.icon
-      color: t.checked ? center.badgeOnInk : center.text
+      color: t.checked ? center.badgeOnInk : "#ffffff"
       Behavior on color { MotionColorAnimation { theme: center.host.theme } }
       font.family: t.iconFamily || center.iconFont
-      font.pixelSize: center.host.theme.px(18)
+      font.pixelSize: center.host.theme.px(16)
     }
   }
   Column {
     anchors.left: badge.right
-    anchors.leftMargin: 9
+    anchors.leftMargin: 12
     anchors.right: parent.right
-    anchors.rightMargin: 16
+    anchors.rightMargin: 14
     anchors.verticalCenter: parent.verticalCenter
-    spacing: 1
+    spacing: 2
     Text {
       width: parent.width
       text: t.title
@@ -81,9 +82,9 @@ Rectangle {
       elide: Text.ElideRight
       color: center.textMuted
       font.family: center.host.theme.textFontFamily
-      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.subheadline)
+      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.px(12))
       font.features: { "tnum": 1 }
-      font.pixelSize: center.host.theme.size.subheadline
+      font.pixelSize: center.host.theme.px(12)
     }
   }
   MouseArea {

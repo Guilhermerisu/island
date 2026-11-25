@@ -3,8 +3,8 @@ import "../../../components"
 
 // Number field with up and down arrows beside it, as macOS's stepper. Type a
 // number (Enter or leaving the field commits it), click or hold an arrow, press
-// ↑/↓ in the field or scroll over it. `picked` fires with the new value,
-// always whole and within from–to.
+// ↑/↓ in the field or scroll over it (not while the page is scrolling past
+// it). `picked` fires with the new value, always whole and within from–to.
 // `view` is the SettingsView, for its colours.
 Item {
   id: stepper
@@ -18,7 +18,7 @@ Item {
   signal picked(int value)
 
   implicitWidth: 96
-  implicitHeight: 28
+  implicitHeight: 26
 
   function clamp(v) { return Math.max(stepper.from, Math.min(stepper.to, Math.round(v))) }
   function pick(v) {
@@ -26,7 +26,12 @@ Item {
     input.text = String(next)
     if (next !== stepper.value) stepper.picked(next)
   }
-  function nudge(dir) { pick((input.activeFocus ? Number(input.text) || stepper.value : stepper.value) + dir * stepper.step) }
+  // What's typed, or the value while the field is empty or not being edited.
+  function current() { return input.activeFocus && input.text !== "" ? Number(input.text) : stepper.value }
+  function nudge(steps) { pick(current() + steps * stepper.step) }
+  // Wheel travel not yet a whole notch (120), so a touchpad's stream of small
+  // deltas steps as a mouse wheel's clicks do.
+  property real wheelRest: 0
 
   onValueChanged: if (!input.activeFocus) input.text = String(value)
   Component.onCompleted: input.text = String(value)
@@ -37,25 +42,13 @@ Item {
     anchors.right: arrows.left
     anchors.rightMargin: 4
     height: parent.height
-    radius: 6
-    color: stepper.view.host.theme.solid(fieldMouse.containsMouse && !input.activeFocus ? "subtle" : "quiet")
+    // Inset as SettingsTextField is.
+    radius: 7
+    color: stepper.view.insetFill
     border.width: 1
-    border.color: stepper.view.host.theme.fill(input.activeFocus ? "strong" : "raised")
+    border.color: stepper.view.ink(input.activeFocus ? 0.18 : 0.12)
     Behavior on color { MotionColorAnimation { theme: stepper.view.host.theme } }
-    // Focus ring: settles in from slightly larger, like macOS's.
-    Rectangle {
-      anchors.centerIn: parent
-      width: parent.width + 6
-      height: parent.height + 6
-      radius: parent.radius + 3
-      color: "transparent"
-      border.width: 3
-      border.color: stepper.view.host.theme.accentFill("ring")
-      opacity: input.activeFocus ? 1 : 0
-      scale: input.activeFocus ? 1 : 1.12
-      Behavior on opacity { MotionAnimation { theme: stepper.view.host.theme; pace: "fade"; curve: "fade" } }
-      Behavior on scale { MotionAnimation { theme: stepper.view.host.theme; pace: "standard" } }
-    }
+    SettingsFocusRing { view: stepper.view; shown: input.activeFocus }
 
     MouseArea {
       id: fieldMouse
@@ -63,8 +56,21 @@ Item {
       hoverEnabled: true
       cursorShape: Qt.IBeamCursor
       onClicked: input.forceActiveFocus()
+      // A scroll that's moving the page (or a sideways one) goes on to it.
       onWheel: function(wheel) {
-        if (wheel.angleDelta.y !== 0) stepper.nudge(wheel.angleDelta.y > 0 ? 1 : -1)
+        var dy = wheel.angleDelta.y
+        if (dy === 0 || stepper.view.pageScrolling) {
+          stepper.wheelRest = 0
+          wheel.accepted = false
+          return
+        }
+        if (stepper.wheelRest * dy < 0) stepper.wheelRest = 0
+        stepper.wheelRest += dy
+        var steps = Math.trunc(stepper.wheelRest / 120)
+        if (steps !== 0) {
+          stepper.wheelRest -= steps * 120
+          stepper.nudge(steps)
+        }
       }
     }
     TextInput {
@@ -76,7 +82,10 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       horizontalAlignment: TextInput.AlignRight
       clip: true
-      validator: IntValidator { bottom: 0; top: stepper.to }
+      // Digits only, any size: Enter clamps a number past `to` rather than
+      // ignoring it.
+      validator: RegularExpressionValidator { regularExpression: /[0-9]*/ }
+      maximumLength: 4
       inputMethodHints: Qt.ImhDigitsOnly
       color: stepper.view.text
       selectionColor: stepper.view.accent
@@ -84,7 +93,7 @@ Item {
       font.family: stepper.view.host.theme.textFontFamily
       font.pixelSize: stepper.view.detailFontSize
       font.features: { "tnum": 1 }
-      onAccepted: { stepper.pick(Number(text) || stepper.from); stepper.view.forceActiveFocus() }
+      onAccepted: { stepper.pick(stepper.current()); stepper.view.forceActiveFocus() }
       onActiveFocusChanged: if (!activeFocus) stepper.pick(text === "" ? stepper.value : Number(text))
       Keys.onUpPressed: stepper.nudge(1)
       Keys.onDownPressed: stepper.nudge(-1)
@@ -112,17 +121,17 @@ Item {
     anchors.right: parent.right
     width: 18
     height: parent.height
-    radius: 6
-    color: stepper.view.host.theme.solid("quiet")
+    radius: 7
+    color: stepper.view.insetFill
     border.width: 1
-    border.color: stepper.view.host.theme.fill("raised")
+    border.color: stepper.view.ink(0.12)
 
     Rectangle {
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.verticalCenter: parent.verticalCenter
       width: parent.width - 6
       height: 1
-      color: stepper.view.host.theme.fill("raised")
+      color: stepper.view.ink(0.12)
     }
 
     component Arrow: MouseArea {
@@ -133,6 +142,9 @@ Item {
       height: arrows.height / 2
       hoverEnabled: true
       enabled: !atEnd
+      // It can reach its end while held: stop there, whether or not taking
+      // `enabled` away mid-press cancels it.
+      onAtEndChanged: if (atEnd) repeat.stop()
       // Held down, it keeps stepping after a beat, as a key repeats.
       onPressed: { stepper.nudge(arrow.dir); repeat.interval = 400; repeat.start() }
       onReleased: repeat.stop()

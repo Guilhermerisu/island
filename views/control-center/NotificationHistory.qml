@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell.Widgets
 import "../../components"
@@ -14,8 +15,7 @@ ColumnLayout {
   readonly property bool empty: history.center.host.notifications.history.length === 0
   visible: !history.center.editMode
   Layout.fillWidth: true
-  Layout.topMargin: 4
-  spacing: 6
+  spacing: 8
   // Off for the first layout each time the control center opens (as the
   // grid's cardsSettled), so only changes made while it's showing animate.
   property bool settled: false
@@ -63,11 +63,12 @@ ColumnLayout {
 
   RowLayout {
     Layout.fillWidth: true
-    Layout.leftMargin: 8
+    // In line with the text inside the tiles and banners.
+    Layout.leftMargin: 14
     Layout.rightMargin: 2
     Text {
       text: "Notifications"
-      color: history.center.text
+      color: history.center.textMuted
       font.family: history.center.host.theme.textFontFamily
       font.pixelSize: history.center.host.theme.size.body
       font.weight: Font.DemiBold
@@ -77,13 +78,14 @@ ColumnLayout {
     // macOS's round ×, widening into "Clear All" while hovered.
     Rectangle {
       scale: clearMouse.pressed ? 0.94 : 1
-      Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: clearMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion.targetValue, clearMouse.pressed ? "press" : "standard") } }
       // Goes with the banners it clears.
       opacity: history.empty ? 0 : 1
       visible: opacity > 0.01
       Behavior on opacity {
+        id: opacityMotion
         enabled: history.settled
-        MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+        MotionAnimation { theme: history.center.host.theme; pace: towards(opacityMotion.targetValue, history.empty ? "exit" : "fade"); curve: towards(opacityMotion.targetValue, history.empty ? "exit" : "fade") }
       }
       implicitWidth: clearMouse.containsMouse ? clearLabel.implicitWidth + 20 : 22
       implicitHeight: 22
@@ -147,8 +149,9 @@ ColumnLayout {
     opacity: history.empty ? 0 : 1
     visible: opacity > 0.01
     Behavior on opacity {
+      id: opacityMotion2
       enabled: history.settled
-      MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+      MotionAnimation { theme: history.center.host.theme; pace: towards(opacityMotion2.targetValue, history.empty ? "exit" : "fade"); curve: towards(opacityMotion2.targetValue, history.empty ? "exit" : "fade") }
     }
     Layout.fillWidth: true
     // Out by the × button's overhang, so the banners line up with the cards.
@@ -159,7 +162,8 @@ ColumnLayout {
     Behavior on frameHeight { enabled: history.settled; MotionAnimation { theme: history.center.host.theme; pace: "standard" } }
     Layout.preferredHeight: frameHeight
     clip: true
-    spacing: 4
+    // The × overhang above each banner is the 6 between banners.
+    spacing: 0
     boundsBehavior: Flickable.StopAtBounds
     // Kept by key, so dismissing one slides the rest up instead of
     // rebuilding every banner.
@@ -186,25 +190,45 @@ ColumnLayout {
       MotionAnimation { theme: history.center.host.theme; property: "y"; pace: "standard" }
       MotionAnimation { theme: history.center.host.theme; properties: "opacity,scale"; to: 1; pace: "fade"; curve: "fade" }
     }
-    // Soft edges where the list runs on above or below, as in Settings.
-    Repeater {
-      model: [
-        { top: true, shown: notes.contentY - notes.originY > 1 },
-        { top: false, shown: notes.contentY - notes.originY < notes.contentHeight - notes.height - 1 }
-      ]
-      delegate: Rectangle {
-        required property var modelData
-        parent: notes
-        z: 1
-        anchors.left: parent.left
-        anchors.right: parent.right
-        y: modelData.top ? 0 : notes.height - height
-        height: 24
-        opacity: modelData.shown ? 1 : 0
-        Behavior on opacity { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
+    // A soft edge where the list runs on above, as in Settings.
+    Rectangle {
+      parent: notes
+      z: 1
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 24
+      opacity: notes.contentY - notes.originY > 1 ? 1 : 0
+      Behavior on opacity { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
+      gradient: Gradient {
+        GradientStop { position: 0; color: history.center.host.theme.background }
+        GradientStop { position: 1; color: "transparent" }
+      }
+    }
+    // Where it runs on below, its last 20% fades out (an opacity mask)
+    // instead of cutting the last row off.
+    readonly property bool moreBelow: contentY - originY < contentHeight - height - 1
+    property real endFade: moreBelow ? 1 : 0
+    Behavior on endFade { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
+    layer.enabled: endFade > 0.01
+    layer.effect: MultiEffect {
+      maskEnabled: true
+      maskSource: endMask
+      maskThresholdMin: 0
+      maskSpreadAtMin: 1
+    }
+    Item {
+      id: endMask
+      parent: history
+      visible: false
+      width: notes.width
+      height: notes.height
+      layer.enabled: true
+      Rectangle {
+        anchors.fill: parent
         gradient: Gradient {
-          GradientStop { position: 0; color: modelData.top ? history.center.host.theme.background : "transparent" }
-          GradientStop { position: 1; color: modelData.top ? "transparent" : history.center.host.theme.background }
+          GradientStop { position: 0; color: "#ffffffff" }
+          GradientStop { position: 0.8; color: "#ffffffff" }
+          GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 1 - notes.endFade) }
         }
       }
     }
@@ -238,11 +262,12 @@ ColumnLayout {
       Rectangle {
         id: banner
         scale: noteMouse.pressed ? 0.98 : 1
-        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: noteMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion2; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion2.targetValue, noteMouse.pressed ? "press" : "standard") } }
         x: 6 + note.inset
         y: 6
         width: parent.width - 6 - note.inset
-        height: Math.max(noteBody.implicitHeight, 36) + 24
+        // 11 above and below, 14 at the sides: one row height for all.
+        height: Math.max(noteBody.implicitHeight, avatar.height) + 22
         radius: history.center.host.theme.radii.card
         color: note.hovered ? history.center.tile : history.center.card
         border.width: 1
@@ -270,10 +295,10 @@ ColumnLayout {
           readonly property string source: history.center.host.notifications.iconSource(note.modelData, imageFailed)
           readonly property var brand: history.center.host.notifications.brand(note.modelData)
           anchors.left: parent.left
-          anchors.leftMargin: 12
+          anchors.leftMargin: 14
           anchors.top: parent.top
-          anchors.topMargin: 12
-          width: 36; height: 36; radius: history.center.host.theme.radii.large
+          anchors.topMargin: 11
+          width: 32; height: 32; radius: 8
           readonly property bool generic: !brand && noteIcon.status !== Image.Ready
           color: brand ? brand.tile : "transparent"
           // Same tile as the banner (NotificationPill), so a notification
@@ -303,18 +328,18 @@ ColumnLayout {
             text: avatar.brand ? avatar.brand.glyph : "󰂚"
             color: avatar.brand ? avatar.brand.ink : history.center.host.theme.accentText
             font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: history.center.host.theme.px(20)
+            font.pixelSize: history.center.host.theme.px(18)
           }
         }
         Column {
           id: noteBody
           anchors.left: avatar.right
-          anchors.leftMargin: 10
+          anchors.leftMargin: 12
           anchors.right: parent.right
           anchors.rightMargin: 14
           anchors.top: parent.top
-          anchors.topMargin: 12
-          spacing: 1
+          anchors.topMargin: 11
+          spacing: 2
           // Like macOS's Notification Center: the title with the time on
           // the same line (the icon already says which app).
           Item {
@@ -327,6 +352,7 @@ ColumnLayout {
               anchors.rightMargin: 8
               text: history.center.host.notifications.title(note.modelData)
               textFormat: Text.PlainText
+              // One line unless Settings asks for the whole title.
               wrapMode: history.center.host.settings.notificationFullText ? Text.Wrap : Text.NoWrap
               elide: Text.ElideRight
               color: history.center.text
@@ -341,26 +367,27 @@ ColumnLayout {
               anchors.baseline: noteTitle.baseline
               text: history.center.host.notifications.age(note.modelData.timestamp, history.now)
               textFormat: Text.PlainText
-              color: history.center.textMuted
+              color: history.center.host.theme.tertiary
               font.family: history.center.host.theme.textFontFamily
-              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.subheadline)
-              font.pixelSize: history.center.host.theme.size.subheadline
+              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(11))
+              font.pixelSize: history.center.host.theme.px(11)
+              font.features: { "tnum": 1 }
             }
           }
           Text {
             width: parent.width
+            // Kept when empty, so a row without a message is as tall.
             text: String(note.modelData.body || "")
-            visible: text !== ""
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
-            // Four lines unless Settings asks for the whole message.
-            maximumLineCount: history.center.host.settings.notificationFullText ? 100000 : 4
+            // One line unless Settings asks for the whole message.
+            maximumLineCount: history.center.host.settings.notificationFullText ? 100000 : 1
             elide: Text.ElideRight
             lineHeight: 1.08
-            color: history.center.host.theme.withAlpha(history.center.text, 0.78)
+            color: history.center.textMuted
             font.family: history.center.host.theme.textFontFamily
-            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.callout)
-            font.pixelSize: history.center.host.theme.size.callout
+            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(12))
+            font.pixelSize: history.center.host.theme.px(12)
           }
           // The buttons of a notification still on screen.
           Row {
@@ -432,7 +459,7 @@ ColumnLayout {
       Rectangle {
         x: note.inset
         scale: closeMouse.pressed ? 0.9 : 1
-        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: closeMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion3; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion3.targetValue, closeMouse.pressed ? "press" : "standard") } }
         width: 20; height: 20; radius: 10
         opacity: note.hovered ? 1 : 0
         visible: opacity > 0
