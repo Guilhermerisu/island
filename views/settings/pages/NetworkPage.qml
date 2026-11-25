@@ -165,8 +165,8 @@ ColumnLayout {
     id: fill
     property bool first: false
     property bool last: false
-    // The card's radius less its 1 px border.
-    readonly property real corner: page.view.host.theme.radii.card - 1
+    // The card's radius.
+    readonly property real corner: page.view.groupRadius
     anchors.fill: parent
     anchors.leftMargin: 1
     anchors.rightMargin: 1
@@ -202,10 +202,8 @@ ColumnLayout {
     visible: client.error !== ""
     Layout.fillWidth: true
     implicitHeight: errorText.implicitHeight + 24
-    radius: page.view.host.theme.radii.card
+    radius: page.view.groupRadius
     color: page.view.card
-    border.width: 1
-    border.color: page.view.edge
     Text {
       id: errorIcon
       anchors.left: parent.left
@@ -253,6 +251,8 @@ ColumnLayout {
       title: "This computer"
       SettingsRow {
         view: page.view
+        icon: "󰌢"
+        iconTint: page.view.host.theme.system.gray
         label: "Hostname"
         detail: "This computer's name on the network"
         last: true
@@ -260,7 +260,7 @@ ColumnLayout {
           view: page.view
           inline: true
           value: client.hostname
-          placeholder: "hostname"
+          placeholder: "arch"
           onCommitted: function(v) { if (v !== "") client.setHostname(v) }
         }
       }
@@ -274,7 +274,8 @@ ColumnLayout {
         readonly property var members: client.connections.filter(function(c) { return c.kind === modelData })
         view: page.view
         title: modelData
-        count: String(members.length)
+        // How many, only once there's more than one.
+        count: members.length > 1 ? String(members.length) : ""
         Repeater {
           model: kindGroup.members
           delegate: Item {
@@ -303,7 +304,12 @@ ColumnLayout {
               detail: client.connecting === connectionRow.modelData.uuid ? "Connecting…" : connectionRow.modelData.active ? "Connected · " + connectionRow.modelData.device : "Not connected"
               detailDot: connectionRow.modelData.active && client.connecting !== connectionRow.modelData.uuid ? page.green : "transparent"
               last: connectionRow.final
-              ValueText { text: "󰅂"; font.family: page.view.host.theme.fontFamily }
+              Text {
+                text: "󰅂"
+                color: page.view.textTertiary
+                font.family: page.view.host.theme.fontFamily
+                font.pixelSize: 13
+              }
             }
             MouseArea {
               id: rowMouse
@@ -322,14 +328,18 @@ ColumnLayout {
       title: "Add"
       SettingsRow {
         view: page.view
+        icon: "󰖩"
+        iconTint: page.view.host.theme.system.blue
         label: "Wi-Fi network"
-        detail: "Joins a hidden network, or one that's out of range"
+        detail: "Join a hidden network, or one that's out of range"
         SettingsButton { view: page.view; small: true; label: page.adding === "wifi" ? "Cancel" : "Add…"; onClicked: page.adding = page.adding === "wifi" ? "" : "wifi" }
       }
       SettingsRow {
         view: page.view
+        icon: "󰌾"
+        iconTint: page.view.host.theme.system.indigo
         label: "VPN"
-        detail: "Imports a WireGuard or OpenVPN configuration file"
+        detail: "Import a WireGuard or OpenVPN configuration file"
         last: true
         SettingsButton { view: page.view; small: true; label: page.adding === "vpn" ? "Cancel" : "Import…"; onClicked: page.adding = page.adding === "vpn" ? "" : "vpn" }
       }

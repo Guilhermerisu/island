@@ -40,7 +40,7 @@ Rectangle {
   }
   readonly property bool open: pop.view.menuButton === pop
   readonly property bool boxed: open || popMouse.containsMouse
-  implicitWidth: Math.max(pop.minWidth, popLabel.implicitWidth + 8 + 5 + chevrons.width + 8)
+  implicitWidth: Math.max(pop.minWidth, popLabel.implicitWidth + 8 + 4 + chevrons.width + 8)
   implicitHeight: 28
   radius: 8
   color: boxed ? pop.view.host.theme.fill("subtle") : pop.view.host.theme.withAlpha(pop.view.host.theme.fill("subtle"), 0)
@@ -52,7 +52,7 @@ Rectangle {
   Text {
     id: popLabel
     anchors.right: chevrons.left
-    anchors.rightMargin: 5
+    anchors.rightMargin: 4
     anchors.verticalCenter: parent.verticalCenter
     text: pop.currentLabel
     textFormat: Text.PlainText

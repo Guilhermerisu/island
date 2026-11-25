@@ -5,8 +5,8 @@ import QtQuick.Layouts
 // its name, and what it's for. Hidden for an addon pane that draws its own
 // (`header: false`, see addons/Addon.qml).
 // Spaced by what's drawn, not by the text boxes (whose ascent and descent
-// would add their own gaps): 18 over the icon, 6 from the icon to the
-// title's capitals, 6 from the title's baseline to the description's
+// would add their own gaps): 18 over the icon, 10 from the icon to the
+// title's capitals, 10 from the title's baseline to the description's
 // capitals, and 16 from the description's last baseline to the bottom.
 // `view` is the SettingsView, for its colours.
 Rectangle {
@@ -19,10 +19,8 @@ Rectangle {
   // The text under the last baseline (its descent), taken back from the 16.
   readonly property real tail: about.visible ? aboutMetrics.descent : titleMetrics.descent
   implicitHeight: 18 + headerColumn.implicitHeight - tail + 16
-  radius: header.view.host.theme.radii.card
+  radius: header.view.groupRadius
   color: header.view.card
-  border.width: 1
-  border.color: header.view.edge
 
   FontMetrics { id: titleMetrics; font: title.font }
   FontMetrics { id: aboutMetrics; font: about.font }
@@ -49,7 +47,7 @@ Rectangle {
     Text {
       id: title
       Layout.fillWidth: true
-      Layout.topMargin: 6 - (titleMetrics.ascent + titleCap.tightBoundingRect.y)
+      Layout.topMargin: 10 - (titleMetrics.ascent + titleCap.tightBoundingRect.y)
       horizontalAlignment: Text.AlignHCenter
       text: header.page
       color: header.view.text
@@ -62,7 +60,7 @@ Rectangle {
     Text {
       id: about
       Layout.fillWidth: true
-      Layout.topMargin: 6 - titleMetrics.descent - (aboutMetrics.ascent + aboutCap.tightBoundingRect.y)
+      Layout.topMargin: 10 - titleMetrics.descent - (aboutMetrics.ascent + aboutCap.tightBoundingRect.y)
       visible: text !== ""
       horizontalAlignment: Text.AlignHCenter
       text: header.info.about || ""

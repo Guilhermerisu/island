@@ -118,8 +118,8 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: page.view.text
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
-                font.pixelSize: page.view.detailFontSize
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.rowTitleFontSize)
+                font.pixelSize: page.view.rowTitleFontSize
               }
               Text {
                 width: parent.width

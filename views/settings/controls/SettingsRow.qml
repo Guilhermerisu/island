@@ -35,9 +35,9 @@ Item {
   Component.onDestruction: if (view.unregisterSearchable) view.unregisterSearchable(row)
   default property alias control: slot.data
   Layout.fillWidth: true
-  // At least 48, with 8 over and under the text; grows with the text size
+  // At least 50, with 8 over and under the text; grows with the text size
   // so a larger label and detail keep their margins.
-  implicitHeight: Math.max(48, labels.implicitHeight + 16)
+  implicitHeight: Math.max(50, labels.implicitHeight + 16)
   // A row the search found.
   Rectangle {
     anchors.fill: parent
@@ -55,6 +55,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     width: 24
     height: 24
+    glyphSize: 14
     flat: true
     glyph: row.icon
     tint: row.iconTint
@@ -62,9 +63,9 @@ Item {
   Column {
     id: labels
     anchors.left: parent.left
-    anchors.leftMargin: 12 + row.indent + (row.icon !== "" ? rowIcon.width + 12 : 0)
+    anchors.leftMargin: 12 + row.indent + (row.icon !== "" ? rowIcon.width + 11 : 0)
     anchors.right: slot.left
-    anchors.rightMargin: 12
+    anchors.rightMargin: 11
     anchors.verticalCenter: parent.verticalCenter
     spacing: 2
     Text {
@@ -73,8 +74,8 @@ Item {
       elide: Text.ElideRight
       color: row.view.text
       font.family: row.view.host.theme.textFontFamily
-      font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.detailFontSize)
-      font.pixelSize: row.view.detailFontSize
+      font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.rowTitleFontSize)
+      font.pixelSize: row.view.rowTitleFontSize
     }
     Row {
       width: parent.width

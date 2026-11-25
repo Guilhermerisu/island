@@ -68,8 +68,8 @@ Item {
       elide: Text.ElideRight
       color: shortcutRow.view.text
       font.family: shortcutRow.view.host.theme.textFontFamily
-      font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailFontSize)
-      font.pixelSize: shortcutRow.view.detailFontSize
+      font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.rowTitleFontSize)
+      font.pixelSize: shortcutRow.view.rowTitleFontSize
       font.weight: shortcutRow.detail !== "" ? Font.Medium : Font.Normal
     }
     Text {

@@ -34,7 +34,7 @@ ColumnLayout {
     Layout.fillWidth: true
     Layout.leftMargin: 4
     Layout.rightMargin: 4
-    // 6 to the cards, as a title to its group.
+    // 2 to the cards, as a title to its group.
     Layout.bottomMargin: page.view.titleSpacing - page.spacing
     readonly property int size: page.view.calloutFontSize
     Text {
@@ -48,7 +48,7 @@ ColumnLayout {
     }
     Text {
       text: page.enabledCount + " of " + page.activities.length + " on"
-      color: page.view.textMuted
+      color: page.view.textTertiary
       font.family: page.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
       font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, parent.size)
@@ -59,8 +59,8 @@ ColumnLayout {
   GridLayout {
     Layout.fillWidth: true
     columns: page.width < 420 ? 1 : 2
-    columnSpacing: 12
-    rowSpacing: 12
+    columnSpacing: 8
+    rowSpacing: 8
     Repeater {
       model: page.activities
       delegate: ActivityCard {

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import "../../components"
 import QtQuick.Layouts
 import "controls"
@@ -168,19 +169,35 @@ Item {
   readonly property color card: host.theme.card
   readonly property color well: host.theme.well
   readonly property color wellHover: host.theme.wellHover
-  readonly property color divider: host.theme.hairline
+  readonly property color divider: ink(0.07)
   readonly property color edge: host.theme.hairline
   readonly property color accent: host.theme.accent
   readonly property color accentInk: host.theme.accentText
+  readonly property color textTertiary: host.theme.tertiary
+  // macOS's dark greys on the island's black; a light theme background
+  // keeps greys derived from its own text instead.
+  readonly property bool dark: host.theme.background.hslLightness < 0.5
+  // White at `alpha` (the text colour on a light background): dividers and
+  // edges.
+  function ink(alpha) { return dark ? Qt.rgba(1, 1, 1, alpha) : host.theme.withAlpha(host.theme.text, alpha) }
+  // Segmented tracks, buttons, the sidebar's selected item.
+  readonly property color controlFill: dark ? "#2c2c2e" : host.theme.tile
+  readonly property color segmentChip: dark ? "#636366" : Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.31))
+  readonly property color switchOff: dark ? "#3a3a3c" : host.theme.solid("stronger")
+  // Text fields and the sidebar: a step off the black.
+  readonly property color insetFill: dark ? "#111113" : host.theme.solid("quiet")
+  readonly property int groupRadius: 12
 
   // Settings' text, a pixel up from the island's text styles: row titles
   // and values, their subtitles, section titles and segment labels, the
   // pane header's title, and the sidebar.
-  readonly property int detailFontSize: host.theme.px(14)
-  readonly property int detailCaptionFontSize: host.theme.px(12)
-  readonly property int calloutFontSize: host.theme.px(13)
+  readonly property int detailFontSize: host.theme.px(13)
+  // A row's title, a step over its value and the rest of the 13s.
+  readonly property int rowTitleFontSize: host.theme.px(14)
+  readonly property int detailCaptionFontSize: host.theme.px(11)
+  readonly property int calloutFontSize: host.theme.px(12)
   readonly property int paneTitleFontSize: host.theme.px(18)
-  readonly property int sidebarFontSize: host.theme.px(14)
+  readonly property int sidebarFontSize: host.theme.px(15)
   readonly property int detailTitleFontSize: host.theme.px(22)
   // A pane title's exact weight on Adwaita Sans's weight axis, set with
   // font.weight: Font.Bold (the fallback for fonts without the axis).
@@ -188,16 +205,16 @@ Item {
   // The narrowest a row's pop-up or segmented control gets, so the controls
   // down the right of a group line up on both edges.
   readonly property int controlWidth: 156
-  // One rhythm for every pane: 16 around the content, 10 under the pane's
-  // header card, 12 under each group before the next title, and 6 from a
-  // title to its group (see SettingsGroup).
-  readonly property int contentPadding: 16
-  readonly property int groupSpacing: 12
-  readonly property int titleSpacing: 6
-  // The sidebar's own fill, a step up from the island's black (#0d0d0d on
-  // it), so the window reads as two panes without boxing the sidebar.
-  readonly property color sidebarFill: host.theme.background.hslLightness < 0.5
-    ? Qt.tint(host.theme.background, host.theme.withAlpha(host.theme.text, 0.057))
+  // One rhythm for every pane: 14 over the content and 18 at its sides, 10
+  // between groups (and over each section title), 2 from a title to its
+  // group (see SettingsGroup).
+  readonly property int contentTopPadding: 14
+  readonly property int contentSidePadding: 18
+  readonly property int groupSpacing: 10
+  readonly property int titleSpacing: 2
+  // The sidebar's own fill, a step up from the island's black, so the
+  // window reads as two panes without boxing the sidebar.
+  readonly property color sidebarFill: dark ? insetFill
     : Qt.tint(host.theme.background, host.theme.withAlpha(host.theme.text, 0.035))
 
   function revealSettingsItem(item) {
@@ -267,11 +284,18 @@ Item {
     // Its outer corners follow the open island's (30, square on top in
     // notch style).
     Rectangle {
-      Layout.preferredWidth: 220
+      Layout.preferredWidth: 206
       Layout.fillHeight: true
       color: settingsView.sidebarFill
       topLeftRadius: settingsView.settings.notch ? 0 : 30
       bottomLeftRadius: 30
+      // Its right edge, a faint line between the panes.
+      Rectangle {
+        anchors.right: parent.right
+        width: 1
+        height: parent.height
+        color: settingsView.ink(0.06)
+      }
       // One highlight for the open pane that glides between the rows.
       Rectangle {
         readonly property Item at: sidebarItems.itemAt(settingsView.pages.indexOf(settingsView.currentPage))
@@ -280,17 +304,17 @@ Item {
         y: sidebarColumn.y + (at ? at.y : 0)
         width: at ? at.width : 0
         height: at ? at.height : 0
-        radius: 8
-        color: settingsView.well
+        radius: 7
+        color: settingsView.controlFill
         Behavior on y { MotionAnimation { theme: settingsView.host.theme; pace: "quick" } }
       }
       ColumnLayout {
         id: sidebarColumn
         anchors.fill: parent
-        anchors.leftMargin: 12
-        anchors.rightMargin: 13
-        anchors.topMargin: 16
-        anchors.bottomMargin: 16
+        anchors.leftMargin: 10
+        anchors.rightMargin: 11
+        anchors.topMargin: 14
+        anchors.bottomMargin: 14
         spacing: 2
         // 8 between the glyph and the text, so the caret stands clear of
         // the placeholder's first letter.
@@ -298,8 +322,8 @@ Item {
           Layout.fillWidth: true
           Layout.preferredHeight: 30
           Layout.bottomMargin: 10 - sidebarColumn.spacing
-          radius: settingsView.host.theme.radii.medium
-          color: settingsView.host.theme.tile
+          radius: 8
+          color: settingsView.controlFill
           border.width: searchInput.activeFocus ? 2 : 0
           border.color: settingsView.host.theme.accentFill("ring")
           Text {
@@ -307,12 +331,12 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 9
             anchors.verticalCenter: parent.verticalCenter
-            width: settingsView.host.theme.px(14)
+            width: settingsView.host.theme.px(13)
             horizontalAlignment: Text.AlignHCenter
             text: "󰍉"
             color: settingsView.host.theme.placeholder
             font.family: settingsView.host.theme.fontFamily
-            font.pixelSize: settingsView.host.theme.px(14)
+            font.pixelSize: settingsView.host.theme.px(13)
           }
           Text {
             anchors.left: searchGlyph.right
@@ -371,22 +395,54 @@ Item {
     ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
-      Layout.margins: settingsView.contentPadding
+      Layout.topMargin: settingsView.contentTopPadding
+      Layout.leftMargin: settingsView.contentSidePadding
+      Layout.rightMargin: settingsView.contentSidePadding
       spacing: 0
       Flickable {
         id: scroller
         Layout.fillWidth: true
         Layout.fillHeight: true
-        contentHeight: groups.implicitHeight
+        // The last group ends as far over the bottom as the first sits
+        // under the top.
+        contentHeight: groups.implicitHeight + settingsView.contentTopPadding
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         WheelLatch { id: scrollLatch; flickable: scroller; parent: scroller; handOffAtEnds: true }
+        // Where the page runs on below, its last 12% fades out (an opacity
+        // mask) instead of cutting the rows off.
+        readonly property bool moreBelow: contentY < contentHeight - height - 1
+        property real endFade: moreBelow ? 1 : 0
+        Behavior on endFade { MotionAnimation { theme: settingsView.host.theme; pace: "fade"; curve: "fade" } }
+        layer.enabled: endFade > 0.01 && settingsView.active
+        layer.effect: MultiEffect {
+          maskEnabled: true
+          maskSource: endMask
+          maskThresholdMin: 0
+          maskSpreadAtMin: 1
+        }
+        Item {
+          id: endMask
+          parent: settingsView
+          visible: false
+          width: scroller.width
+          height: scroller.height
+          layer.enabled: true
+          Rectangle {
+            anchors.fill: parent
+            gradient: Gradient {
+              GradientStop { position: 0; color: "#ffffffff" }
+              GradientStop { position: 0.88; color: "#ffffffff" }
+              GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 1 - scroller.endFade) }
+            }
+          }
+        }
 
         ColumnLayout {
           id: groups
           width: scroller.width
           // The pane's header card sits 10 over its first group.
-          spacing: 10
+          spacing: settingsView.groupSpacing
           transform: Translate { id: groupsShift }
 
           LoadWarning { view: settingsView }
@@ -422,26 +478,18 @@ Item {
           KeybindsPage { id: keybindsPage; view: settingsView }
         }
       }
-      // Soft edges where the page runs on above or below. A fixed model, so
-      // scrolling only changes the opacity (and the fade runs) instead of
-      // rebuilding the edges.
-      Repeater {
-        model: 2
-        delegate: Rectangle {
-          required property int index
-          readonly property bool upper: index === 0
-          parent: scroller
-          z: 1
-          anchors.left: parent.left
-          anchors.right: parent.right
-          y: upper ? 0 : scroller.height - height
-          height: 24
-          opacity: (upper ? scroller.contentY > 1 : scroller.contentY < scroller.contentHeight - scroller.height - 1) ? 1 : 0
-          Behavior on opacity { MotionAnimation { theme: settingsView.host.theme; pace: "fade"; curve: "fade" } }
-          gradient: Gradient {
-            GradientStop { position: 0; color: upper ? settingsView.panel : "transparent" }
-            GradientStop { position: 1; color: upper ? "transparent" : settingsView.panel }
-          }
+      // A soft edge where the page runs on above.
+      Rectangle {
+        parent: scroller
+        z: 1
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 24
+        opacity: scroller.contentY > 1 ? 1 : 0
+        Behavior on opacity { MotionAnimation { theme: settingsView.host.theme; pace: "fade"; curve: "fade" } }
+        gradient: Gradient {
+          GradientStop { position: 0; color: settingsView.panel }
+          GradientStop { position: 1; color: "transparent" }
         }
       }
     }

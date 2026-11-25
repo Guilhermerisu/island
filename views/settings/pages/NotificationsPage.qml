@@ -90,7 +90,7 @@ ColumnLayout {
       icon: "󰦨"
       iconTint: page.system.gray
       label: "Full notification text"
-      detail: "Shows the whole title and message instead of cutting them short"
+      detail: "The whole title and message instead of cutting them short"
       keywords: "truncate long"
       last: true
       SettingsSwitch {

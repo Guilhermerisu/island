@@ -23,7 +23,7 @@ ColumnLayout {
       icon: "󰌢"
       iconTint: page.system.indigo
       label: "Notch style"
-      detail: "Joins the island to the top edge of the screen, like a MacBook notch"
+      detail: "Joins the island to the top edge, like a MacBook notch"
       SettingsSwitch {
         view: page.view
         checked: page.settings.notch
@@ -48,7 +48,7 @@ ColumnLayout {
       icon: "󰃟"
       iconTint: page.system.gray
       label: "Theme background"
-      detail: "Uses your Omarchy theme's background color instead of black"
+      detail: "Your Omarchy theme's background instead of black"
       keywords: "colour color"
       last: true
       SettingsSwitch {
@@ -300,7 +300,7 @@ ColumnLayout {
       icon: "󰸌"
       iconTint: page.system.red
       label: "Colorful live activities"
-      detail: "Gives each activity its own color instead of the theme accent"
+      detail: "Each activity uses its own color instead of the accent"
       keywords: "colour"
       SettingsSwitch {
         view: page.view
@@ -313,7 +313,7 @@ ColumnLayout {
       icon: "󱂫"
       iconTint: page.system.blue
       label: "Colorful settings icons"
-      detail: "Shows Settings icons in color instead of gray"
+      detail: "Settings icons in color instead of gray"
       keywords: "colour sidebar"
       last: true
       SettingsSwitch {

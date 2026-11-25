@@ -11,8 +11,8 @@ Rectangle {
   readonly property var info: side.view.pageInfo[title] || ({})
   readonly property bool selected: side.view.currentPage === title
   Layout.fillWidth: true
-  Layout.preferredHeight: 36
-  radius: 8
+  Layout.preferredHeight: 38
+  radius: 7
   visible: side.view.pageMatches(title)
   // The open pane's grey is the sidebar's one gliding highlight (see
   // SettingsView); a row only lights up itself while hovered.
@@ -27,8 +27,9 @@ Rectangle {
     spacing: 10
     PaneIcon {
       view: side.view
-      Layout.preferredWidth: 24
-      Layout.preferredHeight: 24
+      Layout.preferredWidth: 26
+      Layout.preferredHeight: 26
+      glyphSize: 15
       flat: true
       glyph: side.info.icon || ""
       tint: side.info.color || side.view.accent

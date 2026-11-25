@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 
 // A group of rows under a grey section title in sentence case ("Clock",
-// never uppercased), with an optional count after it and a footnote.
+// never uppercased), with an optional count at the title row's right end
+// and a footnote.
 // `view` is the SettingsView, for its colours.
 ColumnLayout {
   id: group
@@ -17,12 +18,16 @@ ColumnLayout {
   default property alias rows: groupBody.data
   Layout.fillWidth: true
   spacing: group.view.titleSpacing
-  Row {
+  RowLayout {
     visible: group.title !== ""
+    Layout.fillWidth: true
     Layout.leftMargin: 4
+    Layout.rightMargin: 4
     spacing: 6
     readonly property int size: group.view.calloutFontSize
     Text {
+      Layout.fillWidth: true
+      elide: Text.ElideRight
       text: group.title
       color: group.view.textMuted
       font.family: group.view.host.theme.textFontFamily
@@ -34,7 +39,7 @@ ColumnLayout {
     Text {
       visible: group.count !== ""
       text: group.count
-      color: group.view.textMuted
+      color: group.view.textTertiary
       font.family: group.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
       font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, parent.size)
@@ -44,10 +49,8 @@ ColumnLayout {
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: groupBody.implicitHeight
-    radius: group.view.host.theme.radii.card
+    radius: group.view.groupRadius
     color: group.view.card
-    border.width: 1
-    border.color: group.view.edge
     ColumnLayout {
       id: groupBody
       anchors.left: parent.left

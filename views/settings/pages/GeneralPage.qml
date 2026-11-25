@@ -88,7 +88,7 @@ ColumnLayout {
       icon: "󰍽"
       iconTint: page.system.orange
       label: "Right-click to hide"
-      detail: "Right-click the island to hide it, and the top edge of the screen to bring it back"
+      detail: "Hide the island; the top edge of the screen brings it back"
       SettingsSwitch {
         view: page.view
         checked: page.settings.hideOnRightClick
@@ -126,7 +126,7 @@ ColumnLayout {
       icon: "󰹑"
       iconTint: page.system.cyan
       label: "Keep windows below the island"
-      detail: "Tiled windows leave room for the island instead of going under it"
+      detail: "Tiled windows leave room for the island"
       keywords: "gap margin overlap"
       last: true
       SettingsSwitch {

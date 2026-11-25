@@ -15,18 +15,17 @@ Rectangle {
   property bool writeOnly: false
   // A glyph before the text (a pin for a place), or none.
   property string icon: ""
-  // A value set in its row (the hostname): no outline, the tile grey, the
-  // text at 13 to the right.
+  // A value set in its row (the hostname): 160 wide, the text to the right.
   property bool inline: false
   signal committed(string value)
   // As it's typed, before it's committed.
   signal edited(string value)
   implicitWidth: inline ? 160 : 200
-  implicitHeight: 28
-  radius: inline ? 8 : 6
-  color: inline ? field.view.host.theme.tile : field.view.host.theme.solid(fieldMouse.containsMouse && !input.activeFocus ? "subtle" : "quiet")
-  border.width: inline ? 0 : 1
-  border.color: field.view.host.theme.fill(input.activeFocus ? "strong" : "raised")
+  implicitHeight: 26
+  radius: 7
+  color: field.view.insetFill
+  border.width: 1
+  border.color: field.view.ink(input.activeFocus ? 0.18 : 0.12)
   Behavior on color { MotionColorAnimation { theme: field.view.host.theme } }
   // Focus ring: settles in from slightly larger, like macOS's.
   Rectangle {
@@ -84,9 +83,9 @@ Rectangle {
   TextInput {
     id: input
     anchors.left: parent.left
-    anchors.leftMargin: field.icon !== "" ? 30 : 10
+    anchors.leftMargin: field.icon !== "" ? 30 : 9
     anchors.right: parent.right
-    anchors.rightMargin: 10
+    anchors.rightMargin: 9
     anchors.verticalCenter: parent.verticalCenter
     clip: true
     echoMode: field.secret ? TextInput.Password : TextInput.Normal
@@ -95,7 +94,7 @@ Rectangle {
     selectionColor: field.view.accent
     selectedTextColor: field.view.accentInk
     font.family: field.view.host.theme.textFontFamily
-    readonly property int textSize: field.inline ? field.view.host.theme.px(13) : field.view.detailFontSize
+    readonly property int textSize: field.view.host.theme.px(13)
     font.letterSpacing: field.view.host.theme.tracking(field.view.host.theme.textFontFamily, textSize)
     font.pixelSize: textSize
     onTextEdited: field.edited(field.secret ? text : text.trim())
