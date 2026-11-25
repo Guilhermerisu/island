@@ -146,6 +146,12 @@ FocusScope {
       card.toggled(!card.checked)
     }
   }
+  // Takes the option row's clicks that miss its control (on the label,
+  // say), so they don't flip the card's switch.
+  MouseArea {
+    anchors.fill: optionRow
+    visible: card.hasOption
+  }
   RowLayout {
     id: optionRow
     visible: card.hasOption

@@ -15,16 +15,19 @@ IslandPill {
   readonly property int gap: 8
   readonly property int count: 10
   readonly property int chosenCount: Math.max(5, Math.min(count, host.settings.workspaceHudCount || 5))
-  // The highest of workspaces 1–10 with windows, or 0.
-  readonly property int highestOccupied: {
+  // Whether each of workspaces 1–10 has windows, by id (index 0 unused).
+  readonly property var occupied: {
+    var result = []
+    for (var id = 0; id <= count; id++) result.push(false)
     var values = Hyprland.workspaces.values
-    var highest = 0
     for (var i = 0; i < values.length; i++) {
-      var id = values[i].id
-      if (id >= 1 && id <= count && values[i].toplevels.values.length > 0) highest = Math.max(highest, id)
+      var workspaceId = values[i].id
+      if (workspaceId >= 1 && workspaceId <= count && values[i].toplevels.values.length > 0) result[workspaceId] = true
     }
-    return highest
+    return result
   }
+  // The highest of workspaces 1–10 with windows, or 0.
+  readonly property int highestOccupied: Math.max(0, occupied.lastIndexOf(true))
   readonly property int visibleCount: Math.max(chosenCount, highestOccupied)
   readonly property int step: slot + gap
   // How far the capsule reaches past its dot on each side.
@@ -41,10 +44,11 @@ IslandPill {
     else if (focused > windowStart + visibleCount - 1) windowStart = focused - visibleCount + 1
   }
   onFocusedChanged: followFocus()
-  // From the start, so a window widened for a workspace with windows shows
-  // every one up to it; then far enough to keep the current one in.
+  // Widened for a workspace with windows, from the start so every one up to
+  // it shows; otherwise it stays where it is, as far as it still fits. Then
+  // far enough to keep the current one in.
   onVisibleCountChanged: {
-    windowStart = 1
+    windowStart = highestOccupied > chosenCount ? 1 : Math.max(1, Math.min(windowStart, count - visibleCount + 1))
     followFocus()
   }
   Component.onCompleted: followFocus()
@@ -52,12 +56,6 @@ IslandPill {
   shown: host.workspacesPill
   pillWidth: visibleCount * step + 56
   pillHeight: host.clockHeight
-
-  function workspaceById(id) {
-    var values = Hyprland.workspaces.values
-    for (var i = 0; i < values.length; i++) if (values[i].id === id) return values[i]
-    return null
-  }
 
   // The window: visibleCount slots wide, plus room for the capsule's ends.
   Item {
@@ -83,8 +81,7 @@ IslandPill {
             id: workspaceSlot
             required property int index
             readonly property int workspaceId: index + 1
-            readonly property var workspace: pill.workspaceById(workspaceId)
-            readonly property bool occupied: !!workspace && workspace.toplevels.values.length > 0
+            readonly property bool occupied: pill.occupied[workspaceId]
             readonly property bool inWindow: workspaceId >= pill.windowStart
               && workspaceId < pill.windowStart + pill.visibleCount
             width: pill.slot
@@ -96,7 +93,8 @@ IslandPill {
               width: 6
               height: 6
               radius: 3
-              color: Qt.rgba(1, 1, 1, workspaceSlot.occupied ? 0.75 : 0.2)
+              // The island's text colour, so they show on a light theme background.
+              color: pill.host.theme.withAlpha(pill.host.theme.text, workspaceSlot.occupied ? 0.75 : 0.2)
             }
           }
         }

@@ -61,8 +61,8 @@ Item {
     Row {
       anchors.centerIn: parent
       visible: preview.kind === "workspace"
-      // As WorkspacePill: 18px slots 8 apart, 6px dots (white at 0.75 with
-      // windows, 0.2 empty), and a capsule just past its slot.
+      // As WorkspacePill: 18px slots 8 apart, 6px dots (the text colour at
+      // 0.75 with windows, 0.2 empty), and a capsule just past its slot.
       spacing: 8
       Repeater {
         model: 5
@@ -75,7 +75,7 @@ Item {
             width: workspace.index === 1 ? 22 : 6
             height: workspace.index === 1 ? 18 : 6
             radius: height / 2
-            color: workspace.index === 1 ? (preview.colorfulActivities ? "#ffffff" : preview.accent) : Qt.rgba(1, 1, 1, workspace.index < 3 ? 0.75 : 0.2)
+            color: workspace.index === 1 ? (preview.colorfulActivities ? "#ffffff" : preview.accent) : preview.view.host.theme.withAlpha(preview.view.host.theme.text, workspace.index < 3 ? 0.75 : 0.2)
             Text {
               anchors.centerIn: parent
               visible: workspace.index === 1

@@ -84,7 +84,9 @@ ColumnLayout {
         checked: page.view.settings[modelData.key]
         onToggled: function(on) { page.view.settings[modelData.key] = on }
         option: modelData.kind === "workspace" ? workspaceCountOption : null
-        optionLabel: modelData.kind === "workspace" ? "Visible workspaces" : ""
+        // At least: the indicator widens to reach the highest workspace with
+        // windows (see WorkspacePill).
+        optionLabel: modelData.kind === "workspace" ? "Show at least" : ""
       }
     }
   }

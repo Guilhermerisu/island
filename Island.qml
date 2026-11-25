@@ -158,7 +158,8 @@ Item {
   // ---------- Workspace switches ----------
 
   // Omarchy's bar's workspaces: 1–5 always, and any other up to 10 that
-  // exists. Switching shows them for a moment (see WorkspacePill).
+  // exists, for the hover capsules (see HoverCapsules). The switch
+  // indicator (WorkspacePill) has its own fixed 1–10.
   readonly property var workspaceIds: {
     var ids = [1, 2, 3, 4, 5]
     var values = Hyprland.workspaces.values
@@ -170,7 +171,7 @@ Item {
   }
   readonly property int focusedWorkspaceId: Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1
   onFocusedWorkspaceIdChanged: {
-    if (activities.ready && settings.workspaceHud && focusedWorkspaceId > 0) showFeedback("", 1200, "workspaces")
+    if (activities.ready && settings.workspaceHud && focusedWorkspaceId > 0 && focusedWorkspaceId <= 10) showFeedback("", 1200, "workspaces")
   }
 
   // ---------- Device live activities: battery, Bluetooth ----------
