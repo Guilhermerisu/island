@@ -386,8 +386,13 @@ ColumnLayout {
             visible: !row.isHeader
             anchors.fill: parent
             radius: 8
-            color: rowMouse.pressed ? bt.well : rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected ? bt.tile : "transparent"
+            color: rowMouse.pressed ? bt.well : rowHover.hovered || row.isSelected ? bt.tile : "transparent"
             Behavior on color { MotionColorAnimation { theme: bt.host.theme } }
+            // One passive hover for the whole row, × included. The row's and the
+            // ×'s MouseAreas (and the ×'s Tooltip) each took the hover from the
+            // other, so the × kept fading out and back in and a click could land
+            // on the row instead of the × (or the other way round).
+            HoverHandler { id: rowHover; blocking: false }
 
             Rectangle {
               id: badge
@@ -477,20 +482,18 @@ ColumnLayout {
                 // Fades in on hover and out quicker, and takes no clicks
                 // while it fades out.
                 readonly property bool shown: row.modelData.section !== "nearby" && !row.modelData.pending
-                  && (rowMouse.containsMouse || forgetMouse.containsMouse || row.isSelected)
+                  && (rowHover.hovered || row.isSelected)
                 opacity: shown ? 1 : 0
                 visible: opacity > 0.01
                 Behavior on opacity { MotionAnimation { theme: bt.host.theme; pace: forgetButton.shown ? "fade" : "exit"; curve: forgetButton.shown ? "fade" : "exit" } }
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
-                color: forgetMouse.containsMouse ? bt.wellHover : "transparent"
-                Tooltip { theme: bt.host.theme; text: "Forget This Device" }
-                Text {
+                color: forgetTip.hovered ? bt.wellHover : "transparent"
+                Tooltip { id: forgetTip; theme: bt.host.theme; text: "Forget This Device" }
+                Cross {
                   anchors.centerIn: parent
-                  text: "󰅖"
-                  color: forgetMouse.containsMouse ? bt.text : bt.textMuted
-                  font.family: bt.iconFont
-                  font.pixelSize: bt.host.theme.px(15)
+                  color: forgetTip.hovered ? bt.text : bt.textMuted
+                  pixelSize: bt.host.theme.px(15)
                 }
                 MouseArea {
                   id: forgetMouse

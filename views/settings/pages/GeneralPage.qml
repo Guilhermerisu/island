@@ -86,6 +86,18 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰄮"
+      iconTint: page.system.gray
+      label: "Outline"
+      detail: "A thin light outline around the resting island"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.restingOutline
+        onToggled: function(on) { page.view.settings.restingOutline = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰹑"
       iconTint: page.system.cyan
       label: "Reserve space for the island"
@@ -356,7 +368,19 @@ ColumnLayout {
 
   SettingsGroup {
     view: page.view
-    title: "Hide automatically"
+    title: "Hide"
+    SettingsRow {
+      view: page.view
+      icon: "󰍽"
+      iconTint: page.system.orange
+      label: "Right-click to hide"
+      detail: "Right-click the island to hide it, and the top edge to bring it back"
+      SettingsSwitch {
+        view: page.view
+        checked: page.view.settings.hideOnRightClick
+        onToggled: function(on) { page.view.settings.hideOnRightClick = on }
+      }
+    }
     SettingsRow {
       view: page.view
       icon: "󰊓"

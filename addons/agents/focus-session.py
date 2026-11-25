@@ -1,4 +1,4 @@
-"""Focus the Hyprland client that owns a Claude Code session."""
+"""Focus the Hyprland client that owns a Claude Code or Codex session."""
 import json
 import os
 from pathlib import Path
@@ -45,6 +45,25 @@ def session_pids(session_id):
                 continue
 
 
+def transcript_pids(transcript):
+    """Codex keeps its rollout file open while a session runs, in the CLI
+    and in the desktop app's server alike."""
+    try:
+        wanted = os.path.realpath(transcript)
+    except (OSError, ValueError):
+        return
+    for entry in PROC.glob("[0-9]*"):
+        try:
+            if entry.stat().st_uid != os.getuid():
+                continue
+            for fd in (entry / "fd").iterdir():
+                if os.path.realpath(fd) == wanted:
+                    yield int(entry.name)
+                    break
+        except OSError:
+            continue
+
+
 def ancestors(pid):
     while pid > 1:
         yield pid
@@ -55,13 +74,14 @@ def ancestors(pid):
             return
 
 
-def resolve(session_id, clients):
+def resolve(session_id, clients, provider="claude", transcript=""):
     by_pid, matches = {}, {}
     for window in clients:
         address = window.get("address", "")
         if window.get("mapped") and not window.get("hidden") and ADDRESS.fullmatch(address):
             by_pid.setdefault(window.get("pid"), []).append(window)
-    for pid in session_pids(session_id):
+    pids = transcript_pids(transcript) if provider == "codex" and transcript else session_pids(session_id)
+    for pid in pids:
         for owner in ancestors(pid):
             if owner in by_pid:
                 matches.update((window["address"], window) for window in by_pid[owner])
@@ -83,6 +103,20 @@ def focus(window):
             or hyprctl("dispatch", "focuswindow", address) == "ok")
 
 
+def focused(window):
+    try:
+        active = json.loads(hyprctl("-j", "activewindow") or "{}")
+    except ValueError:
+        return False
+    return isinstance(active, dict) and active.get("address") == window["address"]
+
+
+# With --focused first, it only says (by its exit code) whether the session's
+# window is the focused one.
 if __name__ == "__main__":
-    target = resolve(sys.argv[1], hypr_list("clients")) if len(sys.argv) == 2 else None
-    sys.exit(0 if target and focus(target) else 1)
+    check = sys.argv[1:2] == ["--focused"]
+    if check:
+        sys.argv.pop(1)
+    args = sys.argv[1:] + [""] * (3 - len(sys.argv[1:]))
+    target = resolve(args[0], hypr_list("clients"), args[1] or "claude", args[2]) if len(sys.argv) in (2, 4) else None
+    sys.exit(0 if target and (focused(target) if check else focus(target)) else 1)

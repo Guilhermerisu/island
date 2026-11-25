@@ -550,6 +550,15 @@ Item {
       required property var modelData
       PanelWindow {
         id: window
+        // Hidden by a right-click on this screen's island (see EdgeClick),
+        // until a right-click on its top edge brings it back.
+        property bool manuallyHidden: false
+        Connections {
+          target: root.settings
+          function onHideOnRightClickChanged() {
+            if (!root.settings.hideOnRightClick) window.manuallyHidden = false
+          }
+        }
         screen: perScreen.modelData
         visible: perScreen.modelData.name === root.outputName
         color: "transparent"
@@ -601,11 +610,38 @@ Item {
         readonly property bool isEffectivelyHidden: (root.barHidden || autoHideCondition)
           && (root.view === "rest" || hasScreensaver)
 
-        // Hover at the top edge can bring a hidden island back.
-        readonly property bool revealArmed: isEffectivelyHidden && !hasScreensaver
+        // Hover at the top edge can bring a hidden island back, unless a
+        // right-click hid it: then a right-click on the edge does.
+        readonly property bool revealArmed: isEffectivelyHidden && !hasScreensaver && !window.manuallyHidden
 
-        readonly property bool islandHidden: isEffectivelyHidden
-          && !(revealArmed && edgeRevealed)
+        readonly property bool manuallyHiddenAtRest: window.manuallyHidden && root.view === "rest"
+        readonly property bool edgeClickAllowed: visible && root.settings.hideOnRightClick
+          && !hasScreensaver && root.view === "rest"
+        readonly property bool clickRevealArmed: edgeClickAllowed && window.manuallyHidden
+
+        readonly property bool islandHidden: manuallyHiddenAtRest || (isEffectivelyHidden
+          && !(revealArmed && edgeRevealed))
+
+        // A right-click hides the island, or, on the strip of the top edge
+        // it leaves, brings it back (to where auto-hide leaves it).
+        component EdgeClick: MouseArea {
+          required property bool revealing
+          anchors.fill: parent
+          z: 10
+          acceptedButtons: Qt.RightButton
+          onClicked: {
+            if (revealing && window.isEffectivelyHidden) {
+              window.edgeRevealed = true
+              edgeLeaveTimer.restart()
+            }
+            if (!revealing) {
+              island.glanceActive = false
+              island.capsulesActive = false
+              capsulesEnterTimer.stop()
+            }
+            window.manuallyHidden = !revealing
+          }
+        }
 
         // Only the island takes input, except while a view is open: then the
         // whole screen does, so outsideArea can close it. While the island can
@@ -613,6 +649,7 @@ Item {
         mask: Region {
           item: root.closesOnOutsideClick ? outsideArea : window.islandHidden ? null : island
           regions: [
+            Region { item: window.clickRevealArmed ? clickRevealStrip : null },
             Region { item: window.revealArmed ? revealStrip : null },
             Region { item: satellitePill && satellitePill.shown ? satellitePill : null },
             Region { item: hoverCapsules && hoverCapsules.shown ? hoverCapsules.leftGroup : null },
@@ -628,6 +665,16 @@ Item {
           onPressed: function(mouse) {
             if (!island.contains(mapToItem(island, mouse.x, mouse.y))) root.view = "rest"
           }
+        }
+
+        Item {
+          id: clickRevealStrip
+          anchors.top: parent.top
+          anchors.horizontalCenter: parent.horizontalCenter
+          width: Math.max(100, Math.min(280, island.targetWidth))
+          height: 6
+          visible: window.clickRevealArmed
+          EdgeClick { revealing: true; enabled: window.clickRevealArmed }
         }
 
         Item {
@@ -876,6 +923,11 @@ Item {
           width: Math.max(40, widthSpring.value)
           height: Math.max(28, heightSpring.value)
 
+          EdgeClick {
+            revealing: false
+            enabled: window.edgeClickAllowed && !window.islandHidden
+          }
+
           MouseArea {
             id: islandTap
             anchors.fill: parent
@@ -934,18 +986,23 @@ Item {
           scale: island.scale
           transformOrigin: island.transformOrigin
           readonly property bool prominent: root.surfaceOpen || root.view === "feedback"
-          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.8 : root.theme.isLight ? 0.65 : 0
+          readonly property bool raised: island.lifted || island.isGlanceExpanded
+          // With Outline on, a brighter edge on the resting pill too, so it
+          // doesn't vanish against a black wallpaper. Open and lifted, the
+          // edge stays the chrome's hairline, so banners don't read brighter
+          // than an expanded island.
+          readonly property bool restingEdge: !prominent && !raised && root.settings.restingOutline
+          opacity: prominent ? 1 : raised ? (root.theme.isLight ? 0.8 : 0.6) : restingEdge ? 0.75 : root.theme.isLight ? 0.65 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || islandEdge.raised ? "morph" : "exit"; curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
               strokeWidth: 1
-              // Same hairline as open-view chrome (cards, wells), so banners
-              // don't read brighter than an expanded island.
-              strokeColor: root.theme.hairline
+              strokeColor: islandEdge.restingEdge ? root.theme.outlineColor : root.theme.hairline
+              Behavior on strokeColor { MotionColorAnimation { theme: root.theme } }
               fillColor: "transparent"
               PathSvg { path: island.edgeOutline }
             }
@@ -970,7 +1027,7 @@ Item {
       // change of focus would re-tile two monitors.
       PanelWindow {
         screen: window.screen
-        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition
+        visible: (window.visible || !root.outputPinned) && root.settings.reserveSpace && !root.barHidden && !window.autoHideCondition && !window.manuallyHidden
         color: "transparent"
         anchors { top: true; left: true; right: true }
         exclusionMode: ExclusionMode.Normal

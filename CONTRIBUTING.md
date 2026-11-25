@@ -39,7 +39,7 @@ omarchy plugin validate .
 omarchy plugin validate companion/guilhermerisu.notifications
 bash -n companion/check.sh companion/install.sh companion/uninstall.sh
 git diff --check
-QT_QPA_PLATFORM=offscreen /usr/lib/qt6/bin/qmltestrunner -input tests
+QT_QPA_PLATFORM=offscreen /usr/lib/qt6/bin/qmltestrunner -import tests -input tests
 ```
 
 For visual changes, check the affected views in a running Omarchy session and

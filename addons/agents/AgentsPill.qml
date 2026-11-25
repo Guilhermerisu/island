@@ -3,17 +3,10 @@ import QtQuick.Effects
 import QtQuick.Shapes
 import "../../components"
 
-// Claude Code at work, as Apple's live activities. Resting: Clawd leading
-// and the turn's time trailing, the clock between them; once the turn's
-// done, a tick and "Done" in the time's place, and "Waiting" while it
-// waits on your answer.
-//
-// Hovered (or by itself while it waits on you), it grows into the turn:
-// along the top Clawd, "Claude", the session's title, and the turn's time;
-// under them its last steps, each with how long it took; beside them a card
-// for what it's doing now: the command and its time, the file it's editing
-// with the lines added and removed, the question it's waiting on, your
-// prompt while it thinks, or the turn in numbers once it's done.
+// Claude Code or Codex at work, as Apple's live activities: its mascot (see
+// AgentAvatar) leading and the turn's time trailing, the clock between them.
+// Hovered while working, it expands into the turn's steps and a live detail
+// card; when a turn ends or waits on you, it grows into a notice (AgentNotice).
 // `agents` is the AgentsAddon.
 Item {
   id: pill
@@ -28,11 +21,12 @@ Item {
   readonly property var live: agents.live
   readonly property var step: agents.current
   readonly property string phase: live ? live.state : ""
+  readonly property bool codex: !!live && live.provider === "codex"
   readonly property bool done: phase === "done"
   // Done, and saying so at rest (grown, the card does).
   readonly property bool restDone: done && !expanded
   readonly property var summary: live ? live.summary : null
-  readonly property bool expanded: agents.expanded
+  readonly property bool expanded: agents.expanded && !noticing
   readonly property real inset: agents.inset
 
   // Grown, the header sits lower, clear of the top's curve; the steps and
@@ -47,45 +41,79 @@ Item {
     value: pill.contentTop + Math.max(steps.contentHeight, pill.cardHeight + 4) + 20
   }
 
-  opacity: agents.pillShown ? 1 : 0
+  // Whether it's on the island, steadied: going from a moment's pill back
+  // to the ongoing one, the island's bindings can drop it for an instant,
+  // which would replay its parts' reveal from nothing.
+  property bool onIsland: agents.pillShown
+  Connections {
+    target: pill.agents
+    function onPillShownChanged() {
+      if (pill.agents.pillShown) pill.onIsland = true
+      else Qt.callLater(function() { pill.onIsland = pill.agents.pillShown })
+    }
+  }
+
+  opacity: onIsland ? 1 : 0
   visible: opacity > 0.01
   Behavior on opacity { MotionAnimation { theme: pill.theme; pace: "fade"; curve: "fade" } }
 
-  // Clawd and the time come in from a blur in turn, as the other pills.
-  PillReveal { id: reveal; theme: pill.theme; shown: pill.agents.pillShown }
+  // How far the pill has grown into a notice (see AgentNotice), following the
+  // island's own height as it springs, so what moves keeps in step with it.
+  readonly property real grow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  readonly property bool noticing: agents.noticeShown || grow > 0.5
+
+  // Clawd and the time come in from a blur in turn, as the other pills; the
+  // time gives way while the pill's grown into a notice, and comes back
+  // once it's shrunk most of the way.
+  PillReveal { id: reveal; theme: pill.theme; shown: pill.onIsland && !pill.noticing }
+  // The mascot stays through the notice: it moves onto the notice's tile.
+  PillReveal { id: mascotReveal; theme: pill.theme; shown: pill.onIsland }
 
   HoverHandler {
     enabled: pill.agents.pillShown
     onHoveredChanged: pill.agents.hovered = hovered
   }
 
-  // The resting row, which becomes the header as the pill grows.
+  // The agent's mascot (Clawd or Codex pet/logo). At rest it sits on the left
+  // end; when the pill grows into a notice it walks onto the notice's tile;
+  // when hovered into the expanded steps view it settles into the header.
+  AgentAvatar {
+    id: mascot
+    z: 2
+    readonly property var session: pill.noticing && noticeItem.displayed ? noticeItem.displayed : pill.agents.live
+    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 10
+    readonly property real tileX: noticeItem.tileCenter - width / 2
+    x: pill.expanded ? pill.inset : Math.round(restX + (tileX - restX) * pill.grow)
+    Behavior on x { enabled: !pill.noticing; MotionAnimation { theme: pill.theme; pace: "morph" } }
+    y: pill.expanded
+      ? pill.headerTop + Math.round((pill.agents.restHeight - height) / 2) + (original || logo ? 0 : 1)
+      : Math.round((parent.height - height) / 2) + (original || logo ? 0 : 1)
+    Behavior on y { enabled: !pill.noticing; MotionAnimation { theme: pill.theme; pace: "morph" } }
+    provider: session ? session.provider || "claude" : "claude"
+    clawd: pill.agents.clawd
+    sheet: pill.agents.petSheet
+    cols: pill.agents.petCols
+    rows: pill.agents.petRows
+    color: pill.agents.noticeShown ? noticeItem.mascotTint : pill.ink
+    Behavior on color { MotionColorAnimation { theme: pill.theme } }
+    fontFamily: pill.theme.fontFamily
+    mood: pill.agents.noticeShown ? (noticeItem.asking ? "wave" : "done")
+      : ({ done: "done", asking: "wave", tool: "walk" })[pill.phase] || "think"
+    running: pill.agents.pillShown && noticeItem.fresh
+    opacity: mascotReveal.leadingIn
+    PillPart { progress: mascotReveal.leadingIn }
+  }
+
+  // The resting row, which becomes the header as the pill expands into steps.
   Item {
     id: header
     width: parent.width
     height: pill.agents.restHeight
     y: pill.expanded ? pill.headerTop : 0
     Behavior on y { MotionAnimation { theme: pill.theme; pace: "morph" } }
+    visible: !pill.noticing
 
-    // Clawd, walking while it takes a step, thinking between them, waving
-    // while waiting on you, and hopping once it's done. Whole pixels, so it
-    // stays crisp.
-    AgentsMascot {
-      anchors.left: parent.left
-      anchors.leftMargin: pill.expanded ? pill.inset : 14
-      Behavior on anchors.leftMargin { MotionAnimation { theme: pill.theme; pace: "morph" } }
-      y: Math.round((parent.height - height) / 2) + 1
-      theme: pill.theme
-      color: pill.ink
-      eyeColor: pill.theme.background
-      mood: ({ done: "done", asking: "wave", tool: "walk" })[pill.phase] || "think"
-      running: pill.agents.pillShown
-      opacity: reveal.leadingIn
-      PillPart { progress: reveal.leadingIn }
-    }
-
-    // Grown, "Claude" and the session's title beside Clawd, on one
-    // baseline.
+    // Grown, agent name and session title beside the mascot, on one baseline.
     Item {
       anchors.fill: parent
       opacity: body.reveal
@@ -95,7 +123,7 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: pill.inset + 36
         anchors.verticalCenter: parent.verticalCenter
-        text: "Claude"
+        text: pill.codex ? "Codex" : "Claude"
         color: pill.textInk
         font.family: pill.theme.textFontFamily
         font.pixelSize: pill.theme.px(16)
@@ -655,20 +683,11 @@ Item {
     }
   }
 
-  // A tick drawing itself in as `draw` runs 0 → 1: from the start down to
-  // `corner`, then up to `end`, one stroke after the other.
-  component Tick: ShapePath {
-    id: tick
-    fillColor: "transparent"
-    capStyle: ShapePath.RoundCap
-    joinStyle: ShapePath.RoundJoin
-    property real draw: 1
-    property point corner
-    property point end
-    readonly property real first: Math.min(1, draw * 2)
-    readonly property real second: Math.max(0, draw * 2 - 1)
-    PathLine { x: tick.startX + (tick.corner.x - tick.startX) * tick.first; y: tick.startY + (tick.corner.y - tick.startY) * tick.first }
-    PathLine { x: tick.corner.x + (tick.end.x - tick.corner.x) * tick.second; y: tick.corner.y + (tick.end.y - tick.corner.y) * tick.second }
+  AgentNotice {
+    id: noticeItem
+    anchors.fill: parent
+    agents: pill.agents
+    grow: pill.grow
   }
 
   // A line drawn in one stroke, as the step marks are.
