@@ -14,7 +14,8 @@ import QtQuick
 //           With `pillAsks` set too, the pill is a question waiting for
 //           an answer (Displays' "Keep these display settings?"): it goes
 //           ahead of the other addons' ongoing pills and fills the island,
-//           the clock hidden.
+//           the clock hidden. With `pillFills` instead, it only fills the
+//           island (a pill grown on hover), keeping its place in the order.
 //   views   [{ name, width, padding, component }], each opened with
 //           `show <name>`; its item is on screen while host.view is name.
 //           An item with surfaceWidth, surfacePadding, or surfaceRadius
@@ -184,6 +185,7 @@ Item {
   property Component pill: null
   property bool ongoing: false
   property bool pillAsks: false
+  property bool pillFills: false
   readonly property bool pillShown: host.addonPill === addonRoot
   property real pillWidth: 280
   // The island's live-activity height; a pill that grows starts from it.

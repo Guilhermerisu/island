@@ -1,46 +1,34 @@
 #!/usr/bin/env python3
 """Calendar sync helper for the Island calendar addon.
 
-Manages OAuth2 PKCE authentication and event synchronization for Google Calendar
-and Outlook / Microsoft 365, as well as ICS feed parsing with TZID and RRULE
-support. Uses Python 3 standard library only.
+Fetches the ICS feeds set in the addon's options and parses them, with TZID
+timezones and RRULE / EXDATE / RECURRENCE-ID expansion, keeping the last good
+reading of each feed in a local cache. Uses Python 3 standard library only.
+
+  sync.py cache               the cached events, for an instant start
+  sync.py fetch --ics URL...  fetches every feed, updates the cache, prints it
 """
 
 from __future__ import annotations
 
 import argparse
-import base64
 import calendar as pycal
 from datetime import datetime, timedelta, timezone
-import hashlib
-import html
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 import re
 import secrets
-import subprocess
 import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-GOOGLE_API_BASE = "https://www.googleapis.com/calendar/v3"
-GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
-GOOGLE_SCOPE = "https://www.googleapis.com/auth/calendar.readonly email"
-
-OUTLOOK_AUTH_BASE = "https://login.microsoftonline.com"
-OUTLOOK_GRAPH_BASE = "https://graph.microsoft.com/v1.0"
-OUTLOOK_SCOPE = "offline_access Calendars.Read User.Read"
-
 HTTP_TIMEOUT_S = 15
-OAUTH_TIMEOUT_S = 180
-WINDOW_DAYS_BACK = 60
-WINDOW_DAYS_AHEAD = 180
+# The events kept: a year back and two ahead, as far as the view is usually
+# browsed (the QML parser this replaces kept the same).
+WINDOW_DAYS_BACK = 366
+WINDOW_DAYS_AHEAD = 731
 
 # Common Windows timezone names used by Exchange/Outlook ICS feeds.
 WINDOWS_TZ_MAP = {
@@ -101,10 +89,6 @@ def state_dir() -> str:
     return path
 
 
-def auth_path() -> str:
-    return os.path.join(state_dir(), "auth.json")
-
-
 def cache_path() -> str:
     return os.path.join(state_dir(), "cache.json")
 
@@ -139,14 +123,6 @@ def atomic_write_json(path: str, data: dict) -> None:
         raise
 
 
-def load_auth() -> dict:
-    return read_json(auth_path(), {})
-
-
-def save_auth(data: dict) -> None:
-    atomic_write_json(auth_path(), data)
-
-
 def load_cache() -> dict:
     return read_json(
         cache_path(),
@@ -164,51 +140,6 @@ def public_cache_payload(cache: dict) -> dict:
         "fetchedAt": cache.get("fetchedAt", 0),
         "status": cache.get("status", "missing"),
         "errors": cache.get("errors", {}),
-    }
-
-
-def build_status(auth: dict, cache: dict | None = None) -> dict:
-    g = auth.get("google") or {}
-    o = auth.get("outlook") or {}
-
-    def format_calendars(entry: dict) -> list[dict]:
-        selected = set(entry.get("selectedIds") or [])
-        result = []
-        for cal in entry.get("calendars") or []:
-            cid = cal.get("id", "")
-            result.append(
-                {
-                    "id": cid,
-                    "name": cal.get("name") or cid,
-                    "color": cal.get("color") or "",
-                    "selected": cid in selected,
-                }
-            )
-        return result
-
-    g_connected = bool(g.get("refreshToken") or g.get("accessToken"))
-    o_connected = bool(o.get("refreshToken") or o.get("accessToken"))
-    if cache is None:
-        cache = load_cache()
-
-    return {
-        "google": {
-            "connected": g_connected,
-            "email": g.get("email", "") if g_connected else "",
-            "clientId": g.get("clientId", ""),
-            "hasSecret": bool(g.get("clientSecret")),
-            "calendars": format_calendars(g) if g_connected else [],
-            "error": g.get("error", ""),
-        },
-        "outlook": {
-            "connected": o_connected,
-            "email": o.get("email", "") if o_connected else "",
-            "clientId": o.get("clientId", ""),
-            "tenant": o.get("tenant") or "common",
-            "calendars": format_calendars(o) if o_connected else [],
-            "error": o.get("error", ""),
-        },
-        "fetchedAt": cache.get("fetchedAt", 0),
     }
 
 
@@ -250,428 +181,6 @@ def _http_request(
         raise RuntimeError(f"Network error: {exc.reason}") from exc
 
 
-def http_json(
-    url: str,
-    method: str = "GET",
-    headers: dict[str, str] | None = None,
-    form: dict[str, str] | None = None,
-    timeout: int = HTTP_TIMEOUT_S,
-) -> dict:
-    req_headers = dict(headers or {})
-    body = None
-    if form is not None:
-        body = urllib.parse.urlencode(form).encode("utf-8")
-        req_headers.setdefault("Content-Type", "application/x-www-form-urlencoded")
-    _, raw = _http_request(url, method=method, headers=req_headers, data=body, timeout=timeout)
-    return json.loads(raw.decode("utf-8"))
-
-
-def pkce_pair() -> tuple[str, str]:
-    verifier = secrets.token_urlsafe(64)
-    digest = hashlib.sha256(verifier.encode("ascii")).digest()
-    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
-    return verifier, challenge
-
-
-def run_oauth_callback_server(
-    build_auth_url, redirect_host: str
-) -> tuple[str, str]:
-    """Starts a local HTTP callback server, opens the browser, and waits for code."""
-    result: dict[str, str] = {}
-    expected_state = secrets.token_urlsafe(24)
-
-    class CallbackHandler(BaseHTTPRequestHandler):
-        def log_message(self, format, *args):
-            return
-
-        def do_GET(self):
-            parsed = urllib.parse.urlparse(self.path)
-            if parsed.path != "/callback":
-                self.send_response(204)
-                self.end_headers()
-                return
-            params = urllib.parse.parse_qs(parsed.query)
-            err = (params.get("error") or [""])[0]
-            err_desc = (params.get("error_description") or [""])[0]
-            state = (params.get("state") or [""])[0]
-            code = (params.get("code") or [""])[0]
-
-            if err:
-                result["error"] = err_desc or err
-                self._send_html(
-                    400,
-                    "Authorization failed",
-                    f"Could not connect to Island: {html.escape(result['error'])}",
-                )
-            elif not state or not secrets.compare_digest(state, expected_state):
-                result["error"] = "OAuth state mismatch"
-                self._send_html(400, "Authorization failed", "Invalid OAuth state.")
-            elif not code:
-                result["error"] = "Missing authorization code"
-                self._send_html(400, "Authorization failed", "Missing authorization code.")
-            else:
-                result["code"] = code
-                self._send_html(
-                    200,
-                    "Connected to Island",
-                    "Connected to Island — you can close this tab.",
-                )
-
-        def _send_html(self, status: int, title: str, message: str) -> None:
-            page = (
-                "<!doctype html><html><head><meta charset='utf-8'>"
-                f"<title>{title}</title>"
-                "<style>body{font-family:system-ui,sans-serif;display:flex;"
-                "align-items:center;justify-content:center;min-height:100vh;"
-                "margin:0;background:#111;color:#f5f5f7}"
-                ".card{padding:28px 36px;border-radius:16px;background:#1c1c1e;"
-                "border:1px solid rgba(255,255,255,.12);text-align:center}"
-                "h1{font-size:18px;margin:0 0 8px}p{margin:0;color:#a1a1a6;font-size:14px}"
-                "</style></head><body><div class='card'>"
-                f"<h1>{title}</h1><p>{message}</p></div></body></html>"
-            ).encode("utf-8")
-            self.send_response(status)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(page)))
-            self.end_headers()
-            self.wfile.write(page)
-
-    server = HTTPServer(("127.0.0.1", 0), CallbackHandler)
-    server.timeout = 1.0
-    port = server.server_address[1]
-    redirect_uri = f"http://{redirect_host}:{port}/callback"
-    auth_url = build_auth_url(redirect_uri, expected_state)
-
-    try:
-        subprocess.Popen(
-            ["xdg-open", auth_url],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except OSError as exc:
-        server.server_close()
-        raise RuntimeError(f"Could not open browser: {exc}") from exc
-
-    deadline = time.monotonic() + OAUTH_TIMEOUT_S
-    try:
-        while "code" not in result and "error" not in result:
-            if time.monotonic() >= deadline:
-                raise RuntimeError("Timed out waiting for browser authorization (180s)")
-            server.handle_request()
-    finally:
-        server.server_close()
-
-    if "error" in result:
-        raise RuntimeError(result["error"])
-    return result["code"], redirect_uri
-
-
-def auth_google(client_id: str, client_secret: str = "") -> dict:
-    client_id = client_id.strip()
-    client_secret = client_secret.strip()
-    if not client_id:
-        raise RuntimeError("Google Client ID is required")
-
-    verifier, challenge = pkce_pair()
-
-    def build_url(redirect_uri: str, state: str) -> str:
-        qs = urllib.parse.urlencode(
-            {
-                "client_id": client_id,
-                "redirect_uri": redirect_uri,
-                "response_type": "code",
-                "scope": GOOGLE_SCOPE,
-                "access_type": "offline",
-                "prompt": "consent",
-                "code_challenge": challenge,
-                "code_challenge_method": "S256",
-                "state": state,
-            }
-        )
-        return f"{GOOGLE_AUTH_URL}?{qs}"
-
-    code, redirect_uri = run_oauth_callback_server(build_url, "127.0.0.1")
-
-    token_form = {
-        "client_id": client_id,
-        "code": code,
-        "code_verifier": verifier,
-        "redirect_uri": redirect_uri,
-        "grant_type": "authorization_code",
-    }
-    if client_secret:
-        token_form["client_secret"] = client_secret
-
-    tokens = http_json(GOOGLE_TOKEN_URL, method="POST", form=token_form)
-    access_token = tokens.get("access_token", "")
-    if not access_token:
-        raise RuntimeError("Google did not return an access token")
-    refresh_token = tokens.get("refresh_token", "")
-    expires_at = time.time() + float(tokens.get("expires_in", 3600))
-
-    headers = {"Authorization": f"Bearer {access_token}"}
-    cal_data = http_json(f"{GOOGLE_API_BASE}/users/me/calendarList", headers=headers)
-    calendars, default_selected = _parse_google_calendars(cal_data)
-
-    email = ""
-    try:
-        userinfo = http_json(GOOGLE_USERINFO_URL, headers=headers)
-        email = userinfo.get("email", "")
-    except Exception:
-        pass
-    if not email:
-        for item in cal_data.get("items") or []:
-            if item.get("primary") and "@" in (item.get("id") or ""):
-                email = item["id"]
-                break
-
-    auth = load_auth()
-    prev_selected = (auth.get("google") or {}).get("selectedIds")
-    valid_ids = {c["id"] for c in calendars}
-    if prev_selected:
-        selected_ids = [cid for cid in prev_selected if cid in valid_ids]
-    else:
-        selected_ids = default_selected
-
-    auth["google"] = {
-        "clientId": client_id,
-        "clientSecret": client_secret,
-        "accessToken": access_token,
-        "refreshToken": refresh_token or (auth.get("google") or {}).get("refreshToken", ""),
-        "expiresAt": expires_at,
-        "email": email,
-        "calendars": calendars,
-        "selectedIds": selected_ids,
-        "error": "",
-    }
-    save_auth(auth)
-    return build_status(auth)
-
-
-def _parse_google_calendars(cal_data: dict) -> tuple[list[dict], list[str]]:
-    calendars = []
-    default_selected = []
-    for item in cal_data.get("items") or []:
-        cid = item.get("id") or ""
-        if not cid:
-            continue
-        name = item.get("summaryOverride") or item.get("summary") or cid
-        color = normalize_hex_color(item.get("backgroundColor") or "")
-        calendars.append({"id": cid, "name": name, "color": color})
-        if item.get("selected", True):
-            default_selected.append(cid)
-    if not default_selected and calendars:
-        default_selected = [calendars[0]["id"]]
-    return calendars, default_selected
-
-
-def auth_outlook(client_id: str, tenant: str = "common") -> dict:
-    client_id = client_id.strip()
-    tenant = (tenant or "common").strip() or "common"
-    if not client_id:
-        raise RuntimeError("Outlook Client ID is required")
-
-    verifier, challenge = pkce_pair()
-    safe_tenant = urllib.parse.quote(tenant, safe="")
-
-    def build_url(redirect_uri: str, state: str) -> str:
-        qs = urllib.parse.urlencode(
-            {
-                "client_id": client_id,
-                "response_type": "code",
-                "redirect_uri": redirect_uri,
-                "response_mode": "query",
-                "scope": OUTLOOK_SCOPE,
-                "code_challenge": challenge,
-                "code_challenge_method": "S256",
-                "state": state,
-            }
-        )
-        return f"{OUTLOOK_AUTH_BASE}/{safe_tenant}/oauth2/v2.0/authorize?{qs}"
-
-    code, redirect_uri = run_oauth_callback_server(build_url, "localhost")
-
-    token_url = f"{OUTLOOK_AUTH_BASE}/{safe_tenant}/oauth2/v2.0/token"
-    tokens = http_json(
-        token_url,
-        method="POST",
-        form={
-            "client_id": client_id,
-            "scope": OUTLOOK_SCOPE,
-            "code": code,
-            "redirect_uri": redirect_uri,
-            "grant_type": "authorization_code",
-            "code_verifier": verifier,
-        },
-    )
-    access_token = tokens.get("access_token", "")
-    if not access_token:
-        raise RuntimeError("Microsoft did not return an access token")
-    refresh_token = tokens.get("refresh_token", "")
-    expires_at = time.time() + float(tokens.get("expires_in", 3600))
-
-    headers = {"Authorization": f"Bearer {access_token}"}
-    me = http_json(f"{OUTLOOK_GRAPH_BASE}/me", headers=headers)
-    email = me.get("mail") or me.get("userPrincipalName") or ""
-
-    cal_data = http_json(f"{OUTLOOK_GRAPH_BASE}/me/calendars", headers=headers)
-    calendars, default_selected = _parse_outlook_calendars(cal_data)
-
-    auth = load_auth()
-    prev_selected = (auth.get("outlook") or {}).get("selectedIds")
-    valid_ids = {c["id"] for c in calendars}
-    if prev_selected:
-        selected_ids = [cid for cid in prev_selected if cid in valid_ids]
-    else:
-        selected_ids = default_selected
-
-    auth["outlook"] = {
-        "clientId": client_id,
-        "tenant": tenant,
-        "accessToken": access_token,
-        "refreshToken": refresh_token or (auth.get("outlook") or {}).get("refreshToken", ""),
-        "expiresAt": expires_at,
-        "email": email,
-        "calendars": calendars,
-        "selectedIds": selected_ids,
-        "error": "",
-    }
-    save_auth(auth)
-    return build_status(auth)
-
-
-def _parse_outlook_calendars(cal_data: dict) -> tuple[list[dict], list[str]]:
-    calendars = []
-    default_selected = []
-    for item in cal_data.get("value") or []:
-        cid = item.get("id") or ""
-        if not cid:
-            continue
-        name = item.get("name") or cid
-        color = normalize_hex_color(item.get("hexColor") or "")
-        calendars.append({"id": cid, "name": name, "color": color})
-        if item.get("isDefaultCalendar"):
-            default_selected.append(cid)
-    if not default_selected:
-        default_selected = [c["id"] for c in calendars]
-    return calendars, default_selected
-
-
-def disconnect_provider(provider: str) -> dict:
-    auth = load_auth()
-    auth.pop(provider, None)
-    save_auth(auth)
-
-    cache = load_cache()
-    sources = dict(cache.get("sources") or {})
-    sources.pop(provider, None)
-    errors = dict(cache.get("errors") or {})
-    errors.pop(provider, None)
-
-    events = []
-    for src_events in sources.values():
-        events.extend(src_events)
-    events.sort(key=lambda e: (e["start"], e["title"]))
-
-    has_sources = bool(auth.get("google") or auth.get("outlook") or sources)
-    cache["sources"] = sources
-    cache["errors"] = errors
-    cache["events"] = events
-    if not has_sources:
-        cache["status"] = "missing"
-    elif events:
-        cache["status"] = "ready"
-    save_cache(cache)
-
-    return build_status(auth, cache)
-
-
-def select_calendars(provider: str, ids_csv: str) -> dict:
-    auth = load_auth()
-    entry = auth.get(provider)
-    if not entry:
-        raise RuntimeError(f"{provider} is not connected")
-    known = {c["id"] for c in entry.get("calendars") or []}
-    wanted = [cid for cid in ids_csv.split(",") if cid]
-    if known:
-        wanted = [cid for cid in wanted if cid in known]
-    entry["selectedIds"] = wanted
-    auth[provider] = entry
-    save_auth(auth)
-    return build_status(auth)
-
-
-def _ensure_google_token(auth: dict) -> str:
-    g = auth.get("google") or {}
-    access_token = g.get("accessToken") or ""
-    expires_at = float(g.get("expiresAt") or 0)
-    if access_token and time.time() < expires_at - 60:
-        return access_token
-
-    refresh_token = g.get("refreshToken") or ""
-    client_id = g.get("clientId") or ""
-    if not refresh_token or not client_id:
-        raise RuntimeError("Google session expired; reconnect in Settings")
-
-    form = {
-        "client_id": client_id,
-        "refresh_token": refresh_token,
-        "grant_type": "refresh_token",
-    }
-    if g.get("clientSecret"):
-        form["client_secret"] = g["clientSecret"]
-
-    tokens = http_json(GOOGLE_TOKEN_URL, method="POST", form=form)
-    new_access = tokens.get("access_token") or ""
-    if not new_access:
-        raise RuntimeError("Failed to refresh Google access token")
-
-    g["accessToken"] = new_access
-    if tokens.get("refresh_token"):
-        g["refreshToken"] = tokens["refresh_token"]
-    g["expiresAt"] = time.time() + float(tokens.get("expires_in", 3600))
-    g["error"] = ""
-    auth["google"] = g
-    save_auth(auth)
-    return new_access
-
-
-def _ensure_outlook_token(auth: dict) -> str:
-    o = auth.get("outlook") or {}
-    access_token = o.get("accessToken") or ""
-    expires_at = float(o.get("expiresAt") or 0)
-    if access_token and time.time() < expires_at - 60:
-        return access_token
-
-    refresh_token = o.get("refreshToken") or ""
-    client_id = o.get("clientId") or ""
-    tenant = urllib.parse.quote((o.get("tenant") or "common").strip() or "common", safe="")
-    if not refresh_token or not client_id:
-        raise RuntimeError("Outlook session expired; reconnect in Settings")
-
-    tokens = http_json(
-        f"{OUTLOOK_AUTH_BASE}/{tenant}/oauth2/v2.0/token",
-        method="POST",
-        form={
-            "client_id": client_id,
-            "scope": OUTLOOK_SCOPE,
-            "refresh_token": refresh_token,
-            "grant_type": "refresh_token",
-        },
-    )
-    new_access = tokens.get("access_token") or ""
-    if not new_access:
-        raise RuntimeError("Failed to refresh Outlook access token")
-
-    o["accessToken"] = new_access
-    if tokens.get("refresh_token"):
-        o["refreshToken"] = tokens["refresh_token"]
-    o["expiresAt"] = time.time() + float(tokens.get("expires_in", 3600))
-    o["error"] = ""
-    auth["outlook"] = o
-    save_auth(auth)
-    return new_access
-
 
 def normalize_hex_color(value: str) -> str:
     v = (value or "").strip()
@@ -683,190 +192,6 @@ def normalize_hex_color(value: str) -> str:
 def _local_midnight_ms(year: int, month: int, day: int) -> int:
     dt = datetime(year, month, day, 0, 0, 0).astimezone()
     return int(dt.timestamp() * 1000)
-
-
-def _iso_to_ms(iso_str: str, assume_utc: bool = False) -> int:
-    s = iso_str.strip()
-    if s.endswith("Z"):
-        s = s[:-1] + "+00:00"
-    dt = datetime.fromisoformat(s)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc if assume_utc else datetime.now().astimezone().tzinfo)
-    return int(dt.timestamp() * 1000)
-
-
-def normalize_google_event(item: dict, cal_color: str = "") -> dict | None:
-    if (item.get("status") or "").lower() == "cancelled":
-        return None
-    start_obj = item.get("start") or {}
-    end_obj = item.get("end") or {}
-
-    if "date" in start_obj:
-        all_day = True
-        y, m, d = (int(p) for p in start_obj["date"][:10].split("-"))
-        start_ms = _local_midnight_ms(y, m, d)
-        if "date" in end_obj:
-            ey, em, ed = (int(p) for p in end_obj["date"][:10].split("-"))
-            end_ms = _local_midnight_ms(ey, em, ed)
-        else:
-            end_ms = _local_midnight_ms(*(datetime(y, m, d) + timedelta(days=1)).timetuple()[:3])
-    elif "dateTime" in start_obj:
-        all_day = False
-        start_ms = _iso_to_ms(start_obj["dateTime"])
-        end_ms = _iso_to_ms(end_obj["dateTime"]) if "dateTime" in end_obj else start_ms
-    else:
-        return None
-
-    meeting_url = (item.get("hangoutLink") or "").strip()
-    if not meeting_url:
-        for ep in (item.get("conferenceData") or {}).get("entryPoints") or []:
-            if ep.get("entryPointType") == "video" and ep.get("uri"):
-                meeting_url = str(ep["uri"]).strip()
-                break
-    if not meeting_url.startswith(("https://", "http://")):
-        meeting_url = ""
-
-    return {
-        "title": (item.get("summary") or "").strip() or "Untitled",
-        "start": start_ms,
-        "end": max(end_ms, start_ms),
-        "allDay": all_day,
-        "color": normalize_hex_color(cal_color),
-        "location": (item.get("location") or "").strip(),
-        "meetingUrl": meeting_url,
-        "source": "google",
-    }
-
-
-def fetch_google_events(auth: dict, win_start_ms: int, win_end_ms: int) -> list[dict]:
-    token = _ensure_google_token(auth)
-    g = auth["google"]
-    headers = {"Authorization": f"Bearer {token}"}
-    cal_colors = {c["id"]: c.get("color", "") for c in g.get("calendars") or []}
-    selected = g.get("selectedIds") or []
-
-    time_min = datetime.fromtimestamp(win_start_ms / 1000, tz=timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-    time_max = datetime.fromtimestamp(win_end_ms / 1000, tz=timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-
-    events: list[dict] = []
-    for cal_id in selected:
-        cal_color = cal_colors.get(cal_id, "")
-        page_token = ""
-        while True:
-            params = {
-                "singleEvents": "true",
-                "orderBy": "startTime",
-                "timeMin": time_min,
-                "timeMax": time_max,
-                "maxResults": "250",
-            }
-            if page_token:
-                params["pageToken"] = page_token
-            qs = urllib.parse.urlencode(params)
-            quoted_id = urllib.parse.quote(cal_id, safe="")
-            data = http_json(
-                f"{GOOGLE_API_BASE}/calendars/{quoted_id}/events?{qs}",
-                headers=headers,
-            )
-            for item in data.get("items") or []:
-                ev = normalize_google_event(item, cal_color)
-                if ev:
-                    events.append(ev)
-            page_token = data.get("nextPageToken") or ""
-            if not page_token:
-                break
-    return events
-
-
-def normalize_outlook_event(item: dict, cal_color: str = "") -> dict | None:
-    if item.get("isCancelled"):
-        return None
-    start_obj = item.get("start") or {}
-    end_obj = item.get("end") or {}
-    start_dt = start_obj.get("dateTime")
-    if not start_dt:
-        return None
-    end_dt = end_obj.get("dateTime") or start_dt
-    all_day = bool(item.get("isAllDay"))
-
-    if all_day:
-        y, m, d = (int(p) for p in start_dt[:10].split("-"))
-        start_ms = _local_midnight_ms(y, m, d)
-        ey, em, ed = (int(p) for p in end_dt[:10].split("-"))
-        end_ms = _local_midnight_ms(ey, em, ed)
-        if end_ms <= start_ms:
-            nxt = datetime(y, m, d) + timedelta(days=1)
-            end_ms = _local_midnight_ms(nxt.year, nxt.month, nxt.day)
-    else:
-        start_ms = _iso_to_ms(start_dt, assume_utc=True)
-        end_ms = _iso_to_ms(end_dt, assume_utc=True)
-
-    meeting_url = (
-        (item.get("onlineMeeting") or {}).get("joinUrl")
-        or item.get("onlineMeetingUrl")
-        or ""
-    ).strip()
-    if not meeting_url.startswith(("https://", "http://")):
-        meeting_url = ""
-
-    return {
-        "title": (item.get("subject") or "").strip() or "Untitled",
-        "start": start_ms,
-        "end": max(end_ms, start_ms),
-        "allDay": all_day,
-        "color": normalize_hex_color(cal_color),
-        "location": ((item.get("location") or {}).get("displayName") or "").strip(),
-        "meetingUrl": meeting_url,
-        "source": "outlook",
-    }
-
-
-def fetch_outlook_events(auth: dict, win_start_ms: int, win_end_ms: int) -> list[dict]:
-    token = _ensure_outlook_token(auth)
-    o = auth["outlook"]
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Prefer": 'outlook.timezone="UTC"',
-    }
-    cal_colors = {c["id"]: c.get("color", "") for c in o.get("calendars") or []}
-    selected = o.get("selectedIds") or []
-
-    start_iso = datetime.fromtimestamp(win_start_ms / 1000, tz=timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-    end_iso = datetime.fromtimestamp(win_end_ms / 1000, tz=timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-
-    events: list[dict] = []
-    for cal_id in selected:
-        cal_color = cal_colors.get(cal_id, "")
-        quoted_id = urllib.parse.quote(cal_id, safe="")
-        qs = urllib.parse.urlencode(
-            {
-                "startDateTime": start_iso,
-                "endDateTime": end_iso,
-                "$top": "250",
-            }
-        )
-        next_url: str | None = (
-            f"{OUTLOOK_GRAPH_BASE}/me/calendars/{quoted_id}/calendarView?{qs}"
-        )
-        while next_url:
-            data = http_json(next_url, headers=headers)
-            for item in data.get("value") or []:
-                ev = normalize_outlook_event(item, cal_color)
-                if ev:
-                    events.append(ev)
-            next_url = data.get("@odata.nextLink")
-    return events
-
-
-# ---------- ICS parsing with TZID & RRULE ----------
 
 
 def resolve_tz(tzid: str):
@@ -1295,7 +620,6 @@ def fetch_ics_url(url: str, win_start_ms: int, win_end_ms: int) -> list[dict]:
 
 
 def fetch_all(ics_urls: list[str]) -> dict:
-    auth = load_auth()
     prev_cache = load_cache()
     prev_sources = prev_cache.get("sources") or {}
 
@@ -1309,10 +633,7 @@ def fetch_all(ics_urls: list[str]) -> dict:
         if u and u not in normalized_ics:
             normalized_ics.append(u)
 
-    has_google = bool((auth.get("google") or {}).get("refreshToken") or (auth.get("google") or {}).get("accessToken"))
-    has_outlook = bool((auth.get("outlook") or {}).get("refreshToken") or (auth.get("outlook") or {}).get("accessToken"))
-
-    if not has_google and not has_outlook and not normalized_ics:
+    if not normalized_ics:
         empty_cache = {
             "events": [],
             "fetchedAt": prev_cache.get("fetchedAt", 0),
@@ -1327,24 +648,7 @@ def fetch_all(ics_urls: list[str]) -> dict:
     errors: dict[str, str] = {}
     good_count = 0
 
-    if has_google:
-        try:
-            next_sources["google"] = fetch_google_events(auth, win_start_ms, win_end_ms)
-            good_count += 1
-        except Exception as exc:
-            errors["google"] = str(exc)
-            if "google" in prev_sources:
-                next_sources["google"] = prev_sources["google"]
-
-    if has_outlook:
-        try:
-            next_sources["outlook"] = fetch_outlook_events(auth, win_start_ms, win_end_ms)
-            good_count += 1
-        except Exception as exc:
-            errors["outlook"] = str(exc)
-            if "outlook" in prev_sources:
-                next_sources["outlook"] = prev_sources["outlook"]
-
+    # A feed that can't be read keeps its last good reading.
     for url in normalized_ics:
         key = f"ics:{url}"
         try:
@@ -1377,46 +681,13 @@ def fetch_all(ics_urls: list[str]) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sync.py")
     sub = parser.add_subparsers(dest="cmd", required=True)
-
-    sub.add_parser("status")
     sub.add_parser("cache")
-
-    p_auth = sub.add_parser("auth")
-    p_auth.add_argument("provider", choices=["google", "outlook"])
-    p_auth.add_argument("--client-id", required=True)
-    p_auth.add_argument("--client-secret", default="")
-    p_auth.add_argument("--tenant", default="common")
-
-    p_disc = sub.add_parser("disconnect")
-    p_disc.add_argument("provider", choices=["google", "outlook"])
-
-    p_sel = sub.add_parser("select")
-    p_sel.add_argument("provider", choices=["google", "outlook"])
-    p_sel.add_argument("--ids", default="")
-
     p_fetch = sub.add_parser("fetch")
     p_fetch.add_argument("--ics", nargs="*", default=[])
-
     args = parser.parse_args(argv)
 
     try:
-        if args.cmd == "status":
-            out = build_status(load_auth())
-        elif args.cmd == "cache":
-            out = public_cache_payload(load_cache())
-        elif args.cmd == "auth":
-            if args.provider == "google":
-                out = auth_google(args.client_id, args.client_secret)
-            else:
-                out = auth_outlook(args.client_id, args.tenant)
-        elif args.cmd == "disconnect":
-            out = disconnect_provider(args.provider)
-        elif args.cmd == "select":
-            out = select_calendars(args.provider, args.ids)
-        elif args.cmd == "fetch":
-            out = fetch_all(args.ics)
-        else:
-            raise RuntimeError(f"Unknown command: {args.cmd}")
+        out = public_cache_payload(load_cache()) if args.cmd == "cache" else fetch_all(args.ics)
     except Exception as exc:
         print(str(exc), file=sys.stderr)
         return 1

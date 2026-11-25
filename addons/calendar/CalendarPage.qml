@@ -48,10 +48,10 @@ ColumnLayout {
         view: page.view
         minWidth: 0
         options: [
-          { label: "1m", value: 1 },
-          { label: "2m", value: 2 },
           { label: "5m", value: 5 },
-          { label: "15m", value: 15 }
+          { label: "15m", value: 15 },
+          { label: "30m", value: 30 },
+          { label: "1h", value: 60 }
         ]
         value: page.calendar.refreshMinutes
         onPicked: function(v) { page.calendar.addon.setOption("refreshMinutes", v) }

@@ -20,7 +20,8 @@ Addon {
   ongoing: inCall
   // Grown, as it starts, and as it ends, it hides the clock and takes the
   // island to itself.
-  pillAsks: expanded || intro || ended
+  pillAsks: intro || ended
+  pillFills: expanded
   // As the timer's at rest, a little wider once the call passes an hour
   // (1:02:10); grown, room for the app's name over the buttons, inset as
   // far from the bottom as from the sides, with corners concentric with

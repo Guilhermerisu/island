@@ -150,6 +150,7 @@ Item {
       description: "Agent limits, daily tokens, and Claude Code at work",
       options: [
         { key: "live", label: "Live Activity", detail: "Claude Code's and Codex's steps on the island while they work", type: "switch", default: true },
+        { key: "expandedPill", label: "Expanded Live Activity", detail: "Hovered, or when the agent asks you something, the pill grows into the turn's steps and what it's doing", type: "switch", default: false },
         { key: "agent", label: "Agent", detail: "Ctrl+click to add or remove agents shown as tabs", type: "popup", multiSelect: true, default: "claude",
           choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "Gemini", value: "agy" }, { label: "All Models", value: "all" }] }
       ] },

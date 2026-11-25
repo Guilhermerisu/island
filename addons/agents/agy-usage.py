@@ -5,7 +5,8 @@ omarchy-agent-usage-agy only scans AGY_DIR (default ~/.gemini/antigravity-cli),
 missing conversations stored by the Antigravity app (~/.gemini/antigravity) and
 Antigravity IDE (~/.gemini/antigravity-ide). This scans those extra roots using
 the same transcript token parser and merges their daily and per-model token
-totals into ~/.local/state/omarchy/agents/usage/agy.json without double-counting.
+totals into ~/.local/state/omarchy/agents/usage/agy.json without double-counting:
+what it added is kept in the record and taken out again before the next merge.
 """
 
 import json
@@ -161,52 +162,92 @@ def scan_root(root):
   return by_day, by_model, by_day_model
 
 
+KEYS = ("inputTokens", "outputTokens", "cacheReadInputTokens", "cacheCreationInputTokens")
+
+
+def undo(record, merged):
+  """Takes a previous merge back out of a record Omarchy hasn't rewritten
+  since, so merging again never counts the same transcripts twice."""
+  recent_map = {d["date"]: d for d in (record.get("recentDays") or []) if isinstance(d, dict) and d.get("date")}
+  for day, total in (merged.get("days") or {}).items():
+    if day in recent_map:
+      recent_map[day]["messageCount"] = max(0, number(recent_map[day].get("messageCount")) - number(total))
+  today = merged.get("today") or {}
+  if today.get("date") == datetime.now().astimezone().date().isoformat():
+    record["todayTotalTokens"] = max(0, number(record.get("todayTotalTokens")) - number(today.get("total")))
+    by_model = record.get("todayTokensByModel") or {}
+    for model, total in (today.get("byModel") or {}).items():
+      by_model[model] = max(0, number(by_model.get(model)) - number(total))
+  model_usage = record.get("modelUsage") or {}
+  for model, counts in (merged.get("models") or {}).items():
+    dst = model_usage.get(model)
+    if isinstance(dst, dict):
+      for k in KEYS:
+        dst[k] = max(0, number(dst.get(k)) - number(counts.get(k)))
+  added = set(merged.get("addedDates") or [])
+  record["activeDates"] = [d for d in (record.get("activeDates") or []) if d not in added]
+
+
 def main():
   try:
     record = json.loads(RECORD.read_text())
   except Exception:
     return
-  if not isinstance(record, dict) or record.get("_islandMergedRoots"):
+  if not isinstance(record, dict):
     return
+  # Omarchy's collector drops this key whenever it rewrites the record; while
+  # it's there, the record still holds the last merge, taken out first.
+  merged = record.pop("_islandMerged", None)
+  if isinstance(merged, dict):
+    undo(record, merged)
 
   roots = extra_roots()
-  if not roots:
-    return
+  by_day, by_model, by_day_model = {}, {}, {}
+  for root in roots:
+    days, models, day_models = scan_root(root)
+    for day, total in days.items():
+      by_day[day] = by_day.get(day, 0) + total
+    for model, counts in models.items():
+      dst = by_model.setdefault(model, dict.fromkeys(KEYS, 0))
+      for k in KEYS:
+        dst[k] += counts[k]
+    for day, totals in day_models.items():
+      dst = by_day_model.setdefault(day, {})
+      for model, total in totals.items():
+        dst[model] = dst.get(model, 0) + total
 
-  added_any = False
   today = datetime.now().astimezone().date().isoformat()
   recent_map = {d["date"]: d for d in (record.get("recentDays") or []) if isinstance(d, dict) and d.get("date")}
   model_usage = record.setdefault("modelUsage", {})
   today_by_model = record.setdefault("todayTokensByModel", {})
   active_dates = set(record.get("activeDates") or [])
+  added_dates = sorted(d for d, total in by_day.items() if total > 0 and d not in active_dates)
 
-  for root in roots:
-    by_day, by_model, by_day_model = scan_root(root)
-    if not by_model and not by_day:
-      continue
-    added_any = True
-    for day, total in by_day.items():
-      if total > 0:
-        active_dates.add(day)
-      if day in recent_map:
-        recent_map[day]["messageCount"] = number(recent_map[day].get("messageCount")) + total
-    if today in by_day:
-      record["todayTotalTokens"] = number(record.get("todayTotalTokens")) + by_day[today]
-    for model, total in (by_day_model.get(today) or {}).items():
-      today_by_model[model] = number(today_by_model.get(model)) + total
-    for model, counts in by_model.items():
-      dst = model_usage.setdefault(model, {"inputTokens": 0, "outputTokens": 0, "cacheReadInputTokens": 0, "cacheCreationInputTokens": 0})
-      for k in ("inputTokens", "outputTokens", "cacheReadInputTokens", "cacheCreationInputTokens"):
-        dst[k] = number(dst.get(k)) + counts[k]
+  for day, total in by_day.items():
+    if day in recent_map:
+      recent_map[day]["messageCount"] = number(recent_map[day].get("messageCount")) + total
+  record["todayTotalTokens"] = number(record.get("todayTotalTokens")) + by_day.get(today, 0)
+  for model, total in (by_day_model.get(today) or {}).items():
+    today_by_model[model] = number(today_by_model.get(model)) + total
+  for model, counts in by_model.items():
+    dst = model_usage.setdefault(model, dict.fromkeys(KEYS, 0))
+    for k in KEYS:
+      dst[k] = number(dst.get(k)) + counts[k]
 
-  if not added_any:
-    return
-
-  record["hasLocalStats"] = True
-  record["ready"] = True
+  active_dates.update(added_dates)
   record["activeDates"] = sorted(active_dates)
   record["activeDays"] = len(active_dates)
-  record["_islandMergedRoots"] = [str(r) for r in roots]
+  if by_model or by_day:
+    record["hasLocalStats"] = True
+    record["ready"] = True
+    record["_islandMerged"] = {
+      "days": by_day,
+      "today": {"date": today, "total": by_day.get(today, 0), "byModel": by_day_model.get(today) or {}},
+      "models": by_model,
+      "addedDates": added_dates,
+    }
+  elif not isinstance(merged, dict):
+    return
 
   fd, tmp = tempfile.mkstemp(dir=RECORD.parent, prefix=".agy.")
   try:

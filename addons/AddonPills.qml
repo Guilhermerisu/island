@@ -10,9 +10,9 @@ IslandPill {
   pillWidth: current ? current.pillWidth : 0
   pillHeight: current ? current.pillHeight : 0
   pillRadius: current ? current.pillRadius : 0
-  // An ongoing pill keeps the clock in its middle; a momentary or asking one
-  // fills the island.
-  keepsClock: !!current && host.view !== "feedback" && !current.pillAsks
+  // An ongoing pill keeps the clock in its middle; a momentary, asking or
+  // grown one fills the island.
+  keepsClock: !!current && host.view !== "feedback" && !current.pillAsks && !current.pillFills
   function clicked(mouse) { current.pillClicked() }
   // Each addon's pill fades itself.
   opacity: 1

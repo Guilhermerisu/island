@@ -263,32 +263,42 @@ Item {
   // window, not in the handle: the handle moves with the island while it is
   // dragged. `panel` is the add panel's, drawn as a tab; the bar's is a
   // capsule. Its hit area is `padding` tall, as the island's padding.
+  // `horizontal` ones are dragged sideways at the island's `side` edge (-1
+  // left, +1 right): the island is centered, so its width changes by twice
+  // the pointer's move, `side * 2 * dx`.
   component Grip: Item {
     id: grip
     property bool panel: false
+    property bool horizontal: false
+    property int side: 1
     property string tip: ""
     property real value: 0
     property real least: 0
     property real most: 0
-    property real pressY
+    property real pressAt
     property real pressValue
     property real last: -1
     property bool moved
-    readonly property bool active: area.containsMouse || area.pressed
+    readonly property bool active: area.containsMouse || area.pressed || gripTip.hovered
+    readonly property real factor: horizontal ? 2 * side : 1
     signal live(real value)
     signal committed(real value)
     signal cancelled()
     signal reset()
-    width: 72
-    height: controlsSurface.padding
+    width: horizontal ? controlsSurface.padding : 72
+    height: horizontal ? 72 : controlsSurface.padding
+    function at(item, mouse) {
+      var p = item.mapToItem(null, mouse.x, mouse.y)
+      return horizontal ? p.x : p.y
+    }
     Rectangle {
       visible: !grip.panel
       anchors.centerIn: parent
-      width: 36; height: 5; radius: 2.5
+      width: grip.horizontal ? 5 : 36; height: grip.horizontal ? 36 : 5; radius: 2.5
       color: grip.active ? views.host.theme.fill("stronger") : views.host.theme.fill("strong")
       Behavior on color { MotionColorAnimation { theme: views.host.theme } }
-      // Always there, quietly, so it is found; plain while it is in use.
-      opacity: grip.active || controlCenter.editMode ? 1 : 0.45
+      // Shown while it is hovered or held, and throughout edit mode.
+      opacity: grip.active || controlCenter.editMode ? 1 : 0
       Behavior on opacity { MotionAnimation { theme: views.host.theme; pace: "fade"; curve: "fade" } }
     }
     // The panel's: a wider tab with two lines in it, in the accent, so the two
@@ -315,18 +325,18 @@ Item {
       anchors.fill: parent
       hoverEnabled: true
       preventStealing: true
-      cursorShape: Qt.SizeVerCursor
+      cursorShape: grip.horizontal ? Qt.SizeHorCursor : Qt.SizeVerCursor
       onPressed: function(mouse) {
-        grip.pressY = mapToItem(null, mouse.x, mouse.y).y
+        grip.pressAt = grip.at(area, mouse)
         grip.pressValue = grip.value
         grip.moved = false
       }
       onPositionChanged: function(mouse) {
         if (!pressed) return
-        var dy = mapToItem(null, mouse.x, mouse.y).y - grip.pressY
-        if (!grip.moved && Math.abs(dy) < 2) return
+        var d = grip.at(area, mouse) - grip.pressAt
+        if (!grip.moved && Math.abs(d) < 2) return
         grip.moved = true
-        grip.last = Math.max(grip.least, Math.min(grip.pressValue + dy, Math.max(grip.least, grip.most)))
+        grip.last = Math.max(grip.least, Math.min(grip.pressValue + grip.factor * d, Math.max(grip.least, grip.most)))
         grip.live(grip.last)
       }
       onReleased: {
@@ -336,7 +346,7 @@ Item {
       onCanceled: grip.cancelled()
       onDoubleClicked: grip.reset()
     }
-    Tooltip { theme: views.host.theme; text: grip.tip; above: true }
+    Tooltip { id: gripTip; theme: views.host.theme; text: grip.tip; above: !grip.horizontal }
   }
 
   // The bar's handle: drag it to set how tall the island may grow (the rest
@@ -393,71 +403,16 @@ Item {
   }
 
   // Side handles: drag left or right to widen or narrow the control center
-  // without changing its column count (`side` is -1 for left, +1 for right).
-  // Pointer x is read in the window because the island is centered and moves
-  // both edges symmetrically by `dx` (so total width changes by `side * 2 * dx`).
-  component SideGrip: Item {
-    id: sideGrip
-    property int side: 1
-    property string tip: "Drag to resize width"
-    property real value: 0
-    property real least: 0
-    property real most: 0
-    property real pressX: 0
-    property real pressValue: 0
-    property real last: -1
-    property bool moved: false
-    readonly property bool active: sideArea.containsMouse || sideArea.pressed || sideTip.hovered
-    signal live(real value)
-    signal committed(real value)
-    signal cancelled()
-    signal reset()
-    width: controlsSurface.padding
-    height: 72
-    x: side < 0 ? 0 : views.width - width
-    y: (views.height - height) / 2
-    Rectangle {
-      anchors.centerIn: parent
-      width: 5; height: 36; radius: 2.5
-      color: sideGrip.active ? views.host.theme.fill("stronger") : views.host.theme.fill("strong")
-      Behavior on color { MotionColorAnimation { theme: views.host.theme } }
-      opacity: sideGrip.active || controlCenter.editMode ? 1 : 0.45
-      Behavior on opacity { MotionAnimation { theme: views.host.theme; pace: "fade"; curve: "fade" } }
-    }
-    MouseArea {
-      id: sideArea
-      anchors.fill: parent
-      hoverEnabled: true
-      preventStealing: true
-      cursorShape: Qt.SizeHorCursor
-      onPressed: function(mouse) {
-        sideGrip.pressX = mapToItem(null, mouse.x, mouse.y).x
-        sideGrip.pressValue = sideGrip.value
-        sideGrip.moved = false
-      }
-      onPositionChanged: function(mouse) {
-        if (!pressed) return
-        var dx = mapToItem(null, mouse.x, mouse.y).x - sideGrip.pressX
-        if (!sideGrip.moved && Math.abs(dx) < 2) return
-        sideGrip.moved = true
-        sideGrip.last = Math.max(sideGrip.least, Math.min(sideGrip.pressValue + sideGrip.side * 2 * dx, Math.max(sideGrip.least, sideGrip.most)))
-        sideGrip.live(sideGrip.last)
-      }
-      onReleased: {
-        if (sideGrip.moved) sideGrip.committed(sideGrip.last)
-        else sideGrip.cancelled()
-      }
-      onCanceled: sideGrip.cancelled()
-      onDoubleClicked: sideGrip.reset()
-    }
-    Tooltip { id: sideTip; theme: views.host.theme; text: sideGrip.tip }
-  }
-
+  // without changing its column count.
   Repeater {
     model: [-1, 1]
-    delegate: SideGrip {
+    delegate: Grip {
       required property int modelData
+      horizontal: true
       side: modelData
+      tip: "Drag to resize width"
+      x: side < 0 ? 0 : views.width - width
+      y: (views.height - height) / 2
       visible: controlsSurface.active
       opacity: controlsSurface.opacity
       value: controlCenter.islandWidth

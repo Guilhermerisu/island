@@ -24,7 +24,7 @@ Addon {
   zone: Component { AgentsZone {} }
   ongoing: working
   // Expanded on hover, it hides the clock and takes the island to itself.
-  pillAsks: expanded && !noticeShown
+  pillFills: expanded && !noticeShown
   readonly property real inset: 24
   readonly property int rows: 3
   readonly property real rowHeight: 27
@@ -214,7 +214,7 @@ Addon {
   }
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
-  onAskingChanged: if (asking) present()
+  onAskingChanged: if (asking) presentSteps()
 
   // Codex's pet, looked for once there's a Codex session to show (and at
   // the start, so it's loaded by then); Clawd is drawn until it's found.
@@ -412,7 +412,9 @@ Addon {
 
   // As Apple's live activities alert: grown by itself for a few seconds
   // when it starts waiting on you, unless the pointer's holding it open.
-  function present() {
+  // (Not present(), which shows the notice.)
+  function presentSteps() {
+    if (!expandable) return
     openTimer.stop()
     collapseTimer.stop()
     expanded = true
@@ -453,8 +455,12 @@ Addon {
   // expands into its steps once the pointer rests on it.
   property bool hovered: false
   property bool expanded: false
+  // Growing into the steps is the "Expanded Live Activity" option, off
+  // unless it's turned on.
+  readonly property bool expandable: addon.option("expandedPill") === true
+  onExpandableChanged: if (!expandable) { openTimer.stop(); presentTimer.stop(); expanded = false }
   onHoveredChanged: {
-    if (hovered && ongoing && !noticeShown) { collapseTimer.stop(); if (!expanded) openTimer.restart() }
+    if (hovered && expandable && ongoing && !noticeShown) { collapseTimer.stop(); if (!expanded) openTimer.restart() }
     else { openTimer.stop(); collapseTimer.restart() }
   }
   onNoticeShownChanged: if (noticeShown) { openTimer.stop(); presentTimer.stop(); expanded = false }
@@ -463,7 +469,7 @@ Addon {
   Timer {
     id: openTimer
     interval: 120
-    onTriggered: if (agentsAddon.hovered && agentsAddon.ongoing) agentsAddon.expanded = true
+    onTriggered: if (agentsAddon.hovered && agentsAddon.expandable && agentsAddon.ongoing) agentsAddon.expanded = true
   }
   Timer {
     id: collapseTimer

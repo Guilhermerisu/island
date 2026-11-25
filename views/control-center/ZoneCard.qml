@@ -170,14 +170,18 @@ Item {
         width: options.length * cell + 4
         height: 22
         radius: height / 2
-        color: Qt.rgba(0, 0, 0, 0.3)
+        // A recessed track with a raised thumb, as macOS's segmented control:
+        // darker than the bar in dark mode, a light grey with a white thumb
+        // in light mode.
+        readonly property bool light: zone.center.host.theme.isLight
+        color: light ? zone.center.host.theme.fill("subtle") : Qt.rgba(0, 0, 0, 0.3)
         Rectangle {
           x: 2 + sizes.current * sizes.cell
           y: 2
           width: sizes.cell
           height: sizes.height - 4
           radius: height / 2
-          color: zone.center.well
+          color: sizes.light ? "#ffffff" : zone.center.well
           Behavior on x { MotionAnimation { theme: zone.center.host.theme; pace: "quick" } }
         }
         Repeater {

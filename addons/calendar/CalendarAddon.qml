@@ -2,11 +2,11 @@ import QtQuick
 import Quickshell.Io
 import ".."
 
-// The month and the day's events from Google Calendar, Outlook, or ICS
-// feeds, as an island view (see CalendarView), a control center tile (see
+// The month and the day's events from the ICS calendars set in the addon's
+// options, as an island view (see CalendarView), a control center tile (see
 // CalendarTile), and a pill 10 minutes before each timed event (see
-// CalendarPill). Sync runs in sync.py on a configurable interval (default 2
-// minutes), when sources change, and when the view opens on a stale cache.
+// CalendarPill). Sync runs in sync.py on a configurable interval (default 15
+// minutes), when the calendars change, and when the view opens on a stale cache.
 Addon {
   id: calendarAddon
   views: [{ name: "calendar", width: 480, padding: 22, component: calendarView }]
@@ -23,8 +23,8 @@ Addon {
     iconLayers: [],
     source: Qt.resolvedUrl("CalendarPage.qml"),
     properties: { calendar: calendarAddon },
-    about: "Connect Google Calendar, Outlook, or ICS feeds.",
-    search: "calendar google outlook microsoft oauth ics events sync refresh"
+    about: "Sync your ICS calendars and how often they refresh.",
+    search: "calendar google outlook microsoft ics events sync refresh"
   }]
 
   Component {
@@ -38,35 +38,20 @@ Addon {
 
   function localPath(file) { return decodeURIComponent(String(Qt.resolvedUrl(file)).replace("file://", "")) }
 
-  // ICS fallback URLs, any whitespace or commas between them; webcal:// is
-  // fetched over https.
-  readonly property var icsUrls: String(addon.option("urls") || "").split(/[\s,]+/)
+  // The calendars' ICS URLs, any whitespace or commas between them; webcal://
+  // is fetched over https.
+  readonly property var urls: String(addon.option("urls") || "").split(/[\s,]+/)
     .filter(function(url) { return url !== "" })
     .map(function(url) { return url.replace(/^webcal:\/\//i, "https://") })
 
   readonly property int refreshMinutes: {
     var v = Number(addon.option("refreshMinutes"))
-    return v === 1 || v === 2 || v === 5 || v === 15 ? v : 2
+    return v === 5 || v === 15 || v === 30 || v === 60 ? v : 15
   }
   readonly property int refreshMs: refreshMinutes * 60 * 1000
   readonly property int reminderMs: 10 * 60 * 1000
 
-  property var providersStatus: ({
-    google: { connected: false, email: "", clientId: "", hasSecret: false, calendars: [], error: "" },
-    outlook: { connected: false, email: "", clientId: "", tenant: "common", calendars: [], error: "" },
-    fetchedAt: 0
-  })
-  property bool statusLoaded: false
   property bool ready: false
-
-  // Combined list of configured sources so CalendarTile's `urls.length === 0`
-  // contract accurately reflects OAuth providers as well as ICS feeds.
-  readonly property var urls: {
-    var list = icsUrls.slice()
-    if (providersStatus.google && providersStatus.google.connected) list.push("google")
-    if (providersStatus.outlook && providersStatus.outlook.connected) list.push("outlook")
-    return list
-  }
 
   // "missing" (no source), "loading", "ready", or "offline" (all failed
   // with nothing cached).
@@ -76,9 +61,6 @@ Addon {
   property var fetchErrors: ({})
   property bool syncing: false
   property bool fetchQueued: false
-  readonly property bool authBusy: authProc.running
-  property string authProvider: ""
-  property string authError: ""
 
   // Every calendar's events: { title, start, end (ms, end exclusive),
   // allDay, color, location, meetingUrl, source }.
@@ -179,13 +161,13 @@ Addon {
     function onNameChanged() { themeColorsFile.reload() }
   }
 
-  // ---------- Sync & OAuth2 ----------
+  // ---------- Sync ----------
 
-  onIcsUrlsChanged: if (ready) fetch()
+  onUrlsChanged: if (ready) fetch()
   Component.onCompleted: {
     ready = true
     cacheProc.running = true
-    statusProc.running = true
+    fetch()
   }
   Timer {
     interval: calendarAddon.refreshMs
@@ -198,33 +180,7 @@ Addon {
     if (urls.length > 0 && Date.now() - fetchedAt > Math.max(30000, refreshMs)) fetch()
   }
   function retry() { refreshNow() }
-  function refreshNow() {
-    if (!statusLoaded && !statusProc.running) statusProc.running = true
-    fetch(true)
-  }
-
-  Process {
-    id: statusProc
-    command: ["python3", calendarAddon.localPath("sync.py"), "status"]
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        try {
-          calendarAddon.providersStatus = JSON.parse(text)
-          calendarAddon.statusLoaded = true
-        } catch (e) {}
-      }
-    }
-    onExited: {
-      if (calendarAddon.urls.length === 0) {
-        calendarAddon.status = "missing"
-        calendarAddon.rawEvents = []
-        calendarAddon.fetchErrors = ({})
-      } else {
-        calendarAddon.fetch()
-      }
-    }
-  }
+  function refreshNow() { fetch() }
 
   Process {
     id: cacheProc
@@ -248,14 +204,14 @@ Addon {
 
   Process {
     id: fetcher
-    property var icsSnapshot: []
+    property var urlsSnapshot: []
     property bool parsedOk: false
     onExited: function(code) {
       calendarAddon.syncing = false
       if (!parsedOk && code !== 0) {
         calendarAddon.status = calendarAddon.rawEvents.length > 0 ? "ready" : "offline"
       }
-      if (calendarAddon.fetchQueued || fetcher.icsSnapshot.join(" ") !== calendarAddon.icsUrls.join(" ")) {
+      if (calendarAddon.fetchQueued || fetcher.urlsSnapshot.join(" ") !== calendarAddon.urls.join(" ")) {
         calendarAddon.fetchQueued = false
         calendarAddon.fetch()
       }
@@ -280,8 +236,8 @@ Addon {
     }
   }
 
-  function fetch(force) {
-    if (statusLoaded && urls.length === 0 && !force) {
+  function fetch() {
+    if (urls.length === 0) {
       status = "missing"
       rawEvents = []
       fetchErrors = ({})
@@ -294,138 +250,9 @@ Addon {
     if (status !== "ready") status = "loading"
     syncing = true
     fetcher.parsedOk = false
-    fetcher.icsSnapshot = icsUrls.slice()
-    var cmd = ["python3", localPath("sync.py"), "fetch"]
-    if (icsUrls.length > 0) cmd = cmd.concat(["--ics"]).concat(icsUrls)
-    fetcher.command = cmd
+    fetcher.urlsSnapshot = urls.slice()
+    fetcher.command = ["python3", localPath("sync.py"), "fetch", "--ics"].concat(urls)
     fetcher.running = true
-  }
-
-  Process {
-    id: authProc
-    property bool parsedOk: false
-    property string errText: ""
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        try {
-          calendarAddon.providersStatus = JSON.parse(text)
-          authProc.parsedOk = true
-        } catch (e) {
-          authProc.parsedOk = false
-        }
-      }
-    }
-    stderr: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: authProc.errText = text.trim()
-    }
-    onExited: function(code) {
-      var provider = calendarAddon.authProvider
-      calendarAddon.authProvider = ""
-      if (code === 0 && authProc.parsedOk) {
-        calendarAddon.authError = ""
-        calendarAddon.statusLoaded = true
-        calendarAddon.fetch(true)
-      } else {
-        calendarAddon.authError = (provider ? provider + ": " : "") + (authProc.errText || "Authentication failed")
-      }
-    }
-  }
-
-  function connectGoogle(clientId, clientSecret) {
-    if (authProc.running) return
-    var id = String(clientId || "").trim()
-    var secret = String(clientSecret || "").trim()
-    if (!id) { authError = "google: Client ID is required"; return }
-    authError = ""
-    authProvider = "google"
-    authProc.parsedOk = false
-    authProc.errText = ""
-    var cmd = ["python3", localPath("sync.py"), "auth", "google", "--client-id", id]
-    if (secret !== "") cmd = cmd.concat(["--client-secret", secret])
-    authProc.command = cmd
-    authProc.running = true
-  }
-
-  function connectOutlook(clientId, tenant) {
-    if (authProc.running) return
-    var id = String(clientId || "").trim()
-    var t = String(tenant || "").trim() || "common"
-    if (!id) { authError = "outlook: Client ID is required"; return }
-    authError = ""
-    authProvider = "outlook"
-    authProc.parsedOk = false
-    authProc.errText = ""
-    authProc.command = ["python3", localPath("sync.py"), "auth", "outlook", "--client-id", id, "--tenant", t]
-    authProc.running = true
-  }
-
-  property var queuedAction: null
-  Process {
-    id: actionProc
-    property bool parsedOk: false
-    property string errText: ""
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: {
-        try {
-          calendarAddon.providersStatus = JSON.parse(text)
-          actionProc.parsedOk = true
-        } catch (e) {
-          actionProc.parsedOk = false
-        }
-      }
-    }
-    stderr: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: actionProc.errText = text.trim()
-    }
-    onExited: function(code) {
-      if (code !== 0 && actionProc.errText) calendarAddon.authError = actionProc.errText
-      else if (code === 0 && actionProc.parsedOk) {
-        calendarAddon.authError = ""
-        calendarAddon.fetch(true)
-      }
-      if (calendarAddon.queuedAction) {
-        var next = calendarAddon.queuedAction
-        calendarAddon.queuedAction = null
-        actionProc.parsedOk = false
-        actionProc.errText = ""
-        actionProc.command = next
-        actionProc.running = true
-      }
-    }
-  }
-
-  function runAction(cmd) {
-    if (actionProc.running) {
-      queuedAction = cmd
-      return
-    }
-    actionProc.parsedOk = false
-    actionProc.errText = ""
-    actionProc.command = cmd
-    actionProc.running = true
-  }
-
-  function disconnectProvider(provider) {
-    if (provider !== "google" && provider !== "outlook") return
-    runAction(["python3", localPath("sync.py"), "disconnect", provider])
-  }
-
-  function setCalendarSelected(provider, calendarId, selected) {
-    var entry = (providersStatus || {})[provider]
-    if (!entry || !entry.calendars) return
-    var nextCalendars = entry.calendars.map(function(cal) {
-      return cal.id === calendarId ? Object.assign({}, cal, { selected: !!selected }) : cal
-    })
-    var ids = nextCalendars.filter(function(cal) { return cal.selected }).map(function(cal) { return cal.id })
-    // Optimistic update so rapid switches reflect immediately in the UI.
-    var nextStatus = Object.assign({}, providersStatus)
-    nextStatus[provider] = Object.assign({}, entry, { calendars: nextCalendars })
-    providersStatus = nextStatus
-    runAction(["python3", localPath("sync.py"), "select", provider, "--ids", ids.join(",")])
   }
 
   Process {

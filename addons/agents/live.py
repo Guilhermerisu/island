@@ -137,6 +137,31 @@ def step_for(block):
     return step
 
 
+CODEX_ASKING = ("request_user_input", "request_user_input_async")
+CODEX_RUN = ("shell", "local_shell", "exec_command", "container.exec")
+
+
+def codex_step(payload):
+    """A Codex tool call as a step, as step_for makes Claude's."""
+    name = str(payload.get("name") or "")
+    step = {"id": payload.get("call_id"), "kind": "other", "status": "running", "file": "",
+            "command": "", "added": 0, "removed": 0, "label": name or "Use a tool"}
+    if name.endswith(CODEX_ASKING):
+        step.update(kind="ask", label="Ask you a question", question="It's waiting on your answer.")
+    elif name in CODEX_RUN:
+        try:
+            args = json.loads(payload.get("arguments") or "{}")
+        except ValueError:
+            args = {}
+        command = args.get("command") or args.get("cmd") or ""
+        if isinstance(command, list):
+            # ["bash", "-lc", "npm test"] runs its last word.
+            command = command[-1] if command[:1] in (["bash"], ["sh"], ["zsh"]) else " ".join(map(str, command))
+        command = str(command)
+        step.update(kind="run", command=command_summary(command), label=short("Run " + command_summary(command), 60))
+    return step
+
+
 class Session:
     def __init__(self, path, provider="claude"):
         self.path = path
@@ -234,10 +259,15 @@ class Session:
             call = payload.get("call_id")
             if call and self.state not in ("", "done"):
                 if kind in CODEX_TOOL_IN:
-                    asking = str(payload.get("name", "")).endswith(("request_user_input", "request_user_input_async"))
-                    self.running[call] = asking
+                    step = codex_step(payload)
+                    step["startedAt"] = stamp
+                    self.count += 1
+                    self.add_step(step)
                 elif kind in CODEX_TOOL_OUT:
-                    self.running.pop(call, None)
+                    for step in self.steps:
+                        if step["id"] == call and step["status"] == "running":
+                            step["status"] = "done"
+                            step["endedAt"] = stamp
                 else:
                     return
                 self.updated = max(self.updated, stamp)
@@ -248,7 +278,8 @@ class Session:
         if kind in CODEX_START:
             self.updated = max(self.updated, stamp)
             self.turn = payload.get("turn_id")
-            self.running, self.state, self.started, self.done_at = {}, "thinking", stamp, 0
+            self.steps, self.text, self.state, self.done_at = [], "", "thinking", 0
+            self.started, self.count, self.edits = stamp, 0, {}
             self.interrupted = False
         elif kind in CODEX_FINISH + ("turn_aborted",):
             turn = payload.get("turn_id")
@@ -322,7 +353,7 @@ class Session:
                     args = block.get("input") or {}
                     path = args.get("file_path") or args.get("notebook_path") or step["file"]
                     self.edits[step["id"]] = [path, step["added"], step["removed"]]
-                self.steps = (self.steps + [step])[-MAX_STEPS:]
+                self.add_step(step)
             elif block.get("type") == "text" and block.get("text", "").strip():
                 self.text = short(block["text"].strip().splitlines()[0], 120)
         # end_turn, but also stop_sequence (API errors such as an expired
@@ -339,6 +370,17 @@ class Session:
         if any(s["kind"] == "ask" for s in running):
             return "asking"
         return "tool" if running else "thinking"
+
+    def add_step(self, step):
+        """Keeps the last MAX_STEPS steps, dropping finished ones first, so
+        a step still running is never lost (working() reads them)."""
+        steps = self.steps + [step]
+        while len(steps) > MAX_STEPS:
+            done = next((i for i, s in enumerate(steps) if s["status"] != "running"), None)
+            if done is None:
+                break
+            steps.pop(done)
+        self.steps = steps
 
     def running(self):
         return any(s["status"] == "running" for s in self.steps)
