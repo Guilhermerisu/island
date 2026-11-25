@@ -3,7 +3,9 @@ import QtQuick
 // Shared list view for the island: a search field over a scrolling list, with
 // the selected (or hovered) row marked by a soft well. With
 // `columns` above 1 it becomes a grid of cells (the selected one highlighted)
-// and ←/→ move across while ↑/↓ move by rows.
+// and ←/→ move across while ↑/↓ move by rows; the selected cell gets a well
+// with the accent ring set just outside it, as the theme and wallpaper
+// pickers mark theirs.
 // Keyboard: type to search, ↑/↓ (or Tab, PageUp/PageDown) to move, Enter to
 // choose, Esc to close. Clicking a row chooses it.
 //
@@ -29,6 +31,14 @@ Item {
   property string placeholder: "Search"
   property string emptyText: "Nothing matches"
   property int rowHeight: 50
+  // Between a list row's edges and what it draws.
+  property int rowPadding: 12
+  // The gap between grid cells.
+  property int cellGap: 6
+  // A bar under the list (e.g. the selected emoji's name), set off by a
+  // hairline; its component's root has `property var entry`, bound to the
+  // selected item.
+  property Component footer
   // The list fits its contents, from `minRows` up to `visibleRows` rows, so
   // the island morphs as you type or change menus instead of leaving space.
   property int visibleRows: 7
@@ -44,7 +54,13 @@ Item {
   // (e.g. Delete to remove an entry, Shift+Enter for a second action).
   signal keyFilter(var event)
 
-  implicitHeight: search.height + 8 + list.height
+  // The selection ring reaches past a grid's outer cells, so the grid is
+  // padded to keep it from being clipped.
+  readonly property real ringGap: 2
+  readonly property real ringWidth: 2
+  readonly property int gridPad: grid ? Math.max(0, Math.ceil(ringGap + ringWidth - cellGap / 2)) : 0
+
+  implicitHeight: search.height + 8 + list.height + (footer ? footerBar.height : 0)
 
   onActiveChanged: {
     if (!active) return
@@ -73,7 +89,19 @@ Item {
   }
   function reset() {
     list.currentIndex = firstSelectable()
-    if (items.length) list.positionViewAtIndex(list.currentIndex, GridView.Contain)
+    if (items.length) reveal(list.currentIndex)
+  }
+  // Scrolls just enough to show a row, its padding (and so a grid's ring)
+  // included, which positionViewAtIndex leaves out.
+  function reveal(index) {
+    var top = Math.floor(index / columns) * rowHeight - gridPad
+    var bottom = top + rowHeight + 2 * gridPad
+    var lowest = -gridPad
+    var highest = Math.max(lowest, list.contentHeight + gridPad - list.height)
+    var next = list.contentY
+    if (top < next) next = top
+    else if (bottom > next + list.height) next = bottom - list.height
+    list.contentY = Math.max(lowest, Math.min(highest, next))
   }
   function move(delta) {
     if (!items.length) return
@@ -131,14 +159,18 @@ Item {
     anchors.rightMargin: picker.showSide ? 12 : 0
     anchors.top: search.bottom
     anchors.topMargin: 8
-    height: picker.rowHeight * picker.shownRows
-    cellWidth: Math.floor(width / picker.columns)
+    height: picker.rowHeight * picker.shownRows + 2 * picker.gridPad
+    leftMargin: picker.gridPad
+    rightMargin: picker.gridPad
+    topMargin: picker.gridPad
+    bottomMargin: picker.gridPad
+    cellWidth: Math.floor((width - 2 * picker.gridPad) / picker.columns)
     cellHeight: picker.rowHeight
     clip: true
     model: picker.items
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: false
-    onCurrentIndexChanged: positionViewAtIndex(currentIndex, GridView.Contain)
+    onCurrentIndexChanged: picker.reveal(currentIndex)
 
     // One highlight for the whole list that glides to the selected row,
     // rather than each row lighting up on its own.
@@ -157,13 +189,24 @@ Item {
         else if (!glides) Qt.callLater(function() { if (highlight && highlight.at) highlight.glides = true })
       }
       visible: !!at && list.count > 0
-      x: at ? at.x + (picker.grid ? 3 : 0) : 0
-      y: at ? at.y + (picker.grid ? 3 : 0) : 0
-      width: list.cellWidth - (picker.grid ? 6 : 0)
-      height: list.cellHeight - (picker.grid ? 6 : 0)
+      readonly property real inset: picker.grid ? picker.cellGap / 2 : 0
+      x: at ? at.x + inset : 0
+      y: at ? at.y + inset : 0
+      width: list.cellWidth - 2 * inset
+      height: list.cellHeight - 2 * inset
       radius: 10
-      color: picker.grid ? picker.host.theme.accentFill("medium") : picker.host.theme.well
+      color: picker.host.theme.well
       opacity: atDisabled ? 0.4 : 1
+      // A grid's ring, with the island's black between it and the well.
+      Rectangle {
+        visible: picker.grid
+        anchors.fill: parent
+        anchors.margins: -(picker.ringGap + picker.ringWidth)
+        radius: parent.radius + picker.ringGap + picker.ringWidth
+        color: "transparent"
+        border.width: picker.ringWidth
+        border.color: picker.host.theme.accent
+      }
       Behavior on x { enabled: highlight.glides; MotionAnimation { theme: picker.host.theme; pace: "quick" } }
       Behavior on y { enabled: highlight.glides; MotionAnimation { theme: picker.host.theme; pace: "quick" } }
     }
@@ -191,8 +234,8 @@ Item {
         anchors.fill: parent
         scale: picker.grid && slotMouse.pressed && !slot.itemDisabled ? 0.96 : 1
         Behavior on scale { id: scaleMotion; MotionAnimation { theme: picker.host.theme; pace: towards(scaleMotion.targetValue, slotMouse.pressed ? "press" : "standard") } }
-        anchors.leftMargin: picker.grid ? 0 : 12
-        anchors.rightMargin: picker.grid ? 0 : 12
+        anchors.leftMargin: picker.grid ? 0 : picker.rowPadding
+        anchors.rightMargin: picker.grid ? 0 : picker.rowPadding
         sourceComponent: picker.row
         onLoaded: {
           item.entry = Qt.binding(function() { return slot.modelData || ({}) })
@@ -246,6 +289,31 @@ Item {
       font.family: picker.host.theme.textFontFamily
       font.letterSpacing: picker.host.theme.tracking(picker.host.theme.textFontFamily, picker.host.theme.size.body)
       font.pixelSize: picker.host.theme.size.body
+    }
+  }
+
+  // Under the list: a hairline, then the footer's bar.
+  Item {
+    id: footerBar
+    visible: !!picker.footer
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: list.bottom
+    height: visible ? 1 + 8 + 28 : 0
+    Rectangle {
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 1
+      color: picker.host.theme.hairline
+    }
+    Loader {
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 28
+      sourceComponent: picker.footer
+      onLoaded: item.entry = Qt.binding(function() { return picker.selected || ({}) })
     }
   }
 

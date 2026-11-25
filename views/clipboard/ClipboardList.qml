@@ -263,33 +263,13 @@ ListPicker {
         font.pixelSize: clipboard.host.theme.px(14)
       }
       // What Enter does, on the selected row only.
-      Row {
+      KeyHint {
         id: pasteHint
         visible: clipRow.selected
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 6
-        Text {
-          anchors.verticalCenter: parent.verticalCenter
-          text: "Paste"
-          color: clipboard.host.theme.secondary
-          font.family: clipboard.host.theme.textFontFamily
-          font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.px(11))
-          font.pixelSize: clipboard.host.theme.px(11)
-        }
-        Rectangle {
-          anchors.verticalCenter: parent.verticalCenter
-          width: 18; height: 18
-          radius: 5
-          color: clipboard.host.theme.tile
-          Text {
-            anchors.centerIn: parent
-            text: "↵"
-            color: clipboard.host.theme.secondary
-            font.family: clipboard.host.theme.textFontFamily
-            font.pixelSize: clipboard.host.theme.px(11)
-          }
-        }
+        theme: clipboard.host.theme
+        label: "Paste"
       }
     }
   }
