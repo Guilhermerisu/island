@@ -25,12 +25,14 @@ Popover {
     width = Math.max(target.width, Math.ceil(widest) + 52)
     height = target.options.length * 28 + 10
     var p = target.mapToItem(view, 0, 0)
-    x = Math.max(4, p.x + target.width - width)
+    // Whole pixels: the menu is drawn through a layer (its shadow), and a
+    // layer at a fractional position is resampled and blurs.
+    x = Math.round(Math.max(4, p.x + target.width - width))
     // As macOS's pop-up menus: the current choice opens over the button.
     var chosen = 0
     for (var j = 0; j < target.options.length; j++) if (target.isSelected(target.options[j].value)) { chosen = j; break }
     var top = p.y + (target.height - 28) / 2 - 5 - chosen * 28
-    y = Math.max(4, Math.min(view.height - height - 4, top))
+    y = Math.round(Math.max(4, Math.min(view.height - height - 4, top)))
     button = target
   }
 
