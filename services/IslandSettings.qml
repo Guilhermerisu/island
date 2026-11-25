@@ -63,6 +63,8 @@ Item {
       property bool networkActivity: true
       property bool playbackOsd: false
       property bool workspaceHud: false
+      // How many of workspaces 1–10 its indicator shows at once (5–10).
+      property int workspaceHudCount: 5
       property bool colorfulSettingsIcons: true
       property bool colorfulLiveActivities: true
       property bool themeBackground: false

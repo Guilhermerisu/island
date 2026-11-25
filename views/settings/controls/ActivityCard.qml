@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import "../../../components"
 
 // A checkable activity preview card. Its checked state belongs to
-// IslandSettings.
+// IslandSettings. An `option` (a component, e.g. a SettingsPopUp) adds a
+// labelled control under the switch while the card is on.
 FocusScope {
   id: card
   required property var view
@@ -12,6 +13,9 @@ FocusScope {
   required property string description
   property bool checked: false
   property bool pointerFocus: false
+  property Component option: null
+  property string optionLabel: ""
+  readonly property bool hasOption: option !== null && checked
   signal toggled(bool checked)
 
   implicitWidth: 220
@@ -88,7 +92,7 @@ FocusScope {
       Layout.leftMargin: 14
       Layout.rightMargin: 14
       Layout.topMargin: 2
-      Layout.bottomMargin: 12
+      Layout.bottomMargin: card.hasOption ? 8 : 12
       spacing: 12
       Column {
         Layout.fillWidth: true
@@ -119,6 +123,17 @@ FocusScope {
         checked: card.checked
       }
     }
+    // Room for the option row, which is drawn over the card's click (below)
+    // so its control takes its own clicks.
+    Item {
+      id: optionSlot
+      visible: card.hasOption
+      Layout.fillWidth: true
+      Layout.leftMargin: 14
+      Layout.rightMargin: 14
+      Layout.bottomMargin: 12
+      Layout.preferredHeight: optionRow.implicitHeight
+    }
   }
   MouseArea {
     id: mouse
@@ -129,6 +144,27 @@ FocusScope {
     onClicked: {
       card.forceActiveFocus(Qt.MouseFocusReason)
       card.toggled(!card.checked)
+    }
+  }
+  RowLayout {
+    id: optionRow
+    visible: card.hasOption
+    x: optionSlot.x
+    y: optionSlot.y
+    width: optionSlot.width
+    spacing: 12
+    Text {
+      Layout.fillWidth: true
+      text: card.optionLabel
+      elide: Text.ElideRight
+      color: card.view.textMuted
+      font.family: card.view.host.theme.textFontFamily
+      font.letterSpacing: card.view.host.theme.tracking(card.view.host.theme.textFontFamily, card.view.detailCaptionFontSize)
+      font.pixelSize: card.view.detailCaptionFontSize
+    }
+    Loader {
+      active: card.hasOption
+      sourceComponent: card.option
     }
   }
 }

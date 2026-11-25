@@ -26,6 +26,19 @@ ColumnLayout {
     { kind: "clipboard", key: "clipboard", title: "Clipboard", description: "Preview recently copied content" }
   ]
 
+  // The workspace indicator's card: how many of workspaces 1–10 it shows
+  // at once; it slides to reach the rest.
+  Component {
+    id: workspaceCountOption
+    SettingsPopUp {
+      view: page.view
+      minWidth: 64
+      options: [5, 6, 7, 8, 9, 10].map(function(n) { return { label: n + " workspaces", short: String(n), value: n } })
+      value: page.view.settings.workspaceHudCount
+      onPicked: function(v) { page.view.settings.workspaceHudCount = v }
+    }
+  }
+
   readonly property int enabledCount: activities.filter(function(activity) { return !!view.settings[activity.key] }).length
 
   // As a group's title (see SettingsGroup), with how many are on.
@@ -70,6 +83,8 @@ ColumnLayout {
         description: modelData.description
         checked: page.view.settings[modelData.key]
         onToggled: function(on) { page.view.settings[modelData.key] = on }
+        option: modelData.kind === "workspace" ? workspaceCountOption : null
+        optionLabel: modelData.kind === "workspace" ? "Visible workspaces" : ""
       }
     }
   }
