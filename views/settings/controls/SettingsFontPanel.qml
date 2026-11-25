@@ -24,7 +24,7 @@ Popover {
   // Rows grow with the text size, from 26 at the default.
   readonly property int rowHeight: Math.max(26, view.detailFontSize + 11)
   width: 264
-  height: fontSearch.height + 10 + Math.max(1, Math.min(9, filteredFonts.length)) * rowHeight + 10
+  height: Math.ceil(fontSearch.height + 10 + Math.max(1, Math.min(9, filteredFonts.length)) * rowHeight + 10)
 
   Process {
     command: ["bash", "-c", "fc-list : -f '%{family[0]}\\n' | grep -v -iE 'emoji|signwriting' | sort -u"]
@@ -40,9 +40,9 @@ Popover {
     cursor = 0
     button = target
     var p = target.mapToItem(view, 0, 0)
-    x = Math.max(4, Math.min(view.width - width - 4, p.x + target.width - width))
     var below = p.y + target.height + 4
-    y = below + height <= view.height - 4 ? below : Math.max(4, p.y - height - 4)
+    place(Math.max(4, Math.min(view.width - width - 4, p.x + target.width - width)),
+      below + height <= view.height - 4 ? below : Math.max(4, p.y - height - 4))
     Qt.callLater(function() { fontInput.forceActiveFocus() })
   }
   function pick(font) {
