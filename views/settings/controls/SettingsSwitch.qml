@@ -34,7 +34,8 @@ Rectangle {
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.4)
-      shadowBlur: 0.25
+      blurMax: 8
+      shadowBlur: 1
       shadowVerticalOffset: 0.5
     }
   }

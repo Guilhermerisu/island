@@ -39,7 +39,8 @@ Item {
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.55)
-      shadowBlur: 0.4
+      blurMax: 16
+      shadowBlur: 0.8
       shadowVerticalOffset: 1
     }
   }

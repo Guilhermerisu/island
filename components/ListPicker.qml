@@ -177,7 +177,9 @@ Item {
     cellWidth: Math.floor((width - 2 * picker.gridPad) / picker.columns)
     cellHeight: picker.cellHeight
     clip: true
-    model: picker.items
+    // By count, so a new search's list updates the rows in place rather than
+    // rebuilding every one of them.
+    model: picker.items.length
     boundsBehavior: Flickable.StopAtBounds
     keyNavigationEnabled: false
     onCurrentIndexChanged: picker.reveal(currentIndex)
@@ -223,8 +225,8 @@ Item {
 
     delegate: Item {
       id: slot
-      required property var modelData
       required property int index
+      readonly property var modelData: picker.items[index]
       readonly property bool isSelected: GridView.isCurrentItem
       readonly property bool itemDisabled: picker.isDisabled(slot.modelData)
       width: list.cellWidth

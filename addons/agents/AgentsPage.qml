@@ -578,7 +578,8 @@ ColumnLayout {
                 layer.effect: MultiEffect {
                   shadowEnabled: true
                   shadowColor: Qt.rgba(0, 0, 0, 0.45)
-                  shadowBlur: 0.5
+                  blurMax: 16
+                  shadowBlur: 1
                   shadowVerticalOffset: 2
                 }
                 Column {

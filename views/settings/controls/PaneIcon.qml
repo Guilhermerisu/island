@@ -81,7 +81,8 @@ Item {
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, paneIcon.large ? 0.35 : 0.28)
-      shadowBlur: paneIcon.large ? 0.6 : 0.25
+      blurMax: paneIcon.large ? 32 : 8
+      shadowBlur: paneIcon.large ? 0.6 : 1
       shadowVerticalOffset: paneIcon.large ? 3 : 1
       shadowHorizontalOffset: 0
       autoPaddingEnabled: true
