@@ -16,14 +16,15 @@ Item {
 
   readonly property bool isWarningOrFeedback: (host.view === "feedback" && !host.notificationPill && !host.volumePill) || host.setup.needsSetup
   readonly property bool isStacked: host.clockStacked && !isWarningOrFeedback
-  // The active layout's code ("US"), beside the bare resting clock, only when
-  // there are layouts to switch between.
+  // The active layout's code ("US"), beside the bare resting clock, when the
+  // Keyboard Layout addon asks for it and there are layouts to switch between.
+  readonly property bool languageWanted: host.addons.isEnabled("keyboard") && host.addons.option("keyboard", "clockCode") !== false
   readonly property string languageCode: {
     var codes = host.keyboard.codes || []
     var index = host.keyboard.index
     return codes.length > 1 && index >= 0 && index < codes.length ? String(codes[index]).toUpperCase() : ""
   }
-  readonly property bool showLanguage: host.view === "rest" && !pill && !isWarningOrFeedback && languageCode !== ""
+  readonly property bool showLanguage: languageWanted && host.view === "rest" && !pill && !isWarningOrFeedback && languageCode !== ""
   // The clock stays centred, so the island grows by the code on both sides.
   readonly property real languageExtra: showLanguage ? 2 * (languageText.anchors.leftMargin + languageText.implicitWidth) : 0
 
