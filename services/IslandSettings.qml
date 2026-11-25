@@ -52,6 +52,8 @@ Item {
       property bool notificationFullText: false
       property bool notch: false
       property bool restingOutline: false
+      // Pixels between the top edge and the island, 1–32 (ignored with the notch).
+      property int topGap: 8
       // Windows start under the resting island (the reserve window in Island.qml).
       property bool reserveSpace: false
       property bool downloads: true

@@ -86,6 +86,22 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰞕"
+      iconTint: page.system.indigo
+      label: "Distance from top"
+      detail: "Pixels between the top edge and the island"
+      visible: !page.view.settings.notch
+      SettingsStepper {
+        view: page.view
+        from: 1
+        to: 32
+        suffix: "px"
+        value: page.view.settings.topGap
+        onPicked: function(v) { page.view.settings.topGap = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰄮"
       iconTint: page.system.gray
       label: "Outline"
