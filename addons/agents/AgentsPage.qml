@@ -53,15 +53,8 @@ ColumnLayout {
   readonly property color green: page.view.host.theme.system.green
   readonly property color yellow: page.view.host.theme.system.yellow
 
-  // A clock for the countdowns, ticking while the pane is open.
-  property real now: Date.now()
-  Timer {
-    interval: 30000
-    repeat: true
-    running: page.shown
-    triggeredOnStart: true
-    onTriggered: page.now = Date.now()
-  }
+  // Shared clock from AgentsAddon, ticking while Settings or a zone is open.
+  readonly property real now: agents.usageNow
 
   // Used: green under half, yellow, red from 80%.
   function usedColor(p) { return p >= 0.8 ? red : p >= 0.5 ? yellow : green }
@@ -73,15 +66,7 @@ ColumnLayout {
     if (/720h|30.?d|month/i.test(label)) return "Monthly Limit"
     return label
   }
-  function countdown(iso) {
-    var ms = new Date(iso).getTime() - now
-    if (!isFinite(ms)) return ""
-    if (ms <= 0) return "now"
-    var minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60), days = Math.floor(hours / 24)
-    if (days > 0) return days + (days === 1 ? " day" : " days") + (hours % 24 ? " " + hours % 24 + " hr" : "")
-    if (hours > 0) return hours + " hr " + (minutes % 60) + " min"
-    return Math.max(1, minutes) + " min"
-  }
+  function countdown(iso) { return agents.countdown(iso) }
   function resetTime(iso) {
     var at = new Date(iso)
     if (!isFinite(at.getTime())) return ""
@@ -93,13 +78,7 @@ ColumnLayout {
     if (left === "") return ""
     return left === "now" ? "Resets now" : "Resets in " + left + " · " + resetTime(iso)
   }
-  function tokens(n) {
-    n = n || 0
-    if (n >= 1e9) return (n / 1e9).toFixed(1) + "B"
-    if (n >= 1e6) return (n / 1e6).toFixed(1) + "M"
-    if (n >= 1e3) return (n / 1e3).toFixed(1) + "K"
-    return String(Math.round(n))
-  }
+  function tokens(n) { return agents.tokens(n) }
   // Round scale figures: "50M", not "50.0M".
   function scaleLabel(n) { return tokens(n).replace(".0", "") }
   // "YYYY-MM-DD" as a local day: "Mon", or with `full` "Monday".
@@ -160,11 +139,16 @@ ColumnLayout {
   }
   readonly property real modelTotal: models.reduce(function(sum, m) { return sum + m.value }, 0)
   // "claude-opus-5-5" → "Opus 5.5", "claude-haiku-4-5-20251001" → "Haiku 4.5",
-  // "gpt-6.1-sol" → "GPT-6.1 Sol".
+  // "gpt-6.1-sol" → "GPT-6.1 Sol", "gemini-4-carbon-medium" → "Gemini 4 Carbon (Medium)".
   function modelName(id) {
     var parts = String(id).replace(/^claude-/, "").replace(/-\d{8}$/, "").split("-")
     var cap = function(w) { return w.charAt(0).toUpperCase() + w.slice(1) }
     if (parts[0] === "gpt") return "GPT-" + parts.slice(1, 2).join("") + (parts.length > 2 ? " " + parts.slice(2).map(cap).join(" ") : "")
+    if (parts[0] === "gemini") {
+      var efforts = { low: true, medium: true, high: true, minimal: true }
+      var tail = parts.length > 2 && efforts[parts[parts.length - 1]] ? parts.pop() : ""
+      return parts.map(function(p) { return /^\d/.test(p) ? p : cap(p) }).join(" ") + (tail ? " (" + cap(tail) + ")" : "")
+    }
     var words = parts.filter(function(p) { return !/^\d/.test(p) }).map(cap)
     var version = parts.filter(function(p) { return /^\d/.test(p) }).join(".")
     return words.join(" ") + (version ? " " + version : "")

@@ -151,7 +151,7 @@ Item {
       options: [
         { key: "live", label: "Live Activity", detail: "Claude Code's steps on the island while it works", type: "switch", default: true },
         { key: "agent", label: "Agent", detail: "Ctrl+click to add or remove agents shown as tabs", type: "popup", multiSelect: true, default: "claude",
-          choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "All Models", value: "all" }] }
+          choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "Gemini", value: "agy" }, { label: "All Models", value: "all" }] }
       ] },
     { id: "ask", name: "Ask AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
       searchAliases: ["ask ai"],

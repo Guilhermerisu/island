@@ -79,7 +79,7 @@ Item {
           anchors.centerIn: parent
           anchors.verticalCenterOffset: 0.5
           text: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][pill.day.getMonth()]
-          color: pill.host.theme.text
+          color: "#ffffff"
           font.family: pill.host.theme.textFontFamily
           font.features: { "tnum": 1 }
           font.pixelSize: pill.host.theme.px(8)
@@ -130,8 +130,7 @@ Item {
       width: parent.width
       text: pill.event ? pill.calendar.spanText(pill.event) : ""
       elide: Text.ElideRight
-      // Apple's secondary label.
-      color: Qt.rgba(235 / 255, 235 / 255, 245 / 255, 0.6)
+      color: pill.host.theme.secondary
       font.family: pill.host.theme.textFontFamily
       font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.callout)
       font.pixelSize: pill.host.theme.size.callout

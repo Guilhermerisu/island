@@ -226,4 +226,19 @@ Item {
     rebuild()
     command(row.isActive ? "dismissKey" : "forgetKey", row)
   }
+  // A whole folded stack at once: one rebuild, and one process running every
+  // call in turn, since `proc` runs a single command at a time.
+  function dismissAll(rows) {
+    var keys = {}
+    var args = []
+    rows.forEach(function(row) {
+      keys[key(row)] = true
+      args.push(row.isActive ? "dismissKey" : "forgetKey", key(row))
+    })
+    active = active.filter(function(r) { return !keys[key(r)] })
+    closed = closed.filter(function(r) { return !keys[key(r)] })
+    rebuild()
+    proc.command = ["bash", "-c", "while [ $# -gt 1 ]; do omarchy-shell island-notifications \"$1\" \"$2\"; shift 2; done", "dismiss"].concat(args)
+    proc.running = true
+  }
 }

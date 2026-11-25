@@ -10,15 +10,29 @@ import QtQuick
 // nothing written for its zone: its first view (made with `inZone` set, and
 // `active` following the control center), else its first Settings page (made
 // with its `properties`, a ZoneLook as its `view`, `inZone` set, and `shown`
-// following the zone). Both are told `inZone` only if they have it. Without,
-// whatever is put in the card (a zone an addon draws itself).
+// following the zone). Both are told `inZone`, `zoneSize` and `zoneRoom` (the
+// card's `room`) only if they have them. Without, whatever is put in the card
+// (a zone an addon draws itself).
+//
+// The zone has a size (`zoneSize`, from the Loader's: "xsmall", "small" or
+// "normal"), and the card pads less in the smaller ones, leaving the content
+// `room` in height: see "Zone sizes" in Addon.qml. An XSmall card is one line
+// (center.zoneXsHeight) with its content centered; a Small or Normal one is as
+// tall as its content, and nothing in it scrolls.
 Rectangle {
   id: card
   readonly property var center: parent.center
   readonly property bool zoneActive: !!parent.zoneActive
   default property alias content: body.data
+  // "normal" where there is no size to tell (a card made outside the zones).
+  readonly property string zoneSize: parent && parent.zoneSize !== undefined ? parent.zoneSize : "normal"
   // A Settings page draws its own cards, so it goes without this one.
-  readonly property real padding: mountedPage ? 0 : 16
+  readonly property real padding: mountedPage ? 0 : zoneSize === "xsmall" ? 8 : zoneSize === "small" ? 12 : 16
+  // The height XSmall's line leaves the content, less the padding (a
+  // constant); none for Small and Normal, which are as tall as their content.
+  // Informative: the content doesn't stretch to it, and must not size itself
+  // from it (that would loop).
+  readonly property real room: zoneSize === "xsmall" ? center.zoneXsHeight - 2 * padding : Number.POSITIVE_INFINITY
 
   property bool mount: false
   readonly property var owner: mount ? parent.addonRoot : null
@@ -28,7 +42,9 @@ Rectangle {
   // bar by edit mode.
   readonly property bool shown: zoneActive && visible
 
-  implicitHeight: body.height + 2 * padding
+  // XSmall is one line, or what its content needs if that is more (rows
+  // wrapped); Small and Normal are what they hold. Never from `room`.
+  implicitHeight: zoneSize === "xsmall" ? Math.max(center.zoneXsHeight, body.height + 2 * padding) : body.height + 2 * padding
   radius: center.cardRadius
   color: mountedPage ? "transparent" : center.card
   border.width: mountedPage ? 0 : 1
@@ -37,7 +53,8 @@ Rectangle {
   Item {
     id: body
     x: card.padding
-    y: card.padding
+    // XSmall's line is taller than what it holds, which sits in its middle.
+    y: card.padding + (card.zoneSize === "xsmall" ? Math.max(0, (card.room - height) / 2) : 0)
     width: card.width - 2 * card.padding
     height: childrenRect.height
 
@@ -49,6 +66,8 @@ Rectangle {
       onLoaded: {
         if (item.inZone !== undefined) item.inZone = true
         if (item.active !== undefined) item.active = Qt.binding(function() { return card.zoneActive })
+        if (item.zoneSize !== undefined) item.zoneSize = Qt.binding(function() { return card.zoneSize })
+        if (item.zoneRoom !== undefined) item.zoneRoom = Qt.binding(function() { return card.room })
       }
     }
     Loader {
@@ -58,6 +77,8 @@ Rectangle {
       onLoaded: {
         if (item.inZone !== undefined) item.inZone = true
         if (item.shown !== undefined) item.shown = Qt.binding(function() { return card.shown })
+        if (item.zoneSize !== undefined) item.zoneSize = Qt.binding(function() { return card.zoneSize })
+        if (item.zoneRoom !== undefined) item.zoneRoom = Qt.binding(function() { return card.room })
       }
     }
   }

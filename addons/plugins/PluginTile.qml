@@ -17,5 +17,5 @@ CcTile {
   subtitle: !entry.enabled ? "Off"
     : !entry.openable ? "On"
     : addon.keysById[entry.id] ? addon.keyText(addon.keysById[entry.id]) : "Open"
-  onClicked: entry.openable && entry.enabled ? addon.open(entry) : addon.setEnabled(entry, !entry.enabled)
+  onClicked: addon.activate(entry)
 }

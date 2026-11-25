@@ -7,12 +7,20 @@ import "../../components"
 // heading with Clear All over the newest ones as banners, each dismissed by
 // the round × on its corner while hovered. An app's notifications are one
 // stack, newest on top, that unfolds with "Show n more". One still on screen
-// shows its buttons (Open, Edit…). `center` is the ControlCenter.
+// shows its buttons (Open, Edit…). `center` is the ControlCenter. An XSmall
+// zone is one line, a Small one the same banners compact (and Clear All kept
+// over them), both drawn by NotificationGlance (see `zoneSize`, set by
+// ZoneCard).
 ColumnLayout {
   id: history
   required property var center
+  property string zoneSize: "normal"
+  // The height the zone was given (set by ZoneCard): informative, this zone's
+  // own height never follows it.
+  property real zoneRoom: Number.POSITIVE_INFINITY
+  readonly property bool normal: history.zoneSize === "normal"
+  readonly property bool xs: history.zoneSize === "xsmall"
   readonly property bool empty: history.center.host.notifications.history.length === 0
-  visible: !history.center.editMode
   Layout.fillWidth: true
   Layout.topMargin: 4
   spacing: 6
@@ -33,13 +41,33 @@ ColumnLayout {
     }
     return out
   }
+  function toggleStack(id) {
+    var next = Object.assign({}, history.unfolded)
+    next[id] = !next[id]
+    history.unfolded = next
+  }
+  // A stack that's gone (cleared, expired) must not come back unfolded when
+  // its app notifies again.
+  Connections {
+    target: history.center.host.notifications
+    function onStacksChanged() {
+      var live = {}
+      history.center.host.notifications.stacks.forEach(function(s) { live[s.id] = true })
+      var next = {}
+      var changed = false
+      for (var id in history.unfolded) {
+        if (live[id]) next[id] = history.unfolded[id]
+        else changed = true
+      }
+      if (changed) history.unfolded = next
+    }
+  }
   Connections {
     target: history.center
     function onActiveChanged() {
       history.settled = false
       if (!history.center.active) return
       historySettleTimer.restart()
-      notes.positionViewAtBeginning()
     }
   }
   Timer {
@@ -47,10 +75,6 @@ ColumnLayout {
     interval: history.center.host.theme.motionDuration("morph")
     onTriggered: history.settled = history.center.active
   }
-  // The history is re-read on opening, so what's new lands after the list
-  // has gone to its start: it opens on the newest either way.
-  onShownRowsChanged: if (!history.settled && history.center.active) Qt.callLater(notes.positionViewAtBeginning)
-
   // What "2m ago" counts from, kept current only while it's on screen.
   property real now: Date.now()
   Timer {
@@ -61,7 +85,10 @@ ColumnLayout {
     onTriggered: history.now = Date.now()
   }
 
+  // Small keeps the heading and Clear All, but not over nothing: then it is
+  // the one "No notifications" line.
   RowLayout {
+    visible: history.normal || (!history.xs && !history.empty)
     Layout.fillWidth: true
     Layout.leftMargin: 8
     Layout.rightMargin: 2
@@ -126,7 +153,7 @@ ColumnLayout {
 
   // Fades in as the last banners go out; it isn't in the way of new ones.
   Text {
-    visible: history.empty
+    visible: history.normal && history.empty
     opacity: history.empty ? 1 : 0
     Behavior on opacity { enabled: history.settled; MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
     Layout.fillWidth: true
@@ -140,12 +167,25 @@ ColumnLayout {
     font.pixelSize: history.center.host.theme.size.body
   }
 
+  Loader {
+    active: !history.normal
+    visible: active
+    Layout.fillWidth: true
+    sourceComponent: NotificationGlance {
+      center: history.center
+      zoneSize: history.zoneSize
+      rows: history.shownRows
+      now: history.now
+      onStackToggled: function(id) { history.toggleStack(id) }
+    }
+  }
+
   ListView {
     id: notes
     // Clear All (or dismissing the last banner) lets the rows fade out and
     // the frame close before the list goes, rather than dropping it at once.
     opacity: history.empty ? 0 : 1
-    visible: opacity > 0.01
+    visible: history.normal && opacity > 0.01
     Behavior on opacity {
       enabled: history.settled
       MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
@@ -155,12 +195,18 @@ ColumnLayout {
     Layout.leftMargin: -6
     // Grows and shrinks with the rows as they come and go, instead of
     // jumping to the new content height while they're still animating.
-    property real frameHeight: history.empty ? 0 : Math.min(contentHeight, 320)
+    // The zone never scrolls: every banner shows, and the island's page
+    // scrolls when they're too many.
+    property real frameHeight: history.empty ? 0 : contentHeight
     Behavior on frameHeight { enabled: history.settled; MotionAnimation { theme: history.center.host.theme; pace: "standard" } }
     Layout.preferredHeight: frameHeight
     clip: true
     spacing: 4
-    boundsBehavior: Flickable.StopAtBounds
+    // Not a scroller: a ListView only for its add/remove/displaced transitions.
+    interactive: false
+    // Builds every banner (the service bounds the history), so contentHeight
+    // is the real one rather than an estimate from what fit the frame.
+    cacheBuffer: 1000000
     // Kept by key, so dismissing one slides the rest up instead of
     // rebuilding every banner.
     model: noteRows.model
@@ -185,28 +231,6 @@ ColumnLayout {
     displaced: Transition {
       MotionAnimation { theme: history.center.host.theme; property: "y"; pace: "standard" }
       MotionAnimation { theme: history.center.host.theme; properties: "opacity,scale"; to: 1; pace: "fade"; curve: "fade" }
-    }
-    // Soft edges where the list runs on above or below, as in Settings.
-    Repeater {
-      model: [
-        { top: true, shown: notes.contentY - notes.originY > 1 },
-        { top: false, shown: notes.contentY - notes.originY < notes.contentHeight - notes.height - 1 }
-      ]
-      delegate: Rectangle {
-        required property var modelData
-        parent: notes
-        z: 1
-        anchors.left: parent.left
-        anchors.right: parent.right
-        y: modelData.top ? 0 : notes.height - height
-        height: 24
-        opacity: modelData.shown ? 1 : 0
-        Behavior on opacity { MotionAnimation { theme: history.center.host.theme; pace: "fade"; curve: "fade" } }
-        gradient: Gradient {
-          GradientStop { position: 0; color: modelData.top ? history.center.host.theme.background : "transparent" }
-          GradientStop { position: 1; color: modelData.top ? "transparent" : history.center.host.theme.background }
-        }
-      }
     }
     // Inset by the × button's overhang, which sits on the banner's corner.
     delegate: Item {
@@ -262,49 +286,14 @@ ColumnLayout {
         }
         // The notification's image or app icon; the banner's accent bell
         // tile when there's none (or it fails to load).
-        ClippingRectangle {
+        NotificationGlance.Avatar {
           id: avatar
-          // A live image handle dies with the shell; fall back to the app
-          // icon (then the bell) when it no longer loads.
-          property bool imageFailed: false
-          readonly property string source: history.center.host.notifications.iconSource(note.modelData, imageFailed)
-          readonly property var brand: history.center.host.notifications.brand(note.modelData)
+          center: history.center
+          row: note.modelData
           anchors.left: parent.left
           anchors.leftMargin: 12
           anchors.top: parent.top
           anchors.topMargin: 12
-          width: 36; height: 36; radius: history.center.host.theme.radii.large
-          readonly property bool generic: !brand && noteIcon.status !== Image.Ready
-          color: brand ? brand.tile : "transparent"
-          // Same tile as the banner (NotificationPill), so a notification
-          // looks the same on the pill and here.
-          Rectangle {
-            anchors.fill: parent
-            visible: avatar.generic
-            gradient: Gradient {
-              GradientStop { position: 0; color: Qt.lighter(history.center.host.theme.accent, 1.25) }
-              GradientStop { position: 1; color: history.center.host.theme.accent }
-            }
-          }
-          Image {
-            id: noteIcon
-            anchors.fill: parent
-            source: avatar.source
-            sourceSize.width: 60
-            sourceSize.height: 60
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            visible: status === Image.Ready
-            onStatusChanged: if (status === Image.Error) avatar.imageFailed = true
-          }
-          Text {
-            anchors.centerIn: parent
-            visible: noteIcon.status !== Image.Ready
-            text: avatar.brand ? avatar.brand.glyph : "󰂚"
-            color: avatar.brand ? avatar.brand.ink : history.center.host.theme.accentText
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: history.center.host.theme.px(20)
-          }
         }
         Column {
           id: noteBody
@@ -418,11 +407,7 @@ ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: -4
                 cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  var next = Object.assign({}, history.unfolded)
-                  next[note.modelData.stackId] = !next[note.modelData.stackId]
-                  history.unfolded = next
-                }
+                onClicked: history.toggleStack(note.modelData.stackId)
               }
             }
           }
@@ -452,9 +437,16 @@ ColumnLayout {
           id: closeMouse
           anchors.fill: parent
           anchors.margins: -3
-          onClicked: history.center.host.notifications.dismiss(note.modelData)
+          // A folded stack goes whole; unfolded, each × is its own banner's.
+          readonly property bool wholeStack: note.stacked && !note.modelData.stackOpen
+          onClicked: {
+            var notifications = history.center.host.notifications
+            if (!wholeStack) { notifications.dismiss(note.modelData); return }
+            var stack = notifications.stacks.find(function(s) { return s.id === note.modelData.stackId })
+            if (stack) notifications.dismissAll([stack.head].concat(stack.rest))
+          }
         }
-        Tooltip { theme: history.center.host.theme; text: "Dismiss" }
+        Tooltip { theme: history.center.host.theme; text: closeMouse.wholeStack ? "Clear Stack" : "Dismiss" }
       }
     }
   }

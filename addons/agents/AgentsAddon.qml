@@ -12,12 +12,27 @@ import ".."
 //
 // While Claude Code works, it's a live activity too (see AgentsPill): its
 // turn as it goes, read from its transcripts by live.py, with Clawd
-// (AgentsMascot) acting it out. It says when a turn's done.
+// (AgentsMascot) acting it out. It says when a turn's done, and grows by
+// itself when it's waiting on you.
 Addon {
   id: agentsAddon
   pill: Component { AgentsPill { agents: agentsAddon } }
+  // In the control center, Normal is the Settings pane as a card (AgentsZone
+  // mounts it), XSmall and Small are visuals of their own.
+  zone: Component { AgentsZone {} }
   ongoing: working || finished
-  pillWidth: 236
+  // Grown, it hides the clock and takes the island to itself.
+  pillAsks: expanded
+  readonly property real restHeight: host.settings.notch ? 40 : 44
+  readonly property real inset: 24
+  readonly property int rows: 3
+  readonly property real rowHeight: 27
+  // Grown, its height follows its steps, which can take two lines each
+  // (see AgentsPill).
+  property real grownHeight: 173
+  pillWidth: expanded ? 460 : 236
+  pillHeight: expanded ? grownHeight : restHeight
+  pillRadius: expanded ? 32 : 0
   // Claude's orange, or the theme's accent when live activities aren't
   // colorful; amber while it waits on you.
   readonly property color ink: asking ? host.theme.system.orange
@@ -29,13 +44,14 @@ Addon {
     iconLayers: [{ glyph: provider.glyph, color: "#ffffff", x: 0.5, y: 0.5, size: provider.glyphSize }],
     source: Qt.resolvedUrl("AgentsPage.qml"), properties: { agents: agentsAddon },
     about: "Usage limits and tokens by day for your coding agent.",
-    search: "agents ai claude code codex usage limits rate session 5-hour five hour weekly week tokens day plan subscription"
+    search: "agents ai claude code codex gemini antigravity agy usage limits rate session 5-hour five hour weekly week tokens day plan subscription"
   }]
 
   // Claude's mark reads smaller than Codex's at the same size, so it's drawn larger.
   readonly property var providers: ({
     claude: { id: "claude", name: "Claude Code", glyph: "", glyphSize: 0.7, color: "#d97757", login: "claude auth login" },
     codex: { id: "codex", name: "Codex", glyph: "", glyphSize: 0.6, color: host.theme.system.blue, login: "codex login" },
+    agy: { id: "agy", name: "Gemini", glyph: "✦", glyphSize: 0.65, color: "#1a73e8", login: "agy" },
     // Every model on this machine, from all-usage.py: no limits, just tokens.
     all: { id: "all", name: "All Models", glyph: "󰚩", glyphSize: 0.6, color: host.theme.system.indigo, login: "" }
   })
@@ -82,6 +98,60 @@ Addon {
     record = next
   }
 
+  // What the control center's small zones show: the session and weekly
+  // limits (null when the agent has none, as All Models), and the tokens a
+  // day over the recent days, as the Settings pane's average.
+  function limit(pattern) {
+    return (record && record.limits || []).filter(function(l) { return pattern.test(l.label) })[0] || null
+  }
+  readonly property var sessionLimit: limit(/5.?h|session/i)
+  readonly property var weeklyLimit: limit(/week|7.?d/i)
+  readonly property real averageTokens: {
+    var days = record && record.recentDays || []
+    return days.length ? days.reduce(function(sum, d) { return sum + (d.messageCount || 0) }, 0) / days.length : 0
+  }
+  function tokens(n) {
+    n = n || 0
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + "B"
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + "M"
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + "K"
+    return String(Math.round(n))
+  }
+  // Used: green under half, yellow, red from 80% (as AgentsPage's meters).
+  function usedColor(p) {
+    return p >= 0.8 ? host.theme.system.red : p >= 0.5 ? host.theme.system.yellow : host.theme.system.green
+  }
+
+  // Shared clock for usage countdowns across Settings and Control Center zones.
+  property real usageNow: Date.now()
+  Timer {
+    interval: 30000
+    repeat: true
+    running: agentsAddon.watching
+    triggeredOnStart: true
+    onTriggered: agentsAddon.usageNow = Date.now()
+  }
+  function countdown(iso) {
+    if (!iso) return ""
+    var ms = new Date(iso).getTime() - usageNow
+    if (!isFinite(ms)) return ""
+    if (ms <= 0) return "now"
+    var minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60), days = Math.floor(hours / 24)
+    if (days > 0) return days + (days === 1 ? " day" : " days") + (hours % 24 ? " " + hours % 24 + " hr" : "")
+    if (hours > 0) return hours + " hr " + (minutes % 60) + " min"
+    return Math.max(1, minutes) + " min"
+  }
+  function shortCountdown(iso) {
+    if (!iso) return ""
+    var ms = new Date(iso).getTime() - usageNow
+    if (!isFinite(ms)) return ""
+    if (ms <= 0) return "now"
+    var minutes = Math.floor(ms / 60000), hours = Math.floor(minutes / 60), days = Math.floor(hours / 24)
+    if (days > 0) return days + "d" + (hours % 24 ? " " + hours % 24 + "h" : "")
+    if (hours > 0) return hours + "h" + (minutes % 60 ? " " + minutes % 60 + "m" : "")
+    return Math.max(1, minutes) + "m"
+  }
+
   // A run collapses into one queued rerun if asked again meanwhile.
   property bool rerun: false
   Process {
@@ -99,14 +169,18 @@ Addon {
     if (update.running) { rerun = true; return }
     updating = true
     // Codex's collector gives up on its limits here, so codex-limits.py
-    // fills them in after it (see there).
-    // All Models regenerates both agents' records, then merges them with
-    // the other models' sessions (all-usage.py).
+    // fills them in after it (see there). Antigravity's collector only scans
+    // ~/.gemini/antigravity-cli, so agy-usage.py merges ~/.gemini/antigravity
+    // and ~/.gemini/antigravity-ide transcripts into agy.json.
+    // All Models regenerates the subscription agents' records, then merges
+    // them with the other models' sessions (all-usage.py).
     update.command = provider.id === "all"
-      ? ["bash", "-c", "omarchy-agent-usage-update claude codex; python3 \"$1\"; python3 \"$2\"", "bash",
-         agentsAddon.localPath("codex-limits.py"), agentsAddon.localPath("all-usage.py")]
+      ? ["bash", "-c", "omarchy-agent-usage-update claude codex agy; python3 \"$1\"; python3 \"$2\"; python3 \"$3\"", "bash",
+         agentsAddon.localPath("codex-limits.py"), agentsAddon.localPath("agy-usage.py"), agentsAddon.localPath("all-usage.py")]
       : provider.id === "codex"
       ? ["bash", "-c", "omarchy-agent-usage-update codex; python3 \"$1\"", "bash", agentsAddon.localPath("codex-limits.py")]
+      : provider.id === "agy"
+      ? ["bash", "-c", "omarchy-agent-usage-update agy; python3 \"$1\"", "bash", agentsAddon.localPath("agy-usage.py")]
       : ["omarchy-agent-usage-update", provider.id]
     update.running = true
   }
@@ -126,8 +200,16 @@ Addon {
   readonly property var session: sessions.length ? sessions[0] : null
   readonly property bool working: sessions.some(function(s) { return s.state !== "done" })
   readonly property var live: working ? sessions.filter(function(s) { return s.state !== "done" })[0] : session
+  // The step it's taking: with several asked at once, the first, as the
+  // others wait for it.
+  readonly property var current: {
+    var steps = live && live.steps ? live.steps : []
+    for (var i = 0; i < steps.length; i++) if (steps[i].status === "running") return steps[i]
+    return null
+  }
   // Waiting on your answer to a question or its plan.
   readonly property bool asking: !!live && live.state === "asking"
+  onAskingChanged: if (asking) present()
 
   Process {
     id: liveWatch
@@ -166,8 +248,12 @@ Addon {
   function pillClicked() {
     var target = asking || finished ? live : null
     if (!target) { host.view = "controls"; return }
+    focusSession(target, !asking)
+  }
+  // Also what a click on a session in the control center's zone does.
+  function focusSession(target, wasDone) {
     if (focusProc.running) return
-    focusProc.wasDone = !asking
+    focusProc.wasDone = wasDone
     focusProc.command = ["python3", localPath("focus-session.py"), target.id]
     focusProc.running = true
   }
@@ -188,8 +274,22 @@ Addon {
     onTriggered: if (agentsAddon.hovered) restart(); else agentsAddon.finished = false
   }
 
-  // The turn's time, by the second while it's on screen; done, it stops
-  // where it ended.
+  // As Apple's live activities alert: grown by itself for a few seconds
+  // when it starts waiting on you, unless the pointer's holding it open.
+  function present() {
+    openTimer.stop()
+    collapseTimer.stop()
+    expanded = true
+    presentTimer.restart()
+  }
+  Timer {
+    id: presentTimer
+    interval: 4500
+    onTriggered: if (!agentsAddon.hovered) agentsAddon.expanded = false
+  }
+
+  // The turn's time and the running step's, by the second while they're on
+  // screen; done, the turn's stops where it ended.
   property real now: Date.now()
   Timer {
     interval: 1000
@@ -198,8 +298,13 @@ Addon {
     triggeredOnStart: true
     onTriggered: agentsAddon.now = Date.now()
   }
-  readonly property real turnTime: !live || !live.startedAt ? 0
-    : Math.max(0, (live.state === "done" ? live.doneAt : now) - live.startedAt)
+  readonly property real turnStart: live ? live.startedAt || (live.steps && live.steps.length ? live.steps[0].startedAt : 0) : 0
+  readonly property real turnTime: !turnStart ? 0 : Math.max(0, (live.state === "done" ? live.doneAt : now) - turnStart)
+  // A step's length, shorter: <1s, 4s, 1:12.
+  function durationText(ms) {
+    var s = Math.floor(Math.max(0, ms) / 1000)
+    return s < 1 ? "<1s" : s < 60 ? s + "s" : timeText(ms)
+  }
   // 0:04, 12:31, 1:02:10
   function timeText(ms) {
     var s = Math.max(0, Math.floor(ms / 1000))
@@ -208,6 +313,24 @@ Addon {
     return h > 0 ? h + ":" + ("0" + m).slice(-2) + ":" + ss : m + ":" + ss
   }
 
-  // Held by the pointer, a finished turn's "Done" stays (see finishedTimer).
+  // As the call's: it opens once the pointer rests on it, and closes a
+  // moment after it leaves.
   property bool hovered: false
+  property bool expanded: false
+  onHoveredChanged: {
+    if (hovered && ongoing) { collapseTimer.stop(); if (!expanded) openTimer.restart() }
+    else { openTimer.stop(); collapseTimer.restart() }
+  }
+  onOngoingChanged: if (!ongoing) { presentTimer.stop(); expanded = false }
+  onPillShownChanged: if (!pillShown) { openTimer.stop(); collapseTimer.stop(); presentTimer.stop(); expanded = false }
+  Timer {
+    id: openTimer
+    interval: 120
+    onTriggered: if (agentsAddon.hovered && agentsAddon.ongoing) agentsAddon.expanded = true
+  }
+  Timer {
+    id: collapseTimer
+    interval: 450
+    onTriggered: agentsAddon.expanded = false
+  }
 }

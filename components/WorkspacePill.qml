@@ -42,7 +42,7 @@ IslandPill {
             width: 7
             height: 7
             radius: 3.5
-            color: Qt.rgba(1, 1, 1, workspaceSlot.occupied ? 0.7 : 0.22)
+            color: pill.host.theme.withAlpha(pill.host.theme.text, workspaceSlot.occupied ? 0.7 : 0.22)
           }
         }
       }
@@ -57,12 +57,12 @@ IslandPill {
       width: pill.slot + 10
       height: pill.slot
       radius: height / 2
-      color: pill.host.settings.colorfulLiveActivities ? "#ffffff" : pill.host.theme.accent
+      color: pill.host.settings.colorfulLiveActivities ? pill.host.theme.text : pill.host.theme.accent
       Behavior on x { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
       Text {
         anchors.centerIn: parent
         text: pill.host.focusedWorkspaceId
-        color: pill.host.settings.colorfulLiveActivities ? "#000000" : pill.host.theme.accentText
+        color: pill.host.settings.colorfulLiveActivities ? pill.host.theme.background : pill.host.theme.accentText
         font.family: pill.host.theme.textFontFamily
         font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.callout)
         font.pixelSize: pill.host.theme.size.callout

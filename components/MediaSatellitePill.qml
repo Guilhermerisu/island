@@ -42,7 +42,7 @@ Rectangle {
   readonly property bool hasBorder: host.settings.glanceMediaSatelliteBorder !== false
   border.width: 1
   border.color: hasBorder
-    ? (mouseArea.containsMouse ? (nowPlaying.tint || host.theme.accent) : Qt.rgba(1, 1, 1, 0.25))
+    ? (mouseArea.containsMouse ? (nowPlaying.tint || host.theme.accent) : host.theme.withAlpha(host.theme.text, 0.25))
     : "transparent"
   Behavior on border.color {
     ColorAnimation { duration: 150 }
@@ -65,7 +65,7 @@ Rectangle {
     z: -1
     anchors.fill: parent
     anchors.margins: -3
-    opacity: satellite.shown && satellite.hasBorder ? 0.45 : 0
+    opacity: satellite.shown && satellite.hasBorder ? (host.theme.isLight ? 0.12 : 0.45) : 0
     visible: opacity > 0.01
     Behavior on opacity { NumberAnimation { duration: 180 } }
     Rectangle {

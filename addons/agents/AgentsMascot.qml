@@ -10,8 +10,9 @@ import QtQuick
 // "rest"; it blinks now and then in any of them.
 Item {
   id: clawd
+  property var theme: null
   property color color: "#d97757"
-  property color eyeColor: "#000000"
+  property color eyeColor: theme ? theme.background : "#000000"
   property string mood: "rest"
   property bool running: true
   property real unit: 1

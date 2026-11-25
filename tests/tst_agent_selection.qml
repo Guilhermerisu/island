@@ -39,7 +39,7 @@ TestCase {
       id: selector
       view: view
       x: 40; y: 80
-      options: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "All Models", value: "all" }]
+      options: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "Gemini", value: "agy" }, { label: "All Models", value: "all" }]
       multiSelect: true
       onPicked: function(next) { value = next }
     }
@@ -69,29 +69,34 @@ TestCase {
     tryCompare(selector, "currentLabel", "Claude + Codex")
     compare(menu.button, selector)
     choose(2, Qt.ControlModifier)
-    compare(selector.value, ["claude", "codex", "all"])
+    compare(selector.value, ["claude", "codex", "agy"])
+    tryCompare(selector, "currentLabel", "Claude + Codex + Gemini")
+    choose(3, Qt.ControlModifier)
+    compare(selector.value, ["claude", "codex", "agy", "all"])
     choose(1, Qt.ControlModifier)
-    compare(selector.value, ["claude", "all"])
-    choose(2)
+    compare(selector.value, ["claude", "agy", "all"])
+    choose(3)
     compare(selector.value, ["all"])
     compare(menu.button, null)
-    choose(2, Qt.ControlModifier)
+    choose(3, Qt.ControlModifier)
     compare(selector.value, ["all"])
   }
   function test_other_popups_remain_single() {
     selector.multiSelect = false
-    choose(1, Qt.ControlModifier)
-    compare(selector.value, "codex")
+    choose(2, Qt.ControlModifier)
+    compare(selector.value, "agy")
     compare(menu.button, null)
   }
   function test_tabs_switch_without_changing_selection() {
-    selector.value = ["claude", "codex", "all"]
+    selector.value = ["claude", "codex", "agy", "all"]
     tabs.value = "claude"
     verify(waitForRendering(tabs))
     mouseClick(tabs, 2 + tabs.chipWidth * 1.5, 14)
     compare(tabs.value, "codex")
-    compare(selector.value, ["claude", "codex", "all"])
+    compare(selector.value, ["claude", "codex", "agy", "all"])
     mouseClick(tabs, 2 + tabs.chipWidth * 2.5, 14)
+    compare(tabs.value, "agy")
+    mouseClick(tabs, 2 + tabs.chipWidth * 3.5, 14)
     compare(tabs.value, "all")
   }
 }

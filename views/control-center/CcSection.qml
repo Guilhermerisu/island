@@ -98,7 +98,7 @@ Rectangle {
     Text {
       anchors.centerIn: parent
       text: sec.toggleIcon
-      color: sec.toggleOn ? "#ffffff" : center.textMuted
+      color: sec.toggleOn ? center.host.theme.contrastOn(center.host.theme.system.red) : center.textMuted
       font.family: center.iconFont
       font.pixelSize: center.host.theme.px(13)
     }

@@ -64,6 +64,8 @@ Item {
       property bool workspaceHud: false
       property bool colorfulSettingsIcons: true
       property bool colorfulLiveActivities: true
+      // "dark", "light", or "theme"; empty falls back to themeBackground for older configs.
+      property string appearance: ""
       property bool themeBackground: false
       property string textFontMode: "island"
       property string customFont: ""
@@ -83,10 +85,19 @@ Item {
       // Each column's share of the width, per column count (JSON, e.g.
       // {"3":[0.3,0.4,0.3]}); unset counts split evenly.
       property string controlCenterColumnWidths: ""
+      // The island's width, per column count (JSON, e.g. {"1":620,"3":1380});
+      // unset counts use the default width for that layout.
+      property string controlCenterWidths: ""
+      // Each zone's size when not Normal (JSON, e.g. {"weather":"small"},
+      // see views/control-center/zones.js): "xsmall" or "small" by zone id.
+      property string controlCenterZoneSizes: ""
       // Slider cards drawn upright, as their keys.
       property string controlCenterVertical: ""
       // Its height cap, set with the handle under it; 0 for the default.
       property int controlCenterMaxHeight: 0
+      // The add panel's height in edit mode, set with the handle under it; 0 for
+      // the default (views/control-center/zones.js editPanelHeight).
+      property int controlCenterEditPanelHeight: 0
       property bool microphoneMuteControl: false
       property bool stayAwakeControl: false
       property bool screensaverControl: false

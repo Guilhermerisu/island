@@ -934,7 +934,7 @@ Item {
           scale: island.scale
           transformOrigin: island.transformOrigin
           readonly property bool prominent: root.surfaceOpen || root.view === "feedback"
-          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.6 : 0
+          opacity: prominent ? 1 : (island.lifted || island.isGlanceExpanded) ? 0.8 : root.theme.isLight ? 0.65 : 0
           visible: opacity > 0.01
           Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || island.lifted || island.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
           Shape {
@@ -1009,7 +1009,7 @@ Item {
     y: shape.y
     width: r + 0.5
     height: r
-    property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
+    property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.8 : root.theme.isLight ? 0.65 : 0
     Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer

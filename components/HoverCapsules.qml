@@ -39,7 +39,7 @@ Item {
   readonly property int traySize: 16
   readonly property int textSize: theme.px(13)
   readonly property color ink: capsules.host.theme.text
-  readonly property color faint: Qt.rgba(0.89, 0.90, 0.87, 0.4)
+  readonly property color faint: capsules.theme.withAlpha(capsules.ink, 0.45)
 
   Controls { id: controls; host: capsules.host }
   // The history is only read while it's on screen; the count needs it fresh.
@@ -168,6 +168,8 @@ Item {
     topLeftRadius: capsules.notch ? 0 : radius
     topRightRadius: capsules.notch ? 0 : radius
     color: capsules.theme.background
+    border.width: capsules.theme.isLight ? 1 : 0
+    border.color: capsules.theme.hairline
     opacity: Math.min(1, settled * 3)
     transform: [
       Scale {
@@ -343,12 +345,12 @@ Item {
             width: capsules.capsuleHeight - 16
             height: width
             radius: 8
-            color: current ? "#5c5c5e" : "transparent"
+            color: current ? capsules.theme.wellHover : "transparent"
             Behavior on color { MotionColorAnimation { theme: capsules.theme } }
             Label {
               anchors.horizontalCenter: parent.horizontalCenter
               text: tile.modelData
-              color: tile.current || tile.occupied ? "#ffffff" : capsules.faint
+              color: tile.current || tile.occupied ? capsules.ink : capsules.faint
             }
             MouseArea {
               anchors.fill: parent
@@ -374,7 +376,7 @@ Item {
         width: capsules.capsuleHeight - 18
         height: width
         radius: 5
-        color: "#2a2a2c"
+        color: capsules.theme.well
         Glyph {
           anchors.horizontalCenter: parent.horizontalCenter
           visible: cover.status !== Image.Ready

@@ -15,13 +15,21 @@ Item {
   // In a control center zone: it doesn't take the keyboard, which stays with
   // the control center (Esc closes that), and starting leaves it open.
   property bool inZone: false
+  // Set by the zone's card (see AddonZone): XSmall and Small are drawn by
+  // TimerCompact, the view's own look being Normal's.
+  property string zoneSize: "normal"
+  // The control center, and the Component of a picker for its popover (see
+  // TimerZone): in a zone only, they give the compact sizes any length.
+  property var center: null
+  property Component picker: null
+  readonly property bool compact: inZone && zoneSize !== "normal"
   readonly property var host: timer.host
   readonly property bool picking: timer.phase === "idle"
   readonly property int defaultMinutes: 15
   readonly property int maxMinutes: 24 * 60 - 1
   property int minutes: defaultMinutes
 
-  implicitHeight: 52
+  implicitHeight: compact ? (zoneSize === "xsmall" ? 34 : 48) : 52
 
   onActiveChanged: if (active) reset()
   onPickingChanged: if (active) reset()
@@ -52,6 +60,8 @@ Item {
   }
   function start() {
     timer.start(minutes * 60000)
+    // From the compact sizes' popover: it has done its job.
+    if (center) center.closePopover()
     if (!inZone) host.view = "rest"
   }
 
@@ -65,7 +75,12 @@ Item {
   }
 
   Fade {
-    on: view.picking
+    on: view.compact
+    TimerCompact { anchors.fill: parent; timer: view.timer; small: view.zoneSize === "small"; center: view.center; picker: view.picker }
+  }
+
+  Fade {
+    on: view.picking && !view.compact
 
     Rectangle {
       id: startButton
@@ -103,13 +118,13 @@ Item {
       width: 52
       height: width
       radius: width / 2
-      color: "#48484a"
+      color: view.host.theme.well
       scale: cancelMouse.pressed ? 0.92 : 1
       Behavior on scale { MotionAnimation { theme: view.host.theme; pace: cancelMouse.pressed ? "press" : "standard" } }
       Text {
         anchors.centerIn: parent
         text: "󰅖"
-        color: "#ffffff"
+        color: view.host.theme.text
         font.family: view.host.theme.fontFamily
         font.pixelSize: Math.round(parent.width * 0.7)
       }
@@ -168,8 +183,8 @@ Item {
       component Face: Text {
         property real shift: 0
         // A long length ("23 h 59 min") shrinks to fit between the label
-        // and the buttons.
-        width: Math.min(implicitWidth, view.width - 2 * 52 - 12 - 16 - timerLabel.implicitWidth - 20)
+        // and the buttons (the cancel one isn't there in a zone).
+        width: Math.min(implicitWidth, view.width - 52 - (cancelButton.visible ? 52 + 12 : 0) - 16 - timerLabel.implicitWidth - 20)
         fontSizeMode: Text.HorizontalFit
         minimumPixelSize: 22
         anchors.right: parent.right
@@ -226,7 +241,7 @@ Item {
   }
 
   Fade {
-    on: !view.picking
+    on: !view.picking && !view.compact
     TimerControls {
       anchors.left: parent.left
       anchors.right: parent.right

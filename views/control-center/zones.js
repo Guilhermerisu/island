@@ -8,7 +8,7 @@ var fallback = [["controls", "notifications"]]
 // What the island is wide for 1, 2 and 3 columns, each column taking its
 // share of it (and the gaps between them).
 var islandWidths = [0, 540, 440, 380]
-var maxScreenShare = 0.8
+var maxScreenShare = 0.94
 
 function clampColumns(value) {
   var n = Math.round(Number(value))
@@ -101,16 +101,104 @@ function absent(model, known) {
   })
 }
 
-// The island's width for `columns` columns, kept to a share of the screen
-// (when its width is known).
-function islandWidth(columns, screenWidth, gap) {
-  var wanted = columns * islandWidths[columns] + (columns - 1) * gap
-  return Math.round(screenWidth > 0 ? Math.min(wanted, maxScreenShare * screenWidth) : wanted)
+// Width bounds and default for `columns` columns, clamped to `screenWidth`
+// (up to 94% so 3 columns can widen while keeping a margin at the edges).
+function islandWidthBounds(columns, screenWidth, padding, gap) {
+  if (padding === undefined) padding = 16
+  if (gap === undefined) gap = 8
+  columns = clampColumns(columns)
+  var screenMax = screenWidth > 0 ? Math.floor(maxScreenShare * screenWidth) : 2400
+  var defaultRaw = columns * islandWidths[columns] + (columns - 1) * gap
+  var fallback = Math.round(screenWidth > 0 ? Math.min(defaultRaw, screenMax) : defaultRaw)
+  var minRaw = columns === 1 ? 360 : columns * minColumnWidth + (columns - 1) * gap + 2 * padding
+  var maxRaw = [0, 820, 1440, 1920][columns]
+  var max = Math.min(maxRaw, screenMax)
+  var min = Math.min(minRaw, max)
+  return {
+    min: Math.round(min),
+    max: Math.round(max),
+    fallback: Math.round(Math.max(min, Math.min(fallback, max)))
+  }
+}
+
+function savedWidth(json, columns) {
+  var saved
+  try { saved = JSON.parse(json) } catch (e) { return 0 }
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return 0
+  var key = String(columns)
+  var value = Object.prototype.hasOwnProperty.call(saved, key) ? saved[key] : 0
+  return typeof value === "number" && isFinite(value) && value > 0 ? value : 0
+}
+
+function withWidth(json, columns, width) {
+  var all
+  try { all = JSON.parse(json) } catch (e) { all = null }
+  if (!all || typeof all !== "object" || Array.isArray(all)) all = {}
+  var key = String(columns)
+  if (typeof width === "number" && isFinite(width) && width > 0) all[key] = Math.round(width)
+  else delete all[key]
+  return Object.keys(all).length > 0 ? JSON.stringify(all) : ""
+}
+
+// The island's width for `columns` columns, using `customWidth` when valid
+// (clamped to the layout's bounds) or the layout's default otherwise.
+function islandWidth(columns, screenWidth, gap, customWidth, padding) {
+  var bounds = islandWidthBounds(columns, screenWidth, padding === undefined ? 16 : padding, gap === undefined ? 8 : gap)
+  if (typeof customWidth === "number" && isFinite(customWidth) && customWidth > 0)
+    return Math.round(Math.max(bounds.min, Math.min(customWidth, bounds.max)))
+  return bounds.fallback
 }
 
 // The room the columns share inside an island of that width and padding.
 function columnsSpace(columns, island, padding, gap) {
   return island - 2 * padding - (columns - 1) * gap
+}
+
+// The zones' sizes: JSON of { "<zoneId>": "xsmall" | "small" }, a zone with
+// no entry being "normal" (the default, drawn as it always was).
+var sizes = ["xsmall", "small", "normal"]
+
+function sizeOf(json, id) {
+  var saved
+  try { saved = JSON.parse(json) } catch (e) { return "normal" }
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return "normal"
+  var size = Object.prototype.hasOwnProperty.call(saved, id) ? saved[id] : "normal"
+  return sizes.indexOf(size) === -1 ? "normal" : size
+}
+
+// The JSON with `id` at `size`; "normal" drops its entry, and with none left
+// it is "". Other zones' entries are kept (invalid JSON starts over).
+function withSize(json, id, size) {
+  var all
+  try { all = JSON.parse(json) } catch (e) { all = null }
+  if (!all || typeof all !== "object" || Array.isArray(all)) all = {}
+  if (size === "xsmall" || size === "small") all[id] = size
+  else delete all[id]
+  return Object.keys(all).length > 0 ? JSON.stringify(all) : ""
+}
+
+// The island's least height (Views.qml's 260): an XS zone is sized from it.
+var minIslandHeight = 260
+
+// An XS zone's one line: a third of what the columns have at that least
+// height, once the `chrome` around them (island padding twice, header and the
+// space under it) is taken out, so three fill it: 58 for the usual 70
+// (32 + 30 + 8) and a `gap` of 8 between zones, (190 - 2 x 8) / 3. A zone
+// whose content is taller (Controls on several rows) is as tall as that.
+function xsHeight(chrome, gap) {
+  return Math.floor((minIslandHeight - chrome - 2 * gap) / 3)
+}
+
+// The add panel's height in edit mode (it is a menu you stretch to see more
+// to add). `wanted` is the saved or dragged one, 0 for the default; `room` is
+// what is left of the screen under the zones' frame: the panel is the first
+// thing to shrink when the island would be taller than that, but is never
+// under its least.
+var defaultEditPanelHeight = 320
+var minEditPanelHeight = 140
+function editPanelHeight(wanted, room) {
+  var want = wanted > 0 ? wanted : defaultEditPanelHeight
+  return Math.round(Math.max(minEditPanelHeight, Math.min(want, room)))
 }
 
 // What no column is narrower than, set with the handles between them.

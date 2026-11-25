@@ -11,6 +11,7 @@ Addon {
   views: [{ name: "timer", width: 440, padding: 20, component: timerView }]
   tiles: [{ key: "timer", title: "Timer", component: timerTile }]
   pill: Component { TimerPill { timer: timerAddon } }
+  zone: Component { TimerZone { addon: timerAddon } }
   ongoing: phase !== "idle"
   pillWidth: 240
   function pillClicked() { host.view = "timer" }
@@ -28,6 +29,9 @@ Addon {
   readonly property color tint: host.theme.system.orange
   readonly property color tintDim: Qt.rgba(1, 159 / 255, 10 / 255, 0.35)
   readonly property color tintWell: Qt.rgba(1, 159 / 255, 10 / 255, 0.22)
+
+  // What the compact zones start with, shortest first (ms).
+  readonly property var presets: [5 * 60000, 15 * 60000, 30 * 60000]
 
   // "idle", "running", or "paused"
   property string phase: "idle"

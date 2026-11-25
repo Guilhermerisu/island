@@ -8,9 +8,30 @@ import "gridLayout.js" as Grid
 // cards can be dragged to reorder them, dragged out onto the add panel below
 // to remove them, or dragged in from the panel to add them. The order is saved
 // in the island's settings. `center` is the ControlCenter.
+//
+// `zoneSize` (set by ZoneCard) is its size, edited in place in all three: Normal is
+// the grid; Small the same grid of short tiles (CcCompactTile, two to a row)
+// and thin sliders (CcThinSlider, with a › to the sources of Sound and the
+// microphone); XSmall round pips wrapped onto as many lines as the width needs
+// (CcPipRow, a ring of the level on the sliders'). None of them scrolls: the
+// grid is as tall as its cards and the page of the island scrolls. The pickers of Normal's cards are, in the compact sizes, the
+// popover of CcLevelPopover. `zoneRoom` is the height the zone was given
+// (informative, never the grid's: its height is the grid's).
+// In edit mode each size is edited where it is: every card, tile or pip is a
+// CcSlot (its −, its drag), and one order, one drop and one drag proxy serve
+// the three: `slots` says where the slots of the size are (the grid's cards,
+// the pips of CcPipRow), `viewItem` what shows them and the drop is over.
 ColumnLayout {
   id: layout
   required property var center
+  property string zoneSize: "normal"
+  property real zoneRoom: Number.POSITIVE_INFINITY
+  readonly property bool xsmall: zoneSize === "xsmall"
+  readonly property bool small: zoneSize === "small"
+  readonly property bool normal: !xsmall && !small
+  // Small's rows: a tile and a slider.
+  readonly property real compactTileHeight: 40
+  readonly property real compactSliderHeight: 32
   readonly property var controls: center.controls
   readonly property DragProxy dragProxy: center.dragProxy
   readonly property bool editMode: center.editMode
@@ -26,8 +47,15 @@ ColumnLayout {
   property bool removeDropActive: false
   property point dragPoint: Qt.point(0, 0)
   property var previewOrder: []
-  // Room around the grid in edit mode for the − badges on the cards' corners.
-  readonly property real inset: editMode ? 8 : 0
+  // Room around the grid in edit mode for the − badges on the cards' corners
+  // (a little less in the compact sizes, whose zone clips at its edges).
+  readonly property real inset: editMode ? (normal ? 8 : 6) : 0
+  // Where the slots are, in what, and what shows them (its size is the
+  // drop's): the grid's cards, or the pips of CcPipRow's lines. Both start at
+  // the origin of `viewItem`.
+  readonly property var slots: xsmall ? pipRow.positions : cardArea.positions
+  readonly property Item slotsItem: xsmall ? pipRow.content : cardArea
+  readonly property Item viewItem: xsmall ? pipRow : cardView
   // Off for the first layout each time the control center opens, so cards
   // appear and move only for changes made while it's showing.
   property bool cardsSettled: false
@@ -63,7 +91,6 @@ ColumnLayout {
   Behavior on inputsExtra { enabled: layout.cardsSettled; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
   onEditModeChanged: {
     endDrag()
-    controlLayoutScroll.contentY = 0
     if (editMode) center.addPanel.resetScroll()
   }
 
@@ -86,18 +113,30 @@ ColumnLayout {
   }
   // `grabX`/`grabY`: where in the card the pointer went down, so the proxy
   // lifts from where the card is instead of jumping to centre on the
-  // pointer. Without them (the gallery's small choices) it centres.
+  // pointer. Without them (the gallery's small choices) it centres. A card
+  // dragged in from the panel is made the size of the size's own: a pip, or a
+  // tile or slider of the compact grid.
   function beginDrag(key, fromGallery, width, height, grabX, grabY) {
     previewOrder = controls.keys.slice()
     dragFromGallery = fromGallery
     draggedKey = key
-    dragProxy.grabX = grabX === undefined ? width / 2 : grabX
-    dragProxy.grabY = grabY === undefined ? height / 2 : grabY
-    dragProxy.lift(key, fromGallery, width, height, center.controlComponent(key))
+    if (fromGallery && !normal) {
+      var wide = small && controls.canBeVertical(key)
+      width = xsmall ? pipRow.pipSize : wide ? cardArea.width - 2 * inset : (cardArea.width - 2 * inset - center.gap) / 2
+      height = xsmall ? pipRow.pipSize : wide ? compactSliderHeight : compactTileHeight
+    }
+    dragProxy.grabX = grabX === undefined ? width / 2 : Math.min(grabX, width)
+    dragProxy.grabY = grabY === undefined ? height / 2 : Math.min(grabY, height)
+    // The proxy's corners, which are the cards' unless it is a pip or short.
+    dragProxy.radius = xsmall ? width / 2 : Math.min(center.cardRadius, height / 2)
+    dragProxy.lift(key, fromGallery, width, height, proxyComponent(key))
+  }
+  function proxyComponent(key) {
+    return xsmall ? pipCard : small ? (controls.canBeVertical(key) ? thinSlider : compactTile) : center.controlComponent(key)
   }
   function moveDrag(source, x, y) {
     dragProxy.follow(source, x, y)
-    dragPoint = source.mapToItem(controlLayoutScroll, x, y)
+    dragPoint = source.mapToItem(viewItem, x, y)
     var panel = center.addPanel
     var panelPoint = source.mapToItem(panel, x, y)
     removeDropActive = !dragFromGallery && panel.visible
@@ -106,15 +145,13 @@ ColumnLayout {
     updateDropPosition()
   }
   function updateDropPosition() {
-    dropActive = !removeDropActive && dragPoint.x >= 0 && dragPoint.x <= controlLayoutScroll.width
-      && dragPoint.y >= 0 && dragPoint.y <= controlLayoutScroll.height
+    dropActive = !removeDropActive && dragPoint.x >= 0 && dragPoint.x <= viewItem.width
+      && dragPoint.y >= 0 && dragPoint.y <= viewItem.height
     if (!dropActive) return
-    var y = dragPoint.y + controlLayoutScroll.contentY
-    if (dragFromGallery) previewInsertAt(dragPoint.x, y)
-    else previewMoveAt(dragPoint.x, y)
+    if (dragFromGallery) previewInsertAt(dragPoint.x, dragPoint.y)
+    else previewMoveAt(dragPoint.x, dragPoint.y)
   }
   function previewInsertAt(x, y) {
-    var slots = cardArea.positions
     var own = slots[draggedKey]
     // Keep the insertion stable while the pointer is over its placeholder.
     if (own && x >= own.x && x <= own.x + own.width && y >= own.y && y <= own.y + own.height) return
@@ -123,9 +160,10 @@ ColumnLayout {
     for (var i = 0; i < keys.length; i++) {
       var slot = slots[keys[i]]
       if (!slot) continue
-      var wide = controls.controlWide(keys[i]) && !controls.isVertical(keys[i])
-      if (y < slot.y || (y < slot.y + slot.height && (wide
-          ? y < slot.y + slot.height / 2 : x < slot.x + slot.width / 2))) {
+      var wide = !xsmall && controls.controlWide(keys[i]) && !controls.isVertical(keys[i])
+      // The pips, like the cards, wrap: a line first, then x within it.
+      var before = y < slot.y || (y < slot.y + slot.height && (wide ? y < slot.y + slot.height / 2 : x < slot.x + slot.width / 2))
+      if (before) {
         target = keys[i]
         break
       }
@@ -146,38 +184,16 @@ ColumnLayout {
     endDrag(true)
     // The slot it lands in, read after endDrag so it's the saved order (or
     // its old place, when dropped outside the grid); none once removed.
-    var slot = key !== "" ? cardArea.positions[key] : null
+    var slot = key !== "" ? slots[key] : null
     dragProxy.release(slot ? settleTarget(slot) : null)
   }
-  // Where the proxy settles for a slot, in its layer. The grid clips while
-  // it scrolls, so a slot scrolled out of view is clamped to the visible
-  // grid's edge: the proxy eases to the edge it went under and fades there
-  // rather than settling somewhere the card itself can't be seen.
+  // Where the proxy settles for a slot, in its layer.
   function settleTarget(slot) {
-    var layer = dragProxy.parent
-    var target = cardArea.mapToItem(layer, slot.x, slot.y)
-    var view = controlLayoutScroll.mapToItem(layer, 0, 0)
-    var top = view.y
-    var bottom = view.y + controlLayoutScroll.height - slot.height
-    return { x: target.x, y: Math.max(top, Math.min(Math.max(top, bottom), target.y)), width: slot.width, height: slot.height }
-  }
-  Timer {
-    interval: 25
-    repeat: true
-    running: layout.draggedKey !== "" && layout.dropActive
-    onTriggered: {
-      var step = layout.dragPoint.y < 32 ? -8 : layout.dragPoint.y > controlLayoutScroll.height - 32 ? 8 : 0
-      var limit = Math.max(0, controlLayoutScroll.contentHeight - controlLayoutScroll.height)
-      var next = Math.max(0, Math.min(limit, controlLayoutScroll.contentY + step))
-      if (next !== controlLayoutScroll.contentY) {
-        controlLayoutScroll.contentY = next
-        layout.updateDropPosition()
-      }
-    }
+    var target = slotsItem.mapToItem(dragProxy.parent, slot.x, slot.y)
+    return { x: target.x, y: target.y, width: slot.width, height: slot.height }
   }
   function previewMoveAt(x, y) {
-    if (x < 0 || y < 0 || x > cardArea.width || y > cardArea.height) return
-    var slots = cardArea.positions
+    if (x < 0 || y < 0 || x > slotsItem.width || y > slotsItem.height) return
     for (var i = 0; i < visibleControlKeys.length; i++) {
       var key = visibleControlKeys[i]
       if (key === draggedKey) continue
@@ -198,20 +214,40 @@ ColumnLayout {
     }
   }
 
-  Flickable {
-    id: controlLayoutScroll
+  CcPipRow {
+    id: pipRow
+    visible: layout.xsmall
     Layout.fillWidth: true
-    // In edit mode it fits the grid, up to a scrolling 300.
-    Layout.preferredHeight: layout.center.editMode
-      ? Math.min(300, Math.max(cardArea.height, layout.center.tileHeight + 2 * layout.inset))
-      : cardArea.positions.height
-    contentWidth: width
-    contentHeight: cardArea.height
-    interactive: layout.center.editMode
-    clip: layout.center.editMode
-    boundsBehavior: Flickable.StopAtBounds
+    center: layout.center
+    owner: layout
+  }
+  Component {
+    id: pipCard
+    CcPip { center: parent.center; controlKey: parent.controlKey; anchors.fill: parent }
+  }
+  Component {
+    id: compactTile
+    CcCompactTile { center: layout.center; controlKey: parent.controlKey; anchors.fill: parent }
+  }
+  Component {
+    id: thinSlider
+    CcThinSlider { center: layout.center; controlKey: parent.controlKey; anchors.fill: parent }
+  }
+
+  Item {
+    id: cardView
+    visible: !layout.xsmall
+    Layout.fillWidth: true
+    // The room around the cards in edit mode (for the −, on their corners) is
+    // lent by the gaps around the grid: the zone is as tall as outside it,
+    // plus its bar.
+    Layout.topMargin: -layout.inset
+    Layout.bottomMargin: -layout.inset
+    // The grid's height, whatever the size and mode; in edit mode room for at
+    // least a card (an empty grid has room for its words).
+    Layout.preferredHeight: Math.max(cardArea.positions.height, !layout.center.editMode ? 0
+      : (layout.normal ? layout.center.tileHeight : layout.compactTileHeight) + 2 * layout.inset)
     Text {
-      parent: controlLayoutScroll
       anchors.centerIn: parent
       visible: layout.center.editMode && layout.visibleControlKeys.length === 0
       text: "Drag a control here"
@@ -222,112 +258,57 @@ ColumnLayout {
     }
     Item {
       id: cardArea
-      width: controlLayoutScroll.width
+      width: cardView.width
       height: positions.height
       readonly property var positions: Grid.place(layout.visibleControlKeys.map(function(key) {
-        var vertical = layout.controls.isVertical(key)
+        // Small keeps no picker open and no slider upright.
+        var vertical = !layout.small && layout.controls.isVertical(key)
         return {
           key: key,
-          wide: layout.controls.controlWide(key),
+          wide: layout.small ? layout.controls.canBeVertical(key) : layout.controls.controlWide(key),
           vertical: vertical,
-          extra: vertical ? 0 : key === "sound" ? layout.outputsExtra : key === "microphone" ? layout.inputsExtra : 0
+          extra: vertical || layout.small ? 0 : key === "sound" ? layout.outputsExtra : key === "microphone" ? layout.inputsExtra : 0
         }
-      }), { width: width, inset: layout.inset, gap: layout.center.gap, tileHeight: layout.center.tileHeight, sectionHeight: layout.center.sectionHeight })
+      }), {
+        width: width, inset: layout.inset, gap: layout.center.gap,
+        tileHeight: layout.small ? layout.compactTileHeight : layout.center.tileHeight,
+        sectionHeight: layout.small ? layout.compactSliderHeight : layout.center.sectionHeight
+      })
       Repeater {
-        model: layout.controls.known
-        delegate: Item {
+        // The pips, in XSmall, are CcPipRow's.
+        model: layout.xsmall ? [] : layout.controls.known
+        delegate: CcSlot {
           id: controlCard
           required property string modelData
-          readonly property var slot: cardArea.positions[modelData] || null
-          readonly property bool shown: !!slot
-          // Where it last was, so a card leaving the grid fades out in place.
-          property var lastSlot: null
-          onSlotChanged: if (slot) lastSlot = slot
-          Component.onCompleted: lastSlot = slot
-          x: lastSlot ? lastSlot.x : 0
-          y: lastSlot ? lastSlot.y : 0
-          width: lastSlot ? lastSlot.width : 0
-          height: lastSlot ? lastSlot.height : 0
-          readonly property bool dragged: layout.draggedKey === modelData
-          readonly property real cornerRadius: layout.center.cardRadius
+          center: layout.center
+          place: cardArea.positions[modelData] || null
           // Added and removed cards scale in and out while the others slide.
-          opacity: shown ? 1 : 0
-          scale: shown ? 1 : 0.9
-          visible: opacity > 0.01
-          Behavior on opacity {
-            enabled: layout.cardsSettled
-            MotionAnimation { theme: layout.center.host.theme; pace: controlCard.shown ? "fade" : "exit"; curve: controlCard.shown ? "fade" : "exit" }
-          }
-          Behavior on scale {
-            enabled: layout.cardsSettled
-            MotionAnimation { theme: layout.center.host.theme; pace: controlCard.shown ? "standard" : "exit"; curve: controlCard.shown ? "settle" : "exit" }
-          }
-          // A card that was hidden appears in its new place rather than
-          // sliding there from where it was last shown.
-          Behavior on x { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-          Behavior on y { enabled: layout.center.editMode && layout.cardsSettled && controlCard.visible; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-          Behavior on width { enabled: layout.flipping; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-          Behavior on height { enabled: layout.flipping; MotionAnimation { theme: layout.center.host.theme; pace: "standard" } }
-
-          // While it's dragged, an empty slot holds its place.
-          Rectangle {
-            anchors.fill: parent
-            radius: controlCard.cornerRadius
-            color: layout.center.host.theme.fill("quiet")
-            border.width: 1.5
-            border.color: layout.center.host.theme.fill("strong")
-            opacity: controlCard.dragged ? 1 : 0
-            visible: opacity > 0
-            Behavior on opacity { MotionAnimation { theme: layout.center.host.theme; pace: "fade"; curve: "fade" } }
-          }
+          animated: layout.cardsSettled
+          sliding: layout.center.editMode && layout.cardsSettled
+          resizing: layout.flipping
+          editing: layout.center.editMode
+          dragged: layout.draggedKey === modelData
+          onDragBegan: function(grabX, grabY) { layout.beginDrag(modelData, false, width, height, grabX, grabY) }
+          onDragMoved: function(source, x, y) { layout.moveDrag(source, x, y) }
+          onDragEnded: function(source, x, y) { layout.moveDrag(source, x, y); layout.finishDrag() }
+          onDragCanceled: layout.endDrag()
+          onRemoved: { layout.controls.setShown(modelData, false); layout.endDrag() }
           Loader {
             anchors.fill: parent
-            opacity: controlCard.dragged ? 0 : 1
-            Behavior on opacity { MotionAnimation { theme: layout.center.host.theme; pace: "fade"; curve: "fade" } }
             property var center: layout.center
             property string controlKey: controlCard.modelData
             property bool galleryPreview: false
-            sourceComponent: layout.center.controlComponent(controlCard.modelData)
-          }
-          MouseArea {
-            id: editDragMouse
-            anchors.fill: parent
-            visible: layout.center.editMode
-            enabled: layout.center.editMode && controlCard.shown
-            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-            preventStealing: true
-            property real pressX: 0
-            property real pressY: 0
-            onPressed: function(mouse) { pressX = mouse.x; pressY = mouse.y }
-            onPositionChanged: function(mouse) {
-              if (!pressed) return
-              if (layout.draggedKey === "" && Math.pow(mouse.x - pressX, 2) + Math.pow(mouse.y - pressY, 2) < 36) return
-              if (layout.draggedKey === "") layout.beginDrag(controlCard.modelData, false, controlCard.width, controlCard.height, pressX, pressY)
-              layout.moveDrag(editDragMouse, mouse.x, mouse.y)
-            }
-            onReleased: function(mouse) {
-              if (layout.draggedKey !== "") {
-                layout.moveDrag(editDragMouse, mouse.x, mouse.y)
-                layout.finishDrag()
-              }
-            }
-            onCanceled: layout.endDrag()
-          }
-          CcEditBadge {
-            center: layout.center
-            shown: layout.center.editMode && !controlCard.dragged && controlCard.shown
-            cornerRadius: controlCard.cornerRadius
-            tip: "Remove"
-            onClicked: { layout.controls.setShown(controlCard.modelData, false); layout.endDrag() }
+            sourceComponent: !layout.small ? layout.center.controlComponent(controlCard.modelData)
+              : layout.controls.canBeVertical(controlCard.modelData) ? thinSlider : compactTile
           }
           // Slider cards flip between horizontal and upright; the glyph and
           // tip name what a click turns it into.
-          CcEditBadge {
+          overlay: CcEditBadge {
             readonly property bool vertical: layout.controls.isVertical(controlCard.modelData)
             center: layout.center
             corner: "right"
             glyph: vertical ? "↔" : "↕"
-            shown: layout.center.editMode && !controlCard.dragged && controlCard.shown && layout.controls.canBeVertical(controlCard.modelData)
+            shown: layout.center.editMode && !controlCard.dragged && controlCard.shown && layout.normal && layout.controls.canBeVertical(controlCard.modelData)
             cornerRadius: controlCard.cornerRadius
             tip: vertical ? "Horizontal Slider" : "Vertical Slider"
             onClicked: {
@@ -345,7 +326,7 @@ ColumnLayout {
   Rectangle {
     visible: !layout.center.editMode && layout.visibleControlKeys.length === 0
     Layout.fillWidth: true
-    Layout.preferredHeight: layout.center.tileHeight
+    Layout.preferredHeight: layout.xsmall ? layout.center.zoneXsHeight : layout.center.tileHeight
     radius: layout.center.cardRadius
     color: layout.center.card
     border.width: 1

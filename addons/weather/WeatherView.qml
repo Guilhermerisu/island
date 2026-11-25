@@ -13,6 +13,10 @@ Item {
   // In a control center zone: it doesn't take the keyboard, which stays with
   // the control center (Esc closes that).
   property bool inZone: false
+  // The zone's size ("xsmall", "small", "normal"): the first two draw
+  // WeatherGlance, not the view below.
+  property string zoneSize: "normal"
+  readonly property bool glanced: zoneSize !== "normal"
   readonly property var host: weather.host
   readonly property var theme: host.theme
   readonly property var now: weather.current
@@ -27,7 +31,7 @@ Item {
   readonly property int opticalBottom: 2
   // Extra room above and below, on top of the even margins.
   readonly property int roomY: 5
-  implicitHeight: showing ? reading.implicitHeight - opticalTop - opticalBottom + 2 * roomY : notice.implicitHeight
+  implicitHeight: glanced ? glance.implicitHeight : showing ? reading.implicitHeight - opticalTop - opticalBottom + 2 * roomY : notice.implicitHeight
 
   onActiveChanged: {
     if (!active) return
@@ -46,16 +50,15 @@ Item {
   // A chance of rain under this (%) isn't shown.
   readonly property int rainShown: 20
 
-  // White text, Apple style, whatever the theme's text colour.
-  readonly property color ink: "#ffffff"
-  readonly property color inkMuted: Qt.rgba(1, 1, 1, 0.6)
+  readonly property color ink: theme.text
+  readonly property color inkMuted: theme.secondary
 
   // The condition's icon close beside the place and condition, and the
   // temperature on their baseline; then now and the next hours, each with
   // its temperature and, when rain is likely, its chance in blue.
   Column {
     id: reading
-    visible: view.showing
+    visible: view.showing && !view.glanced
     y: view.roomY - view.opticalTop
     anchors.left: parent.left
     anchors.right: parent.right
@@ -164,7 +167,7 @@ Item {
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               text: modelData.rain + "%"
-              color: "#5ac8fa"
+              color: view.theme.system.cyan
               font.family: view.theme.textFontFamily
               font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.footnote)
               font.features: { "tnum": 1 }
@@ -193,10 +196,25 @@ Item {
     }
   }
 
+  // Why there's nothing to show.
+  readonly property string statusText: weather.status === "loading" ? "Loading weather…"
+    : weather.status === "missing" ? "Set a city, or turn on Detect my location, in Settings → Addons"
+    : weather.status === "unknown" ? "Couldn't find “" + weather.city + "”"
+    : !weather.located && weather.detecting ? "Couldn't detect your location"
+    : "Couldn't reach Open-Meteo"
+
+  WeatherGlance {
+    id: glance
+    visible: view.glanced
+    view: view
+    anchors.left: parent.left
+    anchors.right: parent.right
+  }
+
   // Loading, or why there's nothing to show.
   ColumnLayout {
     id: notice
-    visible: !view.showing
+    visible: !view.showing && !view.glanced
     anchors.left: parent.left
     anchors.right: parent.right
     spacing: 12
@@ -207,11 +225,7 @@ Item {
       Layout.fillWidth: true
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
-      text: notice.status === "loading" ? "Loading weather…"
-        : notice.status === "missing" ? "Set a city, or turn on Detect my location, in Settings → Addons"
-        : notice.status === "unknown" ? "Couldn't find “" + view.weather.city + "”"
-        : !view.weather.located && view.weather.detecting ? "Couldn't detect your location"
-        : "Couldn't reach Open-Meteo"
+      text: view.statusText
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily
       font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)

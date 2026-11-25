@@ -15,6 +15,9 @@ Item {
   readonly property var zones: center.zones
   Layout.fillWidth: true
   // Not a layout itself, so the stand-in can be placed freely over the columns.
+  // As tall as the tallest column, each zone being as tall as it is (in edit
+  // mode too, with its title bar of `barHeight` added on top).
+  readonly property real barHeight: 28
   implicitHeight: row.implicitHeight
   visible: implicitHeight > 0
   // Over the add panel, where a zone dragged in from it starts.
@@ -118,6 +121,7 @@ Item {
   RowLayout {
     id: row
     width: parent.width
+    height: board.height
     spacing: board.center.gap
     Repeater {
       model: board.zones.columns

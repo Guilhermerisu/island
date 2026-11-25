@@ -196,6 +196,10 @@ Addon {
             feelsLike: now.apparent_temperature,
             code: now.weather_code,
             day: !!now.is_day,
+            // Today's range, for the zone's smaller sizes. The same request,
+            // one more field.
+            high: reply.daily ? reply.daily.temperature_2m_max[0] : null,
+            low: reply.daily ? reply.daily.temperature_2m_min[0] : null,
             fahrenheit: weatherAddon.fahrenheit
           }
           weatherAddon.fetchedAt = Date.now()
@@ -213,6 +217,7 @@ Addon {
       "-d", "latitude=" + latitude, "-d", "longitude=" + longitude,
       "-d", "current=temperature_2m,apparent_temperature,weather_code,is_day",
       "-d", "hourly=temperature_2m,weather_code,precipitation_probability,is_day",
+      "-d", "daily=temperature_2m_max,temperature_2m_min", "-d", "forecast_days=1",
       "-d", "forecast_hours=" + (hourCount + 2), "-d", "timezone=auto",
       "-d", "temperature_unit=" + (fahrenheit ? "fahrenheit" : "celsius")]
     forecast.running = true

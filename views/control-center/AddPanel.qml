@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import "../../components"
 
 // What can be added to the control center, in edit mode, across its whole
-// width under the columns: the controls that aren't in the grid, the plugins
+// width under the columns (and the bar's handle): the controls that aren't in the grid, the plugins
 // (each for the grid, the Plugins zone, or both), and the zones that aren't on
 // show. Each section has its own file (ControlGallery,
 // PluginGallery, ZoneGallery); the list scrolls. A control dragged out of the
@@ -31,7 +31,8 @@ Rectangle {
   opacity: visible ? 1 : 0
   Behavior on opacity { enabled: panel.center.settled; MotionAnimation { theme: panel.center.host.theme; pace: "fade"; curve: "fade" } }
   Layout.fillWidth: true
-  Layout.preferredHeight: content.implicitHeight + 26
+  // Its own height (see ControlCenter.editPanelHeight): the list scrolls in it.
+  Layout.preferredHeight: center.editPanelHeight
   radius: center.cardRadius
   color: center.host.theme.solid("quiet")
   border.width: 1
@@ -70,7 +71,8 @@ Rectangle {
       id: scroll
       OverlayScrollbar { flickable: scroll; parent: scroll; theme: panel.center.host.theme }
       Layout.fillWidth: true
-      Layout.preferredHeight: 260
+      Layout.fillHeight: true
+      Layout.minimumHeight: 0
       contentWidth: width
       contentHeight: sections.implicitHeight
       clip: true

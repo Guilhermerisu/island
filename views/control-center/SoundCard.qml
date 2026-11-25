@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Services.Pipewire
 import "../../components"
 
 // The Sound card: the volume slider, and the output picker behind its ›
@@ -36,27 +35,9 @@ CcSection {
       if (card.controls.sink.audio.muted && v > 0) card.controls.sink.audio.muted = false
     }
   }
-  // Output picker, revealed by the › button. The rows are kept by sink name
-  // while it's closed too, so a stream coming or going doesn't rebuild them
-  // and opening the picker doesn't animate every row in. A ListView rather
-  // than a Repeater, so an output that goes away fades out in place while
-  // the rest slide up (the card's height follows, in ControlLayout).
+  // Output picker, revealed by the › button (the list is CcDeviceList, which
+  // the compact sizes' popover shows too).
   readonly property bool outputsShown: !galleryPreview && !card.vertical && card.center.outputsOpen && !card.center.editMode
-  KeyedListModel {
-    id: outputRows
-    // The label rides along, so a row still reads right while it fades out
-    // after its node is gone.
-    values: card.galleryPreview ? [] : card.controls.outputs.map(function(n) {
-      return { name: String(n.name || n.id), label: String(n.description || n.nickname || n.name || "") }
-    })
-    keyOf: function(r) { return r.name }
-  }
-  // The live node for a row: the model holds plain values only.
-  function outputFor(name) {
-    var outputs = card.controls.outputs
-    for (var i = 0; i < outputs.length; i++) if (String(outputs[i].name || outputs[i].id) === name) return outputs[i]
-    return null
-  }
   // Live output level, as the Microphone card's. Only listens to the sink
   // while the picker is open.
   PeakBar {
@@ -65,46 +46,10 @@ CcSection {
     shown: card.outputsShown
     muted: card.controls.muted
   }
-  ListView {
-    id: outputList
-    Layout.fillWidth: true
-    Layout.preferredHeight: contentHeight
-    interactive: false
-    spacing: 6
-    // Fades with the picker opening and closing, while the card's height
-    // eases; out on the shorter exit pace.
-    opacity: card.outputsShown ? 1 : 0
-    visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: card.center.host.theme; pace: card.outputsShown ? "fade" : "exit"; curve: card.outputsShown ? "fade" : "exit" } }
-    model: outputRows.model
-    // An output plugged in while the picker is open fades in; one unplugged
-    // fades out where it was. The first fill just appears.
-    add: Transition {
-      enabled: outputRows.primed && card.outputsShown
-      MotionAnimation { theme: card.center.host.theme; property: "opacity"; from: 0; to: 1; pace: "fade"; curve: "fade" }
-    }
-    remove: Transition {
-      enabled: card.outputsShown
-      MotionAnimation { theme: card.center.host.theme; property: "opacity"; to: 0; pace: "exit"; curve: "exit" }
-    }
-    // Also settles opacity, in case a row was still fading in.
-    displaced: Transition {
-      MotionAnimation { theme: card.center.host.theme; property: "y"; pace: "standard" }
-      MotionAnimation { theme: card.center.host.theme; property: "opacity"; to: 1; pace: "fade"; curve: "fade" }
-    }
-    delegate: CcDeviceRow {
-      id: output
-      required property var entry
-      readonly property var modelData: card.outputFor(entry.name)
-      width: ListView.view.width
-      height: 32
-      enabled: !!modelData
-      center: card.center
-      device: modelData || ({ description: entry.label })
-      selected: !!modelData && modelData === card.controls.sink
-      icon: "󰓃"
-      onPicked: if (modelData) Pipewire.preferredDefaultAudioSink = modelData
-    }
+  CcDeviceList {
+    center: card.center
+    shown: card.outputsShown
+    preview: card.galleryPreview
   }
   Text {
     visible: !galleryPreview && !card.controls.controlPresent("sound")
