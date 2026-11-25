@@ -22,8 +22,7 @@ ColumnLayout {
   readonly property bool xs: history.zoneSize === "xsmall"
   readonly property bool empty: history.center.host.notifications.history.length === 0
   Layout.fillWidth: true
-  Layout.topMargin: 4
-  spacing: 6
+  spacing: 8
   // Off for the first layout each time the control center opens (as the
   // grid's cardsSettled), so only changes made while it's showing animate.
   property bool settled: false
@@ -90,11 +89,12 @@ ColumnLayout {
   RowLayout {
     visible: history.normal || (!history.xs && !history.empty)
     Layout.fillWidth: true
-    Layout.leftMargin: 8
+    // In line with the text inside the tiles and banners.
+    Layout.leftMargin: 14
     Layout.rightMargin: 2
     Text {
       text: "Notifications"
-      color: history.center.text
+      color: history.center.textMuted
       font.family: history.center.host.theme.textFontFamily
       font.pixelSize: history.center.host.theme.size.body
       font.weight: Font.DemiBold
@@ -104,13 +104,14 @@ ColumnLayout {
     // macOS's round ×, widening into "Clear All" while hovered.
     Rectangle {
       scale: clearMouse.pressed ? 0.94 : 1
-      Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: clearMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion.targetValue, clearMouse.pressed ? "press" : "standard") } }
       // Goes with the banners it clears.
       opacity: history.empty ? 0 : 1
       visible: opacity > 0.01
       Behavior on opacity {
+        id: opacityMotion
         enabled: history.settled
-        MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+        MotionAnimation { theme: history.center.host.theme; pace: towards(opacityMotion.targetValue, history.empty ? "exit" : "fade"); curve: towards(opacityMotion.targetValue, history.empty ? "exit" : "fade") }
       }
       implicitWidth: clearMouse.containsMouse ? clearLabel.implicitWidth + 20 : 22
       implicitHeight: 22
@@ -187,8 +188,9 @@ ColumnLayout {
     opacity: history.empty ? 0 : 1
     visible: history.normal && opacity > 0.01
     Behavior on opacity {
+      id: opacityMotion2
       enabled: history.settled
-      MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+      MotionAnimation { theme: history.center.host.theme; pace: towards(opacityMotion2.targetValue, history.empty ? "exit" : "fade"); curve: towards(opacityMotion2.targetValue, history.empty ? "exit" : "fade") }
     }
     Layout.fillWidth: true
     // Out by the × button's overhang, so the banners line up with the cards.
@@ -201,7 +203,8 @@ ColumnLayout {
     Behavior on frameHeight { enabled: history.settled; MotionAnimation { theme: history.center.host.theme; pace: "standard" } }
     Layout.preferredHeight: frameHeight
     clip: true
-    spacing: 4
+    // The × overhang above each banner is the 6 between banners.
+    spacing: 0
     // Not a scroller: a ListView only for its add/remove/displaced transitions.
     interactive: false
     // Builds every banner (the service bounds the history), so contentHeight
@@ -262,11 +265,12 @@ ColumnLayout {
       Rectangle {
         id: banner
         scale: noteMouse.pressed ? 0.98 : 1
-        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: noteMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion2; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion2.targetValue, noteMouse.pressed ? "press" : "standard") } }
         x: 6 + note.inset
         y: 6
         width: parent.width - 6 - note.inset
-        height: Math.max(noteBody.implicitHeight, 36) + 24
+        // 11 above and below, 14 at the sides: one row height for all.
+        height: Math.max(noteBody.implicitHeight, avatar.height) + 22
         radius: history.center.host.theme.radii.card
         color: note.hovered ? history.center.tile : history.center.card
         border.width: 1
@@ -291,19 +295,19 @@ ColumnLayout {
           center: history.center
           row: note.modelData
           anchors.left: parent.left
-          anchors.leftMargin: 12
+          anchors.leftMargin: 14
           anchors.top: parent.top
-          anchors.topMargin: 12
+          anchors.topMargin: 11
         }
         Column {
           id: noteBody
           anchors.left: avatar.right
-          anchors.leftMargin: 10
+          anchors.leftMargin: 12
           anchors.right: parent.right
           anchors.rightMargin: 14
           anchors.top: parent.top
-          anchors.topMargin: 12
-          spacing: 1
+          anchors.topMargin: 11
+          spacing: 2
           // Like macOS's Notification Center: the title with the time on
           // the same line (the icon already says which app).
           Item {
@@ -316,6 +320,7 @@ ColumnLayout {
               anchors.rightMargin: 8
               text: history.center.host.notifications.title(note.modelData)
               textFormat: Text.PlainText
+              // One line unless Settings asks for the whole title.
               wrapMode: history.center.host.settings.notificationFullText ? Text.Wrap : Text.NoWrap
               elide: Text.ElideRight
               color: history.center.text
@@ -330,26 +335,27 @@ ColumnLayout {
               anchors.baseline: noteTitle.baseline
               text: history.center.host.notifications.age(note.modelData.timestamp, history.now)
               textFormat: Text.PlainText
-              color: history.center.textMuted
+              color: history.center.host.theme.tertiary
               font.family: history.center.host.theme.textFontFamily
-              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.subheadline)
-              font.pixelSize: history.center.host.theme.size.subheadline
+              font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(11))
+              font.pixelSize: history.center.host.theme.px(11)
+              font.features: { "tnum": 1 }
             }
           }
           Text {
             width: parent.width
+            // Kept when empty, so a row without a message is as tall.
             text: String(note.modelData.body || "")
-            visible: text !== ""
             textFormat: Text.PlainText
             wrapMode: Text.Wrap
-            // Four lines unless Settings asks for the whole message.
-            maximumLineCount: history.center.host.settings.notificationFullText ? 100000 : 4
+            // One line unless Settings asks for the whole message.
+            maximumLineCount: history.center.host.settings.notificationFullText ? 100000 : 1
             elide: Text.ElideRight
             lineHeight: 1.08
-            color: history.center.host.theme.withAlpha(history.center.text, 0.78)
+            color: history.center.textMuted
             font.family: history.center.host.theme.textFontFamily
-            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.size.callout)
-            font.pixelSize: history.center.host.theme.size.callout
+            font.letterSpacing: history.center.host.theme.tracking(history.center.host.theme.textFontFamily, history.center.host.theme.px(12))
+            font.pixelSize: history.center.host.theme.px(12)
           }
           // The buttons of a notification still on screen.
           Row {
@@ -417,7 +423,7 @@ ColumnLayout {
       Rectangle {
         x: note.inset
         scale: closeMouse.pressed ? 0.9 : 1
-        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: closeMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion3; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion3.targetValue, closeMouse.pressed ? "press" : "standard") } }
         width: 20; height: 20; radius: 10
         opacity: note.hovered ? 1 : 0
         visible: opacity > 0

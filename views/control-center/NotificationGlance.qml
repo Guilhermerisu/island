@@ -30,7 +30,7 @@ Item {
     property bool imageFailed: false
     readonly property string source: center.host.notifications.iconSource(row, imageFailed)
     readonly property var brand: center.host.notifications.brand(row)
-    width: 36; height: 36; radius: center.host.theme.radii.large
+    width: 32; height: 32; radius: 8
     readonly property bool generic: !brand && icon.status !== Image.Ready
     color: brand ? brand.tile : "transparent"
     // Same tile as the banner (NotificationPill), so a notification looks the
@@ -60,7 +60,7 @@ Item {
       text: avatar.brand ? avatar.brand.glyph : "󰂚"
       color: avatar.brand ? avatar.brand.ink : avatar.center.host.theme.accentText
       font.family: "JetBrainsMono Nerd Font"
-      font.pixelSize: avatar.center.host.theme.px(20)
+      font.pixelSize: avatar.center.host.theme.px(18)
     }
   }
 
@@ -225,7 +225,7 @@ Item {
     border.width: 1
     border.color: glance.center.edge
     scale: lineMouse.pressed ? 0.98 : 1
-    Behavior on scale { MotionAnimation { theme: glance.theme; pace: lineMouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion1; MotionAnimation { theme: glance.theme; pace: towards(scaleMotion1.targetValue, lineMouse.pressed ? "press" : "standard") } }
     Behavior on color { MotionColorAnimation { theme: glance.theme } }
     HoverHandler { id: lineHover }
 
@@ -318,7 +318,7 @@ Item {
           border.width: 1
           border.color: glance.center.edge
           scale: cardMouse.pressed ? 0.98 : 1
-          Behavior on scale { MotionAnimation { theme: glance.theme; pace: cardMouse.pressed ? "press" : "standard" } }
+          Behavior on scale { id: scaleMotion2; MotionAnimation { theme: glance.theme; pace: towards(scaleMotion2.targetValue, cardMouse.pressed ? "press" : "standard") } }
           Behavior on color { MotionColorAnimation { theme: glance.theme } }
 
           // Click: as on the full list's banner. Right click: its menu.
@@ -430,7 +430,7 @@ Item {
             anchors.top: parent.top
             anchors.topMargin: 6
             scale: closeMouse.pressed ? 0.9 : 1
-            Behavior on scale { MotionAnimation { theme: glance.theme; pace: closeMouse.pressed ? "press" : "standard" } }
+            Behavior on scale { id: scaleMotion3; MotionAnimation { theme: glance.theme; pace: towards(scaleMotion3.targetValue, closeMouse.pressed ? "press" : "standard") } }
             width: 20; height: 20; radius: 10
             opacity: banner.hovered ? 1 : 0
             Behavior on opacity { MotionAnimation { theme: glance.theme; pace: "fade"; curve: "fade" } }

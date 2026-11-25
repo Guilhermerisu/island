@@ -88,7 +88,7 @@ Item {
               Item {
                 anchors.fill: parent
                 scale: press.pressed ? 0.97 : 1
-                Behavior on scale { MotionAnimation { theme: cards.view.host.theme; pace: press.pressed ? "press" : "standard" } }
+                Behavior on scale { id: scaleMotion; MotionAnimation { theme: cards.view.host.theme; pace: towards(scaleMotion.targetValue, press.pressed ? "press" : "standard") } }
                 DisplayScreen {
                   id: desk
                   readonly property real zoom: cards.narrowest / card.modelData.width

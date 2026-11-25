@@ -10,6 +10,7 @@ Item {
   required property var timer
   property real buttonSize: 52
   property real timeSize: 46
+  property real labelSize: 18
   readonly property var theme: timer.host.theme
   readonly property string phase: timer.phase
 
@@ -24,7 +25,7 @@ Item {
     height: width
     radius: width / 2
     scale: mouse.pressed ? 0.92 : 1
-    Behavior on scale { MotionAnimation { theme: controls.theme; pace: mouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion; MotionAnimation { theme: controls.theme; pace: towards(scaleMotion.targetValue, mouse.pressed ? "press" : "standard") } }
     Text {
       anchors.centerIn: parent
       text: button.glyph
@@ -65,8 +66,8 @@ Item {
     text: controls.phase === "paused" ? "Paused" : "Timer"
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
-    font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, Math.round(controls.theme.px(controls.timeSize) * 0.4))
-    font.pixelSize: Math.round(controls.theme.px(controls.timeSize) * 0.4)
+    font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, controls.theme.px(controls.labelSize))
+    font.pixelSize: controls.theme.px(controls.labelSize)
     font.weight: Font.Medium
   }
   RollingText {

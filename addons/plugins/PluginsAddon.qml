@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import ".."
+import "../../components/KeyNames.js" as KeyNames
 
 // Plugins added with `omarchy plugin add`, as an island view (see PluginList),
 // as a control center zone of tiles for the plugins the user pinned
@@ -61,7 +62,6 @@ Addon {
   readonly property var pinnedIds: String(host.settings.pluginsZonePinned || "").split(",")
     .filter(function(id) { return id !== "" })
   readonly property var pinned: pinnedIds.map(entryFor).filter(function(entry) { return !!entry })
-  readonly property var unpinned: all.filter(function(entry) { return pinnedIds.indexOf(entry.id) === -1 })
   function savePinned(ids) {
     host.settings.pluginsZonePinned = ids.join(",")
   }
@@ -148,13 +148,7 @@ Addon {
       }
     }
   }
-  readonly property var keyNames: ({ SUPER: "Super", SHIFT: "Shift", CTRL: "Ctrl", ALT: "Alt", ESCAPE: "Esc", RETURN: "Enter" })
-  function keyText(keys) {
-    if (!keys) return "None"
-    return keys.split(" + ").map(function(part) {
-      return keyNames[part] || (part.length <= 3 ? part : part.charAt(0) + part.slice(1).toLowerCase())
-    }).join(" + ")
-  }
+  function keyText(keys) { return KeyNames.shortcut(keys) }
 
   Process {
     id: toggleProc

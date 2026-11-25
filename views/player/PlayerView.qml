@@ -262,7 +262,7 @@ Item {
         Behavior on opacity { MotionAnimation { theme: player.host.theme; pace: "quick"; curve: "fade" } }
         font.family: player.host.theme.fontFamily
         scale: controlMouse.pressed ? 0.94 : 1
-        Behavior on scale { MotionAnimation { theme: player.host.theme; pace: controlMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: player.host.theme; pace: towards(scaleMotion.targetValue, controlMouse.pressed ? "press" : "standard") } }
         MouseArea {
           id: controlMouse
           anchors.fill: parent

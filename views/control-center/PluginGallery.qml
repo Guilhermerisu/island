@@ -128,7 +128,7 @@ ColumnLayout {
         Layout.preferredWidth: gallery.panel.cardWidth
         Layout.preferredHeight: gallery.cc.tileHeight + 8
         scale: dragMouse.pressed ? 0.98 : 1
-        Behavior on scale { MotionAnimation { theme: gallery.cc.host.theme; pace: dragMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: gallery.cc.host.theme; pace: towards(scaleMotion.targetValue, dragMouse.pressed ? "press" : "standard") } }
         CcTile {
           anchors.fill: parent
           anchors.margins: 4

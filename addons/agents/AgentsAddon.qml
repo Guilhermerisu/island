@@ -48,7 +48,7 @@ Addon {
     title: "Agents", icon: provider.glyph, color: provider.color, header: false,
     iconLayers: [{ glyph: provider.glyph, color: "#ffffff", x: 0.5, y: 0.5, size: provider.glyphSize }],
     source: Qt.resolvedUrl("AgentsPage.qml"), properties: { agents: agentsAddon },
-    about: "Usage limits and tokens by day for your coding agent.",
+    about: "Your coding agents' limits and daily tokens.",
     search: "agents ai claude code codex gemini antigravity agy usage limits rate session 5-hour five hour weekly week tokens day plan subscription"
   }]
 

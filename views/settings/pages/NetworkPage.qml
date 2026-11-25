@@ -13,12 +13,14 @@ import "../../../services"
 ColumnLayout {
   id: page
   required property var view
-  visible: view.currentPage === "Network"
+  readonly property string settingsPageName: "Network"
+  visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   readonly property bool shown: view.active && view.currentPage === "Network"
-  NetworkConnections { id: client; active: page.shown }
+  // Out of the layout, so it doesn't add a gap over the first group.
+  NetworkConnections { id: client; active: page.shown; visible: false }
 
   readonly property bool detailOpen: client.detailUuid !== ""
   readonly property var item: client.entry(client.detailUuid)
@@ -163,8 +165,8 @@ ColumnLayout {
     id: fill
     property bool first: false
     property bool last: false
-    // The card's radius less its 1 px border.
-    readonly property real corner: page.view.host.theme.radii.card - 1
+    // The card's radius.
+    readonly property real corner: page.view.groupRadius
     anchors.fill: parent
     anchors.leftMargin: 1
     anchors.rightMargin: 1
@@ -200,14 +202,12 @@ ColumnLayout {
     visible: client.error !== ""
     Layout.fillWidth: true
     implicitHeight: errorText.implicitHeight + 24
-    radius: page.view.host.theme.radii.card
+    radius: page.view.groupRadius
     color: page.view.card
-    border.width: 1
-    border.color: page.view.edge
     Text {
       id: errorIcon
       anchors.left: parent.left
-      anchors.leftMargin: 14
+      anchors.leftMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       text: "󰀪"
       color: page.view.host.theme.system.yellow
@@ -244,20 +244,23 @@ ColumnLayout {
   ColumnLayout {
     visible: !page.detailOpen
     Layout.fillWidth: true
-    spacing: 20
+    spacing: page.view.groupSpacing
 
     SettingsGroup {
       view: page.view
-      title: "This Computer"
+      title: "This computer"
       SettingsRow {
         view: page.view
+        icon: "󰌢"
+        iconTint: page.view.host.theme.system.gray
         label: "Hostname"
-        detail: "The name this computer has on the network"
+        detail: "This computer's name on the network"
         last: true
         SettingsTextField {
           view: page.view
+          inline: true
           value: client.hostname
-          placeholder: "hostname"
+          placeholder: "arch"
           onCommitted: function(v) { if (v !== "") client.setHostname(v) }
         }
       }
@@ -271,7 +274,8 @@ ColumnLayout {
         readonly property var members: client.connections.filter(function(c) { return c.kind === modelData })
         view: page.view
         title: modelData
-        count: String(members.length)
+        // How many, only once there's more than one.
+        count: members.length > 1 ? String(members.length) : ""
         Repeater {
           model: kindGroup.members
           delegate: Item {
@@ -282,17 +286,9 @@ ColumnLayout {
             implicitHeight: row.implicitHeight
             readonly property bool first: connectionRow.index === 0
             readonly property bool final: connectionRow.index === kindGroup.members.length - 1
-            // The connected one stands out in green, the one under the pointer lightly.
+            // The one under the pointer, lightly.
             RowFill {
-              visible: connectionRow.modelData.active
-              first: connectionRow.first
-              last: connectionRow.final
-              color: page.view.host.theme.withAlpha(page.green, 0.16)
-              border.width: 1
-              border.color: page.view.host.theme.withAlpha(page.green, 0.4)
-            }
-            RowFill {
-              visible: !connectionRow.modelData.active && rowMouse.containsMouse
+              visible: rowMouse.containsMouse
               first: connectionRow.first
               last: connectionRow.final
               color: page.view.host.theme.fill("quiet")
@@ -306,9 +302,14 @@ ColumnLayout {
               iconTint: connectionRow.modelData.active ? page.green : page.kindTints[connectionRow.modelData.kind] || page.view.accent
               label: connectionRow.modelData.name
               detail: client.connecting === connectionRow.modelData.uuid ? "Connecting…" : connectionRow.modelData.active ? "Connected · " + connectionRow.modelData.device : "Not connected"
-              // The green row has its own edge.
-              last: connectionRow.final || connectionRow.modelData.active
-              ValueText { text: "󰅂"; font.family: page.view.host.theme.fontFamily }
+              detailDot: connectionRow.modelData.active && client.connecting !== connectionRow.modelData.uuid ? page.green : "transparent"
+              last: connectionRow.final
+              Text {
+                text: "󰅂"
+                color: page.view.textTertiary
+                font.family: page.view.host.theme.fontFamily
+                font.pixelSize: 13
+              }
             }
             MouseArea {
               id: rowMouse
@@ -327,16 +328,20 @@ ColumnLayout {
       title: "Add"
       SettingsRow {
         view: page.view
-        label: "Wi-Fi Network"
-        detail: "Join a hidden network, or one that isn't in range"
-        SettingsButton { view: page.view; label: page.adding === "wifi" ? "Cancel" : "Add…"; onClicked: page.adding = page.adding === "wifi" ? "" : "wifi" }
+        icon: "󰖩"
+        iconTint: page.view.host.theme.system.blue
+        label: "Wi-Fi network"
+        detail: "Join a hidden network, or one that's out of range"
+        SettingsButton { view: page.view; small: true; label: page.adding === "wifi" ? "Cancel" : "Add…"; onClicked: page.adding = page.adding === "wifi" ? "" : "wifi" }
       }
       SettingsRow {
         view: page.view
+        icon: "󰌾"
+        iconTint: page.view.host.theme.system.indigo
         label: "VPN"
         detail: "Import a WireGuard or OpenVPN configuration file"
         last: true
-        SettingsButton { view: page.view; label: page.adding === "vpn" ? "Cancel" : "Import…"; onClicked: page.adding = page.adding === "vpn" ? "" : "vpn" }
+        SettingsButton { view: page.view; small: true; label: page.adding === "vpn" ? "Cancel" : "Import…"; onClicked: page.adding = page.adding === "vpn" ? "" : "vpn" }
       }
     }
 
@@ -344,12 +349,12 @@ ColumnLayout {
       id: wifiForm
       visible: page.adding === "wifi"
       view: page.view
-      title: "New Wi-Fi Network"
+      title: "New Wi-Fi network"
       readonly property bool enterprise: page.newSec === "eap"
       readonly property bool newTunnelled: page.newEap === "peap" || page.newEap === "ttls" || page.newEap === "fast"
       SettingsRow {
         view: page.view
-        label: "Network Name"
+        label: "Network name"
         SettingsTextField { view: page.view; value: page.newSsid; placeholder: "SSID"; onCommitted: function(v) { page.newSsid = v } }
       }
       SettingsRow {
@@ -365,7 +370,7 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         label: "Hidden"
-        detail: "The network doesn't announce its name"
+        detail: "The network doesn't broadcast its name"
         last: page.newSec === "open"
         SettingsSwitch { view: page.view; checked: page.newHidden; onToggled: function(on) { page.newHidden = on } }
       }
@@ -386,7 +391,7 @@ ColumnLayout {
         view: page.view
         visible: wifiForm.enterprise
         label: "Identity"
-        detail: "Your user name"
+        detail: "Your username"
         SettingsTextField { view: page.view; value: page.newIdentity; placeholder: "user@example.com"; onCommitted: function(v) { page.newIdentity = v } }
       }
       SettingsRow {
@@ -398,45 +403,45 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && wifiForm.newTunnelled
-        label: "Inner Authentication"
+        label: "Inner authentication"
         SettingsPopUp { view: page.view; options: page.innerMethods; value: page.newInner; onPicked: function(v) { page.newInner = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise
-        label: "CA Certificate"
-        detail: "Empty: the system's certificates"
+        label: "CA certificate"
+        detail: "Leave empty to use the system's certificates"
         last: page.newEap !== "tls"
         PathField { view: page.view; nmClient: client; value: page.newCa; placeholder: "/path/to/ca.pem"; onCommitted: function(v) { page.newCa = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
-        label: "Client Certificate"
+        label: "Client certificate"
         PathField { view: page.view; nmClient: client; value: page.newClientCert; placeholder: "/path/to/client.pem"; onCommitted: function(v) { page.newClientCert = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
-        label: "Private Key"
+        label: "Private key"
         PathField { view: page.view; nmClient: client; value: page.newPrivateKey; placeholder: "/path/to/key.pem"; onCommitted: function(v) { page.newPrivateKey = v } }
       }
       SettingsRow {
         view: page.view
         visible: wifiForm.enterprise && page.newEap === "tls"
-        label: "Key Password"
+        label: "Key password"
         last: true
         SettingsTextField { view: page.view; secret: true; value: page.newKeyPassword; placeholder: "Password"; onCommitted: function(v) { page.newKeyPassword = v } }
       }
       Item {
         Layout.fillWidth: true
-        implicitHeight: 44
+        implicitHeight: 48
         SettingsButton {
           view: page.view
           primary: true
           label: "Add and Connect"
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           onClicked: {
             // Commits the field being typed in.
@@ -483,19 +488,19 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         label: "File"
-        detail: "Path to the .conf or .ovpn file"
+        detail: "The .conf or .ovpn file"
         last: true
         SettingsTextField { view: page.view; value: page.vpnPath; placeholder: "~/vpn.conf"; onCommitted: function(v) { page.vpnPath = v } }
       }
       Item {
         Layout.fillWidth: true
-        implicitHeight: 44
+        implicitHeight: 48
         SettingsButton {
           view: page.view
           primary: true
           label: "Import"
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           onClicked: {
             // Commits the field being typed in.
@@ -513,7 +518,7 @@ ColumnLayout {
   ColumnLayout {
     visible: page.detailOpen && !!page.item
     Layout.fillWidth: true
-    spacing: 20
+    spacing: page.view.groupSpacing
 
     RowLayout {
       Layout.fillWidth: true
@@ -551,7 +556,7 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.ip4
-        label: "IP Address"
+        label: "IP address"
         ValueText { text: client.live.ip4 || "" }
       }
       SettingsRow {
@@ -563,13 +568,13 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.dns
-        label: "DNS Servers"
+        label: "DNS servers"
         ValueText { text: (client.live.dns || "").replace(/ \| /g, ", ") }
       }
       SettingsRow {
         view: page.view
         visible: !!page.item && page.item.active && !!client.live.mac
-        label: "Hardware Address"
+        label: "Hardware address"
         last: true
         ValueText { text: client.live.mac || "" }
       }
@@ -580,8 +585,8 @@ ColumnLayout {
       title: "General"
       SettingsRow {
         view: page.view
-        label: "Connect Automatically"
-        detail: "Join whenever it's in range"
+        label: "Connect automatically"
+        detail: "Joins whenever it's in range"
         SettingsSwitch {
           view: page.view
           checked: page.d["connection.autoconnect"] === "yes"
@@ -591,7 +596,7 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         label: "Priority"
-        detail: "The higher one is joined first"
+        detail: "Networks with a higher priority are joined first"
         last: true
         SettingsTextField {
           view: page.view
@@ -608,9 +613,9 @@ ColumnLayout {
     Repeater {
       model: [
         { proto: "ipv4", title: "IPv4", example: "192.168.1.20/24", gateway: "192.168.1.1",
-          methods: [{ label: "Automatic (DHCP)", value: "auto" }, { label: "Manual", value: "manual" }, { label: "Link-Local Only", value: "link-local" }, { label: "Shared", value: "shared" }, { label: "Off", value: "disabled" }] },
+          methods: [{ label: "Automatic (DHCP)", value: "auto" }, { label: "Manual", value: "manual" }, { label: "Link-local only", value: "link-local" }, { label: "Shared", value: "shared" }, { label: "Off", value: "disabled" }] },
         { proto: "ipv6", title: "IPv6", example: "fd00::20/64", gateway: "fd00::1",
-          methods: [{ label: "Automatic", value: "auto" }, { label: "Automatic (DHCP Only)", value: "dhcp" }, { label: "Manual", value: "manual" }, { label: "Link-Local Only", value: "link-local" }, { label: "Off", value: "disabled" }, { label: "Ignore", value: "ignore" }] }
+          methods: [{ label: "Automatic", value: "auto" }, { label: "Automatic (DHCP only)", value: "dhcp" }, { label: "Manual", value: "manual" }, { label: "Link-local only", value: "link-local" }, { label: "Off", value: "disabled" }, { label: "Ignore", value: "ignore" }] }
       ]
       delegate: SettingsGroup {
         id: ipGroup
@@ -647,7 +652,7 @@ ColumnLayout {
         SettingsRow {
           view: page.view
           visible: ipGroup.usesDns
-          label: "DNS Servers"
+          label: "DNS servers"
           detail: "Separated by commas"
           last: !(ipGroup.e.method === "auto" || ipGroup.e.method === "dhcp") && !page.dirty(ipGroup.modelData.proto)
           SettingsTextField { view: page.view; value: ipGroup.e.dns || ""; placeholder: "Automatic"; onEdited: function(v) { page.setEdit(ipGroup.modelData.proto, "dns", v) } }
@@ -655,18 +660,18 @@ ColumnLayout {
         SettingsRow {
           view: page.view
           visible: ipGroup.e.method === "auto" || ipGroup.e.method === "dhcp"
-          label: "Only Use These DNS Servers"
-          detail: "Ignore the ones the network hands out"
+          label: "Use only these DNS servers"
+          detail: "Ignores the DNS servers the network provides"
           last: !page.dirty(ipGroup.modelData.proto)
           SettingsSwitch { view: page.view; checked: !!ipGroup.e.ignore; onToggled: function(on) { page.setEdit(ipGroup.modelData.proto, "ignore", on) } }
         }
         Item {
           visible: page.dirty(ipGroup.modelData.proto)
           Layout.fillWidth: true
-          implicitHeight: 44
+          implicitHeight: 48
           Row {
             anchors.right: parent.right
-            anchors.rightMargin: 14
+            anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
             SettingsButton { view: page.view; label: "Revert"; onClicked: page.revertEdit(ipGroup.modelData.proto) }
@@ -682,7 +687,7 @@ ColumnLayout {
       title: "Wi-Fi"
       SettingsRow {
         view: page.view
-        label: "Network Name"
+        label: "Network name"
         ValueText { text: page.d["802-11-wireless.ssid"] || "" }
       }
       SettingsRow {
@@ -708,7 +713,7 @@ ColumnLayout {
       }
       SettingsRow {
         view: page.view
-        label: "Hidden Network"
+        label: "Hidden network"
         SettingsSwitch {
           view: page.view
           checked: page.d["802-11-wireless.hidden"] === "yes"
@@ -717,8 +722,8 @@ ColumnLayout {
       }
       SettingsRow {
         view: page.view
-        label: "Private Address"
-        detail: "The hardware address it presents"
+        label: "Private address"
+        detail: "The hardware address this computer shows the network"
         last: true
         SettingsPopUp {
           view: page.view
@@ -747,8 +752,8 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         visible: page.tunnelled
-        label: "Anonymous Identity"
-        detail: "Sent in the clear, before the tunnel"
+        label: "Anonymous identity"
+        detail: "Sent unencrypted, before the secure tunnel opens"
         SettingsTextField { view: page.view; value: page.d["802-1x.anonymous-identity"] || ""; onCommitted: function(v) { page.setEap("anonymous-identity", v) } }
       }
       SettingsRow {
@@ -761,44 +766,44 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         visible: page.tunnelled
-        label: "Inner Authentication"
+        label: "Inner authentication"
         SettingsPopUp { view: page.view; options: page.innerMethods; value: page.d["802-1x.phase2-auth"] || ""; onPicked: function(v) { page.setEap("phase2-auth", v) } }
       }
       SettingsRow {
         view: page.view
-        label: "CA Certificate"
-        detail: "Checks the network is the right one"
+        label: "CA certificate"
+        detail: "Confirms it's the right network"
         PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.ca-cert"]); placeholder: "None"; onCommitted: function(v) { page.setEapPath("ca-cert", v) } }
       }
       SettingsRow {
         view: page.view
-        label: "Use System Certificates"
-        detail: "Trust the certificates already on this computer"
+        label: "Use system certificates"
+        detail: "Trusts the certificates already on this computer"
         SettingsSwitch { view: page.view; checked: page.d["802-1x.system-ca-certs"] === "yes"; onToggled: function(on) { page.setEap("system-ca-certs", on ? "yes" : "no") } }
       }
       SettingsRow {
         view: page.view
-        label: "Server Domain"
-        detail: "The name its certificate must end with"
+        label: "Server domain"
+        detail: "The domain the server's certificate must match"
         last: page.eap !== "tls"
         SettingsTextField { view: page.view; value: page.d["802-1x.domain-suffix-match"] || ""; placeholder: "corp.example.com"; onCommitted: function(v) { page.setEap("domain-suffix-match", v) } }
       }
       SettingsRow {
         view: page.view
         visible: page.eap === "tls"
-        label: "Client Certificate"
+        label: "Client certificate"
         PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.client-cert"]); placeholder: "None"; onCommitted: function(v) { page.setEapPath("client-cert", v) } }
       }
       SettingsRow {
         view: page.view
         visible: page.eap === "tls"
-        label: "Private Key"
+        label: "Private key"
         PathField { view: page.view; nmClient: client; value: page.pathOf(page.d["802-1x.private-key"]); placeholder: "None"; onCommitted: function(v) { page.setEapPath("private-key", v) } }
       }
       SettingsRow {
         view: page.view
         visible: page.eap === "tls"
-        label: "Key Password"
+        label: "Key password"
         last: true
         SettingsTextField { view: page.view; secret: true; writeOnly: true; placeholder: "Unchanged"; onCommitted: function(v) { if (v !== "") page.setEapSecret("private-key-password", v) } }
       }
@@ -810,8 +815,8 @@ ColumnLayout {
       SettingsRow {
         view: page.view
         visible: client.editorAvailable
-        label: "Advanced Settings"
-        detail: "802.1X, VPN options, and more, in NetworkManager's editor"
+        label: "Advanced settings"
+        detail: "Opens NetworkManager's editor for 802.1X, VPN options, and more"
         SettingsButton { view: page.view; label: "Open…"; onClicked: client.openEditor(client.detailUuid) }
       }
       SettingsRow {

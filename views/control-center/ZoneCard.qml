@@ -42,8 +42,7 @@ Item {
   // What the body asks for (its implicit height, never the height it is
   // given), the notifications' small gap under the grid included.
   readonly property real natural: viewport.natural + above
-  readonly property real topGap: zoneId === "notifications" && zoneSize === "normal" ? 4 : 0
-  readonly property real above: topGap
+  readonly property real above: 0
   // The zone's height: what its body asks for, XSmall's at least its line.
   readonly property real fitted: zoneSize === "xsmall" ? Math.max(center.zoneXsHeight, natural) : natural
   // The height a body is told it has, informative: XSmall's line, none (the
@@ -196,7 +195,7 @@ Item {
             width: sizes.cell
             height: sizes.height - 4
             scale: choiceMouse.pressed ? 0.94 : 1
-            Behavior on scale { MotionAnimation { theme: zone.center.host.theme; pace: choiceMouse.pressed ? "press" : "standard" } }
+            Behavior on scale { id: scaleMotion1; MotionAnimation { theme: zone.center.host.theme; pace: towards(scaleMotion1.targetValue, choiceMouse.pressed ? "press" : "standard") } }
             Text {
               anchors.centerIn: parent
               text: choice.modelData.label
@@ -252,7 +251,6 @@ Item {
       clip: zone.zoneSize === "xsmall" || zone.resizing
       layer.enabled: clip
       Layout.fillWidth: true
-      // The notifications sit a little off the grid above them.
       Layout.topMargin: zone.above
       // Only a change of size eases: a picker opening is followed frame by frame.
       Layout.preferredHeight: Math.max(0, zone.fitted - zone.above)

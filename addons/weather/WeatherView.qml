@@ -3,8 +3,8 @@ import QtQuick.Layouts
 import "../../components"
 
 // The weather view: the place, condition, and temperature, then
-// the next hours (see below). Without a city (and no detected place), or
-// one Open-Meteo doesn't know, a hint and a button to Settings → Addons.
+// the next hours (see below). Without a reading, one row says why, with a
+// button to try again or, without a city Open-Meteo knows, to Settings.
 // Esc closes.
 Item {
   id: view
@@ -31,7 +31,12 @@ Item {
   readonly property int opticalBottom: 2
   // Extra room above and below, on top of the even margins.
   readonly property int roomY: 5
-  implicitHeight: glanced ? glance.implicitHeight : showing ? reading.implicitHeight - opticalTop - opticalBottom + 2 * roomY : notice.implicitHeight
+  implicitHeight: glanced ? glance.implicitHeight
+    : showing ? reading.implicitHeight - opticalTop - opticalBottom + 2 * roomY
+    : notice.shown ? notice.implicitHeight : loadingText.implicitHeight
+  // The island's padding: the usual 22 around the reading, 16 around the
+  // row that says why there's none.
+  readonly property int surfacePadding: notice.shown ? 16 : 22
 
   onActiveChanged: {
     if (!active) return
@@ -196,7 +201,7 @@ Item {
     }
   }
 
-  // Why there's nothing to show.
+  // Why there's nothing to show, in a line (for WeatherGlance's small sizes).
   readonly property string statusText: weather.status === "loading" ? "Loading weather…"
     : weather.status === "missing" ? "Set a city, or turn on Detect my location, in Settings → Addons"
     : weather.status === "unknown" ? "Couldn't find “" + weather.city + "”"
@@ -211,46 +216,104 @@ Item {
     anchors.right: parent.right
   }
 
-  // Loading, or why there's nothing to show.
-  ColumnLayout {
-    id: notice
-    visible: !view.showing && !view.glanced
+  // Loading: a quiet line. Anything else that leaves nothing to show is one
+  // row: a grey symbol in a round card, what's wrong and why, and a grey
+  // button that fixes it (Try Again, or Open Settings for the city).
+  Text {
+    id: loadingText
+    visible: !view.showing && !view.glanced && notice.status === "loading"
     anchors.left: parent.left
     anchors.right: parent.right
-    spacing: 12
+    horizontalAlignment: Text.AlignHCenter
+    text: "Loading weather…"
+    color: view.textMuted
+    font.family: view.theme.textFontFamily
+    font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
+    font.pixelSize: view.theme.size.title3
+  }
+  Item {
+    id: notice
     readonly property string status: view.weather.status
     readonly property bool needsCity: status === "missing" || status === "unknown"
+    readonly property bool shown: !view.showing && !view.glanced && status !== "loading"
+    // The island's 16 padding, plus 2 at the sides here, makes the row's
+    // 16 px above and below and 18 px at the sides (a zone has its own).
+    readonly property int sideInset: view.inZone ? 0 : 2
+    visible: shown
+    anchors.left: parent.left
+    anchors.right: parent.right
+    implicitHeight: 44
 
-    Text {
-      Layout.fillWidth: true
-      horizontalAlignment: Text.AlignHCenter
-      wrapMode: Text.WordWrap
-      text: view.statusText
-      color: notice.status === "loading" ? view.textMuted : view.theme.text
-      font.family: view.theme.textFontFamily
-      font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.title3)
-      font.features: { "tnum": 1 }
-      font.pixelSize: view.theme.size.title3
+    Rectangle {
+      id: noticeIcon
+      anchors.left: parent.left
+      anchors.leftMargin: notice.sideInset
+      anchors.verticalCenter: parent.verticalCenter
+      width: 44
+      height: 44
+      radius: 22
+      color: view.theme.card
+      Text {
+        anchors.centerIn: parent
+        text: "󰅤"
+        color: view.theme.tertiary
+        font.family: view.theme.fontFamily
+        font.pixelSize: view.theme.px(22)
+      }
+    }
+    Column {
+      anchors.left: noticeIcon.right
+      anchors.leftMargin: 14
+      anchors.right: noticeButton.left
+      anchors.rightMargin: 14
+      anchors.verticalCenter: parent.verticalCenter
+      spacing: 2
+      Text {
+        width: parent.width
+        text: notice.status === "missing" ? "No city set" : notice.status === "unknown" ? "City not found" : "Weather unavailable"
+        elide: Text.ElideRight
+        color: view.theme.text
+        font.family: view.theme.textFontFamily
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(14))
+        font.pixelSize: view.theme.px(14)
+        font.weight: Font.DemiBold
+      }
+      Text {
+        width: parent.width
+        readonly property string where: view.weather.city || view.weather.place
+        text: notice.status === "missing" ? "Set a city, or turn on Detect my location, in Settings → Addons."
+          : notice.status === "unknown" ? "Couldn't find “" + view.weather.city + "”."
+          : !view.weather.located && view.weather.detecting ? "Couldn't detect your location."
+          : where ? "Couldn't reach Open-Meteo for " + where + "."
+          : "Couldn't reach Open-Meteo."
+        textFormat: Text.PlainText
+        elide: Text.ElideRight
+        color: view.textMuted
+        font.family: view.theme.textFontFamily
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(12))
+        font.pixelSize: view.theme.px(12)
+      }
     }
     Rectangle {
-      visible: notice.status !== "loading"
-      Layout.alignment: Qt.AlignHCenter
-      implicitWidth: buttonText.implicitWidth + 32
-      implicitHeight: 32
-      radius: height / 2
-      color: buttonMouse.containsMouse ? Qt.lighter(view.theme.accent, 1.1) : view.theme.accent
+      id: noticeButton
+      anchors.right: parent.right
+      anchors.rightMargin: notice.sideInset
+      anchors.verticalCenter: parent.verticalCenter
+      width: buttonText.implicitWidth + 24
+      height: 26
+      radius: 7
+      color: buttonMouse.pressed || buttonMouse.containsMouse ? view.theme.wellHover : view.theme.well
       Behavior on color { MotionColorAnimation { theme: view.theme } }
-      scale: buttonMouse.pressed ? 0.97 : 1
-      Behavior on scale { MotionAnimation { theme: view.theme; pace: buttonMouse.pressed ? "press" : "standard" } }
+      scale: buttonMouse.pressed ? 0.96 : 1
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: view.theme; pace: towards(scaleMotion.targetValue, buttonMouse.pressed ? "press" : "standard") } }
       Text {
         id: buttonText
         anchors.centerIn: parent
         text: notice.needsCity ? "Open Settings" : "Try Again"
-        color: view.theme.accentText
+        color: view.theme.text
         font.family: view.theme.textFontFamily
-        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
-        font.features: { "tnum": 1 }
-        font.pixelSize: view.theme.size.body
+        font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(12))
+        font.pixelSize: view.theme.px(12)
         font.weight: Font.Medium
       }
       MouseArea {

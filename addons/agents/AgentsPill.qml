@@ -59,7 +59,20 @@ Item {
 
   // How far the pill has grown into a notice (see AgentNotice), following the
   // island's own height as it springs, so what moves keeps in step with it.
-  readonly property real grow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  // Only from a notice, till the pill's back to its size: the island growing
+  // into an open view (or shrinking back from one) isn't one.
+  property bool fromNotice: false
+  readonly property real heightGrow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  onHeightGrowChanged: if (heightGrow === 0 && !agents.noticeShown) fromNotice = false
+  Connections {
+    target: pill.agents
+    function onNoticeShownChanged() { if (pill.agents.noticeShown) pill.fromNotice = true }
+  }
+  Connections {
+    target: pill.host
+    function onSurfaceOpenChanged() { if (pill.host.surfaceOpen) pill.fromNotice = false }
+  }
+  readonly property real grow: fromNotice ? heightGrow : 0
   readonly property bool noticing: agents.noticeShown || grow > 0.5
 
   // Clawd and the time come in from a blur in turn, as the other pills; the
@@ -81,7 +94,7 @@ Item {
     id: mascot
     z: 2
     readonly property var session: pill.noticing && noticeItem.displayed ? noticeItem.displayed : pill.agents.live
-    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 10
+    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 14
     readonly property real tileX: noticeItem.tileCenter - width / 2
     x: pill.expanded ? pill.inset : Math.round(restX + (tileX - restX) * pill.grow)
     Behavior on x { enabled: !pill.noticing; MotionAnimation { theme: pill.theme; pace: "morph" } }
@@ -149,7 +162,7 @@ Item {
     Item {
       id: timeBox
       anchors.right: parent.right
-      anchors.rightMargin: pill.expanded ? pill.inset : 16
+      anchors.rightMargin: pill.expanded ? pill.inset : 14
       Behavior on anchors.rightMargin { MotionAnimation { theme: pill.theme; pace: "morph" } }
       anchors.verticalCenter: parent.verticalCenter
       width: pill.expanded ? grownTime.implicitWidth : restRow.width
@@ -275,10 +288,13 @@ Item {
     id: body
     anchors.fill: parent
     property real reveal: pill.expanded ? 1 : 0
+    // Read from the Behavior's target, as CallPill's: the flag is already
+    // the next one's by the time Qt reads it.
     Behavior on reveal {
+      id: revealMotion
       SequentialAnimation {
-        PauseAnimation { duration: pill.expanded ? pill.theme.contentRevealDelay : 0 }
-        MotionAnimation { theme: pill.theme; pace: pill.expanded ? "morph" : "exit" }
+        PauseAnimation { duration: revealMotion.targetValue === 1 ? pill.theme.contentRevealDelay : 0 }
+        MotionAnimation { theme: pill.theme; pace: revealMotion.targetValue === 1 ? "morph" : "exit" }
       }
     }
     opacity: body.reveal
@@ -680,6 +696,28 @@ Item {
           }
         }
       }
+    }
+  }
+
+  // Waiting on you: an amber dot left of the time, with a soft halo, coming
+  // and going with it.
+  Rectangle {
+    visible: pill.agents.asking
+    anchors.right: restTime.left
+    anchors.rightMargin: 6 - 3
+    anchors.verticalCenter: restTime.verticalCenter
+    width: 12
+    height: 12
+    radius: 6
+    color: pill.theme.withAlpha(pill.ink, 0.22)
+    opacity: reveal.trailingIn
+    PillPart { progress: reveal.trailingIn }
+    Rectangle {
+      anchors.centerIn: parent
+      width: 6
+      height: 6
+      radius: 3
+      color: pill.ink
     }
   }
 

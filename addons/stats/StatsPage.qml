@@ -18,7 +18,7 @@ ColumnLayout {
   // What the zone was given (AddonZone: 58 in XSmall, a constant).
   property real zoneRoom: 58
   readonly property bool compact: zoneSize !== "normal"
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   StatsGlance {
     visible: page.compact

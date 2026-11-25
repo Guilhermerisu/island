@@ -23,7 +23,7 @@ Rectangle {
   border.color: center.edge
   Behavior on color { MotionColorAnimation { theme: chip.center.host.theme } }
   scale: mouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: chip.center.host.theme; pace: mouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion1; MotionAnimation { theme: chip.center.host.theme; pace: towards(scaleMotion1.targetValue, mouse.pressed ? "press" : "standard") } }
 
   Rectangle {
     id: badge

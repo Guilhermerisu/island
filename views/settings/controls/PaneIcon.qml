@@ -22,6 +22,9 @@ Item {
   // Flat, as the icons in macOS's newer settings lists: one colour on a
   // rounded square with a white line glyph, no gloss, shadow or layers.
   property bool flat: false
+  // The flat glyph's pixel size: 62% of the icon unless set (Settings'
+  // sidebar 13 on 22, its rows 14 on 24).
+  property int glyphSize: Math.round(paneIcon.width * 0.62)
   readonly property bool layered: layers.length > 0 && !neutral && !flat
   implicitWidth: 20
   implicitHeight: 20
@@ -50,7 +53,7 @@ Item {
   Rectangle {
     visible: paneIcon.flat
     anchors.fill: parent
-    radius: Math.round(width * 0.26)
+    radius: width <= 24 ? 6 : Math.round(width * 0.26)
     gradient: Gradient {
       GradientStop { position: 0; color: Qt.lighter(paneIcon.base, paneIcon.neutral ? 1.04 : 1.1) }
       GradientStop { position: 1; color: paneIcon.base }
@@ -65,7 +68,7 @@ Item {
       text: paneIcon.glyph
       color: paneIcon.ink
       font.family: paneIcon.view.host.theme.fontFamily
-      font.pixelSize: Math.round(paneIcon.width * 0.62)
+      font.pixelSize: paneIcon.glyphSize
     }
   }
   Item {
@@ -78,7 +81,8 @@ Item {
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, paneIcon.large ? 0.35 : 0.28)
-      shadowBlur: paneIcon.large ? 0.6 : 0.25
+      blurMax: paneIcon.large ? 32 : 8
+      shadowBlur: paneIcon.large ? 0.6 : 1
       shadowVerticalOffset: paneIcon.large ? 3 : 1
       shadowHorizontalOffset: 0
       autoPaddingEnabled: true

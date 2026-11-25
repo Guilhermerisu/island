@@ -8,9 +8,10 @@ ColumnLayout {
   id: page
   required property var view
   readonly property var addons: view.host.addons
-  visible: view.currentPage === "Addons"
+  readonly property string settingsPageName: "Addons"
+  visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   property string expanded: ""
   property string requestedAddon: ""
@@ -71,7 +72,8 @@ ColumnLayout {
           Item {
             id: entryRow
             Layout.fillWidth: true
-            implicitHeight: Math.max(54, entryText.implicitHeight + 20)
+            // As every Settings row: at least 48, 8 over and under the text.
+            implicitHeight: Math.max(48, entryText.implicitHeight + 16)
 
             Rectangle {
               anchors.fill: parent
@@ -92,10 +94,12 @@ ColumnLayout {
             PaneIcon {
               id: entryIcon
               view: page.view
-              x: 14
+              x: 12
               anchors.verticalCenter: parent.verticalCenter
-              width: 32
-              height: 32
+              width: 24
+              height: 24
+              // Drawn in its layers: some addons' flat colour (Calendar's
+              // white) wouldn't hold a white glyph.
               glyph: addon.modelData.icon || ""
               layers: addon.modelData.iconLayers || []
               tint: addon.modelData.color || page.view.accent
@@ -103,9 +107,9 @@ ColumnLayout {
             Column {
               id: entryText
               anchors.left: entryIcon.right
-              anchors.leftMargin: 14
+              anchors.leftMargin: 12
               anchors.right: entryControls.left
-              anchors.rightMargin: 16
+              anchors.rightMargin: 12
               anchors.verticalCenter: parent.verticalCenter
               spacing: 2
               Text {
@@ -114,9 +118,8 @@ ColumnLayout {
                 elide: Text.ElideRight
                 color: page.view.text
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.host.theme.size.title3)
-                font.pixelSize: page.view.host.theme.size.title3
-                font.weight: Font.Medium
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.rowTitleFontSize)
+                font.pixelSize: page.view.rowTitleFontSize
               }
               Text {
                 width: parent.width
@@ -124,19 +127,17 @@ ColumnLayout {
                 readonly property var describedWith: addon.modelData.describedWith
                 readonly property string shown: describedWith ? String(page.addons.option(addon.modelData.id, describedWith.key) || "") : ""
                 text: shown !== "" ? describedWith.text.arg(shown) : addon.modelData.description || ""
-                wrapMode: Text.WordWrap
-                maximumLineCount: 2
                 elide: Text.ElideRight
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily
-                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
-                font.pixelSize: page.view.detailFontSize
+                font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
+                font.pixelSize: page.view.detailCaptionFontSize
               }
             }
             Row {
               id: entryControls
               anchors.right: parent.right
-              anchors.rightMargin: 14
+              anchors.rightMargin: 12
               anchors.verticalCenter: parent.verticalCenter
               spacing: 10
               // Remove waits for the row to be hovered (or opened), as in
@@ -180,8 +181,8 @@ ColumnLayout {
             visible: addon.open
             Layout.fillWidth: true
             Layout.leftMargin: entryText.x
-            Layout.rightMargin: 16
-            Layout.bottomMargin: 16
+            Layout.rightMargin: 12
+            Layout.bottomMargin: 12
             Layout.preferredHeight: optionList.implicitHeight
             radius: page.view.host.theme.radii.large
             color: page.view.host.theme.solid("quiet")
@@ -269,10 +270,11 @@ ColumnLayout {
               }
             }
           }
-          // The hairline between addons, across the whole group.
+          // The hairline between addons, inset past the icon as the rows'.
           Rectangle {
             visible: !addon.last
             Layout.fillWidth: true
+            Layout.leftMargin: entryText.x
             Layout.preferredHeight: 1
             color: page.view.divider
           }

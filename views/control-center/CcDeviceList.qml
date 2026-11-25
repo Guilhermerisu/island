@@ -31,7 +31,7 @@ ListView {
   // eases; out on the shorter exit pace.
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: list.center.host.theme; pace: list.shown ? "fade" : "exit"; curve: list.shown ? "fade" : "exit" } }
+  Behavior on opacity { id: opacityMotion1; MotionAnimation { theme: list.center.host.theme; pace: towards(opacityMotion1.targetValue, list.shown ? "fade" : "exit"); curve: towards(opacityMotion1.targetValue, list.shown ? "fade" : "exit") } }
 
   KeyedListModel {
     id: rows

@@ -37,13 +37,13 @@ Item {
   }
 
   // The control center's bar: the most the island may be, the height dragged
-  // out on its handle (0 = the default 780), within the screen. The island sits
-  // 8 px under the top edge, so `screenMargin` leaves the same below it.
-  // `dragMax` is the live value while the handle is held (-1 otherwise). In edit
+  // out on its handle (0 = the default 780), within the screen. `screenMargin`
+  // is the gap above the island (at least the default 8, so the notch keeps
+  // its room) and 52 more for below it. `dragMax` is the live value while the handle is held (-1 otherwise). In edit
   // mode the island may be as tall as the screen: the zones with their title
   // bars, the bar's handle, the add panel and that panel's own handle; the add
   // panel is what gives (see ControlCenter.editPanelHeight).
-  readonly property real screenMargin: 60
+  readonly property real screenMargin: Math.max(8, views.host.islandTop) + 52
   readonly property real screenLimit: Math.max(260, Window.height - screenMargin)
   property real dragMax: -1
   readonly property real chosenMax: dragMax >= 0 ? dragMax
@@ -60,6 +60,9 @@ Item {
     id: controlsSurface
     host: views.host
     viewName: "controls"
+    // 28 corners and 14 padding, so the cards' 14 corners sit concentric.
+    padding: 14
+    cornerRadius: 28
     // Follows the columns the control center shows.
     fixedWidth: controlCenter.islandWidth
     maxHeight: views.controlsMaxHeight
@@ -159,6 +162,7 @@ Item {
     host: views.host
     viewName: "apps"
     fixedWidth: 600
+    padding: 14
     AppLauncher { id: appLauncher; host: views.host; active: appsSurface.active; anchors.fill: parent }
   }
 
@@ -183,6 +187,7 @@ Item {
     host: views.host
     viewName: "clipboard"
     fixedWidth: 780
+    padding: 14
     ClipboardList { host: views.host; active: clipboardSurface.active; anchors.fill: parent }
   }
 
@@ -191,6 +196,7 @@ Item {
     host: views.host
     viewName: "menu"
     fixedWidth: 520
+    padding: 14
     OmarchyMenu { host: views.host; launcher: appLauncher; active: menuSurface.active; anchors.fill: parent }
   }
 
@@ -236,7 +242,7 @@ Item {
     id: powerSurface
     host: views.host
     viewName: "power"
-    padding: 18
+    padding: 16
     PowerMenu { host: views.host; active: powerSurface.active; anchors.fill: parent }
   }
 

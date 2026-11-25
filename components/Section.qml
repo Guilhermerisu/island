@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 
 // A System Settings group for the widget panes (System Stats, Agents): a
-// bold title over the box, with the reading's meaning on the right as a
+// grey sentence-case title over the box, as SettingsGroup's, with the reading's meaning on the right as a
 // coloured dot and a word, or (in `accessory`) a control such as a search
 // field. With no title, just the box.
 ColumnLayout {
@@ -15,22 +15,23 @@ ColumnLayout {
   property color statusColor: "#30d158"
   default property alias content: box.data
   property alias accessory: accessorySlot.data
-  spacing: 7
+  spacing: section.view.titleSpacing
 
   RowLayout {
     visible: section.title !== ""
     Layout.fillWidth: true
-    Layout.leftMargin: 14
-    Layout.rightMargin: 14
+    Layout.leftMargin: 4
+    Layout.rightMargin: 4
     Layout.minimumHeight: 20
     spacing: 6
     Text {
       text: section.title
       elide: Text.ElideRight
-      color: section.view.text
+      color: section.view.textMuted
       font.family: section.view.host.theme.textFontFamily
-      font.letterSpacing: section.view.host.theme.tracking(section.view.host.theme.textFontFamily, section.view.detailFontSize)
-      font.pixelSize: section.view.detailFontSize
+      font.capitalization: Font.MixedCase
+      font.letterSpacing: section.view.host.theme.tracking(section.view.host.theme.textFontFamily, section.view.calloutFontSize)
+      font.pixelSize: section.view.calloutFontSize
       font.weight: Font.DemiBold
     }
     Text {

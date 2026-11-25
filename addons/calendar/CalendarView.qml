@@ -3,9 +3,8 @@ import "../../components"
 
 // The calendar view, as Apple's widget: on the left the selected day's
 // weekday, date, and events; on the right its month, Monday first, its weeks
-// spread over the same height. As in Apple's Calendar, today is a filled
-// accent circle while it's the day shown, and accent numbers once another
-// day is picked, that one in a grey circle. A day clicked shows its events,
+// in rows of the same height. Today is always a filled accent circle; another
+// day picked sits in a grey one. A day clicked shows its events,
 // as do ←/→ (a day) and ↑/↓ (a week); scrolling or the chevrons (shown on
 // hover) change the month, which slides in from that side. Esc closes; it
 // opens on today.
@@ -30,7 +29,7 @@ Item {
 
   readonly property int cell: 34
   // Six weeks' room always, so the island keeps its height from month to
-  // month; a month of fewer weeks spreads them over it, as Apple's widget.
+  // month.
   readonly property int gridHeight: 6 * 30
   readonly property int gridWidth: 7 * cell
   // Three events fit beside the month; past that, two and a count of the
@@ -70,24 +69,24 @@ Item {
     visible: !view.glanced
     anchors.left: parent.left
     anchors.right: month.left
-    anchors.rightMargin: 24
+    anchors.rightMargin: 20
     spacing: 0
 
     Text {
-      text: view.weekdays[view.calendar.selected.getDay()].toUpperCase()
+      text: view.weekdays[view.calendar.selected.getDay()]
       color: view.accent
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.size.body
-      font.weight: Font.Bold
+      font.weight: Font.DemiBold
       font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
     }
     Text {
       text: view.calendar.selected.getDate()
       color: view.ink
       font.family: view.theme.textFontFamily
-      font.pixelSize: view.theme.px(52)
+      font.pixelSize: view.theme.px(44)
       font.weight: Font.Light
-      font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.px(52))
+      font.letterSpacing: -1
       font.features: { "tnum": 1 }
     }
     Item { width: 1; height: 8 }
@@ -127,9 +126,9 @@ Item {
               elide: Text.ElideRight
               color: eventCard.eventInk
               font.family: view.theme.textFontFamily
-              font.pixelSize: view.theme.size.body
-              font.weight: Font.Medium
-              font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
+              font.pixelSize: view.theme.size.callout
+              font.weight: Font.DemiBold
+              font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.callout)
             }
             Text {
               width: parent.width
@@ -219,8 +218,8 @@ Item {
     // Blank cells before the 1st, Monday first.
     readonly property int lead: (first.getDay() + 6) % 7
     readonly property int length: new Date(view.calendar.shownYear, view.calendar.shownMonth + 1, 0).getDate()
-    readonly property int weeks: Math.ceil((lead + length) / 7)
-    readonly property real rowHeight: view.gridHeight / weeks
+    // 26 px circles 4 px apart; the grid keeps six weeks' room.
+    readonly property real rowHeight: 30
 
     // A month changed slides in from the side it's on, as the old fades.
     property int lastIndex: view.calendar.shownYear * 12 + view.calendar.shownMonth
@@ -242,12 +241,12 @@ Item {
     Text {
       id: monthName
       x: (view.cell - 14) / 2
-      text: view.months[view.calendar.shownMonth].toUpperCase()
+      text: view.months[view.calendar.shownMonth]
         + (view.calendar.shownYear !== view.calendar.today.getFullYear() ? " " + view.calendar.shownYear : "")
       color: view.accent
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.size.body
-      font.weight: Font.Bold
+      font.weight: Font.DemiBold
       font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
     }
     Row {
@@ -260,7 +259,7 @@ Item {
         opacity: view.calendar.syncing ? 0.5 : (refreshTip.hovered || monthHover.hovered ? 1 : 0.45)
         Behavior on opacity { MotionAnimation { theme: view.theme; pace: "fade"; curve: "fade" } }
         scale: refreshMouse.pressed ? 0.88 : 1
-        Behavior on scale { MotionAnimation { theme: view.theme; pace: refreshMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion1; MotionAnimation { theme: view.theme; pace: towards(scaleMotion1.targetValue, refreshMouse.pressed ? "press" : "standard") } }
         Text {
           anchors.centerIn: parent
           text: "󰑐"
@@ -285,7 +284,7 @@ Item {
           model: [{ glyph: "󰅁", by: -1 }, { glyph: "󰅂", by: 1 }]
           delegate: Text {
             scale: chevronMouse.pressed ? 0.88 : 1
-            Behavior on scale { MotionAnimation { theme: view.theme; pace: chevronMouse.pressed ? "press" : "standard" } }
+            Behavior on scale { id: scaleMotion2; MotionAnimation { theme: view.theme; pace: towards(scaleMotion2.targetValue, chevronMouse.pressed ? "press" : "standard") } }
             required property var modelData
             width: view.cell
             horizontalAlignment: Text.AlignHCenter
@@ -308,7 +307,7 @@ Item {
 
     Row {
       id: weekdayRow
-      y: monthName.height + 12
+      y: monthName.height + 8
       Repeater {
         model: ["M", "T", "W", "T", "F", "S", "S"]
         delegate: Text {
@@ -317,10 +316,10 @@ Item {
           width: view.cell
           horizontalAlignment: Text.AlignHCenter
           text: modelData
-          color: index >= 5 ? view.inkMuted : view.ink
+          color: view.theme.secondary
           font.family: view.theme.textFontFamily
-          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
-          font.pixelSize: view.theme.size.body
+          font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.subheadline)
+          font.pixelSize: view.theme.size.subheadline
           font.weight: Font.Normal
         }
       }
@@ -348,19 +347,19 @@ Item {
 
           Rectangle {
             anchors.centerIn: parent
-            width: 28
-            height: 28
-            radius: 14
-            color: day.isSelected ? (day.isToday ? view.accent : view.theme.fill("strong"))
+            width: 26
+            height: 26
+            radius: 13
+            color: day.isToday ? view.accent : day.isSelected ? view.theme.fill("stronger")
               : dayMouse.containsMouse ? view.theme.fill("subtle") : "transparent"
-            scale: day.isSelected ? 1 : 0.9
+            scale: day.isSelected || day.isToday ? 1 : 0.9
             Behavior on color { MotionColorAnimation { theme: view.theme } }
             Behavior on scale { MotionAnimation { theme: view.theme; pace: "expressive" } }
           }
           Text {
             anchors.centerIn: parent
             text: day.index + 1
-            color: day.isToday ? (day.isSelected ? view.theme.accentText : view.accent)
+            color: day.isToday ? view.theme.accentText
               : day.slot % 7 >= 5 ? view.inkMuted : view.ink
             font.family: view.theme.textFontFamily
             font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)

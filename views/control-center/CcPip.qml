@@ -44,7 +44,7 @@ Item {
   Item {
     anchors.fill: parent
     scale: mouse.pressed ? 0.92 : 1
-    Behavior on scale { MotionAnimation { theme: pip.center.host.theme; pace: mouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion1; MotionAnimation { theme: pip.center.host.theme; pace: towards(scaleMotion1.targetValue, mouse.pressed ? "press" : "standard") } }
 
     Ring {
       visible: pip.slider

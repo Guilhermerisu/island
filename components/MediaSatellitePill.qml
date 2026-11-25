@@ -22,6 +22,9 @@ Rectangle {
   readonly property bool shown: shape && shape.isGlanceExpanded && !hasMediaInGlance && isPlaying && host.view === "rest" && (host.settings.glanceMediaSatellite !== false)
   readonly property bool isHovered: mouseArea.containsMouse
 
+  // Under the island, so it slides out from beneath it and tucks back in
+  // as it goes, as the hover capsules do.
+  z: -1
   x: shape ? shape.x + (shape.width - width) / 2 : 0
   readonly property real targetY: shape ? shape.y + shape.height + (host.settings.notch ? 8 : 6) : 0
   y: ySpring.value
@@ -44,9 +47,7 @@ Rectangle {
   border.color: hasBorder
     ? (mouseArea.containsMouse ? (nowPlaying.tint || host.theme.accent) : host.theme.withAlpha(host.theme.text, 0.25))
     : "transparent"
-  Behavior on border.color {
-    ColorAnimation { duration: 150 }
-  }
+  Behavior on border.color { MotionColorAnimation { theme: satellite.host.theme } }
 
   scale: mouseArea.pressed ? 0.96 : mouseArea.containsMouse ? 1.02 : 1.0
   Behavior on scale {
@@ -56,7 +57,8 @@ Rectangle {
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
   Behavior on opacity {
-    MotionAnimation { theme: satellite.host.theme; pace: satellite.shown ? "standard" : "exit"; curve: "fade" }
+    id: opacityMotion
+    MotionAnimation { theme: satellite.host.theme; pace: towards(opacityMotion.targetValue, satellite.shown ? "standard" : "exit"); curve: "fade" }
   }
 
   // Subtle halo / frame around the satellite pill
@@ -67,7 +69,7 @@ Rectangle {
     anchors.margins: -3
     opacity: satellite.shown && satellite.hasBorder ? (host.theme.isLight ? 0.12 : 0.45) : 0
     visible: opacity > 0.01
-    Behavior on opacity { NumberAnimation { duration: 180 } }
+    Behavior on opacity { MotionAnimation { theme: satellite.host.theme; pace: "fade"; curve: "fade" } }
     Rectangle {
       anchors.fill: parent
       radius: satellite.radius + 3

@@ -23,11 +23,22 @@ Item {
   readonly property color wellHover: host.theme.wellHover
   readonly property color accent: center.accent
   readonly property color accentInk: center.accentInk
+  // The controls' greys (see SettingsView).
+  readonly property color textTertiary: host.theme.tertiary
+  readonly property bool dark: host.theme.background.hslLightness < 0.5
+  function ink(alpha) { return dark ? Qt.rgba(1, 1, 1, alpha) : host.theme.withAlpha(host.theme.text, alpha) }
+  readonly property color controlFill: dark ? "#2c2c2e" : host.theme.tile
+  readonly property color segmentChip: dark ? "#636366" : Qt.tint(host.theme.background, host.theme.withAlpha(text, 0.31))
+  readonly property color switchOff: dark ? "#3a3a3c" : host.theme.solid("stronger")
+  readonly property color insetFill: dark ? "#111113" : host.theme.solid("quiet")
+  readonly property int groupRadius: 12
   readonly property int detailFontSize: host.theme.px(13)
+  readonly property int rowTitleFontSize: host.theme.px(14)
   readonly property int detailCaptionFontSize: host.theme.px(11)
-  readonly property int detailTitleFontSize: host.theme.px(22)
-  readonly property var titleFontAxes: ({ "wght": 500 })
+  readonly property int calloutFontSize: host.theme.px(12)
   readonly property int controlWidth: 156
+  readonly property int groupSpacing: 12
+  readonly property int titleSpacing: 6
 
   property alias menuButton: popMenu.button
   function openMenu(button) { popMenu.openFor(button) }

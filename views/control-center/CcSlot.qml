@@ -49,12 +49,14 @@ Item {
   scale: shown ? 1 : 0.9
   visible: opacity > 0.01
   Behavior on opacity {
+    id: opacityMotion
     enabled: slot.animated
-    MotionAnimation { theme: slot.center.host.theme; pace: slot.shown ? "fade" : "exit"; curve: slot.shown ? "fade" : "exit" }
+    MotionAnimation { theme: slot.center.host.theme; pace: towards(opacityMotion.targetValue, slot.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, slot.shown ? "fade" : "exit") }
   }
   Behavior on scale {
+    id: scaleMotion
     enabled: slot.animated
-    MotionAnimation { theme: slot.center.host.theme; pace: slot.shown ? "standard" : "exit"; curve: slot.shown ? "settle" : "exit" }
+    MotionAnimation { theme: slot.center.host.theme; pace: towards(scaleMotion.targetValue, slot.shown ? "standard" : "exit"); curve: towards(scaleMotion.targetValue, slot.shown ? "settle" : "exit") }
   }
   // A slot that was hidden appears in its new place rather than sliding there
   // from where it was last shown.

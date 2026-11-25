@@ -18,7 +18,7 @@ Rectangle {
   opacity: info.available ? 1 : 0.5
   Behavior on opacity { MotionAnimation { theme: center.host.theme; pace: "fade"; curve: "fade" } }
   scale: mouse.pressed || badgeMouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: center.host.theme; pace: mouse.pressed || badgeMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion1; MotionAnimation { theme: center.host.theme; pace: towards(scaleMotion1.targetValue, mouse.pressed || badgeMouse.pressed ? "press" : "standard") } }
 
   CcControlState { id: info; center: t.center; controlKey: t.controlKey }
 

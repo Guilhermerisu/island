@@ -86,7 +86,7 @@ ColumnLayout {
   }
 
   // Keyboard cursor, by address so it survives rows reordering; "other" is the
-  // Other Devices header.
+  // Other Devices header, "settings" the footer.
   property string selectedKey: ""
   // The keyboard highlight appears once the keys are used, as on macOS.
   property bool usingKeys: false
@@ -96,6 +96,7 @@ ColumnLayout {
       if (displayRows[i].address) keys.push(displayRows[i].address)
       else if (displayRows[i].toggle) keys.push("other")
     }
+    keys.push("settings")
     return keys
   }
   readonly property string cursor: navKeys.indexOf(selectedKey) !== -1 ? selectedKey : navKeys[0] || ""
@@ -127,6 +128,11 @@ ColumnLayout {
     else delete next[address]
     pending = next
     if (action) pendingTimeout.restart()
+  }
+  // Omarchy's own Bluetooth panel, closing the island first.
+  function openSettings() {
+    host.view = "rest"
+    Quickshell.execDetached(["omarchy-shell", "shell", "summon", "omarchy.bluetooth"])
   }
   function run(row, action, label) {
     setPending(row.address, label)
@@ -184,6 +190,7 @@ ColumnLayout {
       bt.usingKeys = true
     else if (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space) {
       if (bt.cursor === "other") bt.otherOpenChoice = !bt.otherOpen
+      else if (bt.cursor === "settings") bt.openSettings()
       else if (row) bt.activate(row)
     } else if (k === Qt.Key_Delete || k === Qt.Key_X) {
       if (row && row.section !== "nearby" && !row.pending) bt.run(row, "forget", "forgetting")
@@ -197,36 +204,47 @@ ColumnLayout {
   // Header: back to the Control Center and the title.
   RowLayout {
     Layout.fillWidth: true
-    Layout.preferredHeight: 34
+    Layout.preferredHeight: 28
     Layout.leftMargin: 4
     Layout.rightMargin: 6
-    spacing: 8
+    spacing: 10
     Rectangle {
       scale: backMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: bt.host.theme; pace: backMouse.pressed ? "press" : "standard" } }
-      Layout.preferredWidth: 32
-      Layout.preferredHeight: 32
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: bt.host.theme; pace: towards(scaleMotion.targetValue, backMouse.pressed ? "press" : "standard") } }
+      Layout.preferredWidth: 28
+      Layout.preferredHeight: 28
       radius: height / 2
-      color: backMouse.containsMouse ? bt.well : bt.card
+      color: backMouse.containsMouse ? bt.tile : bt.card
       Tooltip { theme: bt.host.theme; text: "Control Center" }
-      Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(17) }
+      Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(14) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
     Text {
       text: "Bluetooth"
       color: bt.text
       font.family: bt.host.theme.textFontFamily
-      font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.title2)
-      font.pixelSize: bt.host.theme.size.title2
+      font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.px(15))
+      font.pixelSize: bt.host.theme.px(15)
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
   }
 
+  // Nothing to list: drawn straight on the island, as in the Wi-Fi view.
+  EmptyState {
+    visible: !bt.displayRows.length
+    Layout.fillWidth: true
+    host: bt.host
+    glyph: !bt.adapter || !bt.powered ? "󰂲" : "󰂯"
+    text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
+    detail: bt.adapter ? "" : "Plug in a Bluetooth adapter to pair devices."
+  }
+
+  // The card: the devices, then Bluetooth Settings, as the Wi-Fi view's.
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 12
-    radius: bt.host.theme.radii.card
+    radius: 14
     color: bt.card
     border.width: 1
     border.color: bt.edge
@@ -238,14 +256,6 @@ ColumnLayout {
       anchors.top: parent.top
       anchors.margins: 6
       spacing: 0
-
-      EmptyState {
-        visible: !bt.displayRows.length
-        Layout.fillWidth: true
-        host: bt.host
-        glyph: !bt.adapter || !bt.powered ? "󰂲" : "󰂯"
-        text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
-      }
 
       ListView {
         id: list
@@ -324,8 +334,8 @@ ColumnLayout {
               visible: row.index !== 0
               anchors.left: parent.left
               anchors.right: parent.right
-              anchors.leftMargin: 10
-              anchors.rightMargin: 10
+              anchors.leftMargin: 8
+              anchors.rightMargin: -6
               anchors.bottom: parent.top
               anchors.bottomMargin: 2
               height: 1
@@ -333,7 +343,7 @@ ColumnLayout {
             }
             Text {
               anchors.left: parent.left
-              anchors.leftMargin: 10
+              anchors.leftMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               text: row.modelData.header || ""
               color: bt.textMuted
@@ -344,7 +354,7 @@ ColumnLayout {
             }
             Row {
               anchors.right: parent.right
-              anchors.rightMargin: 10
+              anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               spacing: 8
               visible: !!row.modelData.toggle
@@ -451,7 +461,7 @@ ColumnLayout {
             Row {
               id: trailing
               anchors.right: parent.right
-              anchors.rightMargin: 10
+              anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               spacing: 8
               Row {
@@ -478,14 +488,14 @@ ColumnLayout {
               Rectangle {
                 id: forgetButton
                 scale: forgetMouse.pressed ? 0.9 : 1
-                Behavior on scale { MotionAnimation { theme: bt.host.theme; pace: forgetMouse.pressed ? "press" : "standard" } }
+                Behavior on scale { id: scaleMotion2; MotionAnimation { theme: bt.host.theme; pace: towards(scaleMotion2.targetValue, forgetMouse.pressed ? "press" : "standard") } }
                 // Fades in on hover and out quicker, and takes no clicks
                 // while it fades out.
                 readonly property bool shown: row.modelData.section !== "nearby" && !row.modelData.pending
                   && (rowHover.hovered || row.isSelected)
                 opacity: shown ? 1 : 0
                 visible: opacity > 0.01
-                Behavior on opacity { MotionAnimation { theme: bt.host.theme; pace: forgetButton.shown ? "fade" : "exit"; curve: forgetButton.shown ? "fade" : "exit" } }
+                Behavior on opacity { id: opacityMotion; MotionAnimation { theme: bt.host.theme; pace: towards(opacityMotion.targetValue, forgetButton.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, forgetButton.shown ? "fade" : "exit") } }
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetTip.hovered ? bt.wellHover : "transparent"
@@ -506,6 +516,51 @@ ColumnLayout {
               }
             }
           }
+        }
+      }
+
+      // Footer: Bluetooth Settings, Omarchy's own Bluetooth panel, below a
+      // hairline when devices are listed.
+      Rectangle {
+        visible: list.visible
+        Layout.fillWidth: true
+        Layout.leftMargin: 8
+        Layout.rightMargin: -6
+        Layout.topMargin: 4
+        Layout.bottomMargin: 4
+        Layout.preferredHeight: 1
+        color: bt.host.theme.fill("subtle")
+      }
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 44
+        radius: 8
+        color: settingsMouse.pressed ? bt.well : settingsMouse.containsMouse || (bt.usingKeys && bt.cursor === "settings") ? bt.tile : "transparent"
+        Behavior on color { MotionColorAnimation { theme: bt.host.theme } }
+        Chevron {
+          theme: bt.host.theme
+          anchors.right: parent.right
+          anchors.rightMargin: 8
+          anchors.verticalCenter: parent.verticalCenter
+          pixelSize: 14
+          color: bt.host.theme.tertiary
+        }
+        Text {
+          anchors.left: parent.left
+          anchors.leftMargin: 8
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Bluetooth Settings…"
+          color: bt.text
+          font.family: bt.host.theme.textFontFamily
+          font.letterSpacing: bt.host.theme.tracking(bt.host.theme.textFontFamily, bt.host.theme.size.title3)
+          font.pixelSize: bt.host.theme.size.title3
+        }
+        MouseArea {
+          id: settingsMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: bt.openSettings()
         }
       }
     }

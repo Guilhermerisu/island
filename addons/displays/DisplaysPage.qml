@@ -19,7 +19,7 @@ ColumnLayout {
   // What the zone was given (AddonZone: 58 in XSmall, a constant).
   property real zoneRoom: 58
   readonly property bool compact: zoneSize !== "normal"
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   DisplaysGlance {
     visible: page.compact
@@ -74,7 +74,7 @@ ColumnLayout {
   Text {
     visible: !page.compact && page.displays.loaded && page.displays.draft.length === 0
     Layout.fillWidth: true
-    Layout.leftMargin: 14
+    Layout.leftMargin: 4
     text: "No displays found."
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
@@ -124,6 +124,7 @@ ColumnLayout {
     Rectangle {
       visible: page.on
       Layout.fillWidth: true
+      Layout.leftMargin: 12
       Layout.preferredHeight: 1
       color: page.view.divider
     }

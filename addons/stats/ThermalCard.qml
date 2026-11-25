@@ -4,7 +4,7 @@ import "../../components"
 
 // How hot the machine runs, as macOS puts it, in the same card as the
 // others: the hottest part's temperature on the ring, each part's below it,
-// and one word in the capsule for whichever part runs hottest for its kind.
+// and one word beside the title for whichever part runs hottest for its kind.
 // Chips are Good under 70 °C, Fair under 80, High under 90; SSDs, which
 // slow down sooner, 20 °C lower.
 StatCard {
@@ -32,7 +32,7 @@ StatCard {
   status: temps.length ? levels[level].label : ""
   statusColor: levels[level].color
   // Its temperature toward its Max (100 °C for chips, 80 for SSDs). The
-  // ring stays orange; the capsule carries the level.
+  // ring stays orange; the dot and word carry the level.
   ringColor: card.view.host.theme.system.orange
   value: hottest ? hottest.value / ((hottest.ssd ? 50 : 70) + 30) * 100 : 0
   ringText: hottest ? Math.round(hottest.value) + "°" : "—"

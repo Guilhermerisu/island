@@ -15,7 +15,13 @@ ListPicker {
   id: clipboard
   placeholder: "Search clipboard"
   emptyText: history.length ? "Nothing matches" : "Clipboard history is empty"
-  rowHeight: 44
+  // 38 px rows, 2 px apart, lit one at a time (the pointer moves the
+  // selection).
+  rowHeight: 38
+  rowGap: 2
+  rowRadius: 8
+  rowPadding: 10
+  hoverSelects: true
   visibleRows: 9
   // Room for the image preview even when only a few entries match.
   minRows: 5
@@ -211,7 +217,7 @@ ListPicker {
         id: badge
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 28; height: 28
+        width: 24; height: 24
         ClippingRectangle {
           anchors.fill: parent
           radius: 6
@@ -221,8 +227,8 @@ ListPicker {
             id: thumb
             anchors.fill: parent
             source: clipRow.hasPreview ? "file://" + clipRow.entry.previewImage : ""
-            sourceSize.width: 56
-            sourceSize.height: 56
+            sourceSize.width: 48
+            sourceSize.height: 48
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
           }
@@ -240,25 +246,36 @@ ListPicker {
           anchors.centerIn: parent
           visible: !(clipRow.hasPreview && thumb.status === Image.Ready) && clipRow.swatch === null
           text: clipRow.entry.entryType === "image" ? "󰋩" : clipRow.entry.entryType === "file" ? "󰈔" : clipRow.isLink ? "󰌷" : "󰦨"
-          color: clipRow.selected ? clipboard.host.theme.text : clipboard.host.theme.muted
+          color: clipboard.host.theme.tertiary
           font.family: clipboard.host.theme.fontFamily
-          font.pixelSize: clipboard.host.theme.px(18)
+          font.pixelSize: clipboard.host.theme.px(15)
         }
       }
+      // One line: line breaks and tabs read as spaces, and a long entry ends
+      // in an ellipsis.
       Text {
         anchors.left: badge.right
         anchors.leftMargin: 12
-        anchors.right: parent.right
+        anchors.right: pasteHint.visible ? pasteHint.left : parent.right
+        anchors.rightMargin: pasteHint.visible ? 12 : 0
         anchors.verticalCenter: parent.verticalCenter
-        text: String(clipRow.entry.previewText || "").trim()
+        text: String(clipRow.entry.previewText || "").replace(/\s+/g, " ").trim()
         textFormat: Text.PlainText
         elide: Text.ElideRight
         maximumLineCount: 1
         color: clipboard.host.theme.text
         font.family: clipboard.host.theme.textFontFamily
-        font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.size.body)
-        font.pixelSize: clipboard.host.theme.size.body
-        font.weight: clipRow.selected ? Font.Medium : Font.Normal
+        font.letterSpacing: clipboard.host.theme.tracking(clipboard.host.theme.textFontFamily, clipboard.host.theme.px(14))
+        font.pixelSize: clipboard.host.theme.px(14)
+      }
+      // What Enter does, on the selected row only.
+      KeyHint {
+        id: pasteHint
+        visible: clipRow.selected
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        theme: clipboard.host.theme
+        label: "Paste"
       }
     }
   }

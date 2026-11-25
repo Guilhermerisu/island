@@ -40,7 +40,7 @@ Item {
     width: label ? content.implicitWidth + 24 : height
     radius: height / 2
     scale: mouse.pressed ? 0.92 : 1
-    Behavior on scale { MotionAnimation { theme: compact.theme; pace: mouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion1; MotionAnimation { theme: compact.theme; pace: towards(scaleMotion1.targetValue, mouse.pressed ? "press" : "standard") } }
     Row {
       id: content
       anchors.centerIn: parent

@@ -9,7 +9,7 @@ import ".."
 // minutes), when the calendars change, and when the view opens on a stale cache.
 Addon {
   id: calendarAddon
-  views: [{ name: "calendar", width: 480, padding: 22, component: calendarView }]
+  views: [{ name: "calendar", width: 480, padding: 20, component: calendarView }]
   tiles: [{ key: "today", title: "Calendar", component: calendarTile }]
   pill: Component { CalendarPill { calendar: calendarAddon } }
   pillWidth: 340

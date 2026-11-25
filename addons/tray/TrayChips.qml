@@ -55,7 +55,7 @@ Item {
     color: mouse.containsMouse || tip.hovered ? chips.center.wellHover : chips.center.well
     scale: mouse.pressed ? 0.92 : 1
     Behavior on color { MotionColorAnimation { theme: chips.host.theme } }
-    Behavior on scale { MotionAnimation { theme: chips.host.theme; pace: mouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion1; MotionAnimation { theme: chips.host.theme; pace: towards(scaleMotion1.targetValue, mouse.pressed ? "press" : "standard") } }
     IconImage {
       id: icon
       anchors.centerIn: parent
