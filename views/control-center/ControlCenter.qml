@@ -42,12 +42,11 @@ ColumnLayout {
   // macOS shapes: switches are capsules, cards concentric with the island.
   readonly property real cardRadius: host.theme.radii.card
   // macOS's module sizes: a tile, a slider card, and the gap between them.
-  readonly property real tileHeight: 64
-  readonly property real sectionHeight: 86
+  readonly property real tileHeight: 60
+  readonly property real sectionHeight: 84
   readonly property real gap: 8
-  // The icon on a switched-on (accent) badge: white, as macOS's on blue,
-  // or a deep shade of the accent when it's too light for white.
-  readonly property color badgeOnInk: accent.hslLightness < 0.62 ? "#ffffff" : Qt.hsla(accent.hslHue, accent.hslSaturation, 0.16, 1)
+  // The icon on a switched-on (accent) badge: a deep shade of the accent.
+  readonly property color badgeOnInk: Qt.hsla(accent.hslHue, accent.hslSaturation, 0.16, 1)
   property bool editMode: false
   // The page is mid-scroll (WheelLatch): its sliders leave the wheel to it.
   property bool pageScrolling: false
@@ -129,9 +128,9 @@ ColumnLayout {
       color: cc.text
       font.family: cc.host.theme.textFontFamily
       font.features: { "tnum": 1 }
-      font.pixelSize: cc.host.theme.size.title3
+      font.pixelSize: cc.host.theme.px(16)
       font.weight: Font.DemiBold
-      font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.size.title3)
+      font.letterSpacing: cc.host.theme.tracking(cc.host.theme.textFontFamily, cc.host.theme.px(16))
     }
     Item { Layout.fillWidth: true }
     // How many columns, while editing: the choice is saved as it's made.
@@ -178,7 +177,7 @@ ColumnLayout {
     }
     Rectangle {
       scale: editMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: editMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: cc.host.theme; pace: towards(scaleMotion.targetValue, editMouse.pressed ? "press" : "standard") } }
       Layout.preferredWidth: cc.editMode ? 58 : 28
       Layout.preferredHeight: 28
       radius: 14
@@ -221,7 +220,7 @@ ColumnLayout {
     }
     Rectangle {
       scale: settingsMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: settingsMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion2; MotionAnimation { theme: cc.host.theme; pace: towards(scaleMotion2.targetValue, settingsMouse.pressed ? "press" : "standard") } }
       Layout.preferredWidth: 28
       Layout.preferredHeight: 28
       radius: 14

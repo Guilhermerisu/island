@@ -2,29 +2,32 @@ import QtQuick
 import QtQuick.Layouts
 import "../controls"
 
-// Settings → General: the pill, when it hides, appearance and motion.
+// Settings → General: the clock, when the island hides or makes room, and
+// the Omarchy menu. How it looks is Settings → Appearance.
 ColumnLayout {
   id: page
   required property var view
+  readonly property string settingsPageName: "General"
   readonly property var system: view.host.theme.system
-  visible: view.currentPage === "General"
+  readonly property var settings: view.settings
+  visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   SettingsGroup {
     view: page.view
-    title: "Pill"
+    title: "Clock"
     SettingsRow {
       view: page.view
       icon: "󰅐"
       iconTint: page.system.orange
       label: "Time format"
-      detail: "Shown when the island is idle"
+      detail: "For the clock on the idle island"
       SettingsSegmented {
         view: page.view
         options: [{ label: "24-hour", value: true }, { label: "12-hour", value: false }]
-        value: page.view.settings.clock24h
-        onPicked: function(v) { page.view.settings.clock24h = v }
+        value: page.settings.clock24h
+        onPicked: function(v) { page.settings.clock24h = v }
       }
     }
     SettingsRow {
@@ -32,20 +35,23 @@ ColumnLayout {
       icon: "󰖙"
       iconTint: page.system.yellow
       label: "Show AM/PM"
-      detail: "After the time, as in 4:22 PM"
-      visible: !page.view.settings.clock24h
+      detail: "Adds AM or PM after the time, as in 4:22 PM"
+      visible: !page.settings.clock24h
+      searchable: !page.settings.clock24h
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.clockAmPm
-        onToggled: function(on) { page.view.settings.clockAmPm = on }
+        checked: page.settings.clockAmPm
+        onToggled: function(on) { page.settings.clockAmPm = on }
       }
     }
     SettingsRow {
       view: page.view
       icon: "󰃰"
-      iconTint: "#30b0c7"
+      iconTint: page.system.cyan
       label: "Clock style"
-      detail: "The time alone, or with the day or date"
+      detail: "Adds the day or date next to the time, or stacks them"
+      keywords: "date day weekday year numeric stacked"
+      last: true
       // The button names the style; the menu adds how each one looks now.
       SettingsPopUp {
         readonly property var names: ({
@@ -68,469 +74,84 @@ ColumnLayout {
             : page.view.host.formatClock(page.view.host.clockDate, format)
           return { label: name + " · " + preview, short: name, value: format }
         })
-        value: page.view.settings.clockFormat
-        onPicked: function(v) { page.view.settings.clockFormat = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰌢"
-      iconTint: page.system.indigo
-      label: "Notch style"
-      detail: "Attach the island to the top edge, like a MacBook notch"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.notch
-        onToggled: function(on) { page.view.settings.notch = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰄮"
-      iconTint: page.system.gray
-      label: "Outline"
-      detail: "A thin light outline around the resting island"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.restingOutline
-        onToggled: function(on) { page.view.settings.restingOutline = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰹑"
-      iconTint: page.system.cyan
-      label: "Reserve space for the island"
-      detail: "Tiled windows start below the island instead of under it"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.reserveSpace
-        onToggled: function(on) { page.view.settings.reserveSpace = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰁌"
-      iconTint: page.system.blue
-      label: "Hover style"
-      detail: "What happens when hovering over the idle island"
-      last: true
-      SettingsPopUp {
-        view: page.view
-        options: [
-          { label: "󰁌  Expand island (Glance)", short: "Expand", value: "expand" },
-          { label: "󰂚  Flanking capsules", short: "Capsules", value: "capsules" },
-          { label: "󰅖  Disabled", short: "Disabled", value: "none" }
-        ]
-        value: page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")
-        onPicked: function(v) {
-          page.view.settings.hoverStyle = v
-          page.view.settings.hoverExpand = (v === "expand")
-          page.view.settings.hoverCapsules = (v === "capsules")
-        }
-      }
-    }
-  }
-
-  SettingsGroup {
-    id: glanceGroup
-    view: page.view
-    title: "Glance on hover"
-    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")) === "expand"
-
-    function iconFor(kind) {
-      switch (kind) {
-      case "workspace": return "󱂬"
-      case "battery": return "󰁹"
-      case "network": return "󰤨"
-      case "weather": return "󰖐"
-      case "media": return "󰝚"
-      case "volume": return "󰕾"
-      case "none": return "󰅖"
-      default: return "󰜔"
-      }
-    }
-
-    function tintFor(kind) {
-      switch (kind) {
-      case "workspace": return page.system.blue
-      case "battery": return page.system.green
-      case "network": return page.system.cyan
-      case "weather": return page.system.yellow
-      case "media": return page.system.purple
-      case "volume": return page.system.orange
-      case "none": return page.system.gray
-      default: return page.system.blue
-      }
-    }
-
-    readonly property var moduleChoices: [
-      { label: "󱂬  Workspace", short: "Workspace", value: "workspace" },
-      { label: "󰁹  Battery", short: "Battery", value: "battery" },
-      { label: "󰤨  Network", short: "Network", value: "network" },
-      { label: "󰖐  Weather", short: "Weather", value: "weather" },
-      { label: "󰝚  Now Playing", short: "Now Playing", value: "media" },
-      { label: "󰕾  Volume", short: "Volume", value: "volume" },
-      { label: "󰅖  None", short: "None", value: "none" }
-    ]
-
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceLeft1 || "workspace")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft1 || "workspace")
-      label: "Left slot 1"
-      detail: "First item on the left side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceLeft1 || "workspace"
-        onPicked: function(v) { page.view.settings.glanceLeft1 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceLeft2 || "battery")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceLeft2 || "battery")
-      label: "Left slot 2"
-      detail: "Second item on the left side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceLeft2 || "battery"
-        onPicked: function(v) { page.view.settings.glanceLeft2 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceRight1 || "weather")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight1 || "weather")
-      label: "Right slot 1"
-      detail: "First item on the right side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceRight1 || "weather"
-        onPicked: function(v) { page.view.settings.glanceRight1 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: glanceGroup.iconFor(page.view.settings.glanceRight2 || "volume")
-      iconTint: glanceGroup.tintFor(page.view.settings.glanceRight2 || "volume")
-      label: "Right slot 2"
-      detail: "Second item on the right side"
-      SettingsPopUp {
-        view: page.view
-        options: glanceGroup.moduleChoices
-        value: page.view.settings.glanceRight2 || "volume"
-        onPicked: function(v) { page.view.settings.glanceRight2 = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰝚"
-      iconTint: page.system.purple
-      label: "Floating music pill"
-      detail: "Show a satellite player pill under the island when music is playing"
-      last: page.view.settings.glanceMediaSatellite === false
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.glanceMediaSatellite !== false
-        onToggled: function(on) { page.view.settings.glanceMediaSatellite = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      visible: page.view.settings.glanceMediaSatellite !== false
-      icon: "󰃚"
-      iconTint: page.system.purple
-      label: "Music pill border"
-      detail: "Draw a thin subtle outline around the floating music pill"
-      last: true
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.glanceMediaSatelliteBorder !== false
-        onToggled: function(on) { page.view.settings.glanceMediaSatelliteBorder = on }
+        value: page.settings.clockFormat
+        onPicked: function(v) { page.settings.clockFormat = v }
       }
     }
   }
 
   SettingsGroup {
     view: page.view
-    title: "Capsules on hover"
-    visible: (page.view.settings.hoverStyle || (page.view.settings.hoverCapsules ? "capsules" : page.view.settings.hoverExpand ? "expand" : "none")) === "capsules"
-    SettingsRow {
-      view: page.view
-      icon: "󰀻"
-      iconTint: page.system.purple
-      label: "Tray apps"
-      detail: "Tray icons and Omarchy updates"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.capsuleTray !== false
-        onToggled: function(on) { page.view.settings.capsuleTray = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰂚"
-      iconTint: page.system.orange
-      label: "Notifications"
-      detail: "How many are in the history"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.capsuleNotifications !== false
-        onToggled: function(on) { page.view.settings.capsuleNotifications = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰒓"
-      iconTint: page.system.gray
-      label: "System"
-      detail: "Bluetooth, network, volume and battery"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.capsuleSystem !== false
-        onToggled: function(on) { page.view.settings.capsuleSystem = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󱂬"
-      iconTint: page.system.blue
-      label: "Workspaces"
-      detail: "Tiles to switch between them"
-      SettingsSwitch {
-        view: page.view
-        checked: !!page.view.settings.capsuleWorkspaces
-        onToggled: function(on) { page.view.settings.capsuleWorkspaces = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰝚"
-      iconTint: page.system.cyan
-      label: "Now playing"
-      detail: "The track, with play and pause"
-      SettingsSwitch {
-        view: page.view
-        checked: !!page.view.settings.capsuleMedia
-        onToggled: function(on) { page.view.settings.capsuleMedia = on }
-      }
-    }
-    // It needs the Plugins addon for the list, so turning it on turns that on.
-    SettingsRow {
-      view: page.view
-      last: !page.view.host.addons.isEnabled("calendar") && !page.view.host.addons.isEnabled("weather")
-      icon: "󰐱"
-      iconTint: page.system.orange
-      label: "Plugins"
-      detail: "Icons to open your plugins"
-      SettingsSwitch {
-        view: page.view
-        checked: !!page.view.settings.capsulePlugins && page.view.host.addons.isEnabled("plugins")
-        onToggled: function(on) {
-          page.view.settings.capsulePlugins = on
-          if (on) page.view.host.addons.setEnabled("plugins", true)
-        }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      visible: page.view.host.addons.isEnabled("calendar")
-      last: !page.view.host.addons.isEnabled("weather")
-      icon: "󰃭"
-      iconTint: page.system.red
-      label: "Next event"
-      detail: "When one starts within the hour"
-      SettingsSwitch {
-        view: page.view
-        checked: !!page.view.settings.capsuleEvent
-        onToggled: function(on) { page.view.settings.capsuleEvent = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      visible: page.view.host.addons.isEnabled("weather")
-      last: true
-      icon: "󰖐"
-      iconTint: page.system.yellow
-      label: "Weather"
-      detail: "Current conditions and temperature"
-      SettingsSwitch {
-        view: page.view
-        checked: !!page.view.settings.capsuleWeather
-        onToggled: function(on) { page.view.settings.capsuleWeather = on }
-      }
-    }
-  }
-
-  SettingsGroup {
-    view: page.view
-    title: "Hide"
+    title: "Windows"
     SettingsRow {
       view: page.view
       icon: "󰍽"
       iconTint: page.system.orange
       label: "Right-click to hide"
-      detail: "Right-click the island to hide it, and the top edge to bring it back"
+      detail: "Hide the island; the top edge of the screen brings it back"
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.hideOnRightClick
-        onToggled: function(on) { page.view.settings.hideOnRightClick = on }
+        checked: page.settings.hideOnRightClick
+        onToggled: function(on) { page.settings.hideOnRightClick = on }
       }
     }
     SettingsRow {
       view: page.view
       icon: "󰊓"
       iconTint: page.system.blue
-      label: "When a window is fullscreen"
-      detail: "Slides the island away during fullscreen apps and video"
+      label: "Hide during fullscreen"
+      detail: "Slides away while a fullscreen app or video is showing"
+      keywords: "autohide auto-hide"
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.autoHideFullscreen
-        onToggled: function(on) { page.view.settings.autoHideFullscreen = on }
+        checked: page.settings.autoHideFullscreen
+        onToggled: function(on) { page.settings.autoHideFullscreen = on }
       }
     }
     SettingsRow {
       view: page.view
       icon: "󱇙"
       iconTint: page.system.green
-      label: "When windows are tiled"
-      detail: "Hides the island while tiled windows fill the workspace"
+      label: "Hide when windows are tiled"
+      detail: "Slides away while tiled windows fill the workspace"
+      keywords: "autohide auto-hide tiling"
+      SettingsSwitch {
+        view: page.view
+        checked: page.settings.autoHideTiling
+        onToggled: function(on) { page.settings.autoHideTiling = on }
+      }
+    }
+    SettingsRow {
+      view: page.view
+      icon: "󰹑"
+      iconTint: page.system.cyan
+      label: "Keep windows below the island"
+      detail: "Tiled windows leave room for the island"
+      keywords: "gap margin overlap"
       last: true
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.autoHideTiling
-        onToggled: function(on) { page.view.settings.autoHideTiling = on }
+        checked: page.settings.reserveSpace
+        onToggled: function(on) { page.settings.reserveSpace = on }
       }
     }
   }
 
   SettingsGroup {
     view: page.view
-    title: "Omarchy Menu"
+    title: "Omarchy menu"
     SettingsRow {
       view: page.view
       icon: "󰀻"
       iconTint: page.system.blue
-      label: "Search apps"
-      detail: "Lists matching apps when searching the menu"
+      label: "Include apps in search"
+      detail: "Searching the menu also lists matching apps"
+      keywords: "applications launcher"
       last: true
       SettingsSwitch {
         view: page.view
-        checked: page.view.settings.menuApps
-        onToggled: function(on) { page.view.settings.menuApps = on }
-      }
-    }
-  }
-
-  SettingsGroup {
-    view: page.view
-    title: "Appearance"
-    SettingsRow {
-      view: page.view
-      icon: "󰸌"
-      iconTint: "#ff375f"
-      label: "Colorful live activities"
-      detail: "Use each activity's own accent color"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.colorfulLiveActivities
-        onToggled: function(on) { page.view.settings.colorfulLiveActivities = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󱂫"
-      iconTint: "#2f6fed"
-      label: "Colorful sidebar icons"
-      detail: "macOS-style colored icons throughout settings"
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.colorfulSettingsIcons
-        onToggled: function(on) { page.view.settings.colorfulSettingsIcons = on }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰃟"
-      iconTint: page.system.gray
-      label: "Theme background"
-      detail: "Use the current Omarchy theme's background instead of black"
-      last: true
-      SettingsSwitch {
-        view: page.view
-        checked: page.view.settings.themeBackground === true
-        onToggled: function(on) { page.view.settings.themeBackground = on }
-      }
-    }
-  }
-
-  SettingsGroup {
-    view: page.view
-    title: "Typography"
-    SettingsRow {
-      view: page.view
-      icon: "󰛖"
-      iconTint: page.system.purple
-      label: "Font"
-      detail: "Island default, Omarchy's menu font, or your own"
-      SettingsPopUp {
-        view: page.view
-        options: [
-          { label: "Island default", value: "island" },
-          { label: "Omarchy default", value: "omarchy" },
-          { label: "Custom", value: "custom" }
-        ]
-        value: page.view.settings.textFontMode
-        onPicked: function(v) { page.view.settings.textFontMode = v }
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰬈"
-      iconTint: page.system.purple
-      label: "Custom font"
-      detail: "Search the installed fonts"
-      visible: page.view.settings.textFontMode === "custom"
-      SettingsFontPicker {
-        view: page.view
-        value: page.view.settings.customFont
-      }
-    }
-    SettingsRow {
-      view: page.view
-      icon: "󰊄"
-      iconTint: page.system.gray
-      label: "Text size"
-      detail: "Scales text inside the pill and expanded views"
-      last: true
-      SettingsSegmented {
-        view: page.view
-        options: [{ label: "S", value: 0.9 }, { label: "M", value: 1 }, { label: "L", value: 1.15 }, { label: "XL", value: 1.3 }]
-        value: page.view.settings.textScale
-        onPicked: function(v) { page.view.settings.textScale = v }
-      }
-    }
-  }
-
-  SettingsGroup {
-    view: page.view
-    title: "Motion"
-    SettingsRow {
-      view: page.view
-      icon: "󰓅"
-      iconTint: page.system.green
-      label: "Animation speed"
-      detail: "How quickly the island morphs and settles"
-      last: true
-      SettingsSegmented {
-        view: page.view
-        options: [{ label: "Fast", value: 1 }, { label: "Normal", value: 1.5 }, { label: "Relaxed", value: 2 }]
-        value: page.view.settings.motionScale
-        onPicked: function(v) { page.view.settings.motionScale = v }
+        checked: page.settings.menuApps
+        onToggled: function(on) { page.settings.menuApps = on }
       }
     }
   }

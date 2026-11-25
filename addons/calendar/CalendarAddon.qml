@@ -10,7 +10,7 @@ import ".."
 // Repeating events are expanded from their rules (see repeats).
 Addon {
   id: calendarAddon
-  views: [{ name: "calendar", width: 480, padding: 22, component: calendarView }]
+  views: [{ name: "calendar", width: 480, padding: 20, component: calendarView }]
   tiles: [{ key: "today", title: "Calendar", component: calendarTile }]
   pill: Component { CalendarPill { calendar: calendarAddon } }
   pillWidth: 340

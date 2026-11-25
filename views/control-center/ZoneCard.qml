@@ -138,8 +138,6 @@ ColumnLayout {
     opacity: visible ? 1 : 0
     Behavior on opacity { enabled: zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: "fade"; curve: "fade" } }
     Layout.fillWidth: true
-    // The notifications sit a little off the grid above them.
-    Layout.topMargin: zone.zoneId === "notifications" ? 4 : 0
     Layout.preferredHeight: item ? item.implicitHeight : 0
     sourceComponent: zone.zoneId === "controls" ? controlsZone : notificationsZone
   }

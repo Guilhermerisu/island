@@ -12,12 +12,18 @@ FocusScope {
   required property string description
   property bool checked: false
   property bool pointerFocus: false
+  // Found by Settings' search as a SettingsRow is.
+  property string keywords: ""
+  readonly property string searchText: [title, description, keywords].join(" ")
+  readonly property bool searchHit: !!view.matches && view.matches(searchText)
+  Component.onCompleted: if (view.registerSearchable) view.registerSearchable(card)
+  Component.onDestruction: if (view.unregisterSearchable) view.unregisterSearchable(card)
   signal toggled(bool checked)
 
   implicitWidth: 220
   implicitHeight: content.implicitHeight
   scale: mouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: card.view.host.theme; pace: mouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: card.view.host.theme; pace: towards(scaleMotion.targetValue, mouse.pressed ? "press" : "standard") } }
   activeFocusOnTab: true
   Accessible.role: Accessible.CheckBox
   Accessible.name: title
@@ -47,11 +53,10 @@ FocusScope {
   Rectangle {
     id: backdrop
     anchors.fill: parent
-    radius: card.view.host.theme.radii.card
-    color: mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
+    radius: card.view.groupRadius
+    color: card.searchHit ? Qt.tint(card.view.card, card.view.host.theme.accentFill("soft"))
+      : mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
     Behavior on color { MotionColorAnimation { theme: card.view.host.theme } }
-    border.width: 1
-    border.color: card.view.edge
     Rectangle {
       anchors.fill: parent
       anchors.margins: -3
@@ -68,10 +73,13 @@ FocusScope {
     spacing: 0
     Rectangle {
       Layout.fillWidth: true
-      Layout.margins: 8
+      Layout.leftMargin: 8
+      Layout.rightMargin: 8
+      Layout.topMargin: 8
       Layout.preferredHeight: 96
-      // Concentric with the card: its radius less the 8 around the well.
-      radius: card.view.host.theme.radii.card - 6
+      // Near-concentric with the card, a little rounder than its radius
+      // less the 8 around the well.
+      radius: card.view.groupRadius - 4
       // Only a slightly darker fill, no edge of its own, so the card
       // doesn't read as a box in a box.
       color: card.view.host.theme.solid("quiet")
@@ -85,11 +93,13 @@ FocusScope {
     }
     RowLayout {
       Layout.fillWidth: true
-      Layout.leftMargin: 14
-      Layout.rightMargin: 14
-      Layout.topMargin: 2
-      Layout.bottomMargin: 12
-      spacing: 12
+      // 10 under the preview and 4 in from its edges; 10 over the
+      // card's bottom.
+      Layout.leftMargin: 12
+      Layout.rightMargin: 12
+      Layout.topMargin: 10
+      Layout.bottomMargin: 10
+      spacing: 11
       Column {
         Layout.fillWidth: true
         spacing: 2

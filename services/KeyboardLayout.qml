@@ -16,18 +16,10 @@ Item {
   property bool refreshPending: false
   signal switched()
 
+  // Hyprland's own virtual keyboard (which reports a layout change on every
+  // focus switch) and the power, lid and hotkey switches aren't typed on.
   function isTypedKeyboard(name) {
     return !/^(hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus)|(-wmi-hotkeys|-wireless-radio-control)(-\d+)?$/.test(String(name || ""))
-  }
-
-  function eventKeyboardName(event) {
-    var parts = []
-    try {
-      if (event && event.parse) parts = event.parse(2)
-    } catch (e) {}
-    if (!parts || parts.length === 0) parts = String(event && event.data ? event.data : "").split(",")
-    var name = String(parts[0] || "")
-    return isTypedKeyboard(name) ? name : ""
   }
 
   function refresh() {
@@ -50,21 +42,12 @@ Item {
       onStreamFinished: {
         try {
           var boards = JSON.parse(text).keyboards || []
-          var typed = boards.filter(function(k) {
-            return keyboard.isTypedKeyboard(k.name)
-          })
-          var main = typed.filter(function(k) {
-            return k.name === keyboard.typedKeyboardName
-          })[0]
-
-          if (!main) {
-            main = typed.reduce(function(furthest, k) {
-              var furthestIndex = (furthest && furthest.active_layout_index) || 0
-              var kIndex = k.active_layout_index || 0
-              return kIndex > furthestIndex ? k : furthest
-            }, typed[0])
-          }
-          if (!main) main = boards.filter(function(k) { return k.main })[0] || boards[0]
+          var typed = boards.filter(function(k) { return keyboard.isTypedKeyboard(k.name) })
+          // The keyboard last typed on, else Hyprland's main one if it's real.
+          var main = typed.filter(function(k) { return k.name === keyboard.typedKeyboardName })[0]
+            || typed.filter(function(k) { return k.main })[0]
+            || typed[0]
+            || boards.filter(function(k) { return k.main })[0] || boards[0]
           if (!main) return
 
           var name = String(main.active_keymap || "")
@@ -79,14 +62,18 @@ Item {
     }
   }
   Process { id: switcher; command: ["hyprctl", "switchxkblayout", "all", "next"] }
-  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches;
-  // Hyprland is only asked for the rest when the layout's name is new.
+  // "activelayout>>keyboard,layout" arrives whenever any keyboard switches,
+  // the virtual one included; only a typed keyboard's new layout asks
+  // Hyprland for the rest.
   Connections {
     target: Hyprland
     function onRawEvent(event) {
-      if (!event || event.name !== "activelayout") return
-      var named = keyboard.eventKeyboardName(event)
-      if (named) keyboard.typedKeyboardName = named
+      if (event.name !== "activelayout") return
+      var parts = event.parse(2)
+      if (!keyboard.isTypedKeyboard(parts[0])) return
+      var sameBoard = parts[0] === keyboard.typedKeyboardName
+      keyboard.typedKeyboardName = parts[0]
+      if (keyboard.known && sameBoard && parts[1] === keyboard.name) return
       keyboard.refresh()
     }
   }

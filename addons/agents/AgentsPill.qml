@@ -32,7 +32,20 @@ Item {
 
   // How far the pill has grown into a notice (see AgentNotice), following the
   // island's own height as it springs, so what moves keeps in step with it.
-  readonly property real grow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  // Only from a notice, till the pill's back to its size: the island growing
+  // into an open view (or shrinking back from one) isn't one.
+  property bool fromNotice: false
+  readonly property real heightGrow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  onHeightGrowChanged: if (heightGrow === 0 && !agents.noticeShown) fromNotice = false
+  Connections {
+    target: pill.agents
+    function onNoticeShownChanged() { if (pill.agents.noticeShown) pill.fromNotice = true }
+  }
+  Connections {
+    target: pill.host
+    function onSurfaceOpenChanged() { if (pill.host.surfaceOpen) pill.fromNotice = false }
+  }
+  readonly property real grow: fromNotice ? heightGrow : 0
   readonly property bool noticing: agents.noticeShown || grow > 0.5
 
   // Clawd and the time come in from a blur in turn, as the other pills; the
@@ -58,7 +71,7 @@ Item {
     // turn on the pill.
     readonly property var session: pill.noticing && noticeItem.displayed ? noticeItem.displayed : pill.agents.live
     // Codex's logo sits centered in the pill's rounded end.
-    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 10
+    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 14
     readonly property real tileX: noticeItem.tileCenter - width / 2
     x: Math.round(restX + (tileX - restX) * pill.grow)
     // Clawd (his body) and Codex's logo sit centered; the stand-in pixel
@@ -85,7 +98,7 @@ Item {
     id: restTime
     theme: pill.theme
     anchors.right: parent.right
-    anchors.rightMargin: 16
+    anchors.rightMargin: 14
     anchors.verticalCenter: parent.verticalCenter
     opacity: reveal.trailingIn
     PillPart { progress: reveal.trailingIn }
@@ -96,6 +109,28 @@ Item {
     font.weight: Font.DemiBold
     font.features: { "tnum": 1, "case": 1 }
     font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
+  }
+
+  // Waiting on you: an amber dot left of the time, with a soft halo, coming
+  // and going with it.
+  Rectangle {
+    visible: pill.agents.asking
+    anchors.right: restTime.left
+    anchors.rightMargin: 6 - 3
+    anchors.verticalCenter: restTime.verticalCenter
+    width: 12
+    height: 12
+    radius: 6
+    color: pill.theme.withAlpha(pill.ink, 0.22)
+    opacity: reveal.trailingIn
+    PillPart { progress: reveal.trailingIn }
+    Rectangle {
+      anchors.centerIn: parent
+      width: 6
+      height: 6
+      radius: 3
+      color: pill.ink
+    }
   }
 
   AgentNotice {

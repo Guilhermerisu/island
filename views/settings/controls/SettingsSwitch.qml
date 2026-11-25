@@ -15,13 +15,13 @@ Rectangle {
   radius: 11
   // Off is a clearly lighter grey than the card, so an off switch still
   // reads as a switch rather than a lone knob.
-  color: checked ? sw.view.accent : sw.view.host.theme.solid("stronger")
+  color: checked ? sw.view.accent : sw.view.switchOff
   Behavior on color { MotionColorAnimation { theme: sw.view.host.theme } }
   // The knob widens while held, as Apple's switches do; anchored by its
   // side, it stretches toward the side it will go to.
   Rectangle {
     width: switchMouse.pressed ? 23 : 18
-    Behavior on width { MotionAnimation { theme: sw.view.host.theme; pace: switchMouse.pressed ? "press" : "standard" } }
+    Behavior on width { id: widthMotion; MotionAnimation { theme: sw.view.host.theme; pace: towards(widthMotion.targetValue, switchMouse.pressed ? "press" : "standard") } }
     height: 18; radius: 9
     y: 2
     // How far across the knob is (0 off, 1 on). Animating this rather than
@@ -34,7 +34,8 @@ Rectangle {
     layer.effect: MultiEffect {
       shadowEnabled: true
       shadowColor: Qt.rgba(0, 0, 0, 0.4)
-      shadowBlur: 0.25
+      blurMax: 8
+      shadowBlur: 1
       shadowVerticalOffset: 0.5
     }
   }

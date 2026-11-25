@@ -14,7 +14,7 @@ ColumnLayout {
   required property var view
   required property var displays
   property bool shown: false
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   readonly property var entry: displays.selectedEntry
   readonly property bool on: !!entry && !entry.disabled
@@ -60,7 +60,7 @@ ColumnLayout {
   Text {
     visible: page.displays.loaded && page.displays.draft.length === 0
     Layout.fillWidth: true
-    Layout.leftMargin: 14
+    Layout.leftMargin: 4
     text: "No displays found."
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
@@ -110,6 +110,7 @@ ColumnLayout {
     Rectangle {
       visible: page.on
       Layout.fillWidth: true
+      Layout.leftMargin: 12
       Layout.preferredHeight: 1
       color: page.view.divider
     }

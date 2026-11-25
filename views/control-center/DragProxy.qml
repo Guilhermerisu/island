@@ -70,8 +70,9 @@ Rectangle {
   // Appears at once over the card it lifts; only fades on the way out.
   Behavior on opacity { enabled: proxy.sinking || proxy.settling; MotionAnimation { theme: proxy.center.host.theme; pace: "exit"; curve: "exit" } }
   Behavior on scale {
+    id: scaleMotion
     enabled: proxy.visible
-    MotionAnimation { theme: proxy.center.host.theme; pace: proxy.sinking ? "exit" : "standard"; curve: proxy.sinking ? "exit" : "settle" }
+    MotionAnimation { theme: proxy.center.host.theme; pace: towards(scaleMotion.targetValue, proxy.sinking ? "exit" : "standard"); curve: towards(scaleMotion.targetValue, proxy.sinking ? "exit" : "settle") }
   }
   // Follows the pointer directly while dragged, and eases only to settle.
   Behavior on x { enabled: proxy.settling; MotionAnimation { theme: proxy.center.host.theme; pace: "standard" } }
@@ -85,7 +86,7 @@ Rectangle {
   }
   // The shadow deepens as it lifts and fades as it settles.
   property real shadowStrength: lifted ? 1 : 0
-  Behavior on shadowStrength { MotionAnimation { theme: proxy.center.host.theme; pace: proxy.lifted ? "standard" : "exit"; curve: proxy.lifted ? "settle" : "exit" } }
+  Behavior on shadowStrength { id: shadowStrengthMotion; MotionAnimation { theme: proxy.center.host.theme; pace: towards(shadowStrengthMotion.targetValue, proxy.lifted ? "standard" : "exit"); curve: towards(shadowStrengthMotion.targetValue, proxy.lifted ? "settle" : "exit") } }
   layer.enabled: visible
   layer.effect: MultiEffect {
     shadowEnabled: true

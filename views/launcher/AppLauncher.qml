@@ -15,7 +15,14 @@ import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 // so or no app matches.
 ListPicker {
   id: launcher
-  placeholder: ["Search"].concat(host.addons.launcherHints).join(" or ")
+  // 42 px rows, 2 px apart, lit one at a time (the pointer moves the
+  // selection).
+  rowHeight: 42
+  rowGap: 2
+  rowRadius: 8
+  rowPadding: 10
+  hoverSelects: true
+  placeholder: "Search apps"
   emptyText: "No apps match"
   items: host.addons.searchResults(query, results, true, true)
   onChosen: function(entry) { if (entry.addonRow) entry.run(); else launch(entry) }
@@ -40,12 +47,16 @@ ListPicker {
       property var entry: ({})
       property bool selected: false
       readonly property bool isAddon: !!(entry && entry.addonRow)
+      // A name ending in a bracketed variant ("Cisco Packet Tracer 9.0.1
+      // (PTSA)") shows it after the base name, quieter.
+      readonly property string fullName: isAddon ? "" : String(AppSearch.entryName(entry) || "")
+      readonly property var variant: fullName.match(/^(.*\S)\s*\(([^()]+)\)$/)
 
       ClippingRectangle {
         id: iconTile
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 36; height: 36; radius: 10
+        width: 28; height: 28; radius: 6
         // App icons carry their own shape; only glyphs sit on a tile.
         color: appRow.isAddon && appRow.entry.tile ? appRow.entry.tile
           : !appRow.isAddon && appIcon.status === Image.Ready ? "transparent"
@@ -56,12 +67,12 @@ ListPicker {
           text: appRow.isAddon ? appRow.entry.glyph || "" : ""
           color: appRow.isAddon && appRow.entry.ink ? appRow.entry.ink : launcher.host.theme.text
           font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: launcher.host.theme.px(22)
+          font.pixelSize: launcher.host.theme.px(19)
         }
         Image {
           id: appIcon
           anchors.centerIn: parent
-          width: 32; height: 32
+          width: 28; height: 28
           visible: !appRow.isAddon && status === Image.Ready
           source: appRow.isAddon ? "" : IconSource.source(appRow.entry && appRow.entry.icon)
           sourceSize.width: 64
@@ -81,17 +92,28 @@ ListPicker {
       Text {
         anchors.left: iconTile.right
         anchors.leftMargin: 12
-        anchors.right: parent.right
+        anchors.right: openHint.visible ? openHint.left : parent.right
+        anchors.rightMargin: openHint.visible ? 12 : 0
         anchors.verticalCenter: parent.verticalCenter
         visible: !appRow.isAddon
-        text: appRow.isAddon ? "" : AppSearch.entryName(appRow.entry)
-        textFormat: Text.PlainText
+        text: !appRow.variant ? launcher.escaped(appRow.fullName)
+          : launcher.escaped(appRow.variant[1]) + "<font color=\"" + launcher.host.theme.tertiary + "\"> · " + launcher.escaped(appRow.variant[2]) + "</font>"
+        textFormat: Text.StyledText
         elide: Text.ElideRight
+        maximumLineCount: 1
         color: launcher.host.theme.text
         font.family: launcher.host.theme.textFontFamily
-        font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
-        font.pixelSize: launcher.host.theme.size.title3
-        font.weight: Font.Medium
+        font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(14))
+        font.pixelSize: launcher.host.theme.px(14)
+      }
+      // What Enter does, on the selected app only.
+      KeyHint {
+        id: openHint
+        visible: appRow.selected && !appRow.isAddon
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        theme: launcher.host.theme
+        label: "Open"
       }
       // An addon's row: its label and detail, muted, on one line
       // ("Ask Claude" and the question).
@@ -107,8 +129,8 @@ ListPicker {
           text: appRow.isAddon ? appRow.entry.label || "" : ""
           color: launcher.host.theme.text
           font.family: launcher.host.theme.textFontFamily
-          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
-          font.pixelSize: launcher.host.theme.size.title3
+          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(14))
+          font.pixelSize: launcher.host.theme.px(14)
           font.weight: Font.Medium
         }
         Text {
@@ -118,11 +140,17 @@ ListPicker {
           elide: Text.ElideRight
           color: launcher.host.theme.muted
           font.family: launcher.host.theme.textFontFamily
-          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.size.title3)
-          font.pixelSize: launcher.host.theme.size.title3
+          font.letterSpacing: launcher.host.theme.tracking(launcher.host.theme.textFontFamily, launcher.host.theme.px(14))
+          font.pixelSize: launcher.host.theme.px(14)
         }
       }
     }
+  }
+
+  // App names are drawn as styled text (for a variant's grey), so their own
+  // markup characters are escaped.
+  function escaped(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   }
 
   // ---------- Hidden entries (same sources as Omarchy's AppLibrary) ----------

@@ -151,8 +151,8 @@ Item {
       opacity: shown ? 1 : 0
       scale: shown ? 1 : 0.9
       visible: opacity > 0.01
-      Behavior on opacity { enabled: zone.editing && zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: slot.shown ? "fade" : "exit"; curve: slot.shown ? "fade" : "exit" } }
-      Behavior on scale { enabled: zone.editing && zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: slot.shown ? "standard" : "exit"; curve: slot.shown ? "settle" : "exit" } }
+      Behavior on opacity { id: opacityMotion; enabled: zone.editing && zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: towards(opacityMotion.targetValue, slot.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, slot.shown ? "fade" : "exit") } }
+      Behavior on scale { id: scaleMotion; enabled: zone.editing && zone.center.settled; MotionAnimation { theme: zone.center.host.theme; pace: towards(scaleMotion.targetValue, slot.shown ? "standard" : "exit"); curve: towards(scaleMotion.targetValue, slot.shown ? "settle" : "exit") } }
       Behavior on x { enabled: zone.editing && zone.center.settled && slot.visible; MotionAnimation { theme: zone.center.host.theme; pace: "standard" } }
       Behavior on y { enabled: zone.editing && zone.center.settled && slot.visible; MotionAnimation { theme: zone.center.host.theme; pace: "standard" } }
 

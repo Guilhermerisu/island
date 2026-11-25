@@ -16,7 +16,7 @@ Rectangle {
     : button.view.host.theme.accentFill(buttonMouse.containsMouse ? "medium" : "soft")
   Behavior on color { MotionColorAnimation { theme: button.view.host.theme } }
   opacity: buttonMouse.pressed ? 0.5 : 1
-  Behavior on opacity { MotionAnimation { theme: button.view.host.theme; pace: buttonMouse.pressed ? "press" : "fade" } }
+  Behavior on opacity { id: opacityMotion; MotionAnimation { theme: button.view.host.theme; pace: towards(opacityMotion.targetValue, buttonMouse.pressed ? "press" : "fade") } }
   Row {
     id: label
     anchors.centerIn: parent

@@ -19,7 +19,6 @@ CcSection {
   // Silence the output, keeping its volume for when it's back. Hidden in
   // edit mode, like the ›: the card is a drag handle then.
   toggleIcon: galleryPreview || card.center.editMode || !card.controls.controlPresent("sound") ? "" : card.controls.muted ? "󰖁" : "󰕾"
-  toggleOn: card.controls.muted
   toggleTip: card.controls.muted ? "Unmute" : "Mute"
   onToggleClicked: if (card.controls.sink && card.controls.sink.audio) card.controls.sink.audio.muted = !card.controls.muted
 
@@ -75,7 +74,7 @@ CcSection {
     // eases; out on the shorter exit pace.
     opacity: card.outputsShown ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: card.center.host.theme; pace: card.outputsShown ? "fade" : "exit"; curve: card.outputsShown ? "fade" : "exit" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: card.center.host.theme; pace: towards(opacityMotion.targetValue, card.outputsShown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, card.outputsShown ? "fade" : "exit") } }
     model: outputRows.model
     // An output plugged in while the picker is open fades in; one unplugged
     // fades out where it was. The first fill just appears.

@@ -16,31 +16,24 @@ Item {
 
   readonly property bool isWarningOrFeedback: (host.view === "feedback" && !host.notificationPill && !host.volumePill) || host.setup.needsSetup
   readonly property bool isStacked: host.clockStacked && !isWarningOrFeedback
-  readonly property bool showLanguage: host.view === "rest" && !host.setup.needsSetup
+  // The active layout's code ("US"), beside the bare resting clock, only when
+  // there are layouts to switch between.
   readonly property string languageCode: {
     var codes = host.keyboard.codes || []
-    if (codes.length > 0) {
-      var index = host.keyboard.index
-      if (index >= 0 && index < codes.length) return String(codes[index]).toUpperCase()
-    }
-    var name = String(host.keyboard.name || "").trim()
-    return name ? name : ""
+    var index = host.keyboard.index
+    return codes.length > 1 && index >= 0 && index < codes.length ? String(codes[index]).toUpperCase() : ""
   }
+  readonly property bool showLanguage: host.view === "rest" && !pill && !isWarningOrFeedback && languageCode !== ""
+  // The clock stays centred, so the island grows by the code on both sides.
+  readonly property real languageExtra: showLanguage ? 2 * (languageText.anchors.leftMargin + languageText.implicitWidth) : 0
 
   readonly property font font: singleText.font
-  readonly property real advanceWidth: isWarningOrFeedback
-    ? singleMetrics.advanceWidth
-    : isStacked ? stackedClockRow.implicitWidth
-    : clockRow.implicitWidth
+  readonly property real advanceWidth: (isStacked
+    ? Math.max(stackedTimeMetrics.advanceWidth, stackedSubMetrics.advanceWidth)
+    : singleMetrics.advanceWidth) + languageExtra
 
-  width: isWarningOrFeedback
-    ? singleText.implicitWidth
-    : isStacked ? stackedClockRow.implicitWidth
-    : clockRow.implicitWidth
-  height: isWarningOrFeedback
-    ? singleText.implicitHeight
-    : isStacked ? stackedClockRow.implicitHeight
-    : clockRow.implicitHeight
+  width: Math.max(singleText.implicitWidth, stackedCol.implicitWidth) + languageExtra
+  height: isStacked ? stackedCol.implicitHeight : singleText.implicitHeight
 
   // Single-line text (for feedback, warning, or single-line clock styles)
   Text {
@@ -62,79 +55,65 @@ Item {
     font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.title3)
   }
   // The clock itself, its digits rolling as the minute turns.
-  Row {
-    id: clockRow
+  RollingText {
+    id: clockText
     anchors.centerIn: parent
-    spacing: 8
-    visible: labelRoot.showLanguage && !labelRoot.isWarningOrFeedback && !labelRoot.isStacked
-
-    RollingText {
-      theme: labelRoot.host.theme
-      text: labelRoot.host.clockText
-      color: labelRoot.host.theme.text
-      font: singleText.font
-    }
-    Text {
-      anchors.verticalCenter: parent.verticalCenter
-      text: labelRoot.languageCode
-      textFormat: Text.PlainText
-      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.55)
-      font.family: labelRoot.host.theme.textFontFamily
-      font.pixelSize: labelRoot.host.theme.size.footnote
-      font.weight: Font.Bold
-      font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
-    }
+    visible: !labelRoot.isWarningOrFeedback && !labelRoot.isStacked
+    theme: labelRoot.host.theme
+    text: labelRoot.host.clockText
+    color: labelRoot.host.theme.text
+    font: singleText.font
   }
   TextMetrics { id: singleMetrics; font: singleText.font; text: singleText.text }
 
   // Two-line stacked column (time on top, day/date on bottom)
-  Row {
-    id: stackedClockRow
+  Column {
+    id: stackedCol
     anchors.centerIn: parent
-    spacing: 8
-    visible: labelRoot.showLanguage && labelRoot.isStacked
+    visible: labelRoot.isStacked
+    spacing: 0
 
-    Column {
-      id: stackedCol
-      anchors.verticalCenter: parent.verticalCenter
-      spacing: 0
-
-      RollingText {
-        theme: labelRoot.host.theme
-        id: stackedTimeText
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: labelRoot.host.clockTimeText
-        color: labelRoot.host.theme.text
-        font.family: labelRoot.host.theme.textFontFamily
-        font.pixelSize: labelRoot.host.theme.size.body
-        font.weight: Font.DemiBold
-        font.features: { "tnum": 1, "case": 1 }
-        font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.body)
-      }
-      Text {
-        id: stackedSubText
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: labelRoot.host.clockSubText
-        color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.7)
-        font.family: labelRoot.host.theme.textFontFamily
-        font.pixelSize: labelRoot.host.theme.size.footnote
-        font.weight: Font.Medium
-        font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
-      }
+    RollingText {
+      theme: labelRoot.host.theme
+      id: stackedTimeText
+      anchors.horizontalCenter: parent.horizontalCenter
+      text: labelRoot.host.clockTimeText
+      color: labelRoot.host.theme.text
+      font.family: labelRoot.host.theme.textFontFamily
+      font.pixelSize: labelRoot.host.theme.size.body
+      font.weight: Font.DemiBold
+      font.features: { "tnum": 1, "case": 1 }
+      font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.body)
     }
     Text {
-      anchors.verticalCenter: parent.verticalCenter
-      text: labelRoot.languageCode
-      textFormat: Text.PlainText
-      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.55)
+      id: stackedSubText
+      anchors.horizontalCenter: parent.horizontalCenter
+      text: labelRoot.host.clockSubText
+      color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.7)
       font.family: labelRoot.host.theme.textFontFamily
       font.pixelSize: labelRoot.host.theme.size.footnote
-      font.weight: Font.Bold
+      font.weight: Font.Medium
+      font.features: { "tnum": 1 }
       font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
     }
   }
   TextMetrics { id: stackedTimeMetrics; font: stackedTimeText.font; text: stackedTimeText.text }
   TextMetrics { id: stackedSubMetrics; font: stackedSubText.font; text: stackedSubText.text }
 
-  Behavior on opacity { MotionAnimation { theme: labelRoot.host.theme; pace: labelRoot.shown && labelRoot.fits ? "fade" : "exit"; curve: "fade" } }
+  Text {
+    id: languageText
+    anchors.left: labelRoot.isStacked ? stackedCol.right : clockText.right
+    anchors.leftMargin: 6
+    anchors.verticalCenter: parent.verticalCenter
+    visible: labelRoot.showLanguage
+    text: labelRoot.languageCode
+    textFormat: Text.PlainText
+    color: labelRoot.host.theme.withAlpha(labelRoot.host.theme.text, 0.55)
+    font.family: labelRoot.host.theme.textFontFamily
+    font.pixelSize: labelRoot.host.theme.size.footnote
+    font.weight: Font.Bold
+    font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
+  }
+
+  Behavior on opacity { id: opacityMotion; MotionAnimation { theme: labelRoot.host.theme; pace: towards(opacityMotion.targetValue, labelRoot.shown && labelRoot.fits ? "fade" : "exit"); curve: "fade" } }
 }

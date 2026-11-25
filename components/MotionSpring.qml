@@ -22,12 +22,23 @@ FrameAnimation {
   readonly property real response: (theme ? theme.motionDuration(pace) : 240) * 0.82 / 1000
   readonly property real omega: 2 * Math.PI / Math.max(0.01, response)
 
-  Component.onCompleted: value = target
-  onTargetChanged: if (!running) start()
+  // Stepped by someone else (see Island's morph, which moves several springs
+  // in one go so what they shape is redrawn once a frame), instead of
+  // running itself: `settled` says when it needs stepping.
+  property bool driven: false
+  property bool settled: true
 
-  onTriggered: {
+  Component.onCompleted: value = target
+  onTargetChanged: {
+    if (driven) settled = false
+    else if (!running) start()
+  }
+  onTriggered: if (!step(frameTime)) stop()
+
+  // One frame of `dt` seconds; false once it has come to rest.
+  function step(dt) {
     // Frames longer than 50 ms (a stall) are treated as one short step.
-    var dt = Math.min(frameTime, 0.05)
+    dt = Math.min(dt, 0.05)
     var w = omega
     var offset = value - target
     var zeta = 1 - Math.max(0, Math.min(0.9, bounce))
@@ -50,9 +61,10 @@ FrameAnimation {
     if (Math.abs(offset) < 0.1 && Math.abs(velocity) < 1) {
       value = target
       velocity = 0
-      stop()
-    } else {
-      value = target + offset
+      settled = true
+      return false
     }
+    value = target + offset
+    return true
   }
 }

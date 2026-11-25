@@ -1,8 +1,9 @@
 import QtQuick
 import "../../../components"
 
-// Segmented control, as macOS's: every choice side by side in a well, the
-// current one on a raised chip that glides between them. Chips share one
+// Segmented control, as macOS's: every choice side by side in a track
+// (#2c2c2e, 2 in), the current one on a lighter chip (#636366) that glides
+// between them, its label semibold white; the rest secondary. Chips share one
 // width, and the control is at least the view's controlWidth so it lines up
 // with the pop-ups. For a handful of short choices; longer lists keep
 // SettingsPopUp.
@@ -16,25 +17,33 @@ Rectangle {
   // controls up wider than the General pane's.
   property real minWidth: view.controlWidth
   signal picked(var value)
+  // The choice matching the value; for numbers, the nearest one, so a value
+  // set by hand in island.json (1.2) still shows a choice picked.
   readonly property int currentIndex: {
     for (var i = 0; i < options.length; i++) if (options[i].value === value) return i
-    return -1
+    if (typeof value !== "number" || isNaN(value)) return -1
+    var nearest = -1
+    for (var j = 0; j < options.length; j++) {
+      if (typeof options[j].value !== "number") return -1
+      if (nearest < 0 || Math.abs(options[j].value - value) < Math.abs(options[nearest].value - value)) nearest = j
+    }
+    return nearest
   }
   FontMetrics {
     id: segFont
     font.family: seg.view.host.theme.textFontFamily
-    font.pixelSize: seg.view.detailFontSize
+    font.pixelSize: seg.view.calloutFontSize
     font.weight: Font.DemiBold
   }
   readonly property real chipWidth: {
     var widest = 0
     for (var i = 0; i < options.length; i++) widest = Math.max(widest, segFont.advanceWidth(options[i].label))
-    return Math.max(30, Math.ceil(widest) + 22, options.length ? (seg.minWidth - 4) / options.length : 0)
+    return Math.max(30, Math.ceil(widest) + 20, options.length ? (seg.minWidth - 4) / options.length : 0)
   }
   implicitWidth: choices.implicitWidth + 4
-  implicitHeight: 28
-  radius: 8
-  color: seg.view.host.theme.fill("subtle")
+  implicitHeight: 26
+  radius: 7
+  color: seg.view.controlFill
   // The chip: clearly lighter, with a faint shadow a pixel under it, as
   // macOS's selected segment, so the choice doesn't rest on the bold label.
   // Placed by index, since every chip is chipWidth wide: looking the item
@@ -53,13 +62,13 @@ Rectangle {
       anchors.fill: parent
       anchors.topMargin: 1
       anchors.bottomMargin: -1
-      radius: 6
+      radius: 5
       color: Qt.rgba(0, 0, 0, 0.35)
     }
     Rectangle {
       anchors.fill: parent
-      radius: 6
-      color: Qt.tint(seg.view.host.theme.background, seg.view.host.theme.withAlpha(seg.view.text, 0.31))
+      radius: 5
+      color: seg.view.segmentChip
     }
   }
   Row {
@@ -80,15 +89,15 @@ Rectangle {
           anchors.centerIn: parent
           text: choice.modelData.label
           textFormat: Text.PlainText
-          color: choice.selected ? seg.view.text : seg.view.textMuted
+          color: choice.selected ? (seg.view.dark ? "#ffffff" : seg.view.text) : seg.view.textMuted
           Behavior on color { MotionColorAnimation { theme: seg.view.host.theme } }
           font.family: seg.view.host.theme.textFontFamily
-          font.letterSpacing: seg.view.host.theme.tracking(seg.view.host.theme.textFontFamily, seg.view.detailFontSize)
-          font.pixelSize: seg.view.detailFontSize
+          font.letterSpacing: seg.view.host.theme.tracking(seg.view.host.theme.textFontFamily, seg.view.calloutFontSize)
+          font.pixelSize: seg.view.calloutFontSize
           font.weight: choice.selected ? Font.DemiBold : Font.Normal
         }
         scale: choiceMouse.pressed ? 0.96 : 1
-        Behavior on scale { MotionAnimation { theme: seg.view.host.theme; pace: choiceMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: seg.view.host.theme; pace: towards(scaleMotion.targetValue, choiceMouse.pressed ? "press" : "standard") } }
         MouseArea {
           id: choiceMouse
           anchors.fill: parent

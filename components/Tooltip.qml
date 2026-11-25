@@ -44,10 +44,10 @@ Item {
     visible: opacity > 0.01
     enabled: false
     opacity: tip.shown ? 1 : 0
-    Behavior on opacity { MotionAnimation { theme: tip.theme; pace: tip.shown ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: tip.theme; pace: towards(opacityMotion.targetValue, tip.shown ? "fade" : "exit"); curve: "fade" } }
     scale: tip.shown ? 1 : 0.97
     transformOrigin: tip.above ? Item.Bottom : Item.Top
-    Behavior on scale { MotionAnimation { theme: tip.theme; pace: tip.shown ? "quick" : "exit" } }
+    Behavior on scale { id: scaleMotion; MotionAnimation { theme: tip.theme; pace: towards(scaleMotion.targetValue, tip.shown ? "quick" : "exit") } }
     width: label.width + 16
     height: label.height + 8
     radius: 6
