@@ -32,6 +32,7 @@ Item {
   readonly property color switchOff: dark ? "#3a3a3c" : host.theme.solid("stronger")
   readonly property color insetFill: dark ? "#111113" : host.theme.solid("quiet")
   readonly property int groupRadius: 12
+  readonly property int paneTitleFontSize: host.theme.px(18)
   readonly property int detailFontSize: host.theme.px(13)
   readonly property int rowTitleFontSize: host.theme.px(14)
   readonly property int detailCaptionFontSize: host.theme.px(11)

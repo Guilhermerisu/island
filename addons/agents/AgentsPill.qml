@@ -159,6 +159,27 @@ Item {
     // The turn's time, as the other pills give theirs, a little larger
     // grown. Done, at rest the time gives way to a green check filling in,
     // then "Done" sliding in after it; grown, the time goes green.
+    // Waiting on you: an amber dot left of the time at rest, with a soft
+    // halo, coming and going with it (in the header, the time's sibling).
+    Rectangle {
+      visible: pill.agents.asking && !pill.expanded
+      anchors.right: timeBox.left
+      anchors.rightMargin: 6 - 3
+      anchors.verticalCenter: timeBox.verticalCenter
+      width: 12
+      height: 12
+      radius: 6
+      color: pill.theme.withAlpha(pill.ink, 0.22)
+      opacity: reveal.trailingIn
+      PillPart { progress: reveal.trailingIn }
+      Rectangle {
+        anchors.centerIn: parent
+        width: 6
+        height: 6
+        radius: 3
+        color: pill.ink
+      }
+    }
     Item {
       id: timeBox
       anchors.right: parent.right
@@ -699,33 +720,27 @@ Item {
     }
   }
 
-  // Waiting on you: an amber dot left of the time, with a soft halo, coming
-  // and going with it.
-  Rectangle {
-    visible: pill.agents.asking
-    anchors.right: restTime.left
-    anchors.rightMargin: 6 - 3
-    anchors.verticalCenter: restTime.verticalCenter
-    width: 12
-    height: 12
-    radius: 6
-    color: pill.theme.withAlpha(pill.ink, 0.22)
-    opacity: reveal.trailingIn
-    PillPart { progress: reveal.trailingIn }
-    Rectangle {
-      anchors.centerIn: parent
-      width: 6
-      height: 6
-      radius: 3
-      color: pill.ink
-    }
-  }
-
   AgentNotice {
     id: noticeItem
     anchors.fill: parent
     agents: pill.agents
     grow: pill.grow
+  }
+
+  // A tick drawing itself in as `draw` runs 0 → 1: from the start down to
+  // `corner`, then up to `end`, one stroke after the other.
+  component Tick: ShapePath {
+    id: tick
+    fillColor: "transparent"
+    capStyle: ShapePath.RoundCap
+    joinStyle: ShapePath.RoundJoin
+    property real draw: 1
+    property point corner
+    property point end
+    readonly property real first: Math.min(1, draw * 2)
+    readonly property real second: Math.max(0, draw * 2 - 1)
+    PathLine { x: tick.startX + (tick.corner.x - tick.startX) * tick.first; y: tick.startY + (tick.corner.y - tick.startY) * tick.first }
+    PathLine { x: tick.corner.x + (tick.end.x - tick.corner.x) * tick.second; y: tick.corner.y + (tick.end.y - tick.corner.y) * tick.second }
   }
 
   // A line drawn in one stroke, as the step marks are.

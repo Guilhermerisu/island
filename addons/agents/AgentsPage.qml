@@ -472,7 +472,7 @@ ColumnLayout {
                 color: page.view.host.theme.fill("stronger")
               }
               Repeater {
-                model: grid.modelData === 0 || page.busiest <= 0 ? 0 : Math.floor(chart.plotWidth / 4)
+                model: grid.modelData === 0 || page.busiest <= 0 ? 0 : Math.max(0, Math.floor(chart.plotWidth / 4))
                 delegate: Rectangle {
                   required property int index
                   x: index * 4
