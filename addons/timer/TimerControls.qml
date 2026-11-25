@@ -10,6 +10,7 @@ Item {
   required property var timer
   property real buttonSize: 52
   property real timeSize: 46
+  property real labelSize: 18
   readonly property var theme: timer.host.theme
   readonly property string phase: timer.phase
 
@@ -65,8 +66,8 @@ Item {
     text: controls.phase === "paused" ? "Paused" : "Timer"
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
-    font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, Math.round(controls.theme.px(controls.timeSize) * 0.4))
-    font.pixelSize: Math.round(controls.theme.px(controls.timeSize) * 0.4)
+    font.letterSpacing: controls.theme.tracking(controls.theme.textFontFamily, controls.theme.px(controls.labelSize))
+    font.pixelSize: controls.theme.px(controls.labelSize)
     font.weight: Font.Medium
   }
   RollingText {

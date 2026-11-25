@@ -2,9 +2,10 @@ import QtQuick
 import "../../components"
 import QtQuick.Layouts
 
-// A control tile, as macOS's: a rounded card (the same corners as the wide
-// cards) with a round badge for the icon at its start, and the title over a
-// status.
+// A control tile, as macOS's: a 60 px rounded card (the same corners as the
+// wide cards) with a 32 px round badge for the icon 14 px in, and the title
+// (semibold) over a 12 px status ("Connected", "Off") 12 px after it. On, the
+// badge is the accent with a dark accent icon; off, grey with a white one.
 // `center` is the ControlCenter, for its colours.
 Rectangle {
   id: t
@@ -42,15 +43,15 @@ Rectangle {
   Rectangle {
     id: badge
     anchors.left: parent.left
-    anchors.leftMargin: (t.height - height) / 2
+    anchors.leftMargin: 14
     anchors.verticalCenter: parent.verticalCenter
     width: t.badgeSize; height: t.badgeSize; radius: t.badgeSize / 2
-    color: t.checked ? center.accent : center.well
+    color: t.checked ? center.accent : "#3a3a3c"
     Behavior on color { MotionColorAnimation { theme: center.host.theme } }
     Text {
       anchors.centerIn: parent
       text: t.icon
-      color: t.checked ? center.badgeOnInk : center.text
+      color: t.checked ? center.badgeOnInk : "#ffffff"
       Behavior on color { MotionColorAnimation { theme: center.host.theme } }
       font.family: t.iconFamily || center.iconFont
       font.pixelSize: center.host.theme.px(16)
@@ -81,9 +82,9 @@ Rectangle {
       elide: Text.ElideRight
       color: center.textMuted
       font.family: center.host.theme.textFontFamily
-      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.callout)
+      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.px(12))
       font.features: { "tnum": 1 }
-      font.pixelSize: center.host.theme.size.callout
+      font.pixelSize: center.host.theme.px(12)
     }
   }
   MouseArea {

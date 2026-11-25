@@ -15,9 +15,14 @@ import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 // so or no app matches.
 ListPicker {
   id: launcher
-  rowHeight: 44
+  // 42 px rows, 2 px apart, lit one at a time (the pointer moves the
+  // selection).
+  rowHeight: 42
+  rowGap: 2
+  rowRadius: 8
   rowPadding: 10
-  placeholder: ["Search apps"].concat(host.addons.launcherHints).join(" or ")
+  hoverSelects: true
+  placeholder: "Search apps"
   emptyText: "No apps match"
   items: host.addons.searchResults(query, results, true, true)
   onChosen: function(entry) { if (entry.addonRow) entry.run(); else launch(entry) }
@@ -51,7 +56,7 @@ ListPicker {
         id: iconTile
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 32; height: 32; radius: 8
+        width: 28; height: 28; radius: 6
         // App icons carry their own shape; only glyphs sit on a tile.
         color: appRow.isAddon && appRow.entry.tile ? appRow.entry.tile
           : !appRow.isAddon && appIcon.status === Image.Ready ? "transparent"
@@ -62,12 +67,12 @@ ListPicker {
           text: appRow.isAddon ? appRow.entry.glyph || "" : ""
           color: appRow.isAddon && appRow.entry.ink ? appRow.entry.ink : launcher.host.theme.text
           font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: launcher.host.theme.px(22)
+          font.pixelSize: launcher.host.theme.px(19)
         }
         Image {
           id: appIcon
           anchors.centerIn: parent
-          width: 32; height: 32
+          width: 28; height: 28
           visible: !appRow.isAddon && status === Image.Ready
           source: appRow.isAddon ? "" : IconSource.source(appRow.entry && appRow.entry.icon)
           sourceSize.width: 64
@@ -92,7 +97,7 @@ ListPicker {
         anchors.verticalCenter: parent.verticalCenter
         visible: !appRow.isAddon
         text: !appRow.variant ? launcher.escaped(appRow.fullName)
-          : launcher.escaped(appRow.variant[1]) + "<font color=\"" + launcher.host.theme.secondary + "\"> · " + launcher.escaped(appRow.variant[2]) + "</font>"
+          : launcher.escaped(appRow.variant[1]) + "<font color=\"" + launcher.host.theme.tertiary + "\"> · " + launcher.escaped(appRow.variant[2]) + "</font>"
         textFormat: Text.StyledText
         elide: Text.ElideRight
         maximumLineCount: 1

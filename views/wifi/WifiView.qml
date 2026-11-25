@@ -242,17 +242,17 @@ ColumnLayout {
   // and off from the Control Center's tile.
   RowLayout {
     Layout.fillWidth: true
-    Layout.preferredHeight: 34
+    Layout.preferredHeight: 28
     Layout.leftMargin: 4
     Layout.rightMargin: 6
-    spacing: 8
+    spacing: 10
     Rectangle {
       scale: backMouse.pressed ? 0.92 : 1
       Behavior on scale { id: scaleMotion; MotionAnimation { theme: wf.host.theme; pace: towards(scaleMotion.targetValue, backMouse.pressed ? "press" : "standard") } }
-      Layout.preferredWidth: 32
-      Layout.preferredHeight: 32
+      Layout.preferredWidth: 28
+      Layout.preferredHeight: 28
       radius: height / 2
-      color: backMouse.containsMouse ? wf.well : wf.tile
+      color: backMouse.containsMouse ? wf.tile : wf.card
       Tooltip { theme: wf.host.theme; text: "Control Center" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(14) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
@@ -261,8 +261,8 @@ ColumnLayout {
       text: "Wi-Fi"
       color: wf.text
       font.family: wf.host.theme.textFontFamily
-      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title2)
-      font.pixelSize: wf.host.theme.size.title2
+      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
+      font.pixelSize: wf.host.theme.px(15)
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
@@ -278,10 +278,13 @@ ColumnLayout {
     detail: wf.device ? "" : wf.onEthernet ? "This computer is on Ethernet." : "No wireless hardware was found."
   }
 
+  // The card: the networks, then the options (Speed Test, Wi-Fi Settings),
+  // 44 px rows whose text and dividers start 14 px in from its edge (its
+  // 6 px inset plus 8).
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 12
-    radius: wf.host.theme.radii.card
+    radius: 14
     color: wf.card
     border.width: 1
     border.color: wf.edge
@@ -372,8 +375,8 @@ ColumnLayout {
               visible: row.index !== 0
               anchors.left: parent.left
               anchors.right: parent.right
-              anchors.leftMargin: 10
-              anchors.rightMargin: 10
+              anchors.leftMargin: 8
+              anchors.rightMargin: -6
               anchors.bottom: parent.top
               anchors.bottomMargin: 2
               height: 1
@@ -381,7 +384,7 @@ ColumnLayout {
             }
             Text {
               anchors.left: parent.left
-              anchors.leftMargin: 10
+              anchors.leftMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               text: row.modelData.header || ""
               color: wf.textMuted
@@ -392,7 +395,7 @@ ColumnLayout {
             }
             Row {
               anchors.right: parent.right
-              anchors.rightMargin: 10
+              anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               spacing: 8
               visible: !!row.modelData.toggle
@@ -576,7 +579,7 @@ ColumnLayout {
               id: trailing
               visible: !row.askingPassword
               anchors.right: parent.right
-              anchors.rightMargin: 10
+              anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               spacing: 6
               Rectangle {
@@ -630,8 +633,8 @@ ColumnLayout {
         Rectangle {
           visible: list.visible
           Layout.fillWidth: true
-          Layout.leftMargin: 10
-          Layout.rightMargin: 10
+          Layout.leftMargin: 8
+          Layout.rightMargin: -6
           Layout.topMargin: 4
           Layout.bottomMargin: 4
           Layout.preferredHeight: 1
@@ -645,7 +648,7 @@ ColumnLayout {
           Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
           Column {
             anchors.left: parent.left
-            anchors.leftMargin: 10
+            anchors.leftMargin: 8
             anchors.right: speedAction.left
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
@@ -681,11 +684,11 @@ ColumnLayout {
           Rectangle {
             id: speedAction
             anchors.right: parent.right
-            anchors.rightMargin: 10
+            anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             width: speedActionLabel.implicitWidth + 24
-            height: speedActionLabel.implicitHeight + 10
-            radius: wf.host.theme.radii.medium
+            height: 26
+            radius: 7
             color: speedActionMouse.pressed || speedActionMouse.containsMouse ? wf.wellHover : wf.well
             scale: speedActionMouse.pressed ? 0.96 : 1
             Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
@@ -696,8 +699,8 @@ ColumnLayout {
               text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
               color: wf.text
               font.family: wf.host.theme.textFontFamily
-              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
-              font.pixelSize: wf.host.theme.size.callout
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
+              font.pixelSize: wf.host.theme.px(12)
               font.weight: Font.Medium
             }
             MouseArea {
@@ -761,8 +764,8 @@ ColumnLayout {
       Rectangle {
         visible: list.visible || wf.canSpeedTest
         Layout.fillWidth: true
-        Layout.leftMargin: 10
-        Layout.rightMargin: 10
+        Layout.leftMargin: 8
+        Layout.rightMargin: -6
         Layout.topMargin: 4
         Layout.bottomMargin: 4
         Layout.preferredHeight: 1
@@ -773,9 +776,17 @@ ColumnLayout {
         Layout.preferredHeight: 44
         radius: 8
         color: settingsMouse.pressed ? wf.well : settingsMouse.containsMouse || (wf.usingKeys && wf.cursor === "settings") ? wf.tile : "transparent"
+        Chevron {
+          theme: wf.host.theme
+          anchors.right: parent.right
+          anchors.rightMargin: 8
+          anchors.verticalCenter: parent.verticalCenter
+          pixelSize: 14
+          color: wf.host.theme.tertiary
+        }
         Text {
           anchors.left: parent.left
-          anchors.leftMargin: 10
+          anchors.leftMargin: 8
           anchors.verticalCenter: parent.verticalCenter
           text: "Wi-Fi Settings…"
           color: wf.text

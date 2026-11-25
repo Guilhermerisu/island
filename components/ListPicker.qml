@@ -33,6 +33,16 @@ Item {
   property int rowHeight: 50
   // Between a list row's edges and what it draws.
   property int rowPadding: 12
+  // A list's space between rows, and its highlight's corners.
+  property int rowGap: 0
+  property int rowRadius: 10
+  // The pointer moves the selection, so one row is lit at a time, instead of
+  // the hovered row getting a second well.
+  property bool hoverSelects: false
+  readonly property int cellHeight: rowHeight + (grid ? 0 : rowGap)
+  // Where the pointer last moved the selection (hoverSelects), in screen
+  // coordinates.
+  property point lastPointer: Qt.point(-1, -1)
   // The gap between grid cells.
   property int cellGap: 6
   // A bar under the list (e.g. the selected emoji's name), set off by a
@@ -94,8 +104,8 @@ Item {
   // Scrolls just enough to show a row, its padding (and so a grid's ring)
   // included, which positionViewAtIndex leaves out.
   function reveal(index) {
-    var top = Math.floor(index / columns) * rowHeight - gridPad
-    var bottom = top + rowHeight + 2 * gridPad
+    var top = Math.floor(index / columns) * cellHeight - gridPad
+    var bottom = top + cellHeight + 2 * gridPad
     var lowest = -gridPad
     var highest = Math.max(lowest, list.contentHeight + gridPad - list.height)
     var next = list.contentY
@@ -159,13 +169,13 @@ Item {
     anchors.rightMargin: picker.showSide ? 12 : 0
     anchors.top: search.bottom
     anchors.topMargin: 8
-    height: picker.rowHeight * picker.shownRows + 2 * picker.gridPad
+    height: picker.cellHeight * picker.shownRows + 2 * picker.gridPad
     leftMargin: picker.gridPad
     rightMargin: picker.gridPad
     topMargin: picker.gridPad
     bottomMargin: picker.gridPad
     cellWidth: Math.floor((width - 2 * picker.gridPad) / picker.columns)
-    cellHeight: picker.rowHeight
+    cellHeight: picker.cellHeight
     clip: true
     model: picker.items
     boundsBehavior: Flickable.StopAtBounds
@@ -191,10 +201,10 @@ Item {
       visible: !!at && list.count > 0
       readonly property real inset: picker.grid ? picker.cellGap / 2 : 0
       x: at ? at.x + inset : 0
-      y: at ? at.y + inset : 0
+      y: at ? at.y + inset + picker.rowGap / 2 : 0
       width: list.cellWidth - 2 * inset
-      height: list.cellHeight - 2 * inset
-      radius: 10
+      height: picker.rowHeight - 2 * inset
+      radius: picker.rowRadius
       color: picker.host.theme.well
       opacity: atDisabled ? 0.4 : 1
       // A grid's ring, with the island's black between it and the well.
@@ -224,14 +234,20 @@ Item {
       // A hovered row gets the selection's well too (the gliding highlight
       // stays on the selected one).
       Rectangle {
-        anchors.fill: parent
-        visible: !picker.grid && slotMouse.containsMouse && !slot.isSelected && !slot.itemDisabled
-        radius: 10
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: picker.rowHeight
+        visible: !picker.grid && !picker.hoverSelects && slotMouse.containsMouse && !slot.isSelected && !slot.itemDisabled
+        radius: picker.rowRadius
         color: picker.host.theme.well
       }
       Loader {
         id: rowLoader
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: picker.rowHeight
         scale: picker.grid && slotMouse.pressed && !slot.itemDisabled ? 0.96 : 1
         Behavior on scale { id: scaleMotion; MotionAnimation { theme: picker.host.theme; pace: towards(scaleMotion.targetValue, slotMouse.pressed ? "press" : "standard") } }
         anchors.leftMargin: picker.grid ? 0 : picker.rowPadding
@@ -247,6 +263,15 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: slot.itemDisabled ? Qt.ArrowCursor : Qt.PointingHandCursor
+        // Only a real move of the pointer, not the list scrolling under a
+        // still one (keys reveal rows), takes the selection.
+        onPositionChanged: function(mouse) {
+          if (!picker.hoverSelects || slot.itemDisabled) return
+          var at = mapToGlobal(mouse.x, mouse.y)
+          if (at.x === picker.lastPointer.x && at.y === picker.lastPointer.y) return
+          picker.lastPointer = at
+          list.currentIndex = slot.index
+        }
         onClicked: function(mouse) {
           if (slot.itemDisabled) return
           // A row can take a click on a part of itself (clickAt, true when it did).

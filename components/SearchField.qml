@@ -16,7 +16,7 @@ Rectangle {
 
   height: 36
   radius: 10
-  color: host.theme.tile
+  color: host.theme.card
 
   Text {
     id: icon

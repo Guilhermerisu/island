@@ -19,7 +19,12 @@ ListPicker {
     ? (host.addons.option("ask", "menuSearch") ? ["Search"].concat(host.addons.launcherHints).join(" or ") : "Search")
     : MenuModel.pathFor(items_, activeMenu)
   emptyText: "Nothing matches"
-  rowHeight: 40
+  // 36 px rows, 2 px apart, lit one at a time: the pointer moves the
+  // keyboard's selection rather than lighting a second row.
+  rowHeight: 36
+  rowGap: 2
+  rowRadius: 8
+  hoverSelects: true
   visibleRows: 9
   items: rows
   onChosen: function(entry) { if (entry && entry.addonRow) entry.run(); else activate(entry) }
@@ -381,12 +386,12 @@ ListPicker {
         opacity: appIcon.visible ? 0 : 1
         color: menu.host.theme.secondary
         font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
-        font.pixelSize: menu.host.theme.px(18)
+        font.pixelSize: menu.host.theme.px(17)
       }
       Column {
         anchors.left: menuRow.isAddon ? addonTile.right : icon.right
         anchors.leftMargin: 12
-        anchors.right: chevron.left
+        anchors.right: trailing.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         spacing: 1
@@ -412,15 +417,49 @@ ListPicker {
           font.pixelSize: menu.host.theme.size.subheadline
         }
       }
-      // Only on rows that open a submenu; one that runs an action has none.
-      Chevron {
-        id: chevron
-        theme: menu.host.theme
+      // A hairline over About, apart from the rest of the top menu.
+      Rectangle {
+        visible: menuRow.entry.itemId === "about" && menu.query.trim() === "" && menu.activeMenu === "root"
+        x: -menu.rowPadding + 10
+        y: -1
+        width: parent.width + 2 * menu.rowPadding - 20
+        height: 1
+        color: menu.host.theme.hairline
+      }
+      // The selected row's ↵ keycap; else a chevron on rows that open a
+      // submenu (one that runs an action has none).
+      Item {
+        id: trailing
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        visible: menuRow.isMenu
-        pixelSize: 14
-        color: menu.host.theme.secondary
+        width: keycap.visible ? keycap.width : chevron.visible ? chevron.width : 0
+        height: parent.height
+        Chevron {
+          id: chevron
+          theme: menu.host.theme
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          visible: menuRow.isMenu && !keycap.visible
+          pixelSize: 14
+          color: menu.host.theme.tertiary
+        }
+        Rectangle {
+          id: keycap
+          visible: menuRow.selected && !menuRow.entry.disabled
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          width: 24
+          height: 20
+          radius: 5
+          color: menu.host.theme.fill("strong")
+          Text {
+            anchors.centerIn: parent
+            text: "↵"
+            color: menu.host.theme.secondary
+            font.family: menu.host.theme.textFontFamily
+            font.pixelSize: menu.host.theme.px(11)
+          }
+        }
       }
     }
   }

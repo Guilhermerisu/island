@@ -52,6 +52,9 @@ Item {
     id: controlsSurface
     host: views.host
     viewName: "controls"
+    // 28 corners and 14 padding, so the cards' 14 corners sit concentric.
+    padding: 14
+    cornerRadius: 28
     // Follows the columns the control center shows.
     fixedWidth: controlCenter.islandWidth
     maxHeight: views.controlsMaxHeight
@@ -149,6 +152,7 @@ Item {
     host: views.host
     viewName: "apps"
     fixedWidth: 600
+    padding: 14
     AppLauncher { id: appLauncher; host: views.host; active: appsSurface.active; anchors.fill: parent }
   }
 
@@ -173,6 +177,7 @@ Item {
     host: views.host
     viewName: "clipboard"
     fixedWidth: 780
+    padding: 14
     ClipboardList { host: views.host; active: clipboardSurface.active; anchors.fill: parent }
   }
 
@@ -181,6 +186,7 @@ Item {
     host: views.host
     viewName: "menu"
     fixedWidth: 520
+    padding: 14
     OmarchyMenu { host: views.host; launcher: appLauncher; active: menuSurface.active; anchors.fill: parent }
   }
 
