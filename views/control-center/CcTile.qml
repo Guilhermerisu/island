@@ -22,7 +22,7 @@ Rectangle {
   property bool opens: false
   // The round icon badge's size; addon tiles that draw their own badge
   // (Calendar) line up with it.
-  readonly property real badgeSize: 38
+  readonly property real badgeSize: 32
   signal clicked()
   signal opened()
 
@@ -53,16 +53,16 @@ Rectangle {
       color: t.checked ? center.badgeOnInk : center.text
       Behavior on color { MotionColorAnimation { theme: center.host.theme } }
       font.family: t.iconFamily || center.iconFont
-      font.pixelSize: center.host.theme.px(18)
+      font.pixelSize: center.host.theme.px(16)
     }
   }
   Column {
     anchors.left: badge.right
-    anchors.leftMargin: 9
+    anchors.leftMargin: 12
     anchors.right: parent.right
-    anchors.rightMargin: 16
+    anchors.rightMargin: 14
     anchors.verticalCenter: parent.verticalCenter
-    spacing: 1
+    spacing: 2
     Text {
       width: parent.width
       text: t.title
@@ -81,9 +81,9 @@ Rectangle {
       elide: Text.ElideRight
       color: center.textMuted
       font.family: center.host.theme.textFontFamily
-      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.subheadline)
+      font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.callout)
       font.features: { "tnum": 1 }
-      font.pixelSize: center.host.theme.size.subheadline
+      font.pixelSize: center.host.theme.size.callout
     }
   }
   MouseArea {

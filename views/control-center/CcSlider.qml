@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Effects
 import "../../components"
 import QtQuick.Layouts
 
-// macOS Control Center slider: a translucent capsule with a white fill that
-// ends in a round white knob, and the icon inside on the left. `center` is the
+// macOS Control Center slider: a fully rounded fill bar with no knob, the
+// label colour filling the well, and the icon inside its left end. `center` is the
 // ControlCenter, for its colours.
 Item {
   id: s
@@ -29,7 +28,7 @@ Item {
   property string detail: ""
   Layout.fillWidth: true
   Layout.fillHeight: vertical
-  Layout.preferredHeight: 30
+  Layout.preferredHeight: 24
 
   Item {
     id: track
@@ -37,47 +36,28 @@ Item {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.verticalCenter: parent.verticalCenter
-    height: 26
+    height: 24
     Rectangle {
       anchors.fill: parent
       radius: height / 2
-      color: center.host.theme.fill(sliderMouse.containsMouse ? "stronger" : "strong")
-      border.width: 1
-      border.color: center.host.theme.fill("quiet")
-      Behavior on color { MotionColorAnimation { theme: center.host.theme } }
+      color: center.well
     }
+    // Never shorter than the track is tall, so the glyph always sits on it.
     Rectangle {
       id: sliderFill
       height: parent.height
       radius: height / 2
       width: height + (parent.width - height) * s.shownLevel
-      color: "#ececec"
-    }
-    // The knob, lifted off the fill by a soft shadow.
-    Rectangle {
-      id: knob
-      x: sliderFill.width - width
-      width: parent.height
-      height: parent.height
-      radius: height / 2
-      color: "#ffffff"
-      layer.enabled: visible
-      layer.effect: MultiEffect {
-        shadowEnabled: true
-        shadowColor: Qt.rgba(0, 0, 0, 0.5)
-        shadowBlur: 0.3
-        shadowHorizontalOffset: -0.5
-        shadowVerticalOffset: 0.5
-      }
+      color: center.text
     }
     Text {
-      anchors.left: parent.left
-      anchors.leftMargin: 7
+      anchors.horizontalCenter: parent.left
+      anchors.horizontalCenterOffset: parent.height / 2
       anchors.verticalCenter: parent.verticalCenter
       text: s.icon
-      color: sliderFill.width > x + width ? "#5c5c60" : center.textMuted
+      color: center.well
       font.family: center.iconFont
-      font.pixelSize: center.host.theme.px(15)
+      font.pixelSize: center.host.theme.px(14)
     }
   }
 
@@ -92,10 +72,7 @@ Item {
     Rectangle {
       anchors.fill: parent
       radius: pill.radius
-      color: center.host.theme.fill(sliderMouse.containsMouse ? "stronger" : "strong")
-      border.width: 1
-      border.color: center.host.theme.fill("quiet")
-      Behavior on color { MotionColorAnimation { theme: center.host.theme } }
+      color: center.well
     }
     // The fill is the pill's own shape cut off flat at the level, so its
     // bottom corners follow the pill's.
@@ -110,7 +87,7 @@ Item {
         width: pill.width
         height: pill.height
         radius: pill.radius
-        color: "#ececec"
+        color: center.text
       }
     }
     // Dark ink while the fill is behind a label's middle, the muted ink otherwise.
@@ -126,7 +103,7 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         text: s.title
-        color: pillFill.y < pillLabels.y + y + height / 2 ? "#5c5c60" : center.textMuted
+        color: pillFill.y < pillLabels.y + y + height / 2 ? center.well : center.textMuted
         font.family: center.host.theme.textFontFamily
         font.pixelSize: center.host.theme.size.footnote
         font.letterSpacing: center.host.theme.tracking(center.host.theme.textFontFamily, center.host.theme.size.footnote)
@@ -137,7 +114,7 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         text: s.detail
-        color: pillFill.y < pillLabels.y + y + height / 2 ? "#5c5c60" : center.textMuted
+        color: pillFill.y < pillLabels.y + y + height / 2 ? center.well : center.textMuted
         font.family: center.host.theme.textFontFamily
         font.features: { "tnum": 1 }
         font.pixelSize: center.host.theme.size.callout
@@ -148,7 +125,7 @@ Item {
       x: (parent.width - width) / 2
       y: parent.height - height - 14
       text: s.icon
-      color: pillFill.y < y + height ? "#5c5c60" : center.textMuted
+      color: pillFill.y < y + height ? center.well : center.textMuted
       font.family: center.iconFont
       font.pixelSize: center.host.theme.px(20)
     }
