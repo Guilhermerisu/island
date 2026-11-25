@@ -40,7 +40,7 @@ ColumnLayout {
       // The notch keeps the island flush with the edge.
       visible: !page.settings.notch
       searchable: !page.settings.notch
-      SettingsStepper {
+      SettingsNumberField {
         readonly property var store: page.view.host.settingsStore
         view: page.view
         from: store.topGapMin
