@@ -27,20 +27,7 @@ Rectangle {
   border.width: 1
   border.color: field.view.ink(input.activeFocus ? 0.18 : 0.12)
   Behavior on color { MotionColorAnimation { theme: field.view.host.theme } }
-  // Focus ring: settles in from slightly larger, like macOS's.
-  Rectangle {
-    anchors.centerIn: parent
-    width: parent.width + 6
-    height: parent.height + 6
-    radius: parent.radius + 3
-    color: "transparent"
-    border.width: 3
-    border.color: field.view.host.theme.accentFill("ring")
-    opacity: input.activeFocus ? 1 : 0
-    scale: input.activeFocus ? 1 : 1.12
-    Behavior on opacity { MotionAnimation { theme: field.view.host.theme; pace: "fade"; curve: "fade" } }
-    Behavior on scale { MotionAnimation { theme: field.view.host.theme; pace: "standard" } }
-  }
+  SettingsFocusRing { view: field.view; shown: input.activeFocus }
 
   onValueChanged: if (!input.activeFocus) input.text = value
   Component.onCompleted: input.text = value

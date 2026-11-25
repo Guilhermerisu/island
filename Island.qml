@@ -37,6 +37,9 @@ Item {
   readonly property bool downloadPill: downloadDone || downloadActive
   readonly property bool mediaPill: restingFree && !downloadPill && nowPlaying.playing && settings.mediaPill
   // The live-activity pills' height, and the resting clock's.
+  // The gap between the screen's top edge and the island; none with the notch,
+  // which hangs from the edge.
+  readonly property real islandTop: settings.notch ? 0 : islandSettings.topGap
   readonly property real pillHeight: settings.notch ? 40 : 44
   readonly property real clockHeight: clockStacked ? (settings.notch ? 40 : 42) : (settings.notch ? 36 : 40)
 
@@ -698,7 +701,7 @@ Item {
           // Once revealed it reaches down past the island, so the gap above
           // the floating pill still counts as hovering and doesn't hide it.
           height: !window.revealArmed ? 0
-            : window.edgeRevealed ? (root.settings.notch ? 0 : 8) + island.height : 4
+            : window.edgeRevealed ? root.islandTop + island.height : 4
           visible: height > 0
 
           HoverHandler {
@@ -763,7 +766,7 @@ Item {
           x: (parent.width - width) / 2
           // On a spring like the shape, so hiding and showing again quickly
           // turns around smoothly.
-          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.settings.notch ? 0 : 8 }
+          MotionSpring { id: ySpring; theme: root.theme; pace: "standard"; target: window.islandHidden ? -island.height - 20 : root.islandTop }
           y: ySpring.value
           readonly property Item activeSurface: views.surfaceFor(root.view)
           readonly property Item activePill: pills.active
@@ -1069,7 +1072,7 @@ Item {
         color: "transparent"
         anchors { top: true; left: true; right: true }
         exclusionMode: ExclusionMode.Normal
-        exclusiveZone: (root.settings.notch ? 0 : 8) + root.clockHeight
+        exclusiveZone: root.islandTop + root.clockHeight
         implicitHeight: exclusiveZone
         // Nothing to click: the island's own window is above it.
         mask: Region {}

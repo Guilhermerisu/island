@@ -37,10 +37,11 @@ Item {
 
   // The control center's height cap: the one dragged out on its handle (0 =
   // the default 780), within the screen, plus some room while editing for the
-  // zones' bars and the add panel. The island sits 8 px under the top edge, so
-  // `screenMargin` leaves the same below it. `dragMax` is the live value
-  // while the handle is held (-1 otherwise).
-  readonly property real screenMargin: 60
+  // zones' bars and the add panel. `screenMargin` is the gap above the island
+  // (at least the default 8, so the notch keeps its room) and 52 more for
+  // below it. `dragMax` is the live value while the handle is held (-1
+  // otherwise).
+  readonly property real screenMargin: Math.max(8, views.host.islandTop) + 52
   readonly property real screenLimit: Math.max(260, Window.height - screenMargin)
   readonly property real editRoom: controlCenter.editMode ? 100 : 0
   property real dragMax: -1

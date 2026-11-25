@@ -16,6 +16,11 @@ Item {
   // Why island.json couldn't be read, or "" while it reads fine. Settings
   // shows it; the island runs on the defaults meanwhile.
   property string loadError: ""
+  // The gap above the resting island, within the limits Settings offers,
+  // since island.json can be hand-edited. Flush with the edge is the notch's.
+  readonly property int topGapMin: 1
+  readonly property int topGapMax: 32
+  readonly property int topGap: Math.max(topGapMin, Math.min(topGapMax, settingsData.topGap))
 
   function check(raw) {
     var parsed

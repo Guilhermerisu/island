@@ -32,6 +32,26 @@ ColumnLayout {
     }
     SettingsRow {
       view: page.view
+      icon: "󰞕"
+      iconTint: page.system.indigo
+      label: "Distance from top"
+      detail: "Pixels between the top edge and the island"
+      keywords: "gap offset margin position"
+      // The notch keeps the island flush with the edge.
+      visible: !page.settings.notch
+      searchable: !page.settings.notch
+      SettingsNumberField {
+        readonly property var store: page.view.host.settingsStore
+        view: page.view
+        from: store.topGapMin
+        to: store.topGapMax
+        suffix: "px"
+        value: store.topGap
+        onPicked: function(v) { page.settings.topGap = v }
+      }
+    }
+    SettingsRow {
+      view: page.view
       icon: "󰄮"
       iconTint: page.system.gray
       label: "Outline"

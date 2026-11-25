@@ -37,6 +37,9 @@ JsonAdapter {
   property string notificationSound: "none"
   property bool notch: false
   property bool restingOutline: false
+  // Pixels between the top edge and the island (IslandSettings.topGap has it
+  // within its limits); the notch ignores it.
+  property int topGap: 8
   // Windows start under the resting island (the reserve window in Island.qml).
   property bool reserveSpace: false
   property bool downloads: true
