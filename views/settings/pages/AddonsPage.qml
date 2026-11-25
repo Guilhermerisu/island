@@ -8,7 +8,8 @@ ColumnLayout {
   id: page
   required property var view
   readonly property var addons: view.host.addons
-  visible: view.currentPage === "Addons"
+  readonly property string settingsPageName: "Addons"
+  visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
   spacing: 20
 

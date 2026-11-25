@@ -85,6 +85,8 @@ Item {
   readonly property var theme: themeData
   Theme { id: themeData; settings: root.settings; home: root.home }
   readonly property QtObject settings: islandSettings.values
+  // The file behind them, and whether it read.
+  readonly property var settingsStore: islandSettings
   IslandSettings { id: islandSettings; home: root.home }
 
   readonly property var clockDate: clock.date
@@ -444,10 +446,20 @@ Item {
     // Keeps the pill in step when the notification is dismissed elsewhere.
     onDismissedElsewhere: if (root.notificationPill) root.dismissFeedback()
     onArrived: function(row) {
-      // One with buttons stays long enough to press one.
+      root.playNotificationSound()
+      // One with buttons stays long enough to press one; 0 seconds keeps it
+      // up until it's dismissed (a day, the longest a timer here runs).
+      var seconds = Number(root.settings.bannerSeconds)
+      var duration = seconds > 0 ? seconds * 1000 : 86400000
       if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"),
-        Math.max(root.settings.bannerSeconds * 1000, root.settings.notificationButtons && (row.actions || []).length > 0 ? 8000 : 0), "notification")
+        Math.max(duration, root.settings.notificationButtons && (row.actions || []).length > 0 ? 8000 : 0), "notification")
     }
+  }
+  // The sound picked in Settings → Notifications, from the freedesktop theme.
+  function playNotificationSound(name) {
+    var sound = String(name || root.settings.notificationSound || "none")
+    if (sound === "none" || !/^[a-z0-9-]+$/.test(sound)) return
+    Quickshell.execDetached(["pw-play", "/usr/share/sounds/freedesktop/stereo/" + sound + ".oga"])
   }
   // The island's own banners (setup, updates) in the notification pill.
   function showBanner(row, duration) {
@@ -471,7 +483,7 @@ Item {
   // A tray app whose own menu the tray view opens straight to (see
   // TrayList), set by a right click on it in the hover capsules.
   property var trayMenuFor: null
-  readonly property string hoverMode: settings.hoverStyle ? settings.hoverStyle : settings.hoverCapsules ? "capsules" : settings.hoverExpand ? "expand" : "none"
+  readonly property string hoverMode: settings.hoverStyle || "none"
 
   function toggleView(name) {
     view = view === name ? "rest" : name
@@ -500,6 +512,12 @@ Item {
       // Already open: SettingsView takes the page itself (or closes).
       if (root.view === "settings") root.settingsPage = pages[0].title
       else root.openSettings(pages[0].title)
+      return root.view
+    }
+    // Settings at one of its panes, by name ("Appearance", "Notifications").
+    function settings(page: string): string {
+      if (root.view === "settings") root.settingsPage = page
+      else root.openSettings(page)
       return root.view
     }
     function toggle(): string { return root.toggleView("controls") }

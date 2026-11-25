@@ -16,9 +16,17 @@ Rectangle {
   // controls up wider than the General pane's.
   property real minWidth: view.controlWidth
   signal picked(var value)
+  // The choice matching the value; for numbers, the nearest one, so a value
+  // set by hand in island.json (1.2) still shows a choice picked.
   readonly property int currentIndex: {
     for (var i = 0; i < options.length; i++) if (options[i].value === value) return i
-    return -1
+    if (typeof value !== "number" || isNaN(value)) return -1
+    var nearest = -1
+    for (var j = 0; j < options.length; j++) {
+      if (typeof options[j].value !== "number") return -1
+      if (nearest < 0 || Math.abs(options[j].value - value) < Math.abs(options[nearest].value - value)) nearest = j
+    }
+    return nearest
   }
   FontMetrics {
     id: segFont

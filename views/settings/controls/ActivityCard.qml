@@ -12,6 +12,12 @@ FocusScope {
   required property string description
   property bool checked: false
   property bool pointerFocus: false
+  // Found by Settings' search as a SettingsRow is.
+  property string keywords: ""
+  readonly property string searchText: [title, description, keywords].join(" ")
+  readonly property bool searchHit: !!view.matches && view.matches(searchText)
+  Component.onCompleted: if (view.registerSearchable) view.registerSearchable(card)
+  Component.onDestruction: if (view.unregisterSearchable) view.unregisterSearchable(card)
   signal toggled(bool checked)
 
   implicitWidth: 220
@@ -48,7 +54,8 @@ FocusScope {
     id: backdrop
     anchors.fill: parent
     radius: card.view.host.theme.radii.card
-    color: mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
+    color: card.searchHit ? Qt.tint(card.view.card, card.view.host.theme.accentFill("soft"))
+      : mouse.containsMouse ? Qt.tint(card.view.card, card.view.host.theme.fill("quiet")) : card.view.card
     Behavior on color { MotionColorAnimation { theme: card.view.host.theme } }
     border.width: 1
     border.color: card.view.edge

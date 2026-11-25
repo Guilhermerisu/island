@@ -13,7 +13,8 @@ import "../controls"
 ColumnLayout {
   id: page
   required property var view
-  visible: view.currentPage === "Keybinds"
+  readonly property string settingsPageName: "Keybinds"
+  visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
   spacing: 20
 

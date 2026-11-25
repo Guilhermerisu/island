@@ -10,6 +10,10 @@ ColumnLayout {
   property string title: ""
   property string count: ""
   property string footer: ""
+  // Its rows are found by this too (see SettingsRow); off for a group
+  // that's hidden for now, so the search doesn't find its rows.
+  readonly property string searchTitle: title
+  property bool searchable: true
   default property alias rows: groupBody.data
   Layout.fillWidth: true
   spacing: 8

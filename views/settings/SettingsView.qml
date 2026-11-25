@@ -19,7 +19,7 @@ Item {
   // The core panes, with the enabled addons' own (see addons/Addon.qml)
   // after Addons.
   readonly property var addonPages: host.addons.settingsPages
-  readonly property var pages: ["General", "Live Activities", "Notifications", "Network", "Addons"]
+  readonly property var pages: ["General", "Appearance", "Live Activities", "Notifications", "Network", "Addons"]
     .concat(addonPages.map(function(page) { return page.title }), ["Keybinds"])
   onPagesChanged: if (pages.indexOf(currentPage) === -1) currentPage = "General"
   readonly property var pageInfo: {
@@ -37,35 +37,129 @@ Item {
     "Displays": { icon: "󰍹", color: "#0ea5e9" }
   })
   readonly property var corePageInfo: ({
-    "General": { icon: "󰢻", color: settingsView.host.theme.system.gray, about: "Appearance, motion, and how the pill looks at rest." },
-    "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
-    "Notifications": { icon: "󰂜", color: "#ff3b30", about: "How notification banners appear on the island." },
-    "Network": { icon: "󰖩", color: "#0a84ff", about: "Wi-Fi, Ethernet, and VPN connections, and the computer's name on the network." },
-    "Addons": { icon: "󰐕", color: settingsView.host.theme.system.blue, about: "Extras that stay unloaded until you add them." },
-    "Keybinds": { icon: "󰥻", color: settingsView.host.theme.system.gray, about: "Keyboard shortcuts that open each part of the island." }
+    "General": { icon: "󰢻", color: settingsView.host.theme.system.gray, about: "The clock, hiding, and the Omarchy menu." },
+    "Appearance": { icon: "󰏘", color: settingsView.host.theme.system.purple, about: "Shape, hover, colors, text, and animation." },
+    "Live Activities": { icon: "󰨚", color: "#34c759", about: "What the island shows while things happen." },
+    "Notifications": { icon: "󰂜", color: "#ff3b30", about: "How banners look, sound, and how long they stay." },
+    "Network": { icon: "󰖩", color: "#0a84ff", about: "Wi-Fi, Ethernet, VPNs, and this computer's name." },
+    "Addons": { icon: "󰐕", color: settingsView.host.theme.system.blue, about: "Optional features, loaded only once added." },
+    "Keybinds": { icon: "󰥻", color: settingsView.host.theme.system.gray, about: "Shortcuts that open each part of the island." }
+  })
+  // ---------- Search ----------
+  // Rows and activity cards register themselves (see SettingsRow) and are
+  // found by their own words; `terms` below only adds a pane's other names
+  // for them, and addon panes that aren't loaded yet are found by theirs.
+  readonly property string searchNeedle: searchQuery.trim().toLowerCase()
+  function matches(text) {
+    if (searchNeedle === "") return false
+    var haystack = String(text).toLowerCase()
+    var words = searchNeedle.split(/\s+/)
+    for (var i = 0; i < words.length; i++) if (haystack.indexOf(words[i]) === -1) return false
+    return true
+  }
+  property var searchables: []
+  property int searchablesRevision: 0
+  function registerSearchable(item) {
+    if ("groupTitle" in item) {
+      for (var p = item.parent; p; p = p.parent) if (p.searchTitle !== undefined) { item.groupTitle = p.searchTitle; item.searchGroup = p; break }
+    }
+    searchables.push(item)
+    searchablesRevision++
+  }
+  function unregisterSearchable(item) {
+    var index = searchables.indexOf(item)
+    if (index === -1) return
+    searchables.splice(index, 1)
+    searchablesRevision++
+  }
+  // The pane an item is on: the nearest page naming itself.
+  function pageOf(item) {
+    for (var p = item; p; p = p.parent) if (p.settingsPageName !== undefined) return p.settingsPageName
+    return ""
+  }
+  // What the search found, pane by pane in sidebar order, top to bottom.
+  readonly property var searchHits: {
+    searchablesRevision
+    if (searchNeedle === "") return []
+    var hits = []
+    for (var i = 0; i < pages.length; i++) {
+      var onPage = searchables.filter(function(item) { return item.searchHit && settingsView.pageOf(item) === pages[i] })
+      onPage.sort(function(a, b) { return a.mapToItem(groups, 0, 0).y - b.mapToItem(groups, 0, 0).y })
+      hits = hits.concat(onPage)
+    }
+    return hits
+  }
+  readonly property var terms: ({
+    "General": "general clock time 24-hour 12-hour am pm date day weekday hide autohide fullscreen tiling right-click omarchy menu search apps applications",
+    "Appearance": "appearance look style shape notch outline border hover glance capsules slots colorful colour color icons theme background font typography text size motion animation speed",
+    "Live Activities": "live activities hud osd pill",
+    "Notifications": "notifications banners alerts sound",
+    "Network": "network wifi wi-fi ethernet vpn wireguard openvpn connection connections ip address dns dhcp router gateway hostname password hidden forget networkmanager nmtui",
+    "Keybinds": "keybinds keybindings keyboard shortcuts keys"
   })
   function pageMatches(page) {
-    var query = searchQuery.trim().toLowerCase()
-    if (query === "") return true
-    var terms = {
-      "General": "general time format 12-hour clock style hide automatically appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed pill notch style 24-hour clock am pm format date day weekday font typography text size custom autohide hide fullscreen tiling tile omarchy menu search apps applications",
-      "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads screen recording record system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
-      "Notifications": "notifications banner duration stack stacked group buttons actions",
-      "Network": "network wifi wi-fi ethernet vpn wireguard openvpn connection connections ip address dns dhcp router gateway hostname password hidden forget networkmanager nmtui",
-      "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
-        return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
-      }).join(" "),
-      "Keybinds": "keybinds keybindings keyboard shortcuts keys"
-    }
+    if (searchNeedle === "") return true
+    var words = terms[page] || page
+    if (page === "Addons") words = "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
+      return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
+    }).join(" ")
     var addonPage = host.addons.settingsPage(page)
-    if (addonPage) terms[page] = page + " " + (addonPage.search || "")
-    return String(terms[page] || page).toLowerCase().indexOf(query) !== -1
+    if (addonPage) words = page + " " + (addonPage.search || "")
+    if (matches(page + " " + words)) return true
+    for (var i = 0; i < searchHits.length; i++) if (pageOf(searchHits[i]) === page) return true
+    return false
   }
   readonly property bool hasSearchResults: {
-    var query = searchQuery
-    if (query === "") return true
+    if (searchNeedle === "") return true
     for (var i = 0; i < pages.length; i++) if (pageMatches(pages[i])) return true
     return false
+  }
+  // Which hit Return last went to.
+  property int searchCursor: -1
+  onSearchNeedleChanged: {
+    searchCursor = -1
+    if (searchNeedle === "") return
+    if (!pageMatches(currentPage)) {
+      for (var i = 0; i < pages.length; i++) if (pageMatches(pages[i])) { currentPage = pages[i]; break }
+    }
+    revealTimer.restart()
+  }
+  // The first hit on the open pane (or the one Return went to), once the
+  // pane has laid out.
+  property var pendingHit: null
+  Timer {
+    id: revealTimer
+    interval: 60
+    onTriggered: {
+      if (settingsView.pendingHit) {
+        settingsView.revealHit(settingsView.pendingHit)
+        settingsView.pendingHit = null
+        return
+      }
+      var hits = settingsView.searchHits
+      for (var i = 0; i < hits.length; i++) {
+        if (settingsView.pageOf(hits[i]) === settingsView.currentPage) { settingsView.revealHit(hits[i]); return }
+      }
+    }
+  }
+  // Return: the next hit, on to the next pane after the last one here.
+  function nextHit() {
+    var hits = searchHits
+    if (!hits.length) return
+    searchCursor = (searchCursor + 1) % hits.length
+    var hit = hits[searchCursor]
+    var page = pageOf(hit)
+    if (page !== currentPage) {
+      currentPage = page
+      pendingHit = hit
+      revealTimer.restart()
+    } else revealHit(hit)
+  }
+  function revealHit(item) {
+    if (!item) return
+    var top = item.mapToItem(groups, 0, 0).y
+    var room = Math.max(0, scroller.contentHeight - scroller.height)
+    scroller.contentY = Math.max(0, Math.min(room, top - scroller.height / 3))
   }
 
   readonly property color panel: host.theme.background
@@ -128,6 +222,15 @@ Item {
     id: pageIn
     MotionAnimation { theme: settingsView.host.theme; target: groups; property: "opacity"; from: 0; to: 1; pace: "fade"; curve: "fade" }
     MotionAnimation { theme: settingsView.host.theme; target: groupsShift; property: "y"; from: 6; to: 0; pace: "standard" }
+  }
+  // Typing anywhere in Settings searches, as in System Settings.
+  Keys.onPressed: function(event) {
+    if (menuButton || fontPickerButton || searchInput.activeFocus) return
+    if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return
+    if (event.text.length !== 1 || event.text < " ") return
+    searchInput.forceActiveFocus()
+    searchInput.insert(searchInput.cursorPosition, event.text)
+    event.accepted = true
   }
   Keys.onEscapePressed: {
     if (menuButton || fontPickerButton) closePopups()
@@ -211,16 +314,9 @@ Item {
             font.family: settingsView.host.theme.textFontFamily
             font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
             font.pixelSize: settingsView.host.theme.size.body
-            onTextChanged: {
-              settingsView.searchQuery = text
-              if (text.trim() === "" || settingsView.pageMatches(settingsView.currentPage)) return
-              for (var i = 0; i < settingsView.pages.length; i++) {
-                if (settingsView.pageMatches(settingsView.pages[i])) {
-                  settingsView.currentPage = settingsView.pages[i]
-                  break
-                }
-              }
-            }
+            onTextChanged: settingsView.searchQuery = text
+            Keys.onReturnPressed: settingsView.nextHit()
+            Keys.onEnterPressed: settingsView.nextHit()
             Keys.onEscapePressed: function(event) {
               if (text !== "") { text = ""; event.accepted = true }
               else event.accepted = false
@@ -274,8 +370,10 @@ Item {
           spacing: 20
           transform: Translate { id: groupsShift }
 
+          LoadWarning { view: settingsView }
           PaneHeader { view: settingsView; page: settingsView.currentPage }
           GeneralPage { view: settingsView }
+          AppearancePage { view: settingsView }
           ActivitiesPage { view: settingsView }
           NotificationsPage { view: settingsView }
           NetworkPage { view: settingsView }
@@ -288,6 +386,7 @@ Item {
               id: addonPage
               required property int index
               readonly property var modelData: settingsView.addonPages[index] || ({})
+              readonly property string settingsPageName: modelData.title || ""
               readonly property bool shown: settingsView.currentPage === modelData.title
               visible: shown
               Layout.fillWidth: true

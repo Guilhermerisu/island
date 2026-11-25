@@ -1,10 +1,13 @@
 import QtQuick
 import QtQuick.Layouts
+import "../../../components"
 
 // One row of a group: an optional icon, label (and optional detail) on the
 // left, a control on the right, and a full-width hairline under every row
 // but the last.
 // `indent` sets a row in under the one it belongs to.
+// Settings' search finds a row by its label, detail, group title and
+// `keywords`, and tints the ones it found.
 // `view` is the SettingsView, for its colours.
 Item {
   id: row
@@ -15,11 +18,33 @@ Item {
   property string icon: ""
   property color iconTint: view.accent
   property int indent: 0
+  // More words the search should find it by.
+  property string keywords: ""
+  // Off for a row that's hidden for now (its addon is off, or it only
+  // applies to another choice), so the search doesn't send you to it; a
+  // hidden group's rows likewise (see SettingsGroup).
+  property bool searchable: true
+  property string groupTitle: ""
+  property Item searchGroup: null
+  readonly property string searchText: [label, detail, keywords, groupTitle].join(" ")
+  readonly property bool searchHit: searchable && (!searchGroup || searchGroup.searchable !== false)
+    && !!view.matches && view.matches(searchText)
+  Component.onCompleted: if (view.registerSearchable) view.registerSearchable(row)
+  Component.onDestruction: if (view.unregisterSearchable) view.unregisterSearchable(row)
   default property alias control: slot.data
   Layout.fillWidth: true
   // 44 as macOS's rows, 52 with a detail line; grows with the text size so
   // a larger label and detail keep their margins.
   implicitHeight: Math.max(row.detail !== "" ? 52 : 44, labels.implicitHeight + 18)
+  // A row the search found.
+  Rectangle {
+    anchors.fill: parent
+    anchors.margins: 3
+    radius: row.view.host.theme.radii.medium
+    color: row.view.host.theme.accentFill("soft")
+    opacity: row.searchHit ? 1 : 0
+    Behavior on opacity { MotionAnimation { theme: row.view.host.theme; pace: "fade"; curve: "fade" } }
+  }
   PaneIcon {
     id: rowIcon
     visible: row.icon !== ""
