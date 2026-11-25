@@ -51,6 +51,11 @@ ColumnLayout {
     var devs = Networking.devices ? Networking.devices.values : []
     return devs.some(function(d) { return !!d && !!d.connected })
   }
+  // A wired link up, so the empty state can say why there's no Wi-Fi.
+  readonly property bool onEthernet: {
+    var devs = Networking.devices ? Networking.devices.values : []
+    return devs.some(function(d) { return !!d && d.type === DeviceType.Wired && !!d.connected })
+  }
   readonly property bool canSpeedTest: speed.available && online
   onCanSpeedTestChanged: if (!canSpeedTest) speed.stop()
   SpeedTest { id: speed; active: wf.active }
@@ -247,9 +252,9 @@ ColumnLayout {
       Layout.preferredWidth: 32
       Layout.preferredHeight: 32
       radius: height / 2
-      color: backMouse.containsMouse ? wf.well : wf.card
+      color: backMouse.containsMouse ? wf.well : wf.tile
       Tooltip { theme: wf.host.theme; text: "Control Center" }
-      Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(17) }
+      Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(14) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
     }
     Text {
@@ -261,6 +266,16 @@ ColumnLayout {
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
+  }
+
+  // Nothing to list: drawn straight on the island, above the actions card.
+  EmptyState {
+    visible: !wf.displayRows.length
+    Layout.fillWidth: true
+    host: wf.host
+    glyph: !wf.device || !wf.powered ? "󰖪" : "󰤨"
+    text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
+    detail: wf.device ? "" : wf.onEthernet ? "This computer is on Ethernet." : "No wireless hardware was found."
   }
 
   Rectangle {
@@ -278,14 +293,6 @@ ColumnLayout {
       anchors.top: parent.top
       anchors.margins: 6
       spacing: 0
-
-      EmptyState {
-        visible: !wf.displayRows.length
-        Layout.fillWidth: true
-        host: wf.host
-        glyph: !wf.device || !wf.powered ? "󰖪" : "󰤨"
-        text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
-      }
 
       ListView {
         id: list
@@ -621,6 +628,7 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
         Rectangle {
+          visible: list.visible
           Layout.fillWidth: true
           Layout.leftMargin: 10
           Layout.rightMargin: 10
@@ -631,7 +639,7 @@ ColumnLayout {
         }
         Rectangle {
           Layout.fillWidth: true
-          Layout.preferredHeight: speed.error !== "" ? 54 : 42
+          Layout.preferredHeight: speed.error !== "" ? 54 : 44
           radius: 8
           color: speedMouse.pressed ? wf.well : speedMouse.containsMouse || (wf.usingKeys && wf.cursor === "speed") ? wf.tile : "transparent"
           Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
@@ -662,23 +670,43 @@ ColumnLayout {
               font.pixelSize: wf.host.theme.size.callout
             }
           }
-          Text {
-            id: speedAction
-            anchors.right: parent.right
-            anchors.rightMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
-            color: wf.textMuted
-            font.family: wf.host.theme.textFontFamily
-            font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.body)
-            font.pixelSize: wf.host.theme.size.body
-          }
           MouseArea {
             id: speedMouse
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: wf.toggleSpeedTest()
+          }
+          // A real small button, so the action doesn't read as disabled.
+          Rectangle {
+            id: speedAction
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            width: speedActionLabel.implicitWidth + 24
+            height: speedActionLabel.implicitHeight + 10
+            radius: wf.host.theme.radii.medium
+            color: speedActionMouse.pressed || speedActionMouse.containsMouse ? wf.wellHover : wf.well
+            scale: speedActionMouse.pressed ? 0.96 : 1
+            Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
+            Behavior on scale { id: speedActionScale; MotionAnimation { theme: wf.host.theme; pace: towards(speedActionScale.targetValue, speedActionMouse.pressed ? "press" : "standard") } }
+            Text {
+              id: speedActionLabel
+              anchors.centerIn: parent
+              text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
+              color: wf.text
+              font.family: wf.host.theme.textFontFamily
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.callout)
+              font.pixelSize: wf.host.theme.size.callout
+              font.weight: Font.Medium
+            }
+            MouseArea {
+              id: speedActionMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: wf.toggleSpeedTest()
+            }
           }
         }
         Item {
@@ -731,6 +759,7 @@ ColumnLayout {
 
       // Footer: Wi-Fi Settings, below a hairline, as on macOS.
       Rectangle {
+        visible: list.visible || wf.canSpeedTest
         Layout.fillWidth: true
         Layout.leftMargin: 10
         Layout.rightMargin: 10
@@ -741,7 +770,7 @@ ColumnLayout {
       }
       Rectangle {
         Layout.fillWidth: true
-        Layout.preferredHeight: 42
+        Layout.preferredHeight: 44
         radius: 8
         color: settingsMouse.pressed ? wf.well : settingsMouse.containsMouse || (wf.usingKeys && wf.cursor === "settings") ? wf.tile : "transparent"
         Text {

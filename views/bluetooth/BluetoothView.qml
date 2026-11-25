@@ -207,9 +207,9 @@ ColumnLayout {
       Layout.preferredWidth: 32
       Layout.preferredHeight: 32
       radius: height / 2
-      color: backMouse.containsMouse ? bt.well : bt.card
+      color: backMouse.containsMouse ? bt.well : bt.tile
       Tooltip { theme: bt.host.theme; text: "Control Center" }
-      Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(17) }
+      Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(14) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
     Text {
@@ -223,7 +223,18 @@ ColumnLayout {
     Item { Layout.fillWidth: true }
   }
 
+  // Nothing to list: drawn straight on the island, as in the Wi-Fi view.
+  EmptyState {
+    visible: !bt.displayRows.length
+    Layout.fillWidth: true
+    host: bt.host
+    glyph: !bt.adapter || !bt.powered ? "󰂲" : "󰂯"
+    text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
+    detail: bt.adapter ? "" : "No Bluetooth hardware was found."
+  }
+
   Rectangle {
+    visible: bt.displayRows.length > 0
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 12
     radius: bt.host.theme.radii.card
@@ -238,14 +249,6 @@ ColumnLayout {
       anchors.top: parent.top
       anchors.margins: 6
       spacing: 0
-
-      EmptyState {
-        visible: !bt.displayRows.length
-        Layout.fillWidth: true
-        host: bt.host
-        glyph: !bt.adapter || !bt.powered ? "󰂲" : "󰂯"
-        text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
-      }
 
       ListView {
         id: list
