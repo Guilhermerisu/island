@@ -17,6 +17,8 @@ Item {
   property bool last: false
   property string icon: ""
   property color iconTint: view.accent
+  // A status dot before the detail (a connection's green), or none.
+  property color detailDot: "transparent"
   property int indent: 0
   // More words the search should find it by.
   property string keywords: ""
@@ -74,15 +76,26 @@ Item {
       font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.detailFontSize)
       font.pixelSize: row.view.detailFontSize
     }
-    Text {
+    Row {
       width: parent.width
       visible: row.detail !== ""
-      text: row.detail
-      elide: Text.ElideRight
-      color: row.view.textMuted
-      font.family: row.view.host.theme.textFontFamily
-      font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.detailCaptionFontSize)
-      font.pixelSize: row.view.detailCaptionFontSize
+      spacing: 5
+      Rectangle {
+        id: detailDot
+        visible: row.detailDot.a > 0
+        anchors.verticalCenter: parent.verticalCenter
+        width: 6; height: 6; radius: 3
+        color: row.detailDot
+      }
+      Text {
+        width: parent.width - (detailDot.visible ? detailDot.width + parent.spacing : 0)
+        text: row.detail
+        elide: Text.ElideRight
+        color: row.view.textMuted
+        font.family: row.view.host.theme.textFontFamily
+        font.letterSpacing: row.view.host.theme.tracking(row.view.host.theme.textFontFamily, row.view.detailCaptionFontSize)
+        font.pixelSize: row.view.detailCaptionFontSize
+      }
     }
   }
   Item {

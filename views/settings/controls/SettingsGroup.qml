@@ -34,7 +34,7 @@ ColumnLayout {
     Text {
       visible: group.count !== ""
       text: group.count
-      color: group.view.host.theme.withAlpha(group.view.textMuted, 0.7)
+      color: group.view.textMuted
       font.family: group.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
       font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, parent.size)

@@ -127,8 +127,6 @@ ColumnLayout {
                 readonly property var describedWith: addon.modelData.describedWith
                 readonly property string shown: describedWith ? String(page.addons.option(addon.modelData.id, describedWith.key) || "") : ""
                 text: shown !== "" ? describedWith.text.arg(shown) : addon.modelData.description || ""
-                wrapMode: Text.WordWrap
-                maximumLineCount: 2
                 elide: Text.ElideRight
                 color: page.view.textMuted
                 font.family: page.view.host.theme.textFontFamily

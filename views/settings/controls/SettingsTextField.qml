@@ -15,14 +15,17 @@ Rectangle {
   property bool writeOnly: false
   // A glyph before the text (a pin for a place), or none.
   property string icon: ""
+  // A value set in its row (the hostname): no outline, the tile grey, the
+  // text at 13 to the right.
+  property bool inline: false
   signal committed(string value)
   // As it's typed, before it's committed.
   signal edited(string value)
-  implicitWidth: 200
+  implicitWidth: inline ? 160 : 200
   implicitHeight: 28
-  radius: 6
-  color: field.view.host.theme.solid(fieldMouse.containsMouse && !input.activeFocus ? "subtle" : "quiet")
-  border.width: 1
+  radius: inline ? 8 : 6
+  color: inline ? field.view.host.theme.tile : field.view.host.theme.solid(fieldMouse.containsMouse && !input.activeFocus ? "subtle" : "quiet")
+  border.width: inline ? 0 : 1
   border.color: field.view.host.theme.fill(input.activeFocus ? "strong" : "raised")
   Behavior on color { MotionColorAnimation { theme: field.view.host.theme } }
   // Focus ring: settles in from slightly larger, like macOS's.
@@ -60,6 +63,7 @@ Rectangle {
   Text {
     anchors.fill: input
     verticalAlignment: Text.AlignVCenter
+    horizontalAlignment: input.horizontalAlignment
     visible: input.text === ""
     text: field.placeholder
     elide: Text.ElideRight
@@ -86,12 +90,14 @@ Rectangle {
     anchors.verticalCenter: parent.verticalCenter
     clip: true
     echoMode: field.secret ? TextInput.Password : TextInput.Normal
+    horizontalAlignment: field.inline ? TextInput.AlignRight : TextInput.AlignLeft
     color: field.view.text
     selectionColor: field.view.accent
     selectedTextColor: field.view.accentInk
     font.family: field.view.host.theme.textFontFamily
-    font.letterSpacing: field.view.host.theme.tracking(field.view.host.theme.textFontFamily, field.view.detailFontSize)
-    font.pixelSize: field.view.detailFontSize
+    readonly property int textSize: field.inline ? field.view.host.theme.px(13) : field.view.detailFontSize
+    font.letterSpacing: field.view.host.theme.tracking(field.view.host.theme.textFontFamily, textSize)
+    font.pixelSize: textSize
     onTextEdited: field.edited(field.secret ? text : text.trim())
     onAccepted: { field.commit(); field.view.forceActiveFocus() }
     onActiveFocusChanged: if (!activeFocus) field.commit()

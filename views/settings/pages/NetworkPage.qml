@@ -19,7 +19,8 @@ ColumnLayout {
   spacing: page.view.groupSpacing
 
   readonly property bool shown: view.active && view.currentPage === "Network"
-  NetworkConnections { id: client; active: page.shown }
+  // Out of the layout, so it doesn't add a gap over the first group.
+  NetworkConnections { id: client; active: page.shown; visible: false }
 
   readonly property bool detailOpen: client.detailUuid !== ""
   readonly property var item: client.entry(client.detailUuid)
@@ -257,6 +258,7 @@ ColumnLayout {
         last: true
         SettingsTextField {
           view: page.view
+          inline: true
           value: client.hostname
           placeholder: "hostname"
           onCommitted: function(v) { if (v !== "") client.setHostname(v) }
@@ -283,17 +285,9 @@ ColumnLayout {
             implicitHeight: row.implicitHeight
             readonly property bool first: connectionRow.index === 0
             readonly property bool final: connectionRow.index === kindGroup.members.length - 1
-            // The connected one stands out in green, the one under the pointer lightly.
+            // The one under the pointer, lightly.
             RowFill {
-              visible: connectionRow.modelData.active
-              first: connectionRow.first
-              last: connectionRow.final
-              color: page.view.host.theme.withAlpha(page.green, 0.16)
-              border.width: 1
-              border.color: page.view.host.theme.withAlpha(page.green, 0.4)
-            }
-            RowFill {
-              visible: !connectionRow.modelData.active && rowMouse.containsMouse
+              visible: rowMouse.containsMouse
               first: connectionRow.first
               last: connectionRow.final
               color: page.view.host.theme.fill("quiet")
@@ -307,8 +301,8 @@ ColumnLayout {
               iconTint: connectionRow.modelData.active ? page.green : page.kindTints[connectionRow.modelData.kind] || page.view.accent
               label: connectionRow.modelData.name
               detail: client.connecting === connectionRow.modelData.uuid ? "Connecting…" : connectionRow.modelData.active ? "Connected · " + connectionRow.modelData.device : "Not connected"
-              // The green row has its own edge.
-              last: connectionRow.final || connectionRow.modelData.active
+              detailDot: connectionRow.modelData.active && client.connecting !== connectionRow.modelData.uuid ? page.green : "transparent"
+              last: connectionRow.final
               ValueText { text: "󰅂"; font.family: page.view.host.theme.fontFamily }
             }
             MouseArea {
@@ -330,14 +324,14 @@ ColumnLayout {
         view: page.view
         label: "Wi-Fi network"
         detail: "Joins a hidden network, or one that's out of range"
-        SettingsButton { view: page.view; label: page.adding === "wifi" ? "Cancel" : "Add…"; onClicked: page.adding = page.adding === "wifi" ? "" : "wifi" }
+        SettingsButton { view: page.view; small: true; label: page.adding === "wifi" ? "Cancel" : "Add…"; onClicked: page.adding = page.adding === "wifi" ? "" : "wifi" }
       }
       SettingsRow {
         view: page.view
         label: "VPN"
         detail: "Imports a WireGuard or OpenVPN configuration file"
         last: true
-        SettingsButton { view: page.view; label: page.adding === "vpn" ? "Cancel" : "Import…"; onClicked: page.adding = page.adding === "vpn" ? "" : "vpn" }
+        SettingsButton { view: page.view; small: true; label: page.adding === "vpn" ? "Cancel" : "Import…"; onClicked: page.adding = page.adding === "vpn" ? "" : "vpn" }
       }
     }
 
