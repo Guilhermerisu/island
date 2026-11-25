@@ -1,7 +1,7 @@
 import QtQuick
 
 // Shared list view for the island: a search field over a scrolling list, with
-// the selected row marked by a soft highlight and an accent bar. With
+// the selected (or hovered) row marked by a soft well. With
 // `columns` above 1 it becomes a grid of cells (the selected one highlighted)
 // and ←/→ move across while ↑/↓ move by rows.
 // Keyboard: type to search, ↑/↓ (or Tab, PageUp/PageDown) to move, Enter to
@@ -44,7 +44,7 @@ Item {
   // (e.g. Delete to remove an entry, Shift+Enter for a second action).
   signal keyFilter(var event)
 
-  implicitHeight: search.height + 10 + list.height
+  implicitHeight: search.height + 8 + list.height
 
   onActiveChanged: {
     if (!active) return
@@ -130,7 +130,7 @@ Item {
     anchors.right: picker.showSide ? sidePane.left : parent.right
     anchors.rightMargin: picker.showSide ? 12 : 0
     anchors.top: search.bottom
-    anchors.topMargin: 10
+    anchors.topMargin: 8
     height: picker.rowHeight * picker.shownRows
     cellWidth: Math.floor(width / picker.columns)
     cellHeight: picker.rowHeight
@@ -161,8 +161,8 @@ Item {
       y: at ? at.y + (picker.grid ? 3 : 0) : 0
       width: list.cellWidth - (picker.grid ? 6 : 0)
       height: list.cellHeight - (picker.grid ? 6 : 0)
-      radius: 12
-      color: picker.grid ? picker.host.theme.accentFill("medium") : picker.host.theme.fill("raised")
+      radius: 10
+      color: picker.grid ? picker.host.theme.accentFill("medium") : picker.host.theme.well
       opacity: atDisabled ? 0.4 : 1
       Behavior on x { enabled: highlight.glides; MotionAnimation { theme: picker.host.theme; pace: "quick" } }
       Behavior on y { enabled: highlight.glides; MotionAnimation { theme: picker.host.theme; pace: "quick" } }
@@ -178,12 +178,20 @@ Item {
       height: list.cellHeight
       opacity: slot.itemDisabled ? 0.4 : 1
 
+      // A hovered row gets the selection's well too (the gliding highlight
+      // stays on the selected one).
+      Rectangle {
+        anchors.fill: parent
+        visible: !picker.grid && slotMouse.containsMouse && !slot.isSelected && !slot.itemDisabled
+        radius: 10
+        color: picker.host.theme.well
+      }
       Loader {
         id: rowLoader
         anchors.fill: parent
         scale: picker.grid && slotMouse.pressed && !slot.itemDisabled ? 0.96 : 1
         Behavior on scale { id: scaleMotion; MotionAnimation { theme: picker.host.theme; pace: towards(scaleMotion.targetValue, slotMouse.pressed ? "press" : "standard") } }
-        anchors.leftMargin: picker.grid ? 0 : 10
+        anchors.leftMargin: picker.grid ? 0 : 12
         anchors.rightMargin: picker.grid ? 0 : 12
         sourceComponent: picker.row
         onLoaded: {
@@ -194,6 +202,7 @@ Item {
       MouseArea {
         id: slotMouse
         anchors.fill: parent
+        hoverEnabled: true
         cursorShape: slot.itemDisabled ? Qt.ArrowCursor : Qt.PointingHandCursor
         onClicked: function(mouse) {
           if (slot.itemDisabled) return

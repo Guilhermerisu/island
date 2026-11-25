@@ -17,7 +17,7 @@ ListPicker {
   takeFocus: !inZone
   placeholder: menuItem ? stack.map(function(s) { return s.title }).join(" › ") : "Search tray"
   emptyText: menuItem ? "Empty menu" : SystemTray.items.values.length ? "Nothing matches" : "Nothing in the tray"
-  rowHeight: 44
+  rowHeight: 40
   visibleRows: inZone ? 6 : 9
   items: menuItem ? menuRows : appRows
   onChosen: function(entry) { choose(entry) }
@@ -140,9 +140,9 @@ ListPicker {
         anchors.centerIn: icon
         visible: !icon.visible
         text: trayRow.entry.checked ? "󰄬" : trayRow.entry.kind === "open" ? "󰏌" : ""
-        color: tray.host.theme.muted
+        color: tray.host.theme.secondary
         font.family: tray.host.theme.fontFamily
-        font.pixelSize: tray.host.theme.px(16)
+        font.pixelSize: tray.host.theme.px(18)
       }
       Text {
         anchors.left: icon.right
@@ -155,19 +155,17 @@ ListPicker {
         elide: Text.ElideRight
         color: tray.host.theme.text
         font.family: tray.host.theme.textFontFamily
-        font.letterSpacing: tray.host.theme.tracking(tray.host.theme.textFontFamily, tray.host.theme.size.body)
-        font.pixelSize: tray.host.theme.size.body
-        font.weight: Font.Medium
+        font.letterSpacing: tray.host.theme.tracking(tray.host.theme.textFontFamily, tray.host.theme.px(14))
+        font.pixelSize: tray.host.theme.px(14)
       }
-      Text {
+      Chevron {
         id: chevron
+        theme: tray.host.theme
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         visible: !!trayRow.entry.children
-        text: "󰅂"
-        color: tray.host.theme.muted
-        font.family: tray.host.theme.fontFamily
-        font.pixelSize: tray.host.theme.px(16)
+        pixelSize: 14
+        color: tray.host.theme.secondary
       }
     }
   }

@@ -19,7 +19,7 @@ ListPicker {
     ? (host.addons.option("ask", "menuSearch") ? ["Search"].concat(host.addons.launcherHints).join(" or ") : "Search")
     : MenuModel.pathFor(items_, activeMenu)
   emptyText: "Nothing matches"
-  rowHeight: 46
+  rowHeight: 40
   visibleRows: 9
   items: rows
   onChosen: function(entry) { if (entry && entry.addonRow) entry.run(); else activate(entry) }
@@ -338,7 +338,8 @@ ListPicker {
       id: menuRow
       property var entry: ({})
       property bool selected: false
-      readonly property bool isMenu: entry.kind === "menu" || entry.kind === "link"
+      // Apps opens the launcher's list, so it reads as a submenu too.
+      readonly property bool isMenu: entry.kind === "menu" || entry.kind === "link" || entry.provider === "apps"
       readonly property bool isAddon: !!(entry && entry.addonRow)
       readonly property bool isApp: entry.kind === "app"
 
@@ -361,7 +362,7 @@ ListPicker {
       Image {
         id: appIcon
         anchors.centerIn: icon
-        width: 24; height: 24
+        width: 20; height: 20
         visible: menuRow.isApp && status === Image.Ready
         source: menuRow.isApp ? IconSource.source(menuRow.entry.appIcon) : ""
         sourceSize.width: 48
@@ -374,13 +375,13 @@ ListPicker {
         visible: !menuRow.isAddon
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 24
+        width: 18
         horizontalAlignment: Text.AlignHCenter
         text: menuRow.isApp ? "󰀻" : String(menuRow.entry.icon || "")
         opacity: appIcon.visible ? 0 : 1
-        color: menu.host.theme.muted
+        color: menu.host.theme.secondary
         font.family: menuRow.entry.iconFont || menu.host.theme.fontFamily
-        font.pixelSize: menu.host.theme.px(17)
+        font.pixelSize: menu.host.theme.px(18)
       }
       Column {
         anchors.left: menuRow.isAddon ? addonTile.right : icon.right
@@ -396,9 +397,8 @@ ListPicker {
           elide: Text.ElideRight
           color: menu.host.theme.text
           font.family: menu.host.theme.textFontFamily
-          font.letterSpacing: menu.host.theme.tracking(menu.host.theme.textFontFamily, menu.host.theme.size.title3)
-          font.pixelSize: menu.host.theme.size.title3
-          font.weight: Font.Medium
+          font.letterSpacing: menu.host.theme.tracking(menu.host.theme.textFontFamily, menu.host.theme.px(14))
+          font.pixelSize: menu.host.theme.px(14)
         }
         Text {
           width: parent.width
@@ -412,15 +412,15 @@ ListPicker {
           font.pixelSize: menu.host.theme.size.subheadline
         }
       }
-      Text {
+      // Only on rows that open a submenu; one that runs an action has none.
+      Chevron {
         id: chevron
+        theme: menu.host.theme
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         visible: menuRow.isMenu
-        text: "󰅂"
-        color: menu.host.theme.muted
-        font.family: menu.host.theme.fontFamily
-        font.pixelSize: menu.host.theme.px(16)
+        pixelSize: 14
+        color: menu.host.theme.secondary
       }
     }
   }
