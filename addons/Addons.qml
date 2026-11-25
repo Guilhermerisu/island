@@ -142,7 +142,10 @@ Item {
           }))
         }, []))
         .concat([{ rect: true, color: "#a9bcc2", x: 0.5, y: 0.69, width: 0.5, height: 0.09, radius: 0.4 }]),
-      description: "Shows the layout on the island when it changes" },
+      description: "Shows the layout on the island when it changes",
+      options: [
+        { key: "clockCode", label: "Layout beside the clock", detail: "Its code (\"US\") next to the resting clock, with 2+ layouts", type: "switch", default: false }
+      ] },
     // All Models' robot; its Settings pane takes the picked agent's logo.
     { id: "agents", name: "Agents", icon: "󰚩", color: "#5e5ce6", default: false, source: "agents/AgentsAddon.qml",
       searchAliases: ["ai agents"],
