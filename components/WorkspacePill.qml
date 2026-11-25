@@ -5,7 +5,8 @@ import Quickshell.Hyprland
 // workspaces 1–10 (solid with windows, faint when empty), and a white capsule
 // with the current workspace's number that slides from the one you left. Its
 // neutral accent follows the appearance preference. Only a window of them
-// shows (5–10, see workspaceHudCount); it stays put while the current
+// shows (5–10, see workspaceHudCount), widened to reach the highest workspace
+// with windows so none is left out of sight; it stays put while the current
 // workspace is inside it, and slides just far enough to bring it in when you
 // switch past either edge.
 IslandPill {
@@ -13,7 +14,18 @@ IslandPill {
   readonly property int slot: 18
   readonly property int gap: 8
   readonly property int count: 10
-  readonly property int visibleCount: Math.max(5, Math.min(count, host.settings.workspaceHudCount || 5))
+  readonly property int chosenCount: Math.max(5, Math.min(count, host.settings.workspaceHudCount || 5))
+  // The highest of workspaces 1–10 with windows, or 0.
+  readonly property int highestOccupied: {
+    var values = Hyprland.workspaces.values
+    var highest = 0
+    for (var i = 0; i < values.length; i++) {
+      var id = values[i].id
+      if (id >= 1 && id <= count && values[i].toplevels.values.length > 0) highest = Math.max(highest, id)
+    }
+    return highest
+  }
+  readonly property int visibleCount: Math.max(chosenCount, highestOccupied)
   readonly property int step: slot + gap
   // How far the capsule reaches past its dot on each side.
   readonly property int capsuleBleed: 2
@@ -29,10 +41,10 @@ IslandPill {
     else if (focused > windowStart + visibleCount - 1) windowStart = focused - visibleCount + 1
   }
   onFocusedChanged: followFocus()
-  // A smaller window may leave the current workspace past its end, and a
-  // larger one may run past 10.
+  // From the start, so a window widened for a workspace with windows shows
+  // every one up to it; then far enough to keep the current one in.
   onVisibleCountChanged: {
-    windowStart = Math.min(windowStart, count - visibleCount + 1)
+    windowStart = 1
     followFocus()
   }
   Component.onCompleted: followFocus()
