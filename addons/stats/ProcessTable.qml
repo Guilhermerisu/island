@@ -345,7 +345,7 @@ Item {
             // Quit Process, at the end of the name.
             Rectangle {
               scale: quitMouse.pressed ? 0.9 : 1
-              Behavior on scale { MotionAnimation { theme: table.view.host.theme; pace: quitMouse.pressed ? "press" : "standard" } }
+              Behavior on scale { id: scaleMotion; MotionAnimation { theme: table.view.host.theme; pace: towards(scaleMotion.targetValue, quitMouse.pressed ? "press" : "standard") } }
               visible: cellItem.isName && row.showQuit
               anchors.right: parent.right
               anchors.rightMargin: 4

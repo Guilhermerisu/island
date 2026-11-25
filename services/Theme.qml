@@ -75,6 +75,8 @@ Item {
   readonly property color secondary: Qt.tint(background, withAlpha(text, 0.6))
   // Neutral (not theme-tinted) grey for placeholders and the search glyph.
   readonly property color placeholder: Qt.tint(background, withAlpha(text, 0.38))
+  // macOS's tertiary label: timestamps, chevrons, empty-state symbols.
+  readonly property color tertiary: placeholder
   readonly property color card: solid("subtle")
   readonly property color tile: solid("raised")
   readonly property color well: solid("strong")

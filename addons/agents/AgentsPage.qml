@@ -17,7 +17,7 @@ ColumnLayout {
   required property var view
   required property var agents
   property bool shown: false
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   SettingsSegmented {
     Layout.alignment: Qt.AlignHCenter
@@ -180,21 +180,24 @@ ColumnLayout {
   // Refresh. In Settings' header card, which this pane draws in its place.
   Rectangle {
     Layout.fillWidth: true
-    implicitHeight: agentColumn.implicitHeight + 32
+    // As Settings' own header card (see PaneHeader): 18 over the icon, 16
+    // at the sides and under the button.
+    implicitHeight: agentColumn.implicitHeight + 18 + 16
     radius: page.view.host.theme.radii.card
     color: page.view.card
     border.width: 1
     border.color: page.view.edge
     Column {
       id: agentColumn
-      anchors.centerIn: parent
-      width: Math.min(parent.width - 48, 380)
+      anchors.horizontalCenter: parent.horizontalCenter
+      y: 18
+      width: parent.width - 32
       spacing: 6
       PaneIcon {
         view: page.view
         anchors.horizontalCenter: parent.horizontalCenter
-        width: 56
-        height: 56
+        width: 44
+        height: 44
         glyph: page.provider.glyph
         tint: page.tint
         layers: [{ glyph: page.provider.glyph, color: "#ffffff", x: 0.5, y: 0.5, size: page.provider.glyphSize }]
@@ -207,10 +210,10 @@ ColumnLayout {
         color: page.view.text
         font.family: page.view.host.theme.textFontFamily
         font.features: { "tnum": 1 }
-        font.pixelSize: page.view.detailTitleFontSize
-        font.weight: Font.Bold
-        font.variableAxes: page.view.titleFontAxes
-        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailTitleFontSize)
+        font.pixelSize: page.view.paneTitleFontSize
+        font.weight: Font.DemiBold
+        font.variableAxes: ({ "wght": 600 })
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.paneTitleFontSize)
       }
       Text {
         width: parent.width
@@ -221,9 +224,9 @@ ColumnLayout {
         elide: Text.ElideRight
         color: page.view.textMuted
         font.family: page.view.host.theme.textFontFamily
-        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailCaptionFontSize)
+        font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.calloutFontSize)
         font.features: { "tnum": 1 }
-        font.pixelSize: page.view.detailCaptionFontSize
+        font.pixelSize: page.view.calloutFontSize
       }
       Item { width: 1; height: 4 }
       SettingsButton {
@@ -241,7 +244,7 @@ ColumnLayout {
   SettingsGroup {
     visible: !page.allModels
     view: page.view
-    title: "Usage Limits"
+    title: "Usage limits"
     Repeater {
       // By count: each record's new array would otherwise replay the meters.
       model: page.limits.length
@@ -251,14 +254,14 @@ ColumnLayout {
         readonly property var modelData: page.limits[index] || ({ label: "", percent: 0, resetsAt: "" })
         readonly property real used: Math.max(0, Number(modelData.percent) || 0)
         Layout.fillWidth: true
-        implicitHeight: limitBody.implicitHeight + 26
+        implicitHeight: Math.max(48, limitBody.implicitHeight + 16)
         ColumnLayout {
           id: limitBody
           anchors.left: parent.left
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
-          anchors.leftMargin: 14
-          anchors.rightMargin: 14
+          anchors.leftMargin: 12
+          anchors.rightMargin: 12
           spacing: 7
           RowLayout {
             Layout.fillWidth: true
@@ -322,9 +325,9 @@ ColumnLayout {
         Rectangle {
           visible: limit.index < page.limits.length - 1
           anchors.left: parent.left
-          anchors.leftMargin: 14
+          anchors.leftMargin: 12
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 0
           anchors.bottom: parent.bottom
           height: 1
           color: page.view.divider
@@ -340,7 +343,7 @@ ColumnLayout {
         id: warnIcon
         view: page.view
         anchors.left: parent.left
-        anchors.leftMargin: 14
+        anchors.leftMargin: 12
         anchors.top: parent.top
         anchors.topMargin: 12
         width: 24
@@ -351,9 +354,9 @@ ColumnLayout {
       Column {
         id: noLimits
         anchors.left: warnIcon.right
-        anchors.leftMargin: 10
+        anchors.leftMargin: 12
         anchors.right: parent.right
-        anchors.rightMargin: 14
+        anchors.rightMargin: 12
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
         Text {
@@ -575,7 +578,8 @@ ColumnLayout {
                 layer.effect: MultiEffect {
                   shadowEnabled: true
                   shadowColor: Qt.rgba(0, 0, 0, 0.45)
-                  shadowBlur: 0.5
+                  blurMax: 16
+                  shadowBlur: 1
                   shadowVerticalOffset: 2
                 }
                 Column {
@@ -608,9 +612,9 @@ ColumnLayout {
       }
       Rectangle {
         anchors.left: parent.left
-        anchors.leftMargin: 14
+        anchors.leftMargin: 12
         anchors.right: parent.right
-        anchors.rightMargin: 14
+        anchors.rightMargin: 0
         anchors.bottom: parent.bottom
         height: 1
         color: page.view.divider
@@ -651,7 +655,7 @@ ColumnLayout {
   SettingsGroup {
     visible: page.allModels ? page.modelRows.length > 0 : page.models.length > 0
     view: page.view
-    title: "Tokens by Model"
+    title: "Tokens by model"
     Repeater {
       model: page.allModels ? page.modelRows.length : 0
       delegate: Item {
@@ -659,10 +663,10 @@ ColumnLayout {
         required property int index
         readonly property var modelData: page.modelRows[index] || ({ label: "", source: "", value: 0 })
         Layout.fillWidth: true
-        implicitHeight: 44
+        implicitHeight: 48
         Column {
           anchors.left: parent.left
-          anchors.leftMargin: 14
+          anchors.leftMargin: 12
           anchors.right: modelValue.left
           anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
@@ -692,7 +696,7 @@ ColumnLayout {
         Text {
           id: modelValue
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           text: page.tokens(modelRow.modelData.value)
           color: page.view.textMuted
@@ -704,9 +708,9 @@ ColumnLayout {
         Rectangle {
           visible: modelRow.index < page.modelRows.length - 1
           anchors.left: parent.left
-          anchors.leftMargin: 14
+          anchors.leftMargin: 12
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 0
           anchors.bottom: parent.bottom
           height: 1
           color: page.view.divider
@@ -716,14 +720,14 @@ ColumnLayout {
     Item {
       visible: !page.allModels
       Layout.fillWidth: true
-      implicitHeight: modelBar.implicitHeight + 28
+      implicitHeight: modelBar.implicitHeight + 24
       UsageBar {
         id: modelBar
         view: page.view
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: 14
+        anchors.margins: 12
         barHeight: 18
         barRadius: 5
         total: page.modelTotal

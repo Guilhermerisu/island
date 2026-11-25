@@ -279,7 +279,7 @@ Item {
     // Lifts as it's picked up, and fades where it's let go.
     opacity: board.draggedId !== "" ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: board.center.host.theme; pace: board.draggedId !== "" ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: board.center.host.theme; pace: towards(opacityMotion.targetValue, board.draggedId !== "" ? "fade" : "exit"); curve: "fade" } }
     radius: Math.min(board.center.cardRadius, height / 2)
     color: board.center.tile
     border.width: 1

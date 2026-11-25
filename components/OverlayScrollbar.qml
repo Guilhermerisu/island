@@ -33,7 +33,8 @@ Item {
   visible: needed && opacity > 0.01
   opacity: needed && (awake || engaged) ? 1 : 0
   Behavior on opacity {
-    MotionAnimation { theme: bar.theme; pace: bar.awake || bar.engaged ? "quick" : "standard"; curve: "fade" }
+    id: opacityMotion
+    MotionAnimation { theme: bar.theme; pace: towards(opacityMotion.targetValue, bar.awake || bar.engaged ? "quick" : "standard"); curve: "fade" }
   }
 
   Connections {

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import "../controls"
+import "../../../components/KeyNames.js" as KeyNames
 
 // Settings → Keybinds: the island's shortcuts from companion/bindings.sh, and
 // recording new ones. Addons' shortcuts aren't listed here: they're set in
@@ -13,9 +14,10 @@ import "../controls"
 ColumnLayout {
   id: page
   required property var view
-  visible: view.currentPage === "Keybinds"
+  readonly property string settingsPageName: "Keybinds"
+  visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   // Loaded when the page (or Addons, which shows each addon's shortcuts)
   // opens; recording and a pending conflict end when it closes.
@@ -207,18 +209,7 @@ ColumnLayout {
     return names[k] || scanKeys[event.nativeScanCode] || ""
   }
 
-  function shortcutText(keys) {
-    if (!keys) return "None"
-    var names = {
-      SUPER: "Super", SHIFT: "Shift", CTRL: "Ctrl", ALT: "Alt",
-      ESCAPE: "Esc", RETURN: "Enter", BACKSPACE: "Backspace", PRIOR: "Page Up", NEXT: "Page Down",
-      COMMA: ",", PERIOD: ".", SLASH: "/", MINUS: "-", EQUAL: "=", GRAVE: "`", SEMICOLON: ";",
-      APOSTROPHE: "'", BRACKETLEFT: "[", BRACKETRIGHT: "]", BACKSLASH: "\\"
-    }
-    return keys.split(" + ").map(function(part) {
-      return names[part] || (part.length <= 3 ? part : part.charAt(0) + part.slice(1).toLowerCase())
-    }).join(" + ")
-  }
+  function shortcutText(keys) { return KeyNames.shortcut(keys) }
 
   // Each section's shortcuts share its tile colour; each has its own glyph.
   readonly property var shortcutSections: [

@@ -21,7 +21,7 @@ Item {
   // Visible as soon as it opens, so it can take focus mid-fade.
   visible: open || opacity > 0.01
   opacity: open ? 1 : 0
-  Behavior on opacity { MotionAnimation { theme: sheet.view.host.theme; pace: sheet.open ? "fade" : "exit"; curve: "fade" } }
+  Behavior on opacity { id: opacityMotion; MotionAnimation { theme: sheet.view.host.theme; pace: towards(opacityMotion.targetValue, sheet.open ? "fade" : "exit"); curve: "fade" } }
 
   function ask(target) {
     row = target
@@ -59,7 +59,7 @@ Item {
     id: card
     anchors.horizontalCenter: parent.horizontalCenter
     y: sheet.open ? 40 : 20
-    Behavior on y { MotionAnimation { theme: sheet.view.host.theme; pace: sheet.open ? "standard" : "exit" } }
+    Behavior on y { id: yMotion; MotionAnimation { theme: sheet.view.host.theme; pace: towards(yMotion.targetValue, sheet.open ? "standard" : "exit") } }
     width: 340
     height: body.implicitHeight + 36
     radius: 14

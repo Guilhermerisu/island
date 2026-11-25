@@ -14,7 +14,8 @@ ListPicker {
   placeholder: "Search emoji"
   emptyText: "No emoji match"
   columns: 10
-  rowHeight: 54
+  rowHeight: 50
+  cellGap: 4
   visibleRows: 6
   items: EmojiSearch.filterEmojis(all, query, 1000)
   onChosen: function(entry) { insert(entry.e) }
@@ -36,7 +37,22 @@ ListPicker {
         anchors.centerIn: parent
         text: String(cell.entry.e || "")
         font.family: "Noto Color Emoji"
-        font.pixelSize: emojis.host.theme.px(28)
+        font.pixelSize: emojis.host.theme.px(26)
+      }
+    }
+  }
+
+  // What Enter does with the selected emoji. Omarchy's emoji data has only
+  // a keyword list per emoji ("grinning face smile grinning happy"), no
+  // name of its own, so the bar shows just the hint.
+  footer: Component {
+    Item {
+      property var entry: ({})
+      KeyHint {
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        theme: emojis.host.theme
+        label: "Paste"
       }
     }
   }

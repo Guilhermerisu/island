@@ -11,6 +11,9 @@ Item {
   property real thickness: 7
   property string text: Math.round(value) + "%"
   property string caption: ""
+  // The middle's figure and caption sizes; by default they grow with the ring.
+  property int textSize: Math.round(width * 0.2)
+  property int captionSize: Math.round(width * 0.13)
   implicitWidth: 84
   implicitHeight: 84
 
@@ -49,8 +52,8 @@ Item {
       text: ring.text
       color: ring.view.text
       font.family: ring.view.host.theme.textFontFamily
-      font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, Math.round(ring.width * 0.2))
-      font.pixelSize: Math.round(ring.width * 0.2)
+      font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, ring.textSize)
+      font.pixelSize: ring.textSize
       font.weight: Font.DemiBold
       font.features: { "tnum": 1 }
     }
@@ -60,8 +63,8 @@ Item {
       text: ring.caption
       color: ring.view.textMuted
       font.family: ring.view.host.theme.textFontFamily
-      font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, Math.round(ring.width * 0.13))
-      font.pixelSize: Math.round(ring.width * 0.13)
+      font.letterSpacing: ring.view.host.theme.tracking(ring.view.host.theme.textFontFamily, ring.captionSize)
+      font.pixelSize: ring.captionSize
     }
   }
 }

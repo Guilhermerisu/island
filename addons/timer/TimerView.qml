@@ -1,9 +1,10 @@
 import QtQuick
 import "../../components"
 
-// The timer view. Unset, play and cancel buttons, and after a "Timer"
-// label, as the countdown has, how long it's set to ("15 min", each time it
-// opens), turned a minute at a time like one of iOS's picker wheels:
+// The timer view, a full pill (76 tall, round ends). Unset, play and cancel
+// buttons, and after a "Timer" label, as the countdown has, how long it's
+// set to, as the countdown will show it ("15:00", each time it opens),
+// turned a minute at a time like one of iOS's picker wheels:
 // scrolled, dragged up or down, or with ↑/↓, the new length rolling in as on
 // a drum. Play or Enter starts it and folds the island back to its pill;
 // cancel closes the view. Once set, its controls (see TimerControls): Space
@@ -21,7 +22,14 @@ Item {
   readonly property int maxMinutes: 24 * 60 - 1
   property int minutes: defaultMinutes
 
-  implicitHeight: 52
+  // A pill of its own: no island padding, 14 inside its left end and 22
+  // inside its right (a zone keeps its card's padding and the 52 row).
+  implicitHeight: inZone ? 52 : 76
+  readonly property int surfacePadding: 0
+  readonly property int surfaceRadius: 38
+  // The time and its label, as the running countdown draws them.
+  readonly property int timeSize: 38
+  readonly property int labelSize: 13
 
   onActiveChanged: if (active) reset()
   onPickingChanged: if (active) reset()
@@ -45,7 +53,7 @@ Item {
   function turn(by) {
     var next = Math.max(1, Math.min(maxMinutes, minutes + by))
     if (next === minutes) return
-    leaving = timer.durationText(minutes * 60000)
+    leaving = timer.timeText(minutes * 60000)
     direction = by > 0 ? 1 : -1
     minutes = next
     roller.restart()
@@ -64,174 +72,183 @@ Item {
     Behavior on opacity { MotionAnimation { theme: view.host.theme; pace: "fade"; curve: "fade" } }
   }
 
-  Fade {
-    on: view.picking
+  Item {
+    id: content
+    anchors.fill: parent
+    anchors.leftMargin: view.inZone ? 0 : 14
+    anchors.rightMargin: view.inZone ? 0 : 22
 
-    Rectangle {
-      id: startButton
-      anchors.left: parent.left
-      anchors.verticalCenter: parent.verticalCenter
-      width: 52
-      height: width
-      radius: width / 2
-      color: view.timer.tintWell
-      scale: startMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: view.host.theme; pace: startMouse.pressed ? "press" : "standard" } }
-      Text {
-        anchors.centerIn: parent
-        text: "󰐊"
-        color: view.timer.tint
-        font.family: view.host.theme.fontFamily
-        font.pixelSize: Math.round(parent.width * 0.7)
-      }
-      MouseArea {
-        id: startMouse
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: view.start()
-      }
-    }
+    Fade {
+      on: view.picking
 
-    // Beside it, one that closes the view without starting (none in a zone,
-    // which isn't this view to close).
-    Rectangle {
-      id: cancelButton
-      visible: !view.inZone
-      anchors.left: startButton.right
-      anchors.leftMargin: 12
-      anchors.verticalCenter: parent.verticalCenter
-      width: 52
-      height: width
-      radius: width / 2
-      color: "#48484a"
-      scale: cancelMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: view.host.theme; pace: cancelMouse.pressed ? "press" : "standard" } }
-      Text {
-        anchors.centerIn: parent
-        text: "󰅖"
-        color: "#ffffff"
-        font.family: view.host.theme.fontFamily
-        font.pixelSize: Math.round(parent.width * 0.7)
-      }
-      MouseArea {
-        id: cancelMouse
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: view.host.view = "rest"
-      }
-    }
-
-    // As in the running view, a small label on the length's baseline.
-    Text {
-      id: timerLabel
-      anchors.right: well.left
-      anchors.rightMargin: -2
-      y: well.y + (drum.height - current.height) / 2 + current.baselineOffset - baselineOffset
-      text: "Timer"
-      color: view.timer.tint
-      font.family: view.host.theme.textFontFamily
-      font.letterSpacing: view.host.theme.tracking(view.host.theme.textFontFamily, Math.round(view.host.theme.px(46) * 0.4))
-      font.features: { "tnum": 1 }
-      font.pixelSize: Math.round(view.host.theme.px(46) * 0.4)
-      font.weight: Font.Medium
-    }
-
-    // The length, on a faint well while hovered: the old one turning away
-    // and fading as the new one comes in.
-    Rectangle {
-      id: well
-      anchors.right: parent.right
-      anchors.rightMargin: -10
-      anchors.verticalCenter: parent.verticalCenter
-      width: Math.max(current.implicitWidth, previous.implicitWidth * roller.roll) + 20
-      height: 56
-      radius: 14
-      color: view.timer.tintWell
-      opacity: wheelMouse.containsMouse || wheelMouse.pressed ? 0.4 : 0
-      Behavior on opacity { MotionAnimation { theme: view.host.theme; pace: "fade"; curve: "fade" } }
-    }
-    Item {
-      id: drum
-      anchors.fill: well
-      clip: true
-      NumberAnimation {
-        id: roller
-        target: roller
-        property real roll: 0
-        property: "roll"
-        from: 1
-        to: 0
-        duration: view.host.theme.motionDuration("expressive")
-        easing.type: Easing.BezierSpline
-        easing.bezierCurve: view.host.theme.motionCurve("settle")
-      }
-      component Face: Text {
-        property real shift: 0
-        // A long length ("23 h 59 min") shrinks to fit between the label
-        // and the buttons.
-        width: Math.min(implicitWidth, view.width - 2 * 52 - 12 - 16 - timerLabel.implicitWidth - 20)
-        fontSizeMode: Text.HorizontalFit
-        minimumPixelSize: 22
-        anchors.right: parent.right
-        anchors.rightMargin: 10
-        y: (drum.height - height) / 2 + shift * drum.height * 0.8
-        color: view.timer.tint
-        font.family: view.host.theme.textFontFamily
-        font.pixelSize: view.host.theme.px(46)
-        font.weight: Font.Light
-        font.features: { "tnum": 1, "case": 1 }
-        font.letterSpacing: view.host.theme.tracking(view.host.theme.textFontFamily, view.host.theme.px(46))
-        transform: Scale {
-          origin.y: height / 2
-          yScale: Math.max(0, 1 - Math.abs(shift) * 0.6)
+      Rectangle {
+        id: startButton
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 52
+        height: width
+        radius: width / 2
+        color: view.timer.tintWell
+        scale: startMouse.pressed ? 0.92 : 1
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: view.host.theme; pace: towards(scaleMotion.targetValue, startMouse.pressed ? "press" : "standard") } }
+        Text {
+          anchors.centerIn: parent
+          text: "󰐊"
+          color: view.timer.tint
+          font.family: view.host.theme.fontFamily
+          font.pixelSize: Math.round(parent.width * 0.7)
+        }
+        MouseArea {
+          id: startMouse
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          onClicked: view.start()
         }
       }
-      Face {
-        id: previous
-        visible: roller.roll > 0
-        text: view.leaving
-        shift: -view.direction * (1 - roller.roll)
-        opacity: roller.roll
-      }
-      Face {
-        id: current
-        text: view.timer.durationText(view.minutes * 60000)
-        shift: view.direction * roller.roll
-        opacity: 1 - roller.roll * 0.8
-      }
-    }
-    // A notch of the wheel (or a touchpad's worth of one), or a drag of a
-    // row's height, is a minute.
-    MouseArea {
-      id: wheelMouse
-      anchors.fill: well
-      hoverEnabled: true
-      cursorShape: Qt.SizeVerCursor
-      property real held: 0
-      property real lastY: 0
-      onWheel: function(wheel) {
-        held -= wheel.angleDelta.y
-        while (held >= 120) { view.turn(1); held -= 120 }
-        while (held <= -120) { view.turn(-1); held += 120 }
-      }
-      onPressed: function(mouse) { lastY = mouse.y }
-      onPositionChanged: function(mouse) {
-        if (!pressed) return
-        var rows = Math.trunc((lastY - mouse.y) / 18)
-        if (rows === 0) return
-        view.turn(rows)
-        lastY -= rows * 18
-      }
-    }
-  }
 
-  Fade {
-    on: !view.picking
-    TimerControls {
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
-      timer: view.timer
+      // Beside it, one that closes the view without starting (none in a zone,
+      // which isn't this view to close).
+      Rectangle {
+        id: cancelButton
+        visible: !view.inZone
+        anchors.left: startButton.right
+        anchors.leftMargin: 12
+        anchors.verticalCenter: parent.verticalCenter
+        width: 52
+        height: width
+        radius: width / 2
+        color: "#48484a"
+        scale: cancelMouse.pressed ? 0.92 : 1
+        Behavior on scale { id: scaleMotion2; MotionAnimation { theme: view.host.theme; pace: towards(scaleMotion2.targetValue, cancelMouse.pressed ? "press" : "standard") } }
+        Text {
+          anchors.centerIn: parent
+          text: "󰅖"
+          color: "#ffffff"
+          font.family: view.host.theme.fontFamily
+          font.pixelSize: Math.round(parent.width * 0.7)
+        }
+        MouseArea {
+          id: cancelMouse
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          onClicked: view.host.view = "rest"
+        }
+      }
+
+      // As in the running view, a small label on the length's baseline.
+      Text {
+        id: timerLabel
+        anchors.right: well.left
+        anchors.rightMargin: -2
+        y: well.y + (drum.height - current.height) / 2 + current.baselineOffset - baselineOffset
+        text: "Timer"
+        color: view.timer.tint
+        font.family: view.host.theme.textFontFamily
+        font.letterSpacing: view.host.theme.tracking(view.host.theme.textFontFamily, view.host.theme.px(view.labelSize))
+        font.features: { "tnum": 1 }
+        font.pixelSize: view.host.theme.px(view.labelSize)
+        font.weight: Font.Medium
+      }
+
+      // The length, on a faint well while hovered: the old one turning away
+      // and fading as the new one comes in.
+      Rectangle {
+        id: well
+        anchors.right: parent.right
+        anchors.rightMargin: -10
+        anchors.verticalCenter: parent.verticalCenter
+        width: Math.max(current.implicitWidth, previous.implicitWidth * roller.roll) + 20
+        height: 48
+        radius: 12
+        color: view.timer.tintWell
+        opacity: wheelMouse.containsMouse || wheelMouse.pressed ? 0.4 : 0
+        Behavior on opacity { MotionAnimation { theme: view.host.theme; pace: "fade"; curve: "fade" } }
+      }
+      Item {
+        id: drum
+        anchors.fill: well
+        clip: true
+        NumberAnimation {
+          id: roller
+          target: roller
+          property real roll: 0
+          property: "roll"
+          from: 1
+          to: 0
+          duration: view.host.theme.motionDuration("expressive")
+          easing.type: Easing.BezierSpline
+          easing.bezierCurve: view.host.theme.motionCurve("settle")
+        }
+        component Face: Text {
+          property real shift: 0
+          // A long length ("23:59:00") shrinks to fit between the label and
+          // the buttons.
+          width: Math.min(implicitWidth, content.width - 2 * 52 - 12 - 16 - timerLabel.implicitWidth - 20)
+          fontSizeMode: Text.HorizontalFit
+          minimumPixelSize: 22
+          anchors.right: parent.right
+          anchors.rightMargin: 10
+          y: (drum.height - height) / 2 + shift * drum.height * 0.8
+          color: view.timer.tint
+          font.family: view.host.theme.textFontFamily
+          font.pixelSize: view.host.theme.px(view.timeSize)
+          font.weight: Font.Light
+          font.features: { "tnum": 1, "case": 1 }
+          font.letterSpacing: view.host.theme.tracking(view.host.theme.textFontFamily, view.host.theme.px(view.timeSize))
+          transform: Scale {
+            origin.y: height / 2
+            yScale: Math.max(0, 1 - Math.abs(shift) * 0.6)
+          }
+        }
+        Face {
+          id: previous
+          visible: roller.roll > 0
+          text: view.leaving
+          shift: -view.direction * (1 - roller.roll)
+          opacity: roller.roll
+        }
+        Face {
+          id: current
+          text: view.timer.timeText(view.minutes * 60000)
+          shift: view.direction * roller.roll
+          opacity: 1 - roller.roll * 0.8
+        }
+      }
+      // A notch of the wheel (or a touchpad's worth of one), or a drag of a
+      // row's height, is a minute.
+      MouseArea {
+        id: wheelMouse
+        anchors.fill: well
+        hoverEnabled: true
+        cursorShape: Qt.SizeVerCursor
+        property real held: 0
+        property real lastY: 0
+        onWheel: function(wheel) {
+          held -= wheel.angleDelta.y
+          while (held >= 120) { view.turn(1); held -= 120 }
+          while (held <= -120) { view.turn(-1); held += 120 }
+        }
+        onPressed: function(mouse) { lastY = mouse.y }
+        onPositionChanged: function(mouse) {
+          if (!pressed) return
+          var rows = Math.trunc((lastY - mouse.y) / 18)
+          if (rows === 0) return
+          view.turn(rows)
+          lastY -= rows * 18
+        }
+      }
+    }
+
+    Fade {
+      on: !view.picking
+      TimerControls {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        timer: view.timer
+        timeSize: view.timeSize
+        labelSize: view.labelSize
+      }
     }
   }
 }

@@ -23,9 +23,10 @@ Item {
   property real fieldWidth: 200
   property string icon: ""
   property color iconTint: view.accent
-  readonly property real restHeight: detail !== "" || icon !== "" ? 52 : 44
-  readonly property real textLeft: 14 + indent + (icon !== "" ? 38 : 0)
-  readonly property real edgeMargin: boxed ? 14 : 10
+  // As SettingsRow: at least 48, 12 at the sides, a 24 icon 12 from the text.
+  readonly property real restHeight: Math.max(48, labelColumn.implicitHeight + 16)
+  readonly property real textLeft: 12 + indent + (icon !== "" ? 36 : 0)
+  readonly property real edgeMargin: 12
   // An assigned shortcut shows its clear button only while the row is
   // hovered (or the button has keyboard focus), as macOS's lists do.
   readonly property bool clearable: !!entry.keys && entry.removable !== false && !recording && !asking
@@ -37,10 +38,10 @@ Item {
     visible: shortcutRow.icon !== ""
     view: shortcutRow.view
     flat: true
-    x: 14 + shortcutRow.indent
+    x: 12 + shortcutRow.indent
     y: (shortcutRow.restHeight - height) / 2
-    width: 26
-    height: 26
+    width: 24
+    height: 24
     glyph: shortcutRow.icon
     tint: shortcutRow.iconTint
   }
@@ -54,6 +55,7 @@ Item {
   clip: true
 
   Column {
+    id: labelColumn
     anchors.left: parent.left
     anchors.leftMargin: shortcutRow.textLeft
     anchors.right: keysField.left
@@ -66,8 +68,8 @@ Item {
       elide: Text.ElideRight
       color: shortcutRow.view.text
       font.family: shortcutRow.view.host.theme.textFontFamily
-      font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.detailFontSize)
-      font.pixelSize: shortcutRow.view.detailFontSize
+      font.letterSpacing: shortcutRow.view.host.theme.tracking(shortcutRow.view.host.theme.textFontFamily, shortcutRow.view.rowTitleFontSize)
+      font.pixelSize: shortcutRow.view.rowTitleFontSize
       font.weight: shortcutRow.detail !== "" ? Font.Medium : Font.Normal
     }
     Text {
@@ -93,11 +95,11 @@ Item {
     height: 28
     radius: 6
     scale: keysMouse.pressed ? 0.98 : 1
-    Behavior on scale { MotionAnimation { theme: shortcutRow.view.host.theme; pace: keysMouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(scaleMotion.targetValue, keysMouse.pressed ? "press" : "standard") } }
     // Cross-fades with Cancel and Replace while a conflict is asked about.
     opacity: shortcutRow.asking ? 0 : 1
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "exit" : "fade"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(opacityMotion.targetValue, shortcutRow.asking ? "exit" : "fade"); curve: "fade" } }
     color: shortcutRow.recording ? shortcutRow.view.host.theme.accentFill("soft")
       : shortcutRow.boxed ? shortcutRow.view.host.theme.fill(keysMouse.containsMouse ? "subtle" : "quiet")
       : keysMouse.containsMouse && !caps ? shortcutRow.view.well : shortcutRow.view.host.theme.withAlpha(shortcutRow.view.well, 0)
@@ -225,7 +227,7 @@ Item {
     spacing: 6
     opacity: shortcutRow.asking ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(opacityMotion2.targetValue, shortcutRow.asking ? "fade" : "exit"); curve: "fade" } }
     SettingsButton { view: shortcutRow.view; label: "Cancel"; onClicked: shortcutRow.keybinds.cancelPending() }
     SettingsButton { view: shortcutRow.view; label: "Replace"; primary: true; onClicked: shortcutRow.keybinds.applyPending() }
   }
@@ -235,7 +237,7 @@ Item {
     spacing: 5
     opacity: shortcutRow.asking ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion3; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(opacityMotion3.targetValue, shortcutRow.asking ? "fade" : "exit"); curve: "fade" } }
     Text {
       text: "󰀪"
       color: "#febc2e"
@@ -253,7 +255,7 @@ Item {
   Rectangle {
     visible: !shortcutRow.last
     anchors.left: parent.left
-    anchors.leftMargin: shortcutRow.indent
+    anchors.leftMargin: shortcutRow.textLeft
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     height: 1

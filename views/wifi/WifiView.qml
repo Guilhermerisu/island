@@ -51,6 +51,11 @@ ColumnLayout {
     var devs = Networking.devices ? Networking.devices.values : []
     return devs.some(function(d) { return !!d && !!d.connected })
   }
+  // A wired link up, so the empty state can say why there's no Wi-Fi.
+  readonly property bool onEthernet: {
+    var devs = Networking.devices ? Networking.devices.values : []
+    return devs.some(function(d) { return !!d && d.type === DeviceType.Wired && !!d.connected })
+  }
   readonly property bool canSpeedTest: speed.available && online
   onCanSpeedTestChanged: if (!canSpeedTest) speed.stop()
   SpeedTest { id: speed; active: wf.active }
@@ -237,36 +242,49 @@ ColumnLayout {
   // and off from the Control Center's tile.
   RowLayout {
     Layout.fillWidth: true
-    Layout.preferredHeight: 34
+    Layout.preferredHeight: 28
     Layout.leftMargin: 4
     Layout.rightMargin: 6
-    spacing: 8
+    spacing: 10
     Rectangle {
       scale: backMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: wf.host.theme; pace: backMouse.pressed ? "press" : "standard" } }
-      Layout.preferredWidth: 32
-      Layout.preferredHeight: 32
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: wf.host.theme; pace: towards(scaleMotion.targetValue, backMouse.pressed ? "press" : "standard") } }
+      Layout.preferredWidth: 28
+      Layout.preferredHeight: 28
       radius: height / 2
-      color: backMouse.containsMouse ? wf.well : wf.card
+      color: backMouse.containsMouse ? wf.tile : wf.card
       Tooltip { theme: wf.host.theme; text: "Control Center" }
-      Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(17) }
+      Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(14) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
     }
     Text {
       text: "Wi-Fi"
       color: wf.text
       font.family: wf.host.theme.textFontFamily
-      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.title2)
-      font.pixelSize: wf.host.theme.size.title2
+      font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(15))
+      font.pixelSize: wf.host.theme.px(15)
       font.weight: Font.DemiBold
     }
     Item { Layout.fillWidth: true }
   }
 
+  // Nothing to list: drawn straight on the island, above the actions card.
+  EmptyState {
+    visible: !wf.displayRows.length
+    Layout.fillWidth: true
+    host: wf.host
+    glyph: !wf.device || !wf.powered ? "󰖪" : "󰤨"
+    text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
+    detail: wf.device ? "" : wf.onEthernet ? "This computer is on Ethernet." : "No wireless hardware was found."
+  }
+
+  // The card: the networks, then the options (Speed Test, Wi-Fi Settings),
+  // 44 px rows whose text and dividers start 14 px in from its edge (its
+  // 6 px inset plus 8).
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: body.implicitHeight + 12
-    radius: wf.host.theme.radii.card
+    radius: 14
     color: wf.card
     border.width: 1
     border.color: wf.edge
@@ -278,14 +296,6 @@ ColumnLayout {
       anchors.top: parent.top
       anchors.margins: 6
       spacing: 0
-
-      EmptyState {
-        visible: !wf.displayRows.length
-        Layout.fillWidth: true
-        host: wf.host
-        glyph: !wf.device || !wf.powered ? "󰖪" : "󰤨"
-        text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
-      }
 
       ListView {
         id: list
@@ -365,8 +375,8 @@ ColumnLayout {
               visible: row.index !== 0
               anchors.left: parent.left
               anchors.right: parent.right
-              anchors.leftMargin: 10
-              anchors.rightMargin: 10
+              anchors.leftMargin: 8
+              anchors.rightMargin: -6
               anchors.bottom: parent.top
               anchors.bottomMargin: 2
               height: 1
@@ -374,7 +384,7 @@ ColumnLayout {
             }
             Text {
               anchors.left: parent.left
-              anchors.leftMargin: 10
+              anchors.leftMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               text: row.modelData.header || ""
               color: wf.textMuted
@@ -385,7 +395,7 @@ ColumnLayout {
             }
             Row {
               anchors.right: parent.right
-              anchors.rightMargin: 10
+              anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               spacing: 8
               visible: !!row.modelData.toggle
@@ -569,20 +579,20 @@ ColumnLayout {
               id: trailing
               visible: !row.askingPassword
               anchors.right: parent.right
-              anchors.rightMargin: 10
+              anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
               spacing: 6
               Rectangle {
                 id: forgetButton
                 scale: forgetMouse.pressed ? 0.9 : 1
-                Behavior on scale { MotionAnimation { theme: wf.host.theme; pace: forgetMouse.pressed ? "press" : "standard" } }
+                Behavior on scale { id: scaleMotion2; MotionAnimation { theme: wf.host.theme; pace: towards(scaleMotion2.targetValue, forgetMouse.pressed ? "press" : "standard") } }
                 // Fades in on hover and out quicker, and takes no clicks
                 // while it fades out.
                 readonly property bool shown: row.modelData.section !== "nearby" && !row.modelData.pending
                   && (rowHover.hovered || row.isSelected)
                 opacity: shown ? 1 : 0
                 visible: opacity > 0.01
-                Behavior on opacity { MotionAnimation { theme: wf.host.theme; pace: forgetButton.shown ? "fade" : "exit"; curve: forgetButton.shown ? "fade" : "exit" } }
+                Behavior on opacity { id: opacityMotion; MotionAnimation { theme: wf.host.theme; pace: towards(opacityMotion.targetValue, forgetButton.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, forgetButton.shown ? "fade" : "exit") } }
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetTip.hovered ? wf.wellHover : "transparent"
@@ -621,9 +631,10 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
         Rectangle {
+          visible: list.visible
           Layout.fillWidth: true
-          Layout.leftMargin: 10
-          Layout.rightMargin: 10
+          Layout.leftMargin: 8
+          Layout.rightMargin: -6
           Layout.topMargin: 4
           Layout.bottomMargin: 4
           Layout.preferredHeight: 1
@@ -631,13 +642,13 @@ ColumnLayout {
         }
         Rectangle {
           Layout.fillWidth: true
-          Layout.preferredHeight: speed.error !== "" ? 54 : 42
+          Layout.preferredHeight: speed.error !== "" ? 54 : 44
           radius: 8
           color: speedMouse.pressed ? wf.well : speedMouse.containsMouse || (wf.usingKeys && wf.cursor === "speed") ? wf.tile : "transparent"
           Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
           Column {
             anchors.left: parent.left
-            anchors.leftMargin: 10
+            anchors.leftMargin: 8
             anchors.right: speedAction.left
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
@@ -662,23 +673,43 @@ ColumnLayout {
               font.pixelSize: wf.host.theme.size.callout
             }
           }
-          Text {
-            id: speedAction
-            anchors.right: parent.right
-            anchors.rightMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
-            color: wf.textMuted
-            font.family: wf.host.theme.textFontFamily
-            font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.size.body)
-            font.pixelSize: wf.host.theme.size.body
-          }
           MouseArea {
             id: speedMouse
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: wf.toggleSpeedTest()
+          }
+          // A real small button, so the action doesn't read as disabled.
+          Rectangle {
+            id: speedAction
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            width: speedActionLabel.implicitWidth + 24
+            height: 26
+            radius: 7
+            color: speedActionMouse.pressed || speedActionMouse.containsMouse ? wf.wellHover : wf.well
+            scale: speedActionMouse.pressed ? 0.96 : 1
+            Behavior on color { MotionColorAnimation { theme: wf.host.theme } }
+            Behavior on scale { id: speedActionScale; MotionAnimation { theme: wf.host.theme; pace: towards(speedActionScale.targetValue, speedActionMouse.pressed ? "press" : "standard") } }
+            Text {
+              id: speedActionLabel
+              anchors.centerIn: parent
+              text: speed.running ? "Cancel" : speed.done || speed.error !== "" ? "Run Again" : "Start"
+              color: wf.text
+              font.family: wf.host.theme.textFontFamily
+              font.letterSpacing: wf.host.theme.tracking(wf.host.theme.textFontFamily, wf.host.theme.px(12))
+              font.pixelSize: wf.host.theme.px(12)
+              font.weight: Font.Medium
+            }
+            MouseArea {
+              id: speedActionMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: wf.toggleSpeedTest()
+            }
           }
         }
         Item {
@@ -688,7 +719,7 @@ ColumnLayout {
           Layout.preferredHeight: shown ? 128 : 0
           Behavior on Layout.preferredHeight { MotionAnimation { theme: wf.host.theme; pace: "standard" } }
           opacity: shown ? 1 : 0
-          Behavior on opacity { MotionAnimation { theme: wf.host.theme; pace: speedDials.shown ? "fade" : "exit"; curve: speedDials.shown ? "fade" : "exit" } }
+          Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: wf.host.theme; pace: towards(opacityMotion2.targetValue, speedDials.shown ? "fade" : "exit"); curve: towards(opacityMotion2.targetValue, speedDials.shown ? "fade" : "exit") } }
           clip: true
           Row {
             anchors.centerIn: parent
@@ -731,9 +762,10 @@ ColumnLayout {
 
       // Footer: Wi-Fi Settings, below a hairline, as on macOS.
       Rectangle {
+        visible: list.visible || wf.canSpeedTest
         Layout.fillWidth: true
-        Layout.leftMargin: 10
-        Layout.rightMargin: 10
+        Layout.leftMargin: 8
+        Layout.rightMargin: -6
         Layout.topMargin: 4
         Layout.bottomMargin: 4
         Layout.preferredHeight: 1
@@ -741,12 +773,20 @@ ColumnLayout {
       }
       Rectangle {
         Layout.fillWidth: true
-        Layout.preferredHeight: 42
+        Layout.preferredHeight: 44
         radius: 8
         color: settingsMouse.pressed ? wf.well : settingsMouse.containsMouse || (wf.usingKeys && wf.cursor === "settings") ? wf.tile : "transparent"
+        Chevron {
+          theme: wf.host.theme
+          anchors.right: parent.right
+          anchors.rightMargin: 8
+          anchors.verticalCenter: parent.verticalCenter
+          pixelSize: 14
+          color: wf.host.theme.tertiary
+        }
         Text {
           anchors.left: parent.left
-          anchors.leftMargin: 10
+          anchors.leftMargin: 8
           anchors.verticalCenter: parent.verticalCenter
           text: "Wi-Fi Settings…"
           color: wf.text

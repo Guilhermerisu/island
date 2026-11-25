@@ -19,7 +19,7 @@ Rectangle {
   color: center.host.theme.fill("strong")
   opacity: shown ? (muted ? 0.35 : 1) : 0
   visible: opacity > 0.01
-  Behavior on opacity { MotionAnimation { theme: bar.center.host.theme; pace: bar.shown ? "fade" : "exit"; curve: bar.shown ? "fade" : "exit" } }
+  Behavior on opacity { id: opacityMotion; MotionAnimation { theme: bar.center.host.theme; pace: towards(opacityMotion.targetValue, bar.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, bar.shown ? "fade" : "exit") } }
 
   PwNodePeakMonitor {
     id: peakMonitor

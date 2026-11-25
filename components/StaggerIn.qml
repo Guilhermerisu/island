@@ -3,7 +3,7 @@ import QtQuick
 // Put inside a part of an open view to have it come in after the ones before
 // it: the header (step 0), then the tiles, then the lists, a beat apart. Only
 // opening staggers: closing fades the whole view as one, and going straight
-// from another view is the Surface's blur replace.
+// from another view is the Surface's crossfade.
 Item {
   id: part
   // The part, unless this sits beside it or inside a slot of it.
