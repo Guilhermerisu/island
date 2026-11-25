@@ -1,8 +1,9 @@
 import QtQuick
 import "../../../components"
 
-// Segmented control, as macOS's: every choice side by side in a well, the
-// current one on a raised chip that glides between them. Chips share one
+// Segmented control, as macOS's: every choice side by side in a track
+// (the tile grey, 2 in), the current one on a lighter chip that glides
+// between them, its label medium in the label colour; the rest secondary. Chips share one
 // width, and the control is at least the view's controlWidth so it lines up
 // with the pop-ups. For a handful of short choices; longer lists keep
 // SettingsPopUp.
@@ -31,8 +32,8 @@ Rectangle {
   FontMetrics {
     id: segFont
     font.family: seg.view.host.theme.textFontFamily
-    font.pixelSize: seg.view.detailFontSize
-    font.weight: Font.DemiBold
+    font.pixelSize: seg.view.calloutFontSize
+    font.weight: Font.Medium
   }
   readonly property real chipWidth: {
     var widest = 0
@@ -42,7 +43,7 @@ Rectangle {
   implicitWidth: choices.implicitWidth + 4
   implicitHeight: 28
   radius: 8
-  color: seg.view.host.theme.fill("subtle")
+  color: seg.view.host.theme.tile
   // The chip: clearly lighter, with a faint shadow a pixel under it, as
   // macOS's selected segment, so the choice doesn't rest on the bold label.
   // Placed by index, since every chip is chipWidth wide: looking the item
@@ -91,9 +92,9 @@ Rectangle {
           color: choice.selected ? seg.view.text : seg.view.textMuted
           Behavior on color { MotionColorAnimation { theme: seg.view.host.theme } }
           font.family: seg.view.host.theme.textFontFamily
-          font.letterSpacing: seg.view.host.theme.tracking(seg.view.host.theme.textFontFamily, seg.view.detailFontSize)
-          font.pixelSize: seg.view.detailFontSize
-          font.weight: choice.selected ? Font.DemiBold : Font.Normal
+          font.letterSpacing: seg.view.host.theme.tracking(seg.view.host.theme.textFontFamily, seg.view.calloutFontSize)
+          font.pixelSize: seg.view.calloutFontSize
+          font.weight: choice.selected ? Font.Medium : Font.Normal
         }
         scale: choiceMouse.pressed ? 0.96 : 1
         Behavior on scale { id: scaleMotion; MotionAnimation { theme: seg.view.host.theme; pace: towards(scaleMotion.targetValue, choiceMouse.pressed ? "press" : "standard") } }

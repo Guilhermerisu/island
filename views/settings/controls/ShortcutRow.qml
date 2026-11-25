@@ -23,9 +23,10 @@ Item {
   property real fieldWidth: 200
   property string icon: ""
   property color iconTint: view.accent
-  readonly property real restHeight: detail !== "" || icon !== "" ? 52 : 44
-  readonly property real textLeft: 14 + indent + (icon !== "" ? 38 : 0)
-  readonly property real edgeMargin: boxed ? 14 : 10
+  // As SettingsRow: at least 48, 12 at the sides, a 24 icon 12 from the text.
+  readonly property real restHeight: Math.max(48, labelColumn.implicitHeight + 16)
+  readonly property real textLeft: 12 + indent + (icon !== "" ? 36 : 0)
+  readonly property real edgeMargin: 12
   // An assigned shortcut shows its clear button only while the row is
   // hovered (or the button has keyboard focus), as macOS's lists do.
   readonly property bool clearable: !!entry.keys && entry.removable !== false && !recording && !asking
@@ -37,10 +38,10 @@ Item {
     visible: shortcutRow.icon !== ""
     view: shortcutRow.view
     flat: true
-    x: 14 + shortcutRow.indent
+    x: 12 + shortcutRow.indent
     y: (shortcutRow.restHeight - height) / 2
-    width: 26
-    height: 26
+    width: 24
+    height: 24
     glyph: shortcutRow.icon
     tint: shortcutRow.iconTint
   }
@@ -54,6 +55,7 @@ Item {
   clip: true
 
   Column {
+    id: labelColumn
     anchors.left: parent.left
     anchors.leftMargin: shortcutRow.textLeft
     anchors.right: keysField.left
@@ -253,7 +255,7 @@ Item {
   Rectangle {
     visible: !shortcutRow.last
     anchors.left: parent.left
-    anchors.leftMargin: shortcutRow.indent
+    anchors.leftMargin: shortcutRow.textLeft
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     height: 1

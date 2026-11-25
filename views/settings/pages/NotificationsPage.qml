@@ -13,7 +13,7 @@ ColumnLayout {
   readonly property var settings: view.settings
   visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   SettingsGroup {
     view: page.view

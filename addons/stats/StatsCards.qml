@@ -18,7 +18,7 @@ ColumnLayout {
   required property var stats
   property bool shown: false
   property bool stacked: false
-  spacing: 20
+  spacing: cards.view.groupSpacing
 
 
   readonly property var latest: stats.latest
@@ -114,10 +114,10 @@ ColumnLayout {
     }
   }
 
-  // The groups, 20 apart down and 10 across, as the other panes' groups.
+  // The groups, as far apart as the other panes' groups.
   ColumnLayout {
     Layout.fillWidth: true
-    spacing: 20
+    spacing: cards.view.groupSpacing
     // Takes back the spacing after the collapsed spinner while it fades.
     Layout.topMargin: loading.visible ? -cards.spacing : 0
     opacity: cards.ready ? 1 : 0
@@ -246,11 +246,11 @@ ColumnLayout {
             readonly property bool full: modelData.used / modelData.size > 0.9
             Layout.fillWidth: true
             spacing: 8
-            // The rule between volumes runs the card's full width.
+            // The rule between volumes, inset past the icon as the rows'.
             Rectangle {
               visible: volume.index > 0
               Layout.fillWidth: true
-              Layout.leftMargin: -14
+              Layout.leftMargin: 24 + 10
               Layout.rightMargin: -14
               Layout.preferredHeight: 1
               Layout.bottomMargin: 6

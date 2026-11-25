@@ -13,7 +13,7 @@ ColumnLayout {
   readonly property string hoverStyle: settings.hoverStyle || "none"
   visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   SettingsGroup {
     view: page.view

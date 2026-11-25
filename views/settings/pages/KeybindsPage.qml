@@ -16,7 +16,7 @@ ColumnLayout {
   readonly property string settingsPageName: "Keybinds"
   visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   // Loaded when the page (or Addons, which shows each addon's shortcuts)
   // opens; recording and a pending conflict end when it closes.

@@ -13,7 +13,7 @@ ColumnLayout {
   required property var stats
   property bool shown: false
   property bool inZone: false
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   // Until the first reading, the cards show their spinner; then the processes.
   StatsCards {

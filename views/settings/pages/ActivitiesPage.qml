@@ -10,7 +10,7 @@ ColumnLayout {
   readonly property string settingsPageName: "Live Activities"
   visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   readonly property var activities: [
     { kind: "media", key: "mediaPill", title: "Now Playing", description: "Current track and album art", keywords: "music media cover sound wave" },
@@ -32,25 +32,27 @@ ColumnLayout {
   // As a group's title (see SettingsGroup), with how many are on.
   RowLayout {
     Layout.fillWidth: true
-    Layout.leftMargin: 14
-    Layout.rightMargin: 14
-    Layout.bottomMargin: -12
+    Layout.leftMargin: 4
+    Layout.rightMargin: 4
+    // 6 to the cards, as a title to its group.
+    Layout.bottomMargin: page.view.titleSpacing - page.spacing
+    readonly property int size: page.view.calloutFontSize
     Text {
       Layout.fillWidth: true
       text: "Activities"
       color: page.view.textMuted
       font.family: page.view.host.theme.textFontFamily
-      font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
-      font.pixelSize: page.view.detailFontSize
-      font.weight: Font.Medium
+      font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, parent.size)
+      font.pixelSize: parent.size
+      font.weight: Font.DemiBold
     }
     Text {
       text: page.enabledCount + " of " + page.activities.length + " on"
       color: page.view.textMuted
       font.family: page.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
-      font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, page.view.detailFontSize)
-      font.pixelSize: page.view.detailFontSize
+      font.letterSpacing: page.view.host.theme.tracking(page.view.host.theme.textFontFamily, parent.size)
+      font.pixelSize: parent.size
     }
   }
 

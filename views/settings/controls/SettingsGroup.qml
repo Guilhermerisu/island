@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 
-// A group of rows under a grey section title (and an optional count after
-// it), with an optional footnote.
+// A group of rows under a grey section title in sentence case ("Clock",
+// never uppercased), with an optional count after it and a footnote.
 // `view` is the SettingsView, for its colours.
 ColumnLayout {
   id: group
@@ -16,18 +16,20 @@ ColumnLayout {
   property bool searchable: true
   default property alias rows: groupBody.data
   Layout.fillWidth: true
-  spacing: 8
+  spacing: group.view.titleSpacing
   Row {
     visible: group.title !== ""
-    Layout.leftMargin: 14
-    spacing: 7
+    Layout.leftMargin: 4
+    spacing: 6
+    readonly property int size: group.view.calloutFontSize
     Text {
       text: group.title
       color: group.view.textMuted
       font.family: group.view.host.theme.textFontFamily
-      font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, group.view.detailFontSize)
-      font.pixelSize: group.view.detailFontSize
-      font.weight: Font.Medium
+      font.capitalization: Font.MixedCase
+      font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, parent.size)
+      font.pixelSize: parent.size
+      font.weight: Font.DemiBold
     }
     Text {
       visible: group.count !== ""
@@ -35,8 +37,8 @@ ColumnLayout {
       color: group.view.host.theme.withAlpha(group.view.textMuted, 0.7)
       font.family: group.view.host.theme.textFontFamily
       font.features: { "tnum": 1 }
-      font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, group.view.detailFontSize)
-      font.pixelSize: group.view.detailFontSize
+      font.letterSpacing: group.view.host.theme.tracking(group.view.host.theme.textFontFamily, parent.size)
+      font.pixelSize: parent.size
     }
   }
   Rectangle {
@@ -56,8 +58,8 @@ ColumnLayout {
   Text {
     visible: group.footer !== ""
     Layout.fillWidth: true
-    Layout.leftMargin: 14
-    Layout.rightMargin: 14
+    Layout.leftMargin: 4
+    Layout.rightMargin: 4
     text: group.footer
     wrapMode: Text.WordWrap
     color: group.view.textMuted

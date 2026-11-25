@@ -3,8 +3,8 @@ import QtQuick.Layouts
 import "../../../components"
 
 // One row of a group: an optional icon, label (and optional detail) on the
-// left, a control on the right, and a full-width hairline under every row
-// but the last.
+// left, a control on the right, and a hairline under every row but the
+// last, inset to where the text starts (past the icon), as macOS's lists.
 // `indent` sets a row in under the one it belongs to.
 // Settings' search finds a row by its label, detail, group title and
 // `keywords`, and tints the ones it found.
@@ -33,9 +33,9 @@ Item {
   Component.onDestruction: if (view.unregisterSearchable) view.unregisterSearchable(row)
   default property alias control: slot.data
   Layout.fillWidth: true
-  // 44 as macOS's rows, 52 with a detail line; grows with the text size so
-  // a larger label and detail keep their margins.
-  implicitHeight: Math.max(row.detail !== "" ? 52 : 44, labels.implicitHeight + 18)
+  // At least 48, with 8 over and under the text; grows with the text size
+  // so a larger label and detail keep their margins.
+  implicitHeight: Math.max(48, labels.implicitHeight + 16)
   // A row the search found.
   Rectangle {
     anchors.fill: parent
@@ -49,10 +49,10 @@ Item {
     id: rowIcon
     visible: row.icon !== ""
     view: row.view
-    x: 14 + row.indent
+    x: 12 + row.indent
     anchors.verticalCenter: parent.verticalCenter
-    width: 26
-    height: 26
+    width: 24
+    height: 24
     flat: true
     glyph: row.icon
     tint: row.iconTint
@@ -60,7 +60,7 @@ Item {
   Column {
     id: labels
     anchors.left: parent.left
-    anchors.leftMargin: 14 + row.indent + (row.icon !== "" ? rowIcon.width + 12 : 0)
+    anchors.leftMargin: 12 + row.indent + (row.icon !== "" ? rowIcon.width + 12 : 0)
     anchors.right: slot.left
     anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
@@ -88,7 +88,7 @@ Item {
   Item {
     id: slot
     anchors.right: parent.right
-    anchors.rightMargin: 14
+    anchors.rightMargin: 12
     anchors.verticalCenter: parent.verticalCenter
     width: childrenRect.width
     height: childrenRect.height
@@ -96,7 +96,7 @@ Item {
   Rectangle {
     visible: !row.last
     anchors.left: parent.left
-    anchors.leftMargin: row.indent
+    anchors.leftMargin: labels.anchors.leftMargin
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     height: 1

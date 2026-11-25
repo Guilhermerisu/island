@@ -22,9 +22,9 @@ Rectangle {
   Behavior on scale { id: scaleMotion; MotionAnimation { theme: side.view.host.theme; pace: towards(scaleMotion.targetValue, sideMouse.pressed ? "press" : "standard") } }
   RowLayout {
     anchors.fill: parent
-    anchors.leftMargin: 6
+    anchors.leftMargin: 8
     anchors.rightMargin: 8
-    spacing: 11
+    spacing: 10
     PaneIcon {
       view: side.view
       Layout.preferredWidth: 24
@@ -38,9 +38,9 @@ Rectangle {
       Layout.fillWidth: true
       text: side.title
       elide: Text.ElideRight
-      // A size up from the rows, semibold for the open pane and a touch dimmer
-      // for the rest, as macOS's sidebars.
-      readonly property int size: side.view.host.theme.px(14)
+      // As the rows' titles, semibold for the open pane and a
+      // touch dimmer for the rest, as macOS's sidebars.
+      readonly property int size: side.view.sidebarFontSize
       color: side.selected ? side.view.text : side.view.host.theme.withAlpha(side.view.text, 0.85)
       font.family: side.view.host.theme.textFontFamily
       font.letterSpacing: side.view.host.theme.tracking(side.view.host.theme.textFontFamily, size)

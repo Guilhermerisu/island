@@ -16,7 +16,7 @@ ColumnLayout {
   readonly property string settingsPageName: "Network"
   visible: view.currentPage === settingsPageName
   Layout.fillWidth: true
-  spacing: 20
+  spacing: page.view.groupSpacing
 
   readonly property bool shown: view.active && view.currentPage === "Network"
   NetworkConnections { id: client; active: page.shown }
@@ -208,7 +208,7 @@ ColumnLayout {
     Text {
       id: errorIcon
       anchors.left: parent.left
-      anchors.leftMargin: 14
+      anchors.leftMargin: 12
       anchors.verticalCenter: parent.verticalCenter
       text: "󰀪"
       color: page.view.host.theme.system.yellow
@@ -245,7 +245,7 @@ ColumnLayout {
   ColumnLayout {
     visible: !page.detailOpen
     Layout.fillWidth: true
-    spacing: 20
+    spacing: page.view.groupSpacing
 
     SettingsGroup {
       view: page.view
@@ -431,13 +431,13 @@ ColumnLayout {
       }
       Item {
         Layout.fillWidth: true
-        implicitHeight: 44
+        implicitHeight: 48
         SettingsButton {
           view: page.view
           primary: true
           label: "Add and Connect"
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           onClicked: {
             // Commits the field being typed in.
@@ -490,13 +490,13 @@ ColumnLayout {
       }
       Item {
         Layout.fillWidth: true
-        implicitHeight: 44
+        implicitHeight: 48
         SettingsButton {
           view: page.view
           primary: true
           label: "Import"
           anchors.right: parent.right
-          anchors.rightMargin: 14
+          anchors.rightMargin: 12
           anchors.verticalCenter: parent.verticalCenter
           onClicked: {
             // Commits the field being typed in.
@@ -514,7 +514,7 @@ ColumnLayout {
   ColumnLayout {
     visible: page.detailOpen && !!page.item
     Layout.fillWidth: true
-    spacing: 20
+    spacing: page.view.groupSpacing
 
     RowLayout {
       Layout.fillWidth: true
@@ -664,10 +664,10 @@ ColumnLayout {
         Item {
           visible: page.dirty(ipGroup.modelData.proto)
           Layout.fillWidth: true
-          implicitHeight: 44
+          implicitHeight: 48
           Row {
             anchors.right: parent.right
-            anchors.rightMargin: 14
+            anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
             SettingsButton { view: page.view; label: "Revert"; onClicked: page.revertEdit(ipGroup.modelData.proto) }

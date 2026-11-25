@@ -173,8 +173,14 @@ Item {
   readonly property color accent: host.theme.accent
   readonly property color accentInk: host.theme.accentText
 
-  readonly property int detailFontSize: host.theme.px(13)
-  readonly property int detailCaptionFontSize: host.theme.px(11)
+  // Settings' text, a pixel up from the island's text styles: row titles
+  // and values, their subtitles, section titles and segment labels, the
+  // pane header's title, and the sidebar.
+  readonly property int detailFontSize: host.theme.px(14)
+  readonly property int detailCaptionFontSize: host.theme.px(12)
+  readonly property int calloutFontSize: host.theme.px(13)
+  readonly property int paneTitleFontSize: host.theme.px(18)
+  readonly property int sidebarFontSize: host.theme.px(14)
   readonly property int detailTitleFontSize: host.theme.px(22)
   // A pane title's exact weight on Adwaita Sans's weight axis, set with
   // font.weight: Font.Bold (the fallback for fonts without the axis).
@@ -182,6 +188,17 @@ Item {
   // The narrowest a row's pop-up or segmented control gets, so the controls
   // down the right of a group line up on both edges.
   readonly property int controlWidth: 156
+  // One rhythm for every pane: 16 around the content, 10 under the pane's
+  // header card, 12 under each group before the next title, and 6 from a
+  // title to its group (see SettingsGroup).
+  readonly property int contentPadding: 16
+  readonly property int groupSpacing: 12
+  readonly property int titleSpacing: 6
+  // The sidebar's own fill, a step up from the island's black (#0d0d0d on
+  // it), so the window reads as two panes without boxing the sidebar.
+  readonly property color sidebarFill: host.theme.background.hslLightness < 0.5
+    ? Qt.tint(host.theme.background, host.theme.withAlpha(host.theme.text, 0.057))
+    : Qt.tint(host.theme.background, host.theme.withAlpha(host.theme.text, 0.035))
 
   function revealSettingsItem(item) {
     var top = item.mapToItem(groups, 0, 0).y
@@ -246,13 +263,13 @@ Item {
     anchors.fill: parent
     spacing: 0
 
-    // The sidebar runs to the island's edge in a lighter grey of its own.
+    // The sidebar runs to the island's edge in a slightly lighter fill.
     // Its outer corners follow the open island's (30, square on top in
     // notch style).
     Rectangle {
       Layout.preferredWidth: 220
       Layout.fillHeight: true
-      color: settingsView.host.theme.fill("subtle")
+      color: settingsView.sidebarFill
       topLeftRadius: settingsView.settings.notch ? 0 : 30
       bottomLeftRadius: 30
       // One highlight for the open pane that glides between the rows.
@@ -264,7 +281,7 @@ Item {
         width: at ? at.width : 0
         height: at ? at.height : 0
         radius: 8
-        color: settingsView.host.theme.fill("raised")
+        color: settingsView.well
         Behavior on y { MotionAnimation { theme: settingsView.host.theme; pace: "quick" } }
       }
       ColumnLayout {
@@ -275,45 +292,50 @@ Item {
         anchors.topMargin: 16
         anchors.bottomMargin: 16
         spacing: 2
+        // 8 between the glyph and the text, so the caret stands clear of
+        // the placeholder's first letter.
         Rectangle {
           Layout.fillWidth: true
           Layout.preferredHeight: 30
-          Layout.bottomMargin: 12
+          Layout.bottomMargin: 10 - sidebarColumn.spacing
           radius: settingsView.host.theme.radii.medium
-          color: settingsView.host.theme.fill("subtle")
+          color: settingsView.host.theme.tile
           border.width: searchInput.activeFocus ? 2 : 0
           border.color: settingsView.host.theme.accentFill("ring")
           Text {
+            id: searchGlyph
             anchors.left: parent.left
-            anchors.leftMargin: 10
+            anchors.leftMargin: 9
             anchors.verticalCenter: parent.verticalCenter
+            width: settingsView.host.theme.px(14)
+            horizontalAlignment: Text.AlignHCenter
             text: "󰍉"
-            color: settingsView.textMuted
+            color: settingsView.host.theme.placeholder
             font.family: settingsView.host.theme.fontFamily
             font.pixelSize: settingsView.host.theme.px(14)
           }
           Text {
-            anchors.left: parent.left
-            anchors.leftMargin: 30
+            anchors.left: searchGlyph.right
+            anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             visible: searchInput.text === ""
             text: "Search"
-            color: settingsView.textMuted
+            color: settingsView.host.theme.placeholder
             font.family: settingsView.host.theme.textFontFamily
-            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
-            font.pixelSize: settingsView.host.theme.size.body
+            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.detailFontSize)
+            font.pixelSize: settingsView.detailFontSize
           }
           TextInput {
             id: searchInput
-            anchors.left: parent.left
-            anchors.leftMargin: 30
+            anchors.left: searchGlyph.right
+            anchors.leftMargin: 8
             anchors.right: parent.right
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             color: settingsView.text
             font.family: settingsView.host.theme.textFontFamily
-            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
-            font.pixelSize: settingsView.host.theme.size.body
+            font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.detailFontSize)
+            font.pixelSize: settingsView.detailFontSize
             onTextChanged: settingsView.searchQuery = text
             Keys.onReturnPressed: settingsView.nextHit()
             Keys.onEnterPressed: settingsView.nextHit()
@@ -337,8 +359,8 @@ Item {
           text: "No Results"
           color: settingsView.textMuted
           font.family: settingsView.host.theme.textFontFamily
-          font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.host.theme.size.body)
-          font.pixelSize: settingsView.host.theme.size.body
+          font.letterSpacing: settingsView.host.theme.tracking(settingsView.host.theme.textFontFamily, settingsView.detailFontSize)
+          font.pixelSize: settingsView.detailFontSize
           Layout.alignment: Qt.AlignHCenter
           Layout.topMargin: 18
         }
@@ -349,25 +371,22 @@ Item {
     ColumnLayout {
       Layout.fillWidth: true
       Layout.fillHeight: true
-      Layout.leftMargin: 12
-      Layout.rightMargin: 12
-      Layout.topMargin: 12
-      Layout.bottomMargin: 4
-      spacing: 6
+      Layout.margins: settingsView.contentPadding
+      spacing: 0
       Flickable {
         id: scroller
         Layout.fillWidth: true
         Layout.fillHeight: true
-        contentHeight: groups.implicitHeight + 28
+        contentHeight: groups.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         WheelLatch { id: scrollLatch; flickable: scroller; parent: scroller; handOffAtEnds: true }
 
         ColumnLayout {
           id: groups
-          x: 4
-          width: scroller.width - 8
-          spacing: 20
+          width: scroller.width
+          // The pane's header card sits 10 over its first group.
+          spacing: 10
           transform: Translate { id: groupsShift }
 
           LoadWarning { view: settingsView }

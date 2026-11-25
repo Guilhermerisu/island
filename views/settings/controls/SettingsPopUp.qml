@@ -2,9 +2,10 @@ import QtQuick
 import "../../../components"
 import QtQuick.Layouts
 
-// Pop-up button, as macOS's: the current choice in a bordered box with
-// up/down chevrons; the choices open in a menu (see popMenu in
-// SettingsView).
+// Pop-up button, as macOS's list pop-ups: at rest just the current choice
+// in the secondary grey with up/down chevrons, no box; the box shows only
+// on hover or while the menu is open. The choices open in a menu (see
+// popMenu in SettingsView).
 // `view` is the SettingsView, for its colours.
 Rectangle {
   id: pop
@@ -27,7 +28,9 @@ Rectangle {
     else if (next.length > 1) next.splice(index, 1)
     picked(next)
   }
-  property real minWidth: view.controlWidth
+  // Hugs its choice unless a row asks for more (an addon's options line
+  // their controls up).
+  property real minWidth: 0
   signal picked(var value)
   readonly property string currentLabel: {
     if (multiSelect) return options.filter(function(o) { return pop.isSelected(o.value) })
@@ -36,30 +39,33 @@ Rectangle {
     return ""
   }
   readonly property bool open: pop.view.menuButton === pop
-  implicitWidth: Math.max(pop.minWidth, popLabel.implicitWidth + 44)
+  readonly property bool boxed: open || popMouse.containsMouse
+  implicitWidth: Math.max(pop.minWidth, popLabel.implicitWidth + 8 + 5 + chevrons.width + 8)
   implicitHeight: 28
   radius: 8
-  color: pop.view.host.theme.fill(open || popMouse.containsMouse ? "subtle" : "quiet")
+  color: boxed ? pop.view.host.theme.fill("subtle") : pop.view.host.theme.withAlpha(pop.view.host.theme.fill("subtle"), 0)
   border.width: 1
-  border.color: pop.view.host.theme.fill(open ? "stronger" : "raised")
+  border.color: boxed ? pop.view.host.theme.fill(open ? "stronger" : "raised") : "transparent"
   Behavior on color { MotionColorAnimation { theme: pop.view.host.theme } }
   scale: popMouse.pressed ? 0.98 : 1
   Behavior on scale { id: scaleMotion; MotionAnimation { theme: pop.view.host.theme; pace: towards(scaleMotion.targetValue, popMouse.pressed ? "press" : "standard") } }
   Text {
     id: popLabel
-    anchors.left: parent.left
-    anchors.leftMargin: 10
+    anchors.right: chevrons.left
+    anchors.rightMargin: 5
     anchors.verticalCenter: parent.verticalCenter
     text: pop.currentLabel
     textFormat: Text.PlainText
-    color: pop.view.text
+    color: pop.boxed ? pop.view.text : pop.view.textMuted
+    Behavior on color { MotionColorAnimation { theme: pop.view.host.theme } }
     font.family: pop.view.host.theme.textFontFamily
     font.letterSpacing: pop.view.host.theme.tracking(pop.view.host.theme.textFontFamily, pop.view.detailFontSize)
     font.pixelSize: pop.view.detailFontSize
   }
   Column {
+    id: chevrons
     anchors.right: parent.right
-    anchors.rightMargin: 10
+    anchors.rightMargin: 8
     anchors.verticalCenter: parent.verticalCenter
     spacing: -5
     Repeater {
