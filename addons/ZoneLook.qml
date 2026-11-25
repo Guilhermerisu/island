@@ -36,11 +36,7 @@ Item {
   readonly property int rowTitleFontSize: host.theme.px(14)
   readonly property int detailCaptionFontSize: host.theme.px(11)
   readonly property int calloutFontSize: host.theme.px(12)
-  readonly property int detailTitleFontSize: host.theme.px(22)
-  readonly property var titleFontAxes: ({ "wght": 500 })
   readonly property int controlWidth: 156
-  // The pages' spacing (see SettingsView).
-  readonly property int contentPadding: 16
   readonly property int groupSpacing: 12
   readonly property int titleSpacing: 6
 

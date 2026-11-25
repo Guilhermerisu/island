@@ -19,7 +19,6 @@ CcSection {
   // Silence the output, keeping its volume for when it's back. Hidden in
   // edit mode, like the ›: the card is a drag handle then.
   toggleIcon: galleryPreview || card.center.editMode || !card.controls.controlPresent("sound") ? "" : card.controls.muted ? "󰖁" : "󰕾"
-  toggleOn: card.controls.muted
   toggleTip: card.controls.muted ? "Unmute" : "Mute"
   onToggleClicked: if (card.controls.sink && card.controls.sink.audio) card.controls.sink.audio.muted = !card.controls.muted
 

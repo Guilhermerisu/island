@@ -198,10 +198,6 @@ Item {
   readonly property int calloutFontSize: host.theme.px(12)
   readonly property int paneTitleFontSize: host.theme.px(18)
   readonly property int sidebarFontSize: host.theme.px(15)
-  readonly property int detailTitleFontSize: host.theme.px(22)
-  // A pane title's exact weight on Adwaita Sans's weight axis, set with
-  // font.weight: Font.Bold (the fallback for fonts without the axis).
-  readonly property var titleFontAxes: ({ "wght": 500 })
   // The narrowest a row's pop-up or segmented control gets, so the controls
   // down the right of a group line up on both edges.
   readonly property int controlWidth: 156

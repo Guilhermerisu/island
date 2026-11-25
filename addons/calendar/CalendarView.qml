@@ -181,7 +181,6 @@ Item {
     // Blank cells before the 1st, Monday first.
     readonly property int lead: (first.getDay() + 6) % 7
     readonly property int length: new Date(view.calendar.shownYear, view.calendar.shownMonth + 1, 0).getDate()
-    readonly property int weeks: Math.ceil((lead + length) / 7)
     // 26 px circles 4 px apart; the grid keeps six weeks' room.
     readonly property real rowHeight: 30
 

@@ -471,11 +471,6 @@ Item {
     feedbackKind = ""
     view = "rest"
   }
-  function dismissPillNotification() {
-    var row = notifications.last
-    dismissFeedback()
-    if (row) notifications.command("dismissKey", row)
-  }
 
   property string menuRoute: "root"
 

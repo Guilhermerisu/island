@@ -62,7 +62,6 @@ Addon {
   readonly property var pinnedIds: String(host.settings.pluginsZonePinned || "").split(",")
     .filter(function(id) { return id !== "" })
   readonly property var pinned: pinnedIds.map(entryFor).filter(function(entry) { return !!entry })
-  readonly property var unpinned: all.filter(function(entry) { return pinnedIds.indexOf(entry.id) === -1 })
   function savePinned(ids) {
     host.settings.pluginsZonePinned = ids.join(",")
   }

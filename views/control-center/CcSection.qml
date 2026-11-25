@@ -19,7 +19,6 @@ Rectangle {
   signal chevronClicked()
   // An optional round toggle left of the › (Sound's mute, Microphone's).
   property string toggleIcon: ""
-  property bool toggleOn: false
   property string toggleTip: ""
   signal toggleClicked()
   default property alias content: body.data
