@@ -226,7 +226,7 @@ Item {
     id: powerSurface
     host: views.host
     viewName: "power"
-    padding: 18
+    padding: 16
     PowerMenu { host: views.host; active: powerSurface.active; anchors.fill: parent }
   }
 

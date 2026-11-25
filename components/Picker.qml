@@ -29,8 +29,8 @@ Item {
   // one is marked by a ring set just outside it (macOS picker style), and
   // the strip is padded so the ring never gets clipped.
   readonly property int cardRadius: host.theme.radii.card
-  readonly property real ringGap: 4
-  readonly property real ringWidth: 2.5
+  readonly property real ringGap: 2
+  readonly property real ringWidth: 2
   readonly property real ringReach: ringGap + ringWidth
   readonly property int pad: Math.ceil(ringReach) + 2
   // Emitted after the apply command finishes, before the picker closes.
