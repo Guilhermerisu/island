@@ -15,12 +15,15 @@ Item {
   // Set by the Surface that shows this menu.
   property bool active: false
 
-  readonly property int tileWidth: 96
+  readonly property int tileWidth: 104
   readonly property int tileHeight: 88
   readonly property int tileSpacing: 8
   // Matches Picker's selection ring: 2 px of accent, 2 px of island between.
   readonly property real ringGap: 2
   readonly property real ringWidth: 2
+  // 10 px from the glyph's ink to the label's cap height, less the room the
+  // label's line keeps above its capitals.
+  readonly property int glyphGap: 7
 
   property bool suspendAvailable: true
   property bool hibernateAvailable: false
@@ -145,15 +148,24 @@ Item {
             Behavior on opacity { MotionAnimation { theme: power.host.theme; pace: "fade"; curve: "fade" } }
           }
 
+          // The glyph sits in a 20 px box, as tall as its ink, so the gap to
+          // the label is measured from the ink and not the font's line.
+          // Nerd Font icons draw at about 0.8 of their pixel size.
           Column {
             anchors.centerIn: parent
-            spacing: 8
-            Text {
+            spacing: power.glyphGap
+            Item {
               anchors.horizontalCenter: parent.horizontalCenter
-              text: slot.modelData.icon
-              color: power.host.theme.text
-              font.family: power.host.theme.fontFamily
-              font.pixelSize: power.host.theme.px(20)
+              width: glyph.implicitWidth
+              height: power.host.theme.px(20)
+              Text {
+                id: glyph
+                anchors.centerIn: parent
+                text: slot.modelData.icon
+                color: power.host.theme.text
+                font.family: power.host.theme.fontFamily
+                font.pixelSize: power.host.theme.px(25)
+              }
             }
             Text {
               anchors.horizontalCenter: parent.horizontalCenter
