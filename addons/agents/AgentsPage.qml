@@ -375,7 +375,6 @@ ColumnLayout {
   SettingsGroup {
     view: page.view
     title: "Tokens"
-    footer: "Point at a day to see its total."
     Item {
       Layout.fillWidth: true
       implicitHeight: chartBody.implicitHeight + 28
