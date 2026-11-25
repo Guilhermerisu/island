@@ -38,18 +38,44 @@ Addon {
 
   function localPath(file) { return decodeURIComponent(String(Qt.resolvedUrl(file)).replace("file://", "")) }
 
-  // The calendars' ICS URLs, any whitespace or commas between them; webcal://
-  // is fetched over https.
-  readonly property var urls: String(addon.option("urls") || "").split(/[\s,]+/)
-    .filter(function(url) { return url !== "" })
-    .map(function(url) { return url.replace(/^webcal:\/\//i, "https://") })
+  // Every calendar's ICS URL, any whitespace or commas between them, once
+  // each; webcal:// is fetched over https. `urls` leaves out the ones
+  // switched off in Settings, which aren't fetched.
+  function normalizeUrl(url) { return String(url || "").trim().replace(/^webcal:\/\//i, "https://") }
+  readonly property var allUrls: String(addon.option("urls") || "").split(/[\s,]+/)
+    .map(normalizeUrl)
+    .filter(function(url, i, all) { return url !== "" && all.indexOf(url) === i })
+  readonly property var offUrls: Array.from(addon.option("offUrls") || [])
+  readonly property var urls: allUrls.filter(function(url) { return offUrls.indexOf(url) < 0 })
+  function addUrl(url) {
+    var clean = normalizeUrl(url)
+    if (clean === "" || allUrls.indexOf(clean) >= 0) return
+    addon.setOption("urls", allUrls.concat([clean]).join(" "))
+  }
+  function removeUrl(url) {
+    addon.setOption("urls", allUrls.filter(function(u) { return u !== url }).join(" "))
+    if (offUrls.indexOf(url) >= 0) setUrlOn(url, true)
+  }
+  function setUrlOn(url, on) {
+    var rest = offUrls.filter(function(u) { return u !== url })
+    addon.setOption("offUrls", on ? rest : rest.concat([url]))
+  }
+
+  // What the island shows: all-day and declined events, and how many
+  // minutes before a timed event its pill shows (0, none).
+  readonly property bool showAllDay: addon.option("showAllDay") !== false
+  readonly property bool showDeclined: addon.option("showDeclined") === true
+  readonly property int reminderMinutes: {
+    var v = addon.option("reminderMinutes")
+    return v === 0 || v === 5 || v === 10 || v === 15 ? v : 10
+  }
 
   readonly property int refreshMinutes: {
     var v = Number(addon.option("refreshMinutes"))
     return v === 5 || v === 15 || v === 30 || v === 60 ? v : 15
   }
   readonly property int refreshMs: refreshMinutes * 60 * 1000
-  readonly property int reminderMs: 10 * 60 * 1000
+  readonly property int reminderMs: reminderMinutes * 60 * 1000
 
   property bool ready: false
 
@@ -59,12 +85,19 @@ Addon {
   property var rawEvents: []
   property real fetchedAt: 0
   property var fetchErrors: ({})
+  // Each calendar's { name } from its feed, by "ics:<url>".
+  property var calendarInfo: ({})
   property bool syncing: false
   property bool fetchQueued: false
 
   // Every calendar's events: { title, start, end (ms, end exclusive),
-  // allDay, color, location, meetingUrl, source }.
-  readonly property var events: rawEvents.map(function(e) {
+  // allDay, color, location, meetingUrl, source, declined, calendar }),
+  // less those of a calendar switched off and those Settings hides.
+  readonly property var events: rawEvents.filter(function(e) {
+    return (!e.calendar || calendarAddon.urls.indexOf(e.calendar.replace(/^ics:/, "")) >= 0)
+      && (calendarAddon.showAllDay || !e.allDay)
+      && (calendarAddon.showDeclined || !e.declined)
+  }).map(function(e) {
     return Object.assign({}, e, { color: colorFor(e) })
   })
 
@@ -195,6 +228,7 @@ Addon {
             calendarAddon.rawEvents = data.events
             calendarAddon.fetchedAt = data.fetchedAt || 0
             calendarAddon.fetchErrors = data.errors || ({})
+            calendarAddon.calendarInfo = data.calendars || ({})
             calendarAddon.status = "ready"
           }
         } catch (e) {}
@@ -225,6 +259,7 @@ Addon {
           calendarAddon.rawEvents = data.events || []
           if (data.fetchedAt) calendarAddon.fetchedAt = data.fetchedAt
           calendarAddon.fetchErrors = data.errors || ({})
+          calendarAddon.calendarInfo = Object.assign({}, calendarAddon.calendarInfo, data.calendars || ({}))
           calendarAddon.status = data.status || (calendarAddon.rawEvents.length > 0 ? "ready" : "missing")
         } catch (e) {
           fetcher.parsedOk = false
@@ -284,6 +319,7 @@ Addon {
     onTriggered: calendarAddon.checkReminders()
   }
   function checkReminders() {
+    if (reminderMs <= 0) return
     var now = Date.now()
     for (var i = 0; i < events.length; i++) {
       var e = events[i]

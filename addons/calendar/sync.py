@@ -126,7 +126,7 @@ def atomic_write_json(path: str, data: dict) -> None:
 def load_cache() -> dict:
     return read_json(
         cache_path(),
-        {"events": [], "fetchedAt": 0, "status": "missing", "errors": {}, "sources": {}},
+        {"events": [], "fetchedAt": 0, "status": "missing", "errors": {}, "sources": {}, "calendars": {}},
     )
 
 
@@ -140,6 +140,7 @@ def public_cache_payload(cache: dict) -> dict:
         "fetchedAt": cache.get("fetchedAt", 0),
         "status": cache.get("status", "missing"),
         "errors": cache.get("errors", {}),
+        "calendars": cache.get("calendars", {}),
     }
 
 
@@ -459,7 +460,9 @@ def parse_ics(
     now_ms: int | None = None,
     win_days_back: int = WINDOW_DAYS_BACK,
     win_days_ahead: int = WINDOW_DAYS_AHEAD,
+    info: dict | None = None,
 ) -> list[dict]:
+    """The feed's events; `info`, when given, gets the calendar's "name"."""
     if now_ms is None:
         now_ms = int(time.time() * 1000)
     win_from = now_ms - win_days_back * 24 * 3600 * 1000
@@ -472,6 +475,7 @@ def parse_ics(
     cur: dict | None = None
     sub_depth = 0
     cal_color = ""
+    cal_name = ""
 
     for line in lines:
         upper = line.strip().upper()
@@ -489,6 +493,8 @@ def parse_ics(
             parsed = _split_ics_line(line)
             if parsed and parsed[0] in ("X-WR-CALCOLOR", "COLOR") and not cal_color:
                 cal_color = normalize_hex_color(parsed[2])
+            if parsed and parsed[0] == "X-WR-CALNAME" and not cal_name:
+                cal_name = _ics_unescape(parsed[2]).strip()
             continue
         if upper.startswith("BEGIN:"):
             sub_depth += 1
@@ -509,8 +515,16 @@ def parse_ics(
                 item = item.strip()
                 if item:
                     cur["EXDATE"].append((item, params))
+        elif name == "ATTENDEE":
+            cur.setdefault("ATTENDEE", []).append((value, params))
         elif name not in cur:
             cur[name] = (value, params)
+
+    if info is not None:
+        info["name"] = cal_name
+    # Google names a person's own calendar after their address, so that
+    # attendee is them; an event they declined is marked.
+    me = f"mailto:{cal_name.lower()}" if "@" in cal_name else ""
 
     replaced: set[tuple[str, int]] = set()
     for ev in raw_events:
@@ -571,6 +585,10 @@ def parse_ics(
             "location": location,
             "meetingUrl": meeting_url,
             "source": "ics",
+            "declined": bool(me) and any(
+                value.strip().lower() == me and params.get("PARTSTAT", "").upper() == "DECLINED"
+                for value, params in ev.get("ATTENDEE", [])
+            ),
         }
 
         if "RRULE" not in ev:
@@ -609,19 +627,20 @@ def parse_ics(
     return events
 
 
-def fetch_ics_url(url: str, win_start_ms: int, win_end_ms: int) -> list[dict]:
+def fetch_ics_url(url: str, win_start_ms: int, win_end_ms: int, info: dict | None = None) -> list[dict]:
     normalized = re.sub(r"^webcal://", "https://", url.strip(), flags=re.IGNORECASE)
     _, raw = _http_request(normalized, timeout=HTTP_TIMEOUT_S)
     text = raw.decode("utf-8", errors="replace")
     if "BEGIN:VCALENDAR" not in text:
         raise RuntimeError("Response is not a valid ICS calendar")
     now_ms = int((win_start_ms + WINDOW_DAYS_BACK * 24 * 3600 * 1000))
-    return parse_ics(text, now_ms=now_ms)
+    return parse_ics(text, now_ms=now_ms, info=info)
 
 
 def fetch_all(ics_urls: list[str]) -> dict:
     prev_cache = load_cache()
     prev_sources = prev_cache.get("sources") or {}
+    prev_calendars = prev_cache.get("calendars") or {}
 
     now_ms = int(time.time() * 1000)
     win_start_ms = now_ms - WINDOW_DAYS_BACK * 24 * 3600 * 1000
@@ -640,28 +659,34 @@ def fetch_all(ics_urls: list[str]) -> dict:
             "status": "missing",
             "errors": {},
             "sources": {},
+            "calendars": {},
         }
         save_cache(empty_cache)
         return public_cache_payload(empty_cache)
 
     next_sources: dict[str, list[dict]] = {}
     errors: dict[str, str] = {}
+    calendars: dict[str, dict] = {}
     good_count = 0
 
     # A feed that can't be read keeps its last good reading.
     for url in normalized_ics:
         key = f"ics:{url}"
         try:
-            next_sources[key] = fetch_ics_url(url, win_start_ms, win_end_ms)
+            info: dict = {}
+            next_sources[key] = fetch_ics_url(url, win_start_ms, win_end_ms, info)
+            calendars[key] = {"name": info.get("name", "")}
             good_count += 1
         except Exception as exc:
             errors[key] = str(exc)
             if key in prev_sources:
                 next_sources[key] = prev_sources[key]
+            calendars[key] = prev_calendars.get(key) or {"name": ""}
 
+    # Each event knows its calendar, for the settings' counts.
     events: list[dict] = []
-    for evs in next_sources.values():
-        events.extend(evs)
+    for key, evs in next_sources.items():
+        events.extend({**e, "calendar": key} for e in evs)
     events.sort(key=lambda e: (e["start"], e["title"]))
 
     fetched_at = now_ms if good_count > 0 else prev_cache.get("fetchedAt", 0)
@@ -673,6 +698,8 @@ def fetch_all(ics_urls: list[str]) -> dict:
         "status": status,
         "errors": errors,
         "sources": next_sources,
+        # A calendar switched off keeps its name for when it's back.
+        "calendars": {**prev_calendars, **calendars},
     }
     save_cache(cache)
     return public_cache_payload(cache)

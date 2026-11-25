@@ -31,6 +31,8 @@ Rectangle {
 
   onValueChanged: if (!input.activeFocus) input.text = value
   Component.onCompleted: input.text = value
+  // Empties it (a link that was just added).
+  function clear() { input.text = "" }
   function commit() {
     // A password's spaces are its own.
     var next = field.secret ? input.text : input.text.trim()
