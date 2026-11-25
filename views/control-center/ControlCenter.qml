@@ -45,11 +45,39 @@ ColumnLayout {
   readonly property real tileHeight: 60
   readonly property real sectionHeight: 84
   readonly property real gap: 8
+  readonly property real headerHeight: 30
+  // What is around the columns in the island: its padding twice, the header
+  // and the gap under it (70).
+  readonly property real columnsChrome: 2 * surfacePadding + headerHeight + gap
+  // The most the island can be (the screen less a margin, set by Views), and
+  // in edit mode what the add panel is: its height as saved, or live while its
+  // handle is held (-1 otherwise), made to fit under the zones' frame (the
+  // panel is what shrinks first when the island runs out of screen).
+  property real islandLimit: 100000
+  property real editPanelDrag: -1
+  readonly property Item daySlot: daySlotItem
+  readonly property real editPanelRoom: islandLimit - 2 * surfacePadding - headerHeight - gap
+    - zoneBoardItem.implicitHeight - gap - daySlotItem.height - gap
+  readonly property real editPanelHeight: ZoneModel.editPanelHeight(
+    editPanelDrag >= 0 ? editPanelDrag : host.settings.controlCenterEditPanelHeight, editPanelRoom)
+  // A zone's height in its XSmall size: one line, a third of what a column
+  // has at the island's least height, so three fill it (58). More if what the
+  // zone holds is (Controls on several rows).
+  readonly property real zoneXsHeight: ZoneModel.xsHeight(columnsChrome, gap)
   // The icon on a switched-on (accent) badge: a deep shade of the accent.
   readonly property color badgeOnInk: Qt.hsla(accent.hslHue, accent.hslSaturation, 0.16, 1)
   property bool editMode: false
   // The page is mid-scroll (WheelLatch): its sliders leave the wheel to it.
   property bool pageScrolling: false
+  // A zone's popover (see ZonePopover.qml): any zone, small or not, opens
+  // one from its content with openPopover(anchor, component, properties) and
+  // it is shown over the columns, never cut by the zone's clip. One at a
+  // time; a new one replaces the open one. The content is made when it opens
+  // and destroyed once it has faded out. It closes on a click outside, Esc,
+  // the control center closing, edit mode starting, and the page scrolling.
+  readonly property bool popoverOpen: zonePopover.opened
+  function openPopover(anchor, component, properties) { zonePopover.show(anchor, component, properties) }
+  function closePopover() { zonePopover.hide() }
   property bool outputsOpen: false
   property bool inputsOpen: false
   // A picker whose list went empty closes (its card leaves the grid), so it
@@ -73,12 +101,18 @@ ColumnLayout {
   // screen. `surfacePadding` is the island's around the view, set by Views.
   property real surfacePadding: 16
   readonly property int shownColumns: editMode ? zones.columns : zones.occupied
-  readonly property real islandWidth: ZoneModel.islandWidth(shownColumns, Window.width, gap)
+  property real widthDrag: -1
+  readonly property var widthBounds: ZoneModel.islandWidthBounds(shownColumns, Window.width, surfacePadding, gap)
+  readonly property real islandWidth: ZoneModel.islandWidth(
+    shownColumns, Window.width, gap,
+    widthDrag >= 0 ? widthDrag : zones.savedWidth(shownColumns),
+    surfacePadding)
   // What the columns share (ZoneColumns divides it); the island's final
   // width, not the one it is growing to.
   readonly property real columnsSpace: ZoneModel.columnsSpace(shownColumns, islandWidth, surfacePadding, gap)
 
   onEditModeChanged: {
+    closePopover()
     outputsOpen = false
     inputsOpen = false
     cc.forceActiveFocus()
@@ -87,6 +121,7 @@ ColumnLayout {
     // Reset on open, not on close, so the view keeps its shape while it
     // fades out with the collapsing island.
     settled = false
+    closePopover()
     if (!active) return
     settleTimer.restart()
     outputsOpen = false
@@ -106,9 +141,11 @@ ColumnLayout {
 
   spacing: cc.gap
 
-  // Esc closes a zone's menu, leaves edit mode, then closes the control center.
+  // Esc closes a zone's popover or menu, leaves edit mode, then closes the
+  // control center.
   Keys.onEscapePressed: {
-    if (cc.zoneLook.menuButton) cc.zoneLook.menuButton = null
+    if (cc.popoverOpen) cc.closePopover()
+    else if (cc.zoneLook.menuButton) cc.zoneLook.menuButton = null
     else if (cc.editMode) cc.editMode = false
     else cc.host.view = "rest"
   }
@@ -117,7 +154,7 @@ ColumnLayout {
 
   RowLayout {
     Layout.fillWidth: true
-    Layout.preferredHeight: 30
+    Layout.preferredHeight: cc.headerHeight
     Layout.leftMargin: 6
     Layout.rightMargin: 2
     spacing: 6
@@ -310,6 +347,16 @@ ColumnLayout {
     }
   }
 
+  // Where the bar's handle sits in edit mode, between the zones' frame and the
+  // add panel (Views draws it there; outside edit mode it is at the island's
+  // foot).
+  Item {
+    id: daySlotItem
+    visible: cc.editMode
+    Layout.fillWidth: true
+    Layout.preferredHeight: 12
+  }
+
   AddPanel { id: addPanelItem; center: cc }
 
   // Over the whole control center, beside it rather than inside the layout.
@@ -324,6 +371,18 @@ ColumnLayout {
     z: 100
     DragProxy { id: dragProxyItem; center: cc }
     ZoneLook { id: zoneLookItem; center: cc; anchors.fill: parent }
+  }
+  // The zones' popover has its own layer, the control center's: the island is
+  // as tall as the page shows of it, so a popover is not cut by a zone's clip
+  // and a click anywhere in the island closes it.
+  Item {
+    parent: cc.parent
+    x: cc.x
+    y: cc.y
+    width: cc.width
+    height: cc.height
+    z: 100
+    ZonePopover { id: zonePopover; center: cc; anchors.fill: parent }
   }
 
   // ---------- Cards, loaded by the grid and the add panel ----------

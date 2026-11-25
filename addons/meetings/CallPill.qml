@@ -276,9 +276,9 @@ Item {
     property bool hangUp: false
     signal clicked()
     readonly property real lift: mouse.containsMouse ? 0.07 : 0
-    property color base: hangUp ? Qt.tint("#ff3b30", Qt.rgba(1, 1, 1, lift * 1.4))
-      : on ? Qt.tint("#ffffff", Qt.rgba(0, 0, 0, lift))
-      : Qt.tint(pill.theme.background, Qt.rgba(1, 1, 1, 0.18 + lift))
+    property color base: hangUp ? Qt.tint(pill.theme.system.red, Qt.rgba(1, 1, 1, lift * 1.4))
+      : on ? Qt.tint(pill.theme.text, pill.theme.withAlpha(pill.theme.background, lift))
+      : Qt.tint(pill.theme.background, pill.theme.fill(mouse.containsMouse ? "stronger" : "strong"))
     width: pill.meetings.buttonSize
     height: width
     radius: width / 2
@@ -288,7 +288,7 @@ Item {
       GradientStop { position: 1; color: Qt.tint(button.base, Qt.rgba(0, 0, 0, button.on && !button.hangUp ? 0.07 : 0.04)) }
     }
     border.width: 1
-    border.color: Qt.rgba(1, 1, 1, button.on && !button.hangUp ? 0 : 0.07)
+    border.color: button.on && !button.hangUp ? "transparent" : pill.theme.hairline
     Behavior on base { MotionColorAnimation { theme: pill.theme } }
 
     // In after the ones before it; out all at once.
@@ -312,7 +312,7 @@ Item {
       theme: pill.theme
       name: button.icon
       size: button.hangUp ? 28 : 25
-      color: button.on && !button.hangUp ? "#1c1c1e" : "#ffffff"
+      color: button.hangUp ? pill.theme.contrastOn(pill.theme.system.red) : button.on ? pill.theme.background : pill.theme.text
       Behavior on color { MotionColorAnimation { theme: pill.theme } }
       knockout: button.base
       slashed: button.on && button.slashes

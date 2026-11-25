@@ -19,9 +19,9 @@ Item {
   // `clock`), and the status trailing (in statusColor). Kinds with
   // their own layout (bluetooth, media, workspace, volume) draw the rest below.
   readonly property var sample: ({
-    media: { glyph: "󰝚", glyphColor: "#ffffff" },
-    bluetooth: { glyph: "󰋋", glyphColor: "#ffffff" },
-    playback: { glyph: "󰏤", glyphColor: "#ffffff", label: "Song Title - Artist" },
+    media: { glyph: "󰝚", glyphColor: preview.view.text },
+    bluetooth: { glyph: "󰋋", glyphColor: preview.view.text },
+    playback: { glyph: "󰏤", glyphColor: preview.view.text, label: "Song Title - Artist" },
     clipboard: { glyph: "󰆏", label: "Hello, world!", status: "Copied", statusColor: accent },
     downloads: { glyph: "󰁅", glyphColor: positiveColor, label: "12:34", clock: true, status: "2 MB/s", statusColor: positiveColor },
     updates: { glyph: "󰏗", glyphColor: positiveColor, label: "12:34", clock: true, status: "Updating", statusColor: positiveColor },
@@ -39,7 +39,8 @@ Item {
     scale: Math.min(1.06, preview.width / width)
     radius: height / 2
     color: preview.view.host.theme.background
-    border.width: 0
+    border.width: preview.view.host.theme.isLight ? 1 : 0
+    border.color: preview.view.host.theme.hairline
     clip: true
     layer.enabled: visible
     layer.effect: MultiEffect {
@@ -75,12 +76,12 @@ Item {
             width: workspace.index === 1 ? 22 : 6
             height: workspace.index === 1 ? 18 : 6
             radius: height / 2
-            color: workspace.index === 1 ? (preview.colorfulActivities ? "#ffffff" : preview.accent) : preview.view.host.theme.withAlpha(preview.view.host.theme.text, workspace.index < 3 ? 0.75 : 0.2)
+            color: workspace.index === 1 ? (preview.colorfulActivities ? preview.view.text : preview.accent) : preview.view.host.theme.withAlpha(preview.view.host.theme.text, workspace.index < 3 ? 0.75 : 0.2)
             Text {
               anchors.centerIn: parent
               visible: workspace.index === 1
               text: "2"
-              color: preview.colorfulActivities ? "#000000" : preview.view.accentInk
+              color: preview.colorfulActivities ? preview.view.panel : preview.view.accentInk
               font.family: preview.view.host.theme.textFontFamily
               font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.callout)
               font.pixelSize: preview.view.host.theme.size.callout
@@ -100,7 +101,7 @@ Item {
       width: 28; height: 28
       visible: preview.glyph !== ""
       radius: preview.transfer ? 14 : 7
-      color: preview.kind === "media" ? Qt.tint("#252525", preview.view.host.theme.accentFill("ring")) : "transparent"
+      color: preview.kind === "media" ? Qt.tint(preview.view.well, preview.view.host.theme.accentFill("ring")) : "transparent"
       border.width: preview.transfer ? 2 : 0
       border.color: preview.transfer ? preview.positiveColor : preview.accent
       Text {
@@ -126,6 +127,7 @@ Item {
       width: 25; height: 12
       level: 64
       charging: true
+      color: preview.view.text
       chargingColor: preview.positiveColor
       lowColor: preview.colorfulActivities ? preview.view.host.theme.system.red : preview.accent
     }
@@ -147,7 +149,7 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       visible: !!preview.sample.status
       text: preview.sample.status || ""
-      color: preview.sample.statusColor || "#ffffff"
+      color: preview.sample.statusColor || preview.view.text
       font.family: preview.view.host.theme.textFontFamily
       font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote)
       font.pixelSize: preview.view.host.theme.size.footnote
@@ -160,7 +162,7 @@ Item {
       spacing: 1
       Text {
         text: "Connected"
-        color: "#888888"
+        color: preview.view.textMuted
         font.family: preview.view.host.theme.textFontFamily
         font.letterSpacing: preview.view.host.theme.tracking(preview.view.host.theme.textFontFamily, preview.view.host.theme.size.footnote)
         font.pixelSize: preview.view.host.theme.size.footnote

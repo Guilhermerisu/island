@@ -51,9 +51,9 @@ Item {
     width: label.width + 16
     height: label.height + 8
     radius: 6
-    color: "#2c2c2e"
+    color: tip.theme.well
     border.width: 1
-    border.color: Qt.rgba(1, 1, 1, 0.1)
+    border.color: tip.theme.hairline
     // Centered on the button, kept on screen.
     function place() {
       if (!tip.overlay) return
@@ -67,7 +67,7 @@ Item {
       text: tip.text
       width: tip.maxWidth > 0 ? Math.min(implicitWidth, tip.maxWidth) : implicitWidth
       wrapMode: tip.maxWidth > 0 ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-      color: "#f2f2f7"
+      color: tip.theme.text
       font.family: tip.theme.textFontFamily
       font.letterSpacing: tip.theme.tracking(tip.theme.textFontFamily, tip.theme.size.callout)
       font.pixelSize: tip.theme.size.callout

@@ -141,7 +141,7 @@ IslandPill {
         anchors.baseline: title.baseline
         text: host.notifications.age(pill.row.timestamp)
         textFormat: Text.PlainText
-        color: Qt.rgba(1, 1, 1, 0.45)
+        color: host.theme.withAlpha(host.theme.text, 0.45)
         font.family: host.theme.textFontFamily
         font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.body)
         font.pixelSize: host.theme.size.body
@@ -156,7 +156,7 @@ IslandPill {
       // Room left in the capped pill once the title and padding are taken.
       height: pill.fullText ? Math.max(0, Math.min(implicitHeight, pill.maxHeight - pill.actionsExtra - 44 - title.height - textColumn.spacing)) : implicitHeight
       elide: Text.ElideRight
-      color: Qt.rgba(1, 1, 1, 0.72)
+      color: host.theme.withAlpha(host.theme.text, 0.72)
       font.family: host.theme.textFontFamily
       font.pixelSize: host.theme.size.body
       font.letterSpacing: host.theme.tracking(host.theme.textFontFamily, host.theme.size.body)
@@ -184,7 +184,7 @@ IslandPill {
         width: (parent.width - (pill.actions.slice(0, 3).length - 1) * parent.spacing) / pill.actions.slice(0, 3).length
         height: 28
         radius: height / 2
-        color: Qt.rgba(1, 1, 1, actionMouse.pressed ? 0.28 : actionMouse.containsMouse ? 0.22 : 0.14)
+        color: host.theme.withAlpha(host.theme.text, actionMouse.pressed ? 0.28 : actionMouse.containsMouse ? 0.22 : 0.14)
         Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
         Text {
           anchors.fill: parent

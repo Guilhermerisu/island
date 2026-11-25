@@ -153,8 +153,9 @@ Item {
       description: "Usage limits, tokens by day, and your coding agents at work",
       options: [
         { key: "live", label: "Live activity", detail: "Shows Claude Code's and Codex's steps on the island while they work", type: "switch", default: true },
+        { key: "expandedPill", label: "Expanded live activity", detail: "Grows the pill into the turn's steps when hovered, or when the agent asks you something", type: "switch", default: false },
         { key: "agent", label: "Agent", detail: "The tabs to show; Ctrl+click to pick more than one", type: "popup", multiSelect: true, default: "claude",
-          choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "All Models", value: "all" }] }
+          choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }, { label: "Gemini", value: "agy" }, { label: "All Models", value: "all" }] }
       ] },
     { id: "ask", name: "Ask AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
       searchAliases: ["ask ai"],

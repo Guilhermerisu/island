@@ -92,7 +92,7 @@ Item {
   }
   readonly property var terms: ({
     "General": "general clock time 24-hour 12-hour am pm date day weekday hide autohide fullscreen tiling right-click omarchy menu search apps applications",
-    "Appearance": "appearance look style shape notch outline border hover glance capsules slots colorful colour color icons theme background font typography text size motion animation speed",
+    "Appearance": "appearance look style shape notch outline border hover glance capsules slots colorful colour color icons theme background dark light mode font typography text size motion animation speed",
     "Live Activities": "live activities hud osd pill",
     "Notifications": "notifications banners alerts sound",
     "Network": "network wifi wi-fi ethernet vpn wireguard openvpn connection connections ip address dns dhcp router gateway hostname password hidden forget networkmanager nmtui",

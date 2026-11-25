@@ -21,7 +21,7 @@ Addon {
   }
   Component {
     id: pinnedZone
-    PluginsZone { addon: pluginsAddon; center: parent.center }
+    PluginsZone { addon: pluginsAddon; center: parent.center; zoneSize: parent.zoneSize }
   }
   Component {
     id: pluginTile
@@ -158,6 +158,13 @@ Addon {
     if (!entry || toggleProc.running || (!enabled && !entry.canDisable)) return
     toggleProc.command = [enabled ? "omarchy-plugin-enable" : "omarchy-plugin-disable", entry.id]
     toggleProc.running = true
+  }
+
+  // What a click on a plugin does (tile, XS pill): opens an enabled one that
+  // opens, else flips whether it's enabled.
+  function activate(entry) {
+    if (entry.openable && entry.enabled) open(entry)
+    else setEnabled(entry, !entry.enabled)
   }
 
   // Close first so the plugin's window, not the island, gets the keyboard.

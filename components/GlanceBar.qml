@@ -453,7 +453,7 @@ Item {
         width: 3
         height: 3
         radius: 1.5
-        color: Qt.rgba(1, 1, 1, 0.25)
+        color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.25)
         anchors.verticalCenter: parent.verticalCenter
         visible: !!leftL1.item && !!leftL2.item
       }
@@ -495,7 +495,7 @@ Item {
         width: 3
         height: 3
         radius: 1.5
-        color: Qt.rgba(1, 1, 1, 0.25)
+        color: glanceBar.host.theme.withAlpha(glanceBar.host.theme.text, 0.25)
         anchors.verticalCenter: parent.verticalCenter
         visible: !!rightL1.item && !!rightL2.item
       }

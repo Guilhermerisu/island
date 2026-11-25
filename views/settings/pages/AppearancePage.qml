@@ -67,14 +67,22 @@ ColumnLayout {
       view: page.view
       icon: "󰃟"
       iconTint: page.system.gray
-      label: "Theme background"
-      detail: "Your Omarchy theme's background instead of black"
-      keywords: "colour color"
+      label: "Appearance"
+      detail: "Classic black, light, or your Omarchy theme's background"
+      keywords: "theme background dark light mode colour color"
       last: true
-      SettingsSwitch {
+      SettingsSegmented {
         view: page.view
-        checked: page.settings.themeBackground === true
-        onToggled: function(on) { page.settings.themeBackground = on }
+        options: [
+          { label: "Dark", value: "dark" },
+          { label: "Light", value: "light" },
+          { label: "Theme", value: "theme" }
+        ]
+        value: page.view.host.theme.appearanceMode
+        onPicked: function(v) {
+          page.settings.appearance = v
+          page.settings.themeBackground = (v === "theme")
+        }
       }
     }
   }

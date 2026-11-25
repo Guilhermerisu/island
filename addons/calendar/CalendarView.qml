@@ -15,13 +15,17 @@ Item {
   // In a control center zone: it doesn't take the keyboard, which stays with
   // the control center (Esc closes that).
   property bool inZone: false
+  // The zone's size ("xsmall", "small", "normal"): the first two draw
+  // CalendarGlance, not the view below.
+  property string zoneSize: "normal"
+  readonly property bool glanced: zoneSize !== "normal"
   readonly property var host: view.calendar.host
   readonly property var theme: host.theme
   readonly property color accent: theme.accent
 
-  // White text, Apple style, whatever the theme's text colour.
-  readonly property color ink: "#ffffff"
-  readonly property color inkMuted: Qt.rgba(1, 1, 1, 0.45)
+  // Theme-adaptive ink so the view stays legible on both dark and light islands.
+  readonly property color ink: theme.text
+  readonly property color inkMuted: theme.secondary
 
   readonly property int cell: 34
   // Six weeks' room always, so the island keeps its height from month to
@@ -37,7 +41,7 @@ Item {
   readonly property var months: ["January", "February", "March", "April", "May", "June", "July",
     "August", "September", "October", "November", "December"]
 
-  implicitHeight: Math.max(month.y + month.height, left.implicitHeight)
+  implicitHeight: glanced ? glance.implicitHeight : Math.max(month.y + month.height, left.implicitHeight)
 
   onActiveChanged: {
     if (!active) return
@@ -52,8 +56,17 @@ Item {
 
   // ---------- The day ----------
 
+  CalendarGlance {
+    id: glance
+    visible: view.glanced
+    view: view
+    anchors.left: parent.left
+    anchors.right: parent.right
+  }
+
   Column {
     id: left
+    visible: !view.glanced
     anchors.left: parent.left
     anchors.right: month.left
     anchors.rightMargin: 20
@@ -84,11 +97,14 @@ Item {
       Repeater {
         model: view.dayEvents.slice(0, view.eventsShown)
         delegate: Rectangle {
+          id: eventCard
           required property var modelData
+          readonly property bool hasMeeting: !!modelData.meetingUrl
+          readonly property color eventInk: view.theme.isLight ? Qt.darker(modelData.color, 1.35) : Qt.lighter(modelData.color, 1.2)
           width: parent.width
           height: eventText.implicitHeight + 12
           radius: 8
-          color: view.theme.withAlpha(modelData.color, 0.18)
+          color: view.theme.withAlpha(modelData.color, hasMeeting && meetingTip.hovered ? 0.28 : 0.18)
           Rectangle {
             x: 6
             anchors.verticalCenter: parent.verticalCenter
@@ -100,7 +116,7 @@ Item {
           Column {
             id: eventText
             x: 15
-            width: parent.width - 21
+            width: parent.width - (eventCard.hasMeeting ? 38 : 21)
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
             Text {
@@ -108,7 +124,7 @@ Item {
               text: modelData.title
               textFormat: Text.PlainText
               elide: Text.ElideRight
-              color: Qt.lighter(modelData.color, 1.2)
+              color: eventCard.eventInk
               font.family: view.theme.textFontFamily
               font.pixelSize: view.theme.size.callout
               font.weight: Font.DemiBold
@@ -117,13 +133,33 @@ Item {
             Text {
               width: parent.width
               text: view.calendar.spanText(modelData)
-              color: view.theme.withAlpha(Qt.lighter(modelData.color, 1.2), 0.7)
+              color: view.theme.withAlpha(eventCard.eventInk, 0.72)
               font.family: view.theme.textFontFamily
               font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.callout)
               font.pixelSize: view.theme.size.callout
               font.weight: Font.Normal
               font.features: { "tnum": 1 }
             }
+          }
+          Text {
+            visible: eventCard.hasMeeting
+            anchors.right: parent.right
+            anchors.rightMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            text: "󰍫"
+            color: view.theme.withAlpha(eventCard.eventInk, meetingTip.hovered ? 1 : 0.78)
+            font.family: view.theme.fontFamily
+            font.pixelSize: view.theme.px(14)
+          }
+          Item {
+            visible: eventCard.hasMeeting
+            anchors.fill: parent
+            MouseArea {
+              anchors.fill: parent
+              cursorShape: Qt.PointingHandCursor
+              onClicked: view.calendar.openMeeting(eventCard.modelData.meetingUrl)
+            }
+            Tooltip { id: meetingTip; theme: view.theme; text: "Join meeting" }
           }
         }
       }
@@ -162,7 +198,7 @@ Item {
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           onClicked: notice.status === "missing"
-            ? view.host.openSettings("Addons", view.calendar.addon.id)
+            ? view.host.openSettings("Calendar")
             : view.calendar.retry()
         }
       }
@@ -173,6 +209,7 @@ Item {
 
   Item {
     id: month
+    visible: !view.glanced
     anchors.right: parent.right
     width: view.gridWidth
     height: grid.y + view.gridHeight
@@ -215,27 +252,54 @@ Item {
     Row {
       anchors.right: parent.right
       anchors.verticalCenter: monthName.verticalCenter
-      opacity: monthHover.hovered ? 1 : 0
-      Behavior on opacity { MotionAnimation { theme: view.theme; pace: "fade"; curve: "fade" } }
-      Repeater {
-        model: [{ glyph: "󰅁", by: -1 }, { glyph: "󰅂", by: 1 }]
-        delegate: Text {
-          scale: chevronMouse.pressed ? 0.88 : 1
-          Behavior on scale { id: scaleMotion; MotionAnimation { theme: view.theme; pace: towards(scaleMotion.targetValue, chevronMouse.pressed ? "press" : "standard") } }
-          required property var modelData
-          width: view.cell
-          horizontalAlignment: Text.AlignHCenter
-          text: modelData.glyph
-          color: chevronMouse.containsMouse ? view.ink : view.inkMuted
+      Item {
+        width: 24
+        height: 24
+        anchors.verticalCenter: parent.verticalCenter
+        opacity: view.calendar.syncing ? 0.5 : (refreshTip.hovered || monthHover.hovered ? 1 : 0.45)
+        Behavior on opacity { MotionAnimation { theme: view.theme; pace: "fade"; curve: "fade" } }
+        scale: refreshMouse.pressed ? 0.88 : 1
+        Behavior on scale { id: scaleMotion1; MotionAnimation { theme: view.theme; pace: towards(scaleMotion1.targetValue, refreshMouse.pressed ? "press" : "standard") } }
+        Text {
+          anchors.centerIn: parent
+          text: "󰑐"
+          color: refreshTip.hovered ? view.ink : view.inkMuted
           font.family: view.theme.fontFamily
-          font.pixelSize: view.theme.px(16)
-          MouseArea {
-            id: chevronMouse
-            anchors.fill: parent
-            anchors.margins: -4
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: view.calendar.shiftMonth(parent.modelData.by)
+          font.pixelSize: view.theme.px(14)
+        }
+        MouseArea {
+          id: refreshMouse
+          anchors.fill: parent
+          anchors.margins: -3
+          enabled: !view.calendar.syncing
+          cursorShape: Qt.PointingHandCursor
+          onClicked: view.calendar.refreshNow()
+        }
+        Tooltip { id: refreshTip; theme: view.theme; text: "Refresh calendars" }
+      }
+      Row {
+        opacity: monthHover.hovered ? 1 : 0
+        Behavior on opacity { MotionAnimation { theme: view.theme; pace: "fade"; curve: "fade" } }
+        Repeater {
+          model: [{ glyph: "󰅁", by: -1 }, { glyph: "󰅂", by: 1 }]
+          delegate: Text {
+            scale: chevronMouse.pressed ? 0.88 : 1
+            Behavior on scale { id: scaleMotion2; MotionAnimation { theme: view.theme; pace: towards(scaleMotion2.targetValue, chevronMouse.pressed ? "press" : "standard") } }
+            required property var modelData
+            width: view.cell
+            horizontalAlignment: Text.AlignHCenter
+            text: modelData.glyph
+            color: chevronMouse.containsMouse ? view.ink : view.inkMuted
+            font.family: view.theme.fontFamily
+            font.pixelSize: view.theme.px(16)
+            MouseArea {
+              id: chevronMouse
+              anchors.fill: parent
+              anchors.margins: -4
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: view.calendar.shiftMonth(parent.modelData.by)
+            }
           }
         }
       }
@@ -296,7 +360,7 @@ Item {
             anchors.centerIn: parent
             text: day.index + 1
             color: day.isToday ? view.theme.accentText
-              : day.slot % 7 >= 5 ? view.theme.secondary : view.theme.text
+              : day.slot % 7 >= 5 ? view.inkMuted : view.ink
             font.family: view.theme.textFontFamily
             font.letterSpacing: view.theme.tracking(view.theme.textFontFamily, view.theme.size.body)
             font.pixelSize: view.theme.size.body

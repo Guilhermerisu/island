@@ -207,7 +207,7 @@ Item {
           .replace(/[ \t]+$/gm, "").trim()
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
-        color: answer.error ? answer.host.theme.urgent : "#ffffff"
+        color: answer.error ? answer.host.theme.urgent : answer.host.theme.text
         font.family: answer.host.theme.textFontFamily
         font.pixelSize: answer.host.theme.size.title1
         font.letterSpacing: answer.host.theme.tracking(answer.host.theme.textFontFamily, answer.host.theme.size.title1)
@@ -253,7 +253,7 @@ Item {
         implicitWidth: copyLabel.implicitWidth + 26
         implicitHeight: 28
         radius: 14
-        color: copyMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(1, 1, 1, 0.12)
+        color: answer.host.theme.fill(copyMouse.containsMouse ? "stronger" : "raised")
         Text {
           id: copyLabel
           anchors.centerIn: parent

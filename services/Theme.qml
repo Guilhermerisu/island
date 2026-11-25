@@ -2,9 +2,9 @@ import QtQuick
 import Quickshell.Io
 import qs.Commons as Commons
 
-// The island's colours, font and motion speed. The fill is classic black
-// unless the Theme background setting follows Omarchy's theme. Text and
-// greys stay neutral (macOS-like); only the accent comes from the theme.
+// The island's colours, font and motion speed. The fill is classic black,
+// neutral light, or follows Omarchy's theme. Text and greys stay neutral
+// (macOS-like); only the accent comes from the theme.
 Item {
   id: theme
   required property var settings
@@ -38,11 +38,15 @@ Item {
     if (family !== pluginFont || !(size > 0)) return 0
     return size * (-0.0223 + 0.185 * Math.exp(-0.1745 * size))
   }
-  readonly property color background: settings.themeBackground === true ? Commons.Color.background : "#000000"
+  readonly property string appearanceMode: settings.appearance === "light" || settings.appearance === "dark" || settings.appearance === "theme"
+    ? settings.appearance
+    : (settings.themeBackground === true ? "theme" : "dark")
+  readonly property color background: appearanceMode === "light" ? "#f5f5f7" : appearanceMode === "theme" ? Commons.Color.background : "#000000"
+  readonly property bool isLight: contrastRatio(background, "#1a1a1a") > contrastRatio(background, "#e6e6e6")
   // A neutral label rather than the theme's foreground, which is often
   // tinted; every grey below is derived from it. Flip light/dark ink so
   // light theme backgrounds stay readable.
-  readonly property color text: contrastRatio(background, "#1a1a1a") > contrastRatio(background, "#e6e6e6") ? "#1a1a1a" : "#e6e6e6"
+  readonly property color text: isLight ? "#1a1a1a" : "#e6e6e6"
   // Secondary text and glyphs: a neutral grey, as macOS's secondary label,
   // not the theme's muted colour, which is often tinted and looks dirty
   // next to the neutral cards. The accent alone carries the theme.
@@ -54,9 +58,12 @@ Item {
     var a = Commons.Color.accent
     return a !== undefined && a !== null && contrastRatio(a, background) >= 3 ? a : text
   }
-  // Apple's dark-mode system colours, for what keeps its meaning whatever
-  // the Omarchy theme: status, colourful live activities, charts.
-  readonly property var system: ({
+  // Apple's system colours (adapted for dark or light backgrounds), for what
+  // keeps its meaning whatever the Omarchy theme: status, live activities, charts.
+  readonly property var system: isLight ? ({
+    red: "#ff3b30", orange: "#e07b00", yellow: "#b88200", green: "#248a3d", cyan: "#0082a8",
+    blue: "#007aff", indigo: "#5856d6", purple: "#af52de", gray: "#6e6e73"
+  }) : ({
     red: "#ff453a", orange: "#ff9f0a", yellow: "#ffd60a", green: "#30d158", cyan: "#64d2ff",
     blue: "#0a84ff", indigo: "#5e5ce6", purple: "#bf5af2", gray: "#8e8e93"
   })
@@ -81,7 +88,7 @@ Item {
   readonly property color tile: solid("raised")
   readonly property color well: solid("strong")
   readonly property color wellHover: solid("stronger")
-  readonly property color hairline: fill("subtle")
+  readonly property color hairline: isLight ? withAlpha(text, 0.12) : fill("subtle")
   // The island's own outline, brighter than the chrome's hairlines so the
   // black pill stays visible against a black wallpaper.
   readonly property color outlineColor: withAlpha(text, 0.28)

@@ -174,7 +174,7 @@ Item {
           text: player.mpris ? String(player.mpris.trackArtist || player.mpris.identity || "") : ""
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: Qt.rgba(1, 1, 1, 0.55)
+          color: player.host.theme.secondary
           font.family: player.host.theme.textFontFamily
           font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.title3)
           font.pixelSize: player.host.theme.size.title3
@@ -200,7 +200,7 @@ Item {
 
       Text {
         text: player.clock(player.position)
-        color: Qt.rgba(1, 1, 1, 0.55)
+        color: player.host.theme.secondary
         font.family: player.host.theme.textFontFamily
         font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.callout)
         font.pixelSize: player.host.theme.size.callout
@@ -216,12 +216,12 @@ Item {
           width: parent.width
           height: 6
           radius: 3
-          color: Qt.rgba(1, 1, 1, 0.16)
+          color: player.host.theme.fill("strong")
           Rectangle {
             height: parent.height
             radius: parent.radius
             width: player.length > 0 ? parent.width * Math.max(0, Math.min(1, player.position / player.length)) : 0
-            color: Qt.rgba(1, 1, 1, 0.6)
+            color: player.host.theme.withAlpha(player.host.theme.text, 0.6)
           }
         }
         MouseArea {
@@ -236,7 +236,7 @@ Item {
       }
       Text {
         text: "−" + player.clock(player.length - player.position)
-        color: Qt.rgba(1, 1, 1, 0.55)
+        color: player.host.theme.secondary
         font.family: player.host.theme.textFontFamily
         font.letterSpacing: player.host.theme.tracking(player.host.theme.textFontFamily, player.host.theme.size.callout)
         font.pixelSize: player.host.theme.size.callout
@@ -257,7 +257,7 @@ Item {
         property string name: ""
         property bool available: true
         signal activated()
-        color: "#ffffff"
+        color: player.host.theme.text
         opacity: available ? (controlMouse.pressed ? 0.6 : 1) : 0.35
         Behavior on opacity { MotionAnimation { theme: player.host.theme; pace: "quick"; curve: "fade" } }
         font.family: player.host.theme.fontFamily
@@ -283,7 +283,7 @@ Item {
         text: "󰒟"
         name: !player.canShuffle && player.mpris ? "Shuffle isn't supported by " + String(player.mpris.identity || "this player")
           : player.mpris && player.mpris.shuffle ? "Shuffle: on" : "Shuffle: off"
-        color: player.mpris && player.mpris.shuffle ? player.host.nowPlaying.tint : Qt.rgba(1, 1, 1, 0.6)
+        color: player.mpris && player.mpris.shuffle ? player.host.nowPlaying.tint : player.host.theme.secondary
         font.pixelSize: player.host.theme.px(26)
         available: player.canShuffle
         onActivated: player.toggleShuffle()
@@ -294,7 +294,7 @@ Item {
         anchors.leftMargin: 46
         text: "󰏌"
         name: "Open " + (player.mpris ? String(player.mpris.identity || player.mpris.desktopEntry || "app") : "app")
-        color: Qt.rgba(1, 1, 1, 0.6)
+        color: player.host.theme.secondary
         font.pixelSize: player.host.theme.px(26)
         available: player.canOpenApp
         onActivated: player.openApp()

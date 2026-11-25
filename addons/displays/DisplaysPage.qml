@@ -8,13 +8,27 @@ import "../../views/settings/controls"
 // monitor's scale cards, brightness (when it has one), resolution,
 // refresh rate, rotation and the text size everywhere, then colour (HDR,
 // profile, 10-bit). Edits stay pending until Apply (see DisplaysAddon),
-// except brightness and text size, set at once.
+// except brightness and text size, set at once. A zone sized XSmall or Small
+// (`zoneSize`) shows the glance (DisplaysGlance) instead of any of it.
 ColumnLayout {
   id: page
   required property var view
   required property var displays
   property bool shown: false
+  property string zoneSize: "normal"
+  // What the zone was given (AddonZone: 58 in XSmall, a constant).
+  property real zoneRoom: 58
+  readonly property bool compact: zoneSize !== "normal"
   spacing: page.view.groupSpacing
+
+  DisplaysGlance {
+    visible: page.compact
+    Layout.fillWidth: true
+    view: page.view
+    displays: page.displays
+    zoneSize: page.zoneSize
+    xsHeight: page.zoneRoom
+  }
 
   readonly property var entry: displays.selectedEntry
   readonly property bool on: !!entry && !entry.disabled
@@ -58,7 +72,7 @@ ColumnLayout {
   readonly property var textNames: ({ 9: "Smallest", 10: "Smaller", 11: "Small", 12: "Default", 14: "Large", 16: "Larger", 20: "Largest" })
 
   Text {
-    visible: page.displays.loaded && page.displays.draft.length === 0
+    visible: !page.compact && page.displays.loaded && page.displays.draft.length === 0
     Layout.fillWidth: true
     Layout.leftMargin: 4
     text: "No displays found."
@@ -70,7 +84,7 @@ ColumnLayout {
 
   // ---------- The monitors, arranged in place ----------
   DisplayHero {
-    visible: page.displays.draft.length > 0
+    visible: !page.compact && page.displays.draft.length > 0
     Layout.fillWidth: true
     view: page.view
     displays: page.displays
@@ -78,7 +92,7 @@ ColumnLayout {
   // ---------- Whether the picked monitor is on ----------
   SettingsGroup {
     view: page.view
-    visible: !!page.entry && page.displays.draft.length >= 2
+    visible: !page.compact && !!page.entry && page.displays.draft.length >= 2
     SettingsRow {
       view: page.view
       label: "Use as"
@@ -98,7 +112,7 @@ ColumnLayout {
   // one that's off.
   SettingsGroup {
     view: page.view
-    visible: page.displays.draft.length > 0
+    visible: !page.compact && page.displays.draft.length > 0
     title: "Display"
     ScaleCards {
       visible: page.on
@@ -202,7 +216,7 @@ ColumnLayout {
   // ---------- Its colour: HDR, the profile, 10-bit ----------
   SettingsGroup {
     view: page.view
-    visible: page.on
+    visible: !page.compact && page.on
     title: "Color"
     footer: page.hdr ? "HDR is experimental in Hyprland, and Night Shift is off while it's on. SDR brightness and saturation set how everything that isn't HDR looks." : ""
     SettingsRow {
@@ -275,7 +289,7 @@ ColumnLayout {
   // ---------- Revert, Apply: only while there's something to apply ----------
   RowLayout {
     Layout.fillWidth: true
-    visible: page.displays.dirty
+    visible: !page.compact && page.displays.dirty
     spacing: 8
     Item { Layout.fillWidth: true }
     SettingsButton {

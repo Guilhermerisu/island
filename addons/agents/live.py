@@ -7,15 +7,23 @@ Codex's (~/.codex/sessions/<year>/<month>/<day>/rollout-*.jsonl, the CLI, the
 IDE extension and the ChatGPT desktop app alike) and prints one JSON line
 whenever what's worth showing changes:
 
-  {"sessions": [{"id", "provider", "name", "state", "startedAt", "doneAt",
-                 "interrupted", "transcript"}]}
+  {"sessions": [{"id", "provider", "name", "title", "state", "startedAt",
+                 "doneAt", "interrupted", "transcript", "text", "prompt",
+                 "summary", "steps": [...]}]}
 
 newest first. `state` is "thinking", "tool" (a step is running), "asking"
 (it's waiting on your answer to a question or its plan), or "done"
 (the turn ended, or was interrupted, `doneAt` ms ago at most DONE_KEPT;
 `interrupted` tells the two apart).
 `startedAt` is when you sent the turn's prompt, or when its first step
-started if the prompt is out of reach.
+started if the prompt is out of reach (0 if neither is known).
+`steps` are the current turn's last tool calls, oldest first: {"id",
+"label", "kind" (read, edit, run, search, web, agent, ask, other),
+"status" (running, done, error), "startedAt", "endedAt" (once it's
+finished), "file", "command", "added", "removed", and an ask's
+"question"}. `summary` counts the whole turn, past the steps listed:
+{"steps", "files" (edited), "added", "removed"}. `text` is the agent's
+latest line to you this turn, `prompt` yours that started it.
 
 Only the tail of a transcript is read when it's first seen, then what's
 added to it. A session nothing's written to for IDLE seconds is dropped
@@ -28,6 +36,7 @@ import glob
 import json
 import os
 from pathlib import Path
+import re
 import time
 
 POLL = 0.5          # seconds between looks at the sessions in play
@@ -37,6 +46,7 @@ IDLE = 10 * 60      # a session silent this long is no longer shown
 ASKING_IDLE = 60 * 60  # ...unless it's waiting on your answer
 DONE_KEPT = 30      # seconds a finished turn stays listed
 TAIL = 1 << 20      # bytes read of a transcript first seen
+MAX_STEPS = 6
 CODEX_TAIL = 16 << 20  # tool output can fill several MiB of one Codex turn
 MAX_SESSIONS = 4
 CODEX_START = ("task_started", "turn_started")
@@ -58,6 +68,100 @@ def iso_ms(ts):
         return now_ms()
 
 
+def lines_of(text):
+    return len(str(text or "").splitlines())
+
+
+def short(text, n=80):
+    text = " ".join(str(text or "").split())
+    return text if len(text) <= n else text[: n - 1] + "…"
+
+
+def command_summary(command):
+    """The part of a shell command that does the work: `cd x && npm test`
+    is `npm test`, `S=/tmp/a; omarchy restart shell >/dev/null` is
+    `omarchy restart shell`."""
+    line = command.strip().splitlines()[0] if command.strip() else ""
+    for part in re.split(r"\s*(?:&&|\|\||;)\s*", line):
+        part = re.sub(r"\s*(?:\d?>>?|&>)\s*\S+", "", part.split("|")[0]).strip()
+        words = part.split()
+        while words and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0]):
+            words.pop(0)
+        if words and words[0] not in ("cd", "sleep", "export", "source", ".", "set", "true"):
+            return short(" ".join(words), 60)
+    return short(line, 60)
+
+
+def step_for(block):
+    name = block.get("name") or ""
+    args = block.get("input") or {}
+    base = os.path.basename(str(args.get("file_path") or args.get("notebook_path") or args.get("path") or ""))
+    step = {"id": block.get("id"), "kind": "other", "status": "running", "file": "", "command": "",
+            "added": 0, "removed": 0}
+    if name == "Read":
+        step.update(kind="read", label="Read " + base, file=base)
+    elif name in ("Edit", "MultiEdit", "NotebookEdit"):
+        edits = args.get("edits") or [args]
+        step.update(kind="edit", label="Edit " + base, file=base,
+                    added=sum(lines_of(e.get("new_string") or e.get("new_source")) for e in edits),
+                    removed=sum(lines_of(e.get("old_string")) for e in edits))
+    elif name == "Write":
+        step.update(kind="edit", label="Write " + base, file=base, added=lines_of(args.get("content")))
+    elif name in ("Bash", "PowerShell"):
+        command = str(args.get("command") or "").strip()
+        step.update(kind="run", command=command_summary(command),
+                    label=short(args.get("description") or "Run " + command, 60))
+    elif name in ("Grep", "Glob"):
+        step.update(kind="search", label="Search " + short(args.get("pattern"), 40))
+    elif name in ("WebSearch", "WebFetch"):
+        url = str(args.get("url") or "")
+        host = url.split("/")[2] if url.count("/") >= 2 else ""
+        step.update(kind="web", label="Fetch " + host if host else "Search " + short(args.get("query"), 40))
+    elif name in ("Agent", "Task"):
+        step.update(kind="agent", label=short(args.get("description") or "Run an agent", 60))
+    elif name in ASKING_TOOLS:
+        if name == "ExitPlanMode":
+            step.update(kind="ask", label="Review the plan", question="It has a plan ready for you to approve.")
+        else:
+            questions = args.get("questions") or [{}]
+            question = str((questions[0] if isinstance(questions[0], dict) else {}).get("question") or "")
+            step.update(kind="ask", label=short(question or "Ask you a question", 60), question=short(question, 160))
+    elif name == "TodoWrite":
+        step.update(label="Update the to-do list")
+    elif name == "Skill":
+        step.update(label="Use " + str(args.get("skill") or "a skill"))
+    elif name.startswith("mcp__"):
+        step.update(label=name.split("__")[-1].replace("_", " ").capitalize())
+    else:
+        step.update(label=name)
+    return step
+
+
+CODEX_ASKING = ("request_user_input", "request_user_input_async")
+CODEX_RUN = ("shell", "local_shell", "exec_command", "container.exec")
+
+
+def codex_step(payload):
+    """A Codex tool call as a step, as step_for makes Claude's."""
+    name = str(payload.get("name") or "")
+    step = {"id": payload.get("call_id"), "kind": "other", "status": "running", "file": "",
+            "command": "", "added": 0, "removed": 0, "label": name or "Use a tool"}
+    if name.endswith(CODEX_ASKING):
+        step.update(kind="ask", label="Ask you a question", question="It's waiting on your answer.")
+    elif name in CODEX_RUN:
+        try:
+            args = json.loads(payload.get("arguments") or "{}")
+        except ValueError:
+            args = {}
+        command = args.get("command") or args.get("cmd") or ""
+        if isinstance(command, list):
+            # ["bash", "-lc", "npm test"] runs its last word.
+            command = command[-1] if command[:1] in (["bash"], ["sh"], ["zsh"]) else " ".join(map(str, command))
+        command = str(command)
+        step.update(kind="run", command=command_summary(command), label=short("Run " + command_summary(command), 60))
+    return step
+
+
 class Session:
     def __init__(self, path, provider="claude"):
         self.path = path
@@ -68,9 +172,15 @@ class Session:
         self.turn = None
         self.id = os.path.splitext(os.path.basename(path))[0]
         self.offset = 0
-        self.running = {}      # the turn's running steps by id: whether it's asking
+        self.title = ""
+        self.prompt = ""
+        self.cwd = ""
+        self.steps = []
+        self.text = ""
         self.state = ""        # "", thinking, tool, asking, done
         self.started = 0
+        self.count = 0
+        self.edits = {}        # the turn's edits by step: [path, added, removed]
         self.done_at = 0
         self.interrupted = False
         self.updated = 0
@@ -149,10 +259,15 @@ class Session:
             call = payload.get("call_id")
             if call and self.state not in ("", "done"):
                 if kind in CODEX_TOOL_IN:
-                    asking = str(payload.get("name", "")).endswith(("request_user_input", "request_user_input_async"))
-                    self.running[call] = asking
+                    step = codex_step(payload)
+                    step["startedAt"] = stamp
+                    self.count += 1
+                    self.add_step(step)
                 elif kind in CODEX_TOOL_OUT:
-                    self.running.pop(call, None)
+                    for step in self.steps:
+                        if step["id"] == call and step["status"] == "running":
+                            step["status"] = "done"
+                            step["endedAt"] = stamp
                 else:
                     return
                 self.updated = max(self.updated, stamp)
@@ -163,7 +278,8 @@ class Session:
         if kind in CODEX_START:
             self.updated = max(self.updated, stamp)
             self.turn = payload.get("turn_id")
-            self.running, self.state, self.started, self.done_at = {}, "thinking", stamp, 0
+            self.steps, self.text, self.state, self.done_at = [], "", "thinking", 0
+            self.started, self.count, self.edits = stamp, 0, {}
             self.interrupted = False
         elif kind in CODEX_FINISH + ("turn_aborted",):
             turn = payload.get("turn_id")
@@ -178,8 +294,15 @@ class Session:
             self.take_codex(entry)
             return
         kind = entry.get("type")
+        if kind == "custom-title":
+            self.title = entry.get("customTitle") or self.title
+        elif kind == "agent-name" and not self.title:
+            self.title = entry.get("agentName") or ""
+        elif kind == "last-prompt":
+            self.prompt = entry.get("lastPrompt") or self.prompt
         if kind not in ("user", "assistant") or entry.get("isSidechain"):
             return
+        self.cwd = entry.get("cwd") or self.cwd
         stamp = iso_ms(entry.get("timestamp"))
         self.updated = max(self.updated, stamp)
         content = (entry.get("message") or {}).get("content")
@@ -191,34 +314,81 @@ class Session:
                     self.finish(stamp, interrupted=True)
                 elif not entry.get("isMeta") and text.strip() and not text.lstrip().startswith("<"):
                     # A new turn.
-                    self.running, self.state, self.started, self.done_at = {}, "thinking", stamp, 0
+                    self.steps, self.text, self.state, self.done_at = [], "", "thinking", 0
+                    self.started, self.count, self.edits = stamp, 0, {}
                     self.interrupted = False
+                    self.prompt = text
                 return
             for block in content:
-                if block.get("type") == "tool_result":
-                    self.running.pop(block.get("tool_use_id"), None)
+                if block.get("type") != "tool_result":
+                    continue
+                patch = entry.get("toolUseResult") if isinstance(entry.get("toolUseResult"), dict) else {}
+                hunks = patch.get("structuredPatch")
+                lines = None
+                if hunks:
+                    marks = [l[:1] for h in hunks for l in h.get("lines", [])]
+                    lines = (marks.count("+"), marks.count("-"))
+                # A failed edit changed nothing, so it isn't counted.
+                if block.get("is_error"):
+                    self.edits.pop(block.get("tool_use_id"), None)
+                edit = self.edits.get(block.get("tool_use_id"))
+                if edit and lines:
+                    edit[1], edit[2] = lines
+                for step in self.steps:
+                    if step["id"] == block.get("tool_use_id"):
+                        step["status"] = "error" if block.get("is_error") else "done"
+                        step["endedAt"] = stamp
+                        if lines:
+                            step["added"], step["removed"] = lines
             if self.state != "done":
                 self.state = self.working()
             return
         for block in content or []:
             if block.get("type") == "tool_use":
-                self.running[block.get("id")] = block.get("name") in ASKING_TOOLS
+                step = step_for(block)
+                step["startedAt"] = stamp
                 self.started = self.started or stamp
+                self.count += 1
+                if step["kind"] == "edit":
+                    args = block.get("input") or {}
+                    path = args.get("file_path") or args.get("notebook_path") or step["file"]
+                    self.edits[step["id"]] = [path, step["added"], step["removed"]]
+                self.add_step(step)
+            elif block.get("type") == "text" and block.get("text", "").strip():
+                self.text = short(block["text"].strip().splitlines()[0], 120)
         # end_turn, but also stop_sequence (API errors such as an expired
         # login), max_tokens or refusal: anything but a step still to run.
         if (entry.get("message") or {}).get("stop_reason") not in (None, "tool_use"):
             self.finish(stamp)
-        elif self.state != "done" or self.running:
+        elif self.state != "done" or self.running():
             self.state = self.working()
             self.done_at = 0
+            self.interrupted = False
 
     def working(self):
-        if any(self.running.values()):
+        running = [s for s in self.steps if s["status"] == "running"]
+        if any(s["kind"] == "ask" for s in running):
             return "asking"
-        return "tool" if self.running else "thinking"
+        return "tool" if running else "thinking"
+
+    def add_step(self, step):
+        """Keeps the last MAX_STEPS steps, dropping finished ones first, so
+        a step still running is never lost (working() reads them)."""
+        steps = self.steps + [step]
+        while len(steps) > MAX_STEPS:
+            done = next((i for i, s in enumerate(steps) if s["status"] != "running"), None)
+            if done is None:
+                break
+            steps.pop(done)
+        self.steps = steps
+
+    def running(self):
+        return any(s["status"] == "running" for s in self.steps)
 
     def finish(self, stamp, interrupted=False):
-        self.running = {}
+        for step in self.steps:
+            if step["status"] == "running":
+                step["status"] = "error"
         self.state = "done"
         self.done_at = stamp
         self.interrupted = interrupted
@@ -233,9 +403,16 @@ class Session:
         return now - max(self.updated, mtime_ms(self.path)) < idle * 1000
 
     def snapshot(self):
-        return {"id": self.id, "provider": self.provider, "name": self.name, "state": self.state,
-                "startedAt": self.started, "doneAt": self.done_at, "interrupted": self.interrupted,
-                "transcript": self.path}
+        project = os.path.basename(self.cwd.rstrip("/")) if self.cwd else ""
+        return {"id": self.id, "provider": self.provider, "name": self.name,
+                "title": short(self.title or self.prompt or project or self.name, 60),
+                "state": self.state, "startedAt": self.started, "doneAt": self.done_at,
+                "interrupted": self.interrupted, "transcript": self.path,
+                "text": self.text, "prompt": short(self.prompt, 160),
+                "summary": {"steps": self.count, "files": len({e[0] for e in self.edits.values()}),
+                            "added": sum(e[1] for e in self.edits.values()),
+                            "removed": sum(e[2] for e in self.edits.values())},
+                "steps": self.steps}
 
 
 def mtime_ms(path):

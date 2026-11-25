@@ -1033,7 +1033,7 @@ Item {
           // edge stays the chrome's hairline, so banners don't read brighter
           // than an expanded island.
           readonly property bool restingEdge: !prominent && !raised && root.settings.restingOutline
-          opacity: prominent ? 1 : raised ? 0.6 : restingEdge ? 0.75 : 0
+          opacity: prominent ? 1 : raised ? (root.theme.isLight ? 0.8 : 0.6) : restingEdge ? 0.75 : root.theme.isLight ? 0.65 : 0
           visible: opacity > 0.01
           Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: root.theme; pace: towards(opacityMotion2.targetValue, islandEdge.prominent || islandEdge.raised ? "morph" : "exit"); curve: "fade" } }
           Shape {
@@ -1107,7 +1107,7 @@ Item {
     y: shape.y
     width: r + 0.5
     height: r
-    property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
+    property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.8 : root.theme.isLight ? 0.65 : 0
     Behavior on edgeOpacity { id: edgeOpacityMotion; MotionAnimation { theme: root.theme; pace: towards(edgeOpacityMotion.targetValue, root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"); curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer

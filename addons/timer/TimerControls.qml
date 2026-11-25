@@ -19,7 +19,7 @@ Item {
   component RoundButton: Rectangle {
     id: button
     property string glyph: ""
-    property color ink: "#ffffff"
+    property color ink: controls.theme.text
     signal clicked()
     width: controls.buttonSize
     height: width
@@ -52,7 +52,7 @@ Item {
       onClicked: controls.timer.togglePause()
     }
     RoundButton {
-      color: "#48484a"
+      color: controls.theme.well
       glyph: "󰅖"
       onClicked: controls.timer.cancel()
     }

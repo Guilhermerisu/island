@@ -6,19 +6,34 @@ import "../../components"
 // The System Stats pane: the cards (StatsCards) for the CPU, memory, GPU and
 // storage, then the processes. In a control center zone (`inZone`, see
 // Addon.qml) the cards are stacked one to a row and the table, too tall for a
-// column, is left out.
+// column, is left out. A zone sized XSmall or Small (`zoneSize`) shows the
+// glance (StatsGlance) instead of any of it.
 ColumnLayout {
   id: page
   required property var view
   required property var stats
   property bool shown: false
   property bool inZone: false
+  property string zoneSize: "normal"
+  // What the zone was given (AddonZone: 58 in XSmall, a constant).
+  property real zoneRoom: 58
+  readonly property bool compact: zoneSize !== "normal"
   spacing: page.view.groupSpacing
+
+  StatsGlance {
+    visible: page.compact
+    Layout.fillWidth: true
+    view: page.view
+    readings: cards
+    zoneSize: page.zoneSize
+    xsHeight: page.zoneRoom
+  }
 
   // Until the first reading, the cards show their spinner; then the processes.
   StatsCards {
     id: cards
     Layout.fillWidth: true
+    visible: !page.compact
     view: page.view
     stats: page.stats
     shown: page.shown
@@ -29,7 +44,7 @@ ColumnLayout {
   // the table, each of your rows with its own ⓧ to quit it ----------------
   Section {
     Layout.fillWidth: true
-    visible: cards.ready && !page.inZone
+    visible: cards.ready && !page.inZone && !page.compact
     opacity: cards.ready ? 1 : 0
     Behavior on opacity { MotionAnimation { theme: page.view.host.theme; pace: "fade"; curve: "fade" } }
     view: page.view

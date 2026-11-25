@@ -69,7 +69,7 @@ Item {
       width: pill.chip
       height: parent.height
       radius: height / 2
-      color: "#ffffff"
+      color: pill.host.theme.text
       Behavior on x { MotionAnimation { theme: pill.host.theme; pace: "expressive" } }
     }
 
@@ -85,7 +85,7 @@ Item {
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           text: modelData.toUpperCase()
-          color: index === pill.layout.index ? "#000000" : Qt.rgba(1, 1, 1, 0.45)
+          color: index === pill.layout.index ? pill.host.theme.background : pill.host.theme.withAlpha(pill.host.theme.text, 0.45)
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           font.family: pill.host.theme.textFontFamily
           font.letterSpacing: pill.host.theme.tracking(pill.host.theme.textFontFamily, pill.host.theme.size.subheadline)

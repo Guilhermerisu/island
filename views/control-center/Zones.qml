@@ -56,6 +56,18 @@ Item {
     var json = ZoneModel.withShares(settings.controlCenterColumnWidths, columns, values)
     if (json !== settings.controlCenterColumnWidths) settings.controlCenterColumnWidths = json
   }
+  // Saved per shown column count so layouts keep distinct widths.
+  function savedWidth(count) { return ZoneModel.savedWidth(settings.controlCenterWidths, count) }
+  function setWidth(count, value) {
+    var json = ZoneModel.withWidth(settings.controlCenterWidths, count, value)
+    if (json !== settings.controlCenterWidths) settings.controlCenterWidths = json
+  }
+  // "xsmall", "small" or "normal" (also what a zone with none saved has).
+  function size(id) { return ZoneModel.sizeOf(settings.controlCenterZoneSizes, id) }
+  function setSize(id, size) {
+    var json = ZoneModel.withSize(settings.controlCenterZoneSizes, id, size)
+    if (json !== settings.controlCenterZoneSizes) settings.controlCenterZoneSizes = json
+  }
   function setColumns(count) { settings.controlCenterColumns = ZoneModel.clampColumns(count) }
   // An addon's zone needs the addon; removing the zone leaves it on.
   function enableAddon(id) {
