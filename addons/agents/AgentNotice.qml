@@ -16,6 +16,9 @@ Item {
   readonly property var theme: agents.host.theme
   readonly property var session: agents.noticeShown && !agents.noticeLeaving ? agents.notice : null
   readonly property bool shown: !!session
+  // The pill stays loaded between notices, so the last one's finished badge
+  // goes before the next comes in, or it would show as the badge reveals.
+  onShownChanged: if (shown) badge.pop = badge.draw = badge.burst = 0
   // Kept while it fades away.
   property var displayed: null
   // Off for a moment when one notice follows another straight away, so the

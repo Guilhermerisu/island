@@ -77,13 +77,14 @@ ColumnLayout {
     // macOS's round ×, widening into "Clear All" while hovered.
     Rectangle {
       scale: clearMouse.pressed ? 0.94 : 1
-      Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: clearMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion.targetValue, clearMouse.pressed ? "press" : "standard") } }
       // Goes with the banners it clears.
       opacity: history.empty ? 0 : 1
       visible: opacity > 0.01
       Behavior on opacity {
+        id: opacityMotion
         enabled: history.settled
-        MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+        MotionAnimation { theme: history.center.host.theme; pace: towards(opacityMotion.targetValue, history.empty ? "exit" : "fade"); curve: towards(opacityMotion.targetValue, history.empty ? "exit" : "fade") }
       }
       implicitWidth: clearMouse.containsMouse ? clearLabel.implicitWidth + 20 : 22
       implicitHeight: 22
@@ -147,8 +148,9 @@ ColumnLayout {
     opacity: history.empty ? 0 : 1
     visible: opacity > 0.01
     Behavior on opacity {
+      id: opacityMotion2
       enabled: history.settled
-      MotionAnimation { theme: history.center.host.theme; pace: history.empty ? "exit" : "fade"; curve: history.empty ? "exit" : "fade" }
+      MotionAnimation { theme: history.center.host.theme; pace: towards(opacityMotion2.targetValue, history.empty ? "exit" : "fade"); curve: towards(opacityMotion2.targetValue, history.empty ? "exit" : "fade") }
     }
     Layout.fillWidth: true
     // Out by the × button's overhang, so the banners line up with the cards.
@@ -238,7 +240,7 @@ ColumnLayout {
       Rectangle {
         id: banner
         scale: noteMouse.pressed ? 0.98 : 1
-        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: noteMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion2; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion2.targetValue, noteMouse.pressed ? "press" : "standard") } }
         x: 6 + note.inset
         y: 6
         width: parent.width - 6 - note.inset
@@ -432,7 +434,7 @@ ColumnLayout {
       Rectangle {
         x: note.inset
         scale: closeMouse.pressed ? 0.9 : 1
-        Behavior on scale { MotionAnimation { theme: history.center.host.theme; pace: closeMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion3; MotionAnimation { theme: history.center.host.theme; pace: towards(scaleMotion3.targetValue, closeMouse.pressed ? "press" : "standard") } }
         width: 20; height: 20; radius: 10
         opacity: note.hovered ? 1 : 0
         visible: opacity > 0

@@ -37,7 +37,7 @@ Rectangle {
   opacity: available ? 1 : 0.5
   Behavior on opacity { MotionAnimation { theme: center.host.theme; pace: "fade"; curve: "fade" } }
   scale: tileMouse.pressed || badgeMouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: center.host.theme; pace: tileMouse.pressed || badgeMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: center.host.theme; pace: towards(scaleMotion.targetValue, tileMouse.pressed || badgeMouse.pressed ? "press" : "standard") } }
 
   Rectangle {
     id: badge

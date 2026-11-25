@@ -16,7 +16,7 @@ Rectangle {
   color: primary ? button.view.accent : buttonMouse.containsMouse ? button.view.wellHover : button.view.well
   Behavior on color { MotionColorAnimation { theme: button.view.host.theme } }
   scale: buttonMouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: button.view.host.theme; pace: buttonMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: button.view.host.theme; pace: towards(scaleMotion.targetValue, buttonMouse.pressed ? "press" : "standard") } }
   Text {
     id: buttonText
     anchors.centerIn: parent

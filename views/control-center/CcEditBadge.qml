@@ -28,7 +28,7 @@ Item {
   height: 20
   scale: shown ? (badgeMouse.pressed ? 0.85 : 1) : 0
   visible: scale > 0
-  Behavior on scale { MotionAnimation { theme: b.center.host.theme; pace: badgeMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: b.center.host.theme; pace: towards(scaleMotion.targetValue, badgeMouse.pressed ? "press" : "standard") } }
 
   Rectangle {
     anchors.fill: parent

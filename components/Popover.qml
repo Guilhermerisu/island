@@ -13,8 +13,8 @@ Rectangle {
   enabled: open
   opacity: open ? 1 : 0
   scale: open ? 1 : 0.96
-  Behavior on opacity { MotionAnimation { theme: popover.theme; pace: popover.open ? "fade" : "exit"; curve: "fade" } }
-  Behavior on scale { MotionAnimation { theme: popover.theme; pace: popover.open ? "standard" : "exit" } }
+  Behavior on opacity { id: opacityMotion; MotionAnimation { theme: popover.theme; pace: towards(opacityMotion.targetValue, popover.open ? "fade" : "exit"); curve: "fade" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: popover.theme; pace: towards(scaleMotion.targetValue, popover.open ? "standard" : "exit") } }
   radius: 10
   color: theme.solid("raised")
   border.width: 1

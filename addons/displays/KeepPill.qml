@@ -133,7 +133,7 @@ Item {
           color: modelData.primary ? pill.theme.accent : buttonMouse.containsMouse ? pill.theme.wellHover : pill.theme.well
           Behavior on color { MotionColorAnimation { theme: pill.host.theme } }
           scale: buttonMouse.pressed ? 0.97 : 1
-          Behavior on scale { MotionAnimation { theme: pill.host.theme; pace: buttonMouse.pressed ? "press" : "standard" } }
+          Behavior on scale { id: scaleMotion; MotionAnimation { theme: pill.host.theme; pace: towards(scaleMotion.targetValue, buttonMouse.pressed ? "press" : "standard") } }
           Text {
             anchors.centerIn: parent
             text: button.modelData.label

@@ -75,7 +75,7 @@ CcSection {
     // eases; out on the shorter exit pace.
     opacity: card.outputsShown ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: card.center.host.theme; pace: card.outputsShown ? "fade" : "exit"; curve: card.outputsShown ? "fade" : "exit" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: card.center.host.theme; pace: towards(opacityMotion.targetValue, card.outputsShown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, card.outputsShown ? "fade" : "exit") } }
     model: outputRows.model
     // An output plugged in while the picker is open fades in; one unplugged
     // fades out where it was. The first fill just appears.

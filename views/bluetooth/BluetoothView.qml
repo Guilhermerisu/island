@@ -203,7 +203,7 @@ ColumnLayout {
     spacing: 8
     Rectangle {
       scale: backMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: bt.host.theme; pace: backMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: bt.host.theme; pace: towards(scaleMotion.targetValue, backMouse.pressed ? "press" : "standard") } }
       Layout.preferredWidth: 32
       Layout.preferredHeight: 32
       radius: height / 2
@@ -478,14 +478,14 @@ ColumnLayout {
               Rectangle {
                 id: forgetButton
                 scale: forgetMouse.pressed ? 0.9 : 1
-                Behavior on scale { MotionAnimation { theme: bt.host.theme; pace: forgetMouse.pressed ? "press" : "standard" } }
+                Behavior on scale { id: scaleMotion2; MotionAnimation { theme: bt.host.theme; pace: towards(scaleMotion2.targetValue, forgetMouse.pressed ? "press" : "standard") } }
                 // Fades in on hover and out quicker, and takes no clicks
                 // while it fades out.
                 readonly property bool shown: row.modelData.section !== "nearby" && !row.modelData.pending
                   && (rowHover.hovered || row.isSelected)
                 opacity: shown ? 1 : 0
                 visible: opacity > 0.01
-                Behavior on opacity { MotionAnimation { theme: bt.host.theme; pace: forgetButton.shown ? "fade" : "exit"; curve: forgetButton.shown ? "fade" : "exit" } }
+                Behavior on opacity { id: opacityMotion; MotionAnimation { theme: bt.host.theme; pace: towards(opacityMotion.targetValue, forgetButton.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, forgetButton.shown ? "fade" : "exit") } }
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetTip.hovered ? bt.wellHover : "transparent"

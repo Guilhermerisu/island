@@ -44,7 +44,7 @@ Rectangle {
   border.color: pop.view.host.theme.fill(open ? "stronger" : "raised")
   Behavior on color { MotionColorAnimation { theme: pop.view.host.theme } }
   scale: popMouse.pressed ? 0.98 : 1
-  Behavior on scale { MotionAnimation { theme: pop.view.host.theme; pace: popMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: pop.view.host.theme; pace: towards(scaleMotion.targetValue, popMouse.pressed ? "press" : "standard") } }
   Text {
     id: popLabel
     anchors.left: parent.left

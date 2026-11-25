@@ -88,5 +88,5 @@ Item {
   TextMetrics { id: stackedTimeMetrics; font: stackedTimeText.font; text: stackedTimeText.text }
   TextMetrics { id: stackedSubMetrics; font: stackedSubText.font; text: stackedSubText.text }
 
-  Behavior on opacity { MotionAnimation { theme: labelRoot.host.theme; pace: labelRoot.shown && labelRoot.fits ? "fade" : "exit"; curve: "fade" } }
+  Behavior on opacity { id: opacityMotion; MotionAnimation { theme: labelRoot.host.theme; pace: towards(opacityMotion.targetValue, labelRoot.shown && labelRoot.fits ? "fade" : "exit"); curve: "fade" } }
 }

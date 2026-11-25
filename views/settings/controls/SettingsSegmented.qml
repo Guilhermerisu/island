@@ -96,7 +96,7 @@ Rectangle {
           font.weight: choice.selected ? Font.DemiBold : Font.Normal
         }
         scale: choiceMouse.pressed ? 0.96 : 1
-        Behavior on scale { MotionAnimation { theme: seg.view.host.theme; pace: choiceMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: seg.view.host.theme; pace: towards(scaleMotion.targetValue, choiceMouse.pressed ? "press" : "standard") } }
         MouseArea {
           id: choiceMouse
           anchors.fill: parent

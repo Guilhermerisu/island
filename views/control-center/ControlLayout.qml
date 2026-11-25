@@ -255,12 +255,14 @@ ColumnLayout {
           scale: shown ? 1 : 0.9
           visible: opacity > 0.01
           Behavior on opacity {
+            id: opacityMotion
             enabled: layout.cardsSettled
-            MotionAnimation { theme: layout.center.host.theme; pace: controlCard.shown ? "fade" : "exit"; curve: controlCard.shown ? "fade" : "exit" }
+            MotionAnimation { theme: layout.center.host.theme; pace: towards(opacityMotion.targetValue, controlCard.shown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, controlCard.shown ? "fade" : "exit") }
           }
           Behavior on scale {
+            id: scaleMotion
             enabled: layout.cardsSettled
-            MotionAnimation { theme: layout.center.host.theme; pace: controlCard.shown ? "standard" : "exit"; curve: controlCard.shown ? "settle" : "exit" }
+            MotionAnimation { theme: layout.center.host.theme; pace: towards(scaleMotion.targetValue, controlCard.shown ? "standard" : "exit"); curve: towards(scaleMotion.targetValue, controlCard.shown ? "settle" : "exit") }
           }
           // A card that was hidden appears in its new place rather than
           // sliding there from where it was last shown.

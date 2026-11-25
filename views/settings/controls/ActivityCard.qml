@@ -23,7 +23,7 @@ FocusScope {
   implicitWidth: 220
   implicitHeight: content.implicitHeight
   scale: mouse.pressed ? 0.97 : 1
-  Behavior on scale { MotionAnimation { theme: card.view.host.theme; pace: mouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: card.view.host.theme; pace: towards(scaleMotion.targetValue, mouse.pressed ? "press" : "standard") } }
   activeFocusOnTab: true
   Accessible.role: Accessible.CheckBox
   Accessible.name: title

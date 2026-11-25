@@ -70,7 +70,7 @@ CcSection {
     spacing: 6
     opacity: card.inputsShown ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: card.center.host.theme; pace: card.inputsShown ? "fade" : "exit"; curve: card.inputsShown ? "fade" : "exit" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: card.center.host.theme; pace: towards(opacityMotion.targetValue, card.inputsShown ? "fade" : "exit"); curve: towards(opacityMotion.targetValue, card.inputsShown ? "fade" : "exit") } }
     model: inputRows.model
     add: Transition {
       enabled: inputRows.primed && card.inputsShown

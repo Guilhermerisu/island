@@ -68,7 +68,7 @@ ColumnLayout {
     id: loading
     opacity: cards.ready ? 0 : 1
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: cards.view.host.theme; pace: cards.ready ? "exit" : "fade"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: cards.view.host.theme; pace: towards(opacityMotion.targetValue, cards.ready ? "exit" : "fade"); curve: "fade" } }
     Layout.fillWidth: true
     Layout.preferredHeight: cards.ready ? 0 : 240
     Column {

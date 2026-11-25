@@ -189,7 +189,7 @@ Item {
       OverlayScrollbar { flickable: scroller; parent: scroller; theme: answer.host.theme }
       opacity: answer.thinking ? 0 : 1
       visible: opacity > 0.01
-      Behavior on opacity { MotionAnimation { theme: answer.host.theme; pace: answer.thinking ? "exit" : "fade"; curve: "fade" } }
+      Behavior on opacity { id: opacityMotion; MotionAnimation { theme: answer.host.theme; pace: towards(opacityMotion.targetValue, answer.thinking ? "exit" : "fade"); curve: "fade" } }
       Layout.fillWidth: true
       Layout.preferredHeight: Math.min(body.implicitHeight, 460)
       contentHeight: body.implicitHeight
@@ -226,7 +226,7 @@ Item {
     height: implicitHeight
     opacity: answer.thinking ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: answer.host.theme; pace: answer.thinking ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: answer.host.theme; pace: towards(opacityMotion2.targetValue, answer.thinking ? "fade" : "exit"); curve: "fade" } }
     running: visible && answer.active
   }
 
@@ -249,7 +249,7 @@ Item {
       spacing: 8
       Rectangle {
         scale: copyMouse.pressed ? 0.95 : 1
-        Behavior on scale { MotionAnimation { theme: answer.host.theme; pace: copyMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: answer.host.theme; pace: towards(scaleMotion.targetValue, copyMouse.pressed ? "press" : "standard") } }
         implicitWidth: copyLabel.implicitWidth + 26
         implicitHeight: 28
         radius: 14

@@ -76,7 +76,7 @@ Item {
       radius: width / 2
       color: view.timer.tintWell
       scale: startMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: view.host.theme; pace: startMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: view.host.theme; pace: towards(scaleMotion.targetValue, startMouse.pressed ? "press" : "standard") } }
       Text {
         anchors.centerIn: parent
         text: "󰐊"
@@ -105,7 +105,7 @@ Item {
       radius: width / 2
       color: "#48484a"
       scale: cancelMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: view.host.theme; pace: cancelMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion2; MotionAnimation { theme: view.host.theme; pace: towards(scaleMotion2.targetValue, cancelMouse.pressed ? "press" : "standard") } }
       Text {
         anchors.centerIn: parent
         text: "󰅖"

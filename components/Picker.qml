@@ -206,7 +206,7 @@ Item {
         width: picker.cardWidth
         height: picker.cardHeight
         scale: cardMouse.pressed ? 0.97 : 1
-        Behavior on scale { MotionAnimation { theme: picker.host.theme; pace: cardMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: picker.host.theme; pace: towards(scaleMotion.targetValue, cardMouse.pressed ? "press" : "standard") } }
 
         Loader {
           anchors.fill: parent

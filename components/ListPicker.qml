@@ -182,7 +182,7 @@ Item {
         id: rowLoader
         anchors.fill: parent
         scale: picker.grid && slotMouse.pressed && !slot.itemDisabled ? 0.96 : 1
-        Behavior on scale { MotionAnimation { theme: picker.host.theme; pace: slotMouse.pressed ? "press" : "standard" } }
+        Behavior on scale { id: scaleMotion; MotionAnimation { theme: picker.host.theme; pace: towards(scaleMotion.targetValue, slotMouse.pressed ? "press" : "standard") } }
         anchors.leftMargin: picker.grid ? 0 : 10
         anchors.rightMargin: picker.grid ? 0 : 12
         sourceComponent: picker.row

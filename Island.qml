@@ -265,8 +265,7 @@ Item {
   function surfaceOpenFor(v) { return surfaceNames.indexOf(v) !== -1 }
 
   // Going straight from one view to another, the new one starts halfway
-  // through the old one's fade: both are blurred by then (see Surface), so
-  // there's no legible overlap and no empty moment.
+  // through the old one's fade, so there's no empty moment (see Surface).
   property string previousView: "rest"
   property bool switchingSurface: false
 
@@ -733,7 +732,7 @@ Item {
           transformOrigin: island.transformOrigin
           opacity: root.surfaceOpen ? 1 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { id: opacityMotion; MotionAnimation { theme: root.theme; pace: towards(opacityMotion.targetValue, root.surfaceOpen ? "morph" : "exit"); curve: "fade" } }
           layer.enabled: visible
           layer.effect: MultiEffect { blurEnabled: true; blurMax: 8; blur: 1 }
           Shape {
@@ -848,10 +847,18 @@ Item {
           readonly property real targetRadius: activeSurface && activeSurface.cornerRadius > 0 ? activeSurface.cornerRadius
             : activePill && activePill.pillRadius > 0 ? activePill.pillRadius
             : root.surfaceOpen ? 30 : 38
-          readonly property real radiusCap: radiusSpring.value
-          radius: Math.min(height / 2, root.settings.notch && !root.surfaceOpen ? Math.min(radiusCap, 16) : radiusCap)
-          topLeftRadius: root.settings.notch ? 0 : radius
-          topRightRadius: root.settings.notch ? 0 : radius
+          // The shape's size and corners for this frame, from the springs
+          // all at once (see morphDriver), so the outlines are built once a
+          // frame rather than once for each spring that moved.
+          property var morph: ({ width: 0, height: 0, radius: 0 })
+          readonly property var frame: {
+            var h = Math.max(28, morph.height)
+            var r = Math.min(h / 2, root.settings.notch && !root.surfaceOpen ? Math.min(morph.radius, 16) : morph.radius)
+            return { width: Math.max(40, morph.width), height: h, radius: r, top: root.settings.notch ? 0 : r }
+          }
+          radius: frame.radius
+          topLeftRadius: frame.top
+          topRightRadius: frame.top
           readonly property bool lifted: root.view === "rest" && clockHover.hovered && !root.settings.notch && !island.isGlanceExpanded && !island.capsulesShown
           // Lifts a touch under the pointer and squishes while pressed, then
           // springs back past its size on release, like the iPhone's island.
@@ -884,16 +891,16 @@ Item {
           // the radius and clipping the pills and views rely on.
           color: "transparent"
           clip: true
-          readonly property var cornerRadii: ({ topLeft: topLeftRadius, topRight: topRightRadius, bottomLeft: radius, bottomRight: radius })
-          readonly property string outline: Squircle.path(width, height, cornerRadii, 0.6)
+          readonly property string outline: Squircle.path(frame.width, frame.height,
+            ({ topLeft: frame.top, topRight: frame.top, bottomLeft: frame.radius, bottomRight: frame.radius }), 0.6)
           // The same outline inset half a pixel, so a 1px edge stroke lands
           // inside the shape. Only built while the edge shows, so a resting
           // pill's morphs redraw one outline, not two.
           readonly property string edgeOutline: !islandEdge.visible ? ""
-            : root.settings.notch ? Squircle.notchPath(width - 1, height - 1, Math.max(0, radius - 0.5), 10, 0.6)
-            : Squircle.path(width - 1, height - 1, ({
-                topLeft: Math.max(0, topLeftRadius - 0.5), topRight: Math.max(0, topRightRadius - 0.5),
-                bottomLeft: Math.max(0, radius - 0.5), bottomRight: Math.max(0, radius - 0.5) }), 0.6)
+            : root.settings.notch ? Squircle.notchPath(frame.width - 1, frame.height - 1, Math.max(0, frame.radius - 0.5), 10, 0.6)
+            : Squircle.path(frame.width - 1, frame.height - 1, ({
+                topLeft: Math.max(0, frame.top - 0.5), topRight: Math.max(0, frame.top - 0.5),
+                bottomLeft: Math.max(0, frame.radius - 0.5), bottomRight: Math.max(0, frame.radius - 0.5) }), 0.6)
           Shape {
             anchors.fill: parent
             preferredRendererType: Shape.CurveRenderer
@@ -913,9 +920,23 @@ Item {
           // Going from one view to a smaller one is a way back, as quick as a close.
           readonly property bool shrinkingToView: root.switchingSurface && (targetHeight < heightSpring.value - 1 || targetWidth < widthSpring.value - 1)
           readonly property string morphPace: root.surfaceOpen && !shrinkingToView ? "morph" : "collapse"
-          MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace }
-          MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace }
-          MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; target: island.targetRadius }
+          MotionSpring { id: widthSpring; theme: root.theme; pace: island.morphPace; driven: true }
+          MotionSpring { id: heightSpring; theme: root.theme; pace: island.morphPace; driven: true }
+          MotionSpring { id: radiusSpring; theme: root.theme; pace: island.morphPace; driven: true; target: island.targetRadius }
+          // Steps the three together and hands the shape over once a frame.
+          FrameAnimation {
+            id: morphDriver
+            running: !widthSpring.settled || !heightSpring.settled || !radiusSpring.settled
+            onTriggered: {
+              if (!widthSpring.settled) widthSpring.step(frameTime)
+              if (!heightSpring.settled) heightSpring.step(frameTime)
+              if (!radiusSpring.settled) radiusSpring.step(frameTime)
+              island.commitMorph()
+            }
+          }
+          function commitMorph() {
+            morph = { width: widthSpring.value, height: heightSpring.value, radius: radiusSpring.value }
+          }
           Timer { id: widthLag; interval: root.theme.morphLag; onTriggered: widthSpring.target = island.targetWidth }
           Timer { id: heightLag; interval: root.theme.morphLag; onTriggered: heightSpring.target = island.targetHeight }
           // A view settles its height over a few frames as it lays out; a
@@ -937,9 +958,12 @@ Item {
           Component.onCompleted: {
             widthSpring.target = widthSpring.value = targetWidth
             heightSpring.target = heightSpring.value = targetHeight
+            radiusSpring.value = radiusSpring.target
+            widthSpring.settled = heightSpring.settled = radiusSpring.settled = true
+            commitMorph()
           }
-          width: Math.max(40, widthSpring.value)
-          height: Math.max(28, heightSpring.value)
+          width: frame.width
+          height: frame.height
 
           EdgeClick {
             revealing: false
@@ -1012,7 +1036,7 @@ Item {
           readonly property bool restingEdge: !prominent && !raised && root.settings.restingOutline
           opacity: prominent ? 1 : raised ? 0.6 : restingEdge ? 0.75 : 0
           visible: opacity > 0.01
-          Behavior on opacity { MotionAnimation { theme: root.theme; pace: islandEdge.prominent || islandEdge.raised ? "morph" : "exit"; curve: "fade" } }
+          Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: root.theme; pace: towards(opacityMotion2.targetValue, islandEdge.prominent || islandEdge.raised ? "morph" : "exit"); curve: "fade" } }
           Shape {
             anchors.fill: parent
             anchors.margins: 0.5
@@ -1069,7 +1093,7 @@ Item {
     radius: shape.radius
     opacity: root.surfaceOpen ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen ? "morph" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion3; MotionAnimation { theme: root.theme; pace: towards(opacityMotion3.targetValue, root.surfaceOpen ? "morph" : "exit"); curve: "fade" } }
   }
 
   // With the notch, a concave corner either side of the island where it
@@ -1085,7 +1109,7 @@ Item {
     width: r + 0.5
     height: r
     property real edgeOpacity: (root.surfaceOpen || root.view === "feedback") ? 1 : (shape.lifted || shape.isGlanceExpanded) ? 0.6 : 0
-    Behavior on edgeOpacity { MotionAnimation { theme: root.theme; pace: root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"; curve: "fade" } }
+    Behavior on edgeOpacity { id: edgeOpacityMotion; MotionAnimation { theme: root.theme; pace: towards(edgeOpacityMotion.targetValue, root.surfaceOpen || root.view === "feedback" || shape.isGlanceExpanded ? "morph" : "exit"); curve: "fade" } }
     // Drawn as the island is, so the two edges antialias alike where they meet.
     preferredRendererType: Shape.CurveRenderer
     ShapePath {

@@ -178,7 +178,7 @@ ColumnLayout {
     }
     Rectangle {
       scale: editMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: editMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: cc.host.theme; pace: towards(scaleMotion.targetValue, editMouse.pressed ? "press" : "standard") } }
       Layout.preferredWidth: cc.editMode ? 58 : 28
       Layout.preferredHeight: 28
       radius: 14
@@ -221,7 +221,7 @@ ColumnLayout {
     }
     Rectangle {
       scale: settingsMouse.pressed ? 0.92 : 1
-      Behavior on scale { MotionAnimation { theme: cc.host.theme; pace: settingsMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion2; MotionAnimation { theme: cc.host.theme; pace: towards(scaleMotion2.targetValue, settingsMouse.pressed ? "press" : "standard") } }
       Layout.preferredWidth: 28
       Layout.preferredHeight: 28
       radius: 14

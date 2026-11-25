@@ -183,8 +183,10 @@ Item {
           // ahead of "Call Ended" coming in; back all at once.
           property real shown: pill.meetings.ended ? 0 : 1
           Behavior on shown {
+            id: shownMotion
             SequentialAnimation {
-              PauseAnimation { duration: pill.meetings.ended ? pill.theme.scaled(bar.index * 20) : 0 }
+              // Folding away (heading to 0) when the call ends.
+              PauseAnimation { duration: shownMotion.targetValue === 0 ? pill.theme.scaled(bar.index * 20) : 0 }
               MotionAnimation { theme: pill.theme; pace: "fade"; curve: "exit" }
             }
           }
@@ -205,8 +207,9 @@ Item {
       // In from the right after the dots, as they leave.
       property real shown: pill.meetings.ended ? 1 : 0
       Behavior on shown {
+        id: shownMotion2
         SequentialAnimation {
-          PauseAnimation { duration: pill.meetings.ended ? pill.theme.contentRevealDelay + pill.theme.scaled(60) : 0 }
+          PauseAnimation { duration: shownMotion2.targetValue === 1 ? pill.theme.contentRevealDelay + pill.theme.scaled(60) : 0 }
           MotionAnimation { theme: pill.theme; pace: "morph" }
         }
       }
@@ -291,9 +294,10 @@ Item {
     // In after the ones before it; out all at once.
     property real reveal: pill.meetings.expanded ? 1 : 0
     Behavior on reveal {
+      id: revealMotion
       SequentialAnimation {
-        PauseAnimation { duration: pill.meetings.expanded ? pill.theme.contentRevealDelay + pill.theme.scaled(button.order * 19) : 0 }
-        MotionAnimation { theme: pill.theme; pace: pill.meetings.expanded ? "morph" : "exit" }
+        PauseAnimation { duration: revealMotion.targetValue === 1 ? pill.theme.contentRevealDelay + pill.theme.scaled(button.order * 19) : 0 }
+        MotionAnimation { theme: pill.theme; pace: revealMotion.targetValue === 1 ? "morph" : "exit" }
       }
     }
     opacity: reveal

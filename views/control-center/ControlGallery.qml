@@ -70,7 +70,7 @@ ColumnLayout {
             Layout.columnSpan: wide ? 2 : 1
             Layout.preferredHeight: (wide ? gallery.cc.sectionHeight : gallery.cc.tileHeight) + 8
             scale: addMouse.pressed ? 0.98 : 1
-            Behavior on scale { MotionAnimation { theme: gallery.cc.host.theme; pace: addMouse.pressed ? "press" : "standard" } }
+            Behavior on scale { id: scaleMotion; MotionAnimation { theme: gallery.cc.host.theme; pace: towards(scaleMotion.targetValue, addMouse.pressed ? "press" : "standard") } }
             Loader {
               anchors.fill: parent
               anchors.margins: 4

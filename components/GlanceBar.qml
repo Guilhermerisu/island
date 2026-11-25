@@ -23,7 +23,8 @@ Item {
   opacity: shown ? 1 : 0
   visible: opacity > 0.01
   Behavior on opacity {
-    MotionAnimation { theme: glanceBar.host.theme; pace: glanceBar.shown ? "fade" : "exit"; curve: "fade" }
+    id: opacityMotion
+    MotionAnimation { theme: glanceBar.host.theme; pace: towards(opacityMotion.targetValue, glanceBar.shown ? "fade" : "exit"); curve: "fade" }
   }
 
   readonly property var settings: glanceBar.host.settings

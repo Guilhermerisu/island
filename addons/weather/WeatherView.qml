@@ -227,7 +227,7 @@ Item {
       color: buttonMouse.containsMouse ? Qt.lighter(view.theme.accent, 1.1) : view.theme.accent
       Behavior on color { MotionColorAnimation { theme: view.theme } }
       scale: buttonMouse.pressed ? 0.97 : 1
-      Behavior on scale { MotionAnimation { theme: view.theme; pace: buttonMouse.pressed ? "press" : "standard" } }
+      Behavior on scale { id: scaleMotion; MotionAnimation { theme: view.theme; pace: towards(scaleMotion.targetValue, buttonMouse.pressed ? "press" : "standard") } }
       Text {
         id: buttonText
         anchors.centerIn: parent

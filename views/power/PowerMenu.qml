@@ -131,7 +131,7 @@ Item {
           scale: tileMouse.pressed ? 0.97 : 1
           Behavior on color { MotionColorAnimation { theme: power.host.theme } }
           Behavior on border.color { MotionColorAnimation { theme: power.host.theme } }
-          Behavior on scale { MotionAnimation { theme: power.host.theme; pace: tileMouse.pressed ? "press" : "standard" } }
+          Behavior on scale { id: scaleMotion; MotionAnimation { theme: power.host.theme; pace: towards(scaleMotion.targetValue, tileMouse.pressed ? "press" : "standard") } }
 
           Column {
             anchors.centerIn: parent

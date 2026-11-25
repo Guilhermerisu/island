@@ -24,7 +24,7 @@ Item {
     height: width
     radius: width / 2
     scale: mouse.pressed ? 0.92 : 1
-    Behavior on scale { MotionAnimation { theme: controls.theme; pace: mouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion; MotionAnimation { theme: controls.theme; pace: towards(scaleMotion.targetValue, mouse.pressed ? "press" : "standard") } }
     Text {
       anchors.centerIn: parent
       text: button.glyph

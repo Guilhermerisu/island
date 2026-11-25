@@ -21,7 +21,7 @@ Rectangle {
   // side, it stretches toward the side it will go to.
   Rectangle {
     width: switchMouse.pressed ? 23 : 18
-    Behavior on width { MotionAnimation { theme: sw.view.host.theme; pace: switchMouse.pressed ? "press" : "standard" } }
+    Behavior on width { id: widthMotion; MotionAnimation { theme: sw.view.host.theme; pace: towards(widthMotion.targetValue, switchMouse.pressed ? "press" : "standard") } }
     height: 18; radius: 9
     y: 2
     // How far across the knob is (0 off, 1 on). Animating this rather than

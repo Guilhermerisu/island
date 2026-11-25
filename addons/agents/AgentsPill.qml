@@ -32,7 +32,20 @@ Item {
 
   // How far the pill has grown into a notice (see AgentNotice), following the
   // island's own height as it springs, so what moves keeps in step with it.
-  readonly property real grow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  // Only from a notice, till the pill's back to its size: the island growing
+  // into an open view (or shrinking back from one) isn't one.
+  property bool fromNotice: false
+  readonly property real heightGrow: Math.max(0, Math.min(1, (height - agents.restHeight) / (agents.noticeHeight - agents.restHeight)))
+  onHeightGrowChanged: if (heightGrow === 0 && !agents.noticeShown) fromNotice = false
+  Connections {
+    target: pill.agents
+    function onNoticeShownChanged() { if (pill.agents.noticeShown) pill.fromNotice = true }
+  }
+  Connections {
+    target: pill.host
+    function onSurfaceOpenChanged() { if (pill.host.surfaceOpen) pill.fromNotice = false }
+  }
+  readonly property real grow: fromNotice ? heightGrow : 0
   readonly property bool noticing: agents.noticeShown || grow > 0.5
 
   // Clawd and the time come in from a blur in turn, as the other pills; the

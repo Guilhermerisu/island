@@ -222,7 +222,7 @@ Item {
         model: [{ glyph: "󰅁", by: -1 }, { glyph: "󰅂", by: 1 }]
         delegate: Text {
           scale: chevronMouse.pressed ? 0.88 : 1
-          Behavior on scale { MotionAnimation { theme: view.theme; pace: chevronMouse.pressed ? "press" : "standard" } }
+          Behavior on scale { id: scaleMotion; MotionAnimation { theme: view.theme; pace: towards(scaleMotion.targetValue, chevronMouse.pressed ? "press" : "standard") } }
           required property var modelData
           width: view.cell
           horizontalAlignment: Text.AlignHCenter

@@ -93,11 +93,11 @@ Item {
     height: 28
     radius: 6
     scale: keysMouse.pressed ? 0.98 : 1
-    Behavior on scale { MotionAnimation { theme: shortcutRow.view.host.theme; pace: keysMouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(scaleMotion.targetValue, keysMouse.pressed ? "press" : "standard") } }
     // Cross-fades with Cancel and Replace while a conflict is asked about.
     opacity: shortcutRow.asking ? 0 : 1
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "exit" : "fade"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(opacityMotion.targetValue, shortcutRow.asking ? "exit" : "fade"); curve: "fade" } }
     color: shortcutRow.recording ? shortcutRow.view.host.theme.accentFill("soft")
       : shortcutRow.boxed ? shortcutRow.view.host.theme.fill(keysMouse.containsMouse ? "subtle" : "quiet")
       : keysMouse.containsMouse && !caps ? shortcutRow.view.well : shortcutRow.view.host.theme.withAlpha(shortcutRow.view.well, 0)
@@ -225,7 +225,7 @@ Item {
     spacing: 6
     opacity: shortcutRow.asking ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion2; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(opacityMotion2.targetValue, shortcutRow.asking ? "fade" : "exit"); curve: "fade" } }
     SettingsButton { view: shortcutRow.view; label: "Cancel"; onClicked: shortcutRow.keybinds.cancelPending() }
     SettingsButton { view: shortcutRow.view; label: "Replace"; primary: true; onClicked: shortcutRow.keybinds.applyPending() }
   }
@@ -235,7 +235,7 @@ Item {
     spacing: 5
     opacity: shortcutRow.asking ? 1 : 0
     visible: opacity > 0.01
-    Behavior on opacity { MotionAnimation { theme: shortcutRow.view.host.theme; pace: shortcutRow.asking ? "fade" : "exit"; curve: "fade" } }
+    Behavior on opacity { id: opacityMotion3; MotionAnimation { theme: shortcutRow.view.host.theme; pace: towards(opacityMotion3.targetValue, shortcutRow.asking ? "fade" : "exit"); curve: "fade" } }
     Text {
       text: "󰀪"
       color: "#febc2e"

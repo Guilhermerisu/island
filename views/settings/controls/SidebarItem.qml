@@ -19,7 +19,7 @@ Rectangle {
   color: !selected && sideMouse.containsMouse ? side.view.host.theme.fill("quiet") : "transparent"
   Behavior on color { MotionColorAnimation { theme: side.view.host.theme } }
   scale: sideMouse.pressed ? 0.985 : 1
-  Behavior on scale { MotionAnimation { theme: side.view.host.theme; pace: sideMouse.pressed ? "press" : "standard" } }
+  Behavior on scale { id: scaleMotion; MotionAnimation { theme: side.view.host.theme; pace: towards(scaleMotion.targetValue, sideMouse.pressed ? "press" : "standard") } }
   RowLayout {
     anchors.fill: parent
     anchors.leftMargin: 6

@@ -64,7 +64,7 @@ Rectangle {
   Rectangle {
     id: chevron
     scale: chevronMouse.pressed ? 0.92 : 1
-    Behavior on scale { MotionAnimation { theme: center.host.theme; pace: chevronMouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion; MotionAnimation { theme: center.host.theme; pace: towards(scaleMotion.targetValue, chevronMouse.pressed ? "press" : "standard") } }
     visible: sec.showChevron && !sec.vertical
     anchors.right: parent.right
     anchors.rightMargin: 14
@@ -86,7 +86,7 @@ Rectangle {
   Rectangle {
     visible: sec.toggleIcon !== "" && !sec.vertical
     scale: toggleMouse.pressed ? 0.92 : 1
-    Behavior on scale { MotionAnimation { theme: center.host.theme; pace: toggleMouse.pressed ? "press" : "standard" } }
+    Behavior on scale { id: scaleMotion2; MotionAnimation { theme: center.host.theme; pace: towards(scaleMotion2.targetValue, toggleMouse.pressed ? "press" : "standard") } }
     anchors.right: parent.right
     anchors.rightMargin: sec.showChevron ? 42 : 14
     anchors.top: parent.top
