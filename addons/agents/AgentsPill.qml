@@ -71,7 +71,7 @@ Item {
     // turn on the pill.
     readonly property var session: pill.noticing && noticeItem.displayed ? noticeItem.displayed : pill.agents.live
     // Codex's logo sits centered in the pill's rounded end.
-    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 10
+    readonly property real restX: logo ? Math.round((pill.agents.restHeight - width) / 2) : provider === "codex" ? 8 : 14
     readonly property real tileX: noticeItem.tileCenter - width / 2
     x: Math.round(restX + (tileX - restX) * pill.grow)
     // Clawd (his body) and Codex's logo sit centered; the stand-in pixel
@@ -98,7 +98,7 @@ Item {
     id: restTime
     theme: pill.theme
     anchors.right: parent.right
-    anchors.rightMargin: 16
+    anchors.rightMargin: 14
     anchors.verticalCenter: parent.verticalCenter
     opacity: reveal.trailingIn
     PillPart { progress: reveal.trailingIn }
@@ -109,6 +109,28 @@ Item {
     font.weight: Font.DemiBold
     font.features: { "tnum": 1, "case": 1 }
     font.letterSpacing: pill.theme.tracking(pill.theme.textFontFamily, pill.theme.size.body)
+  }
+
+  // Waiting on you: an amber dot left of the time, with a soft halo, coming
+  // and going with it.
+  Rectangle {
+    visible: pill.agents.asking
+    anchors.right: restTime.left
+    anchors.rightMargin: 6 - 3
+    anchors.verticalCenter: restTime.verticalCenter
+    width: 12
+    height: 12
+    radius: 6
+    color: pill.theme.withAlpha(pill.ink, 0.22)
+    opacity: reveal.trailingIn
+    PillPart { progress: reveal.trailingIn }
+    Rectangle {
+      anchors.centerIn: parent
+      width: 6
+      height: 6
+      radius: 3
+      color: pill.ink
+    }
   }
 
   AgentNotice {

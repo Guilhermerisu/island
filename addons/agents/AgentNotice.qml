@@ -59,8 +59,8 @@ Item {
   RowLayout {
     id: row
     anchors.fill: parent
-    anchors.leftMargin: 13
-    anchors.rightMargin: 15
+    anchors.leftMargin: 11.5
+    anchors.rightMargin: 19.5
     spacing: 10
 
     // Growing in under the mascot as he arrives.
@@ -75,7 +75,7 @@ Item {
     }
     ColumnLayout {
       Layout.fillWidth: true
-      spacing: 3
+      spacing: 2
       opacity: reveal.middleIn
       PillPart { progress: reveal.middleIn; scaleFrom: 0.94 }
       Text {
@@ -98,15 +98,15 @@ Item {
       }
     }
     Item {
-      Layout.preferredWidth: 23
-      Layout.preferredHeight: 23
+      Layout.preferredWidth: 24
+      Layout.preferredHeight: 24
       opacity: reveal.trailingIn
       PillPart { progress: reveal.trailingIn }
       Rectangle {
         id: badge
         anchors.fill: parent
         radius: 12
-        color: notice.asking ? notice.theme.withAlpha(notice.tint, 0.16) : notice.tint
+        color: notice.tint
         // Asking, the badge beats and a ring spreads from it. Done, a green
         // circle grows in and its tick draws its two strokes in turn, as SF
         // Symbols' checkmark.circle.fill.
@@ -153,10 +153,10 @@ Item {
             // From the start down to the corner, then up to the end.
             readonly property real first: Math.min(1, badge.draw * 2)
             readonly property real second: Math.max(0, badge.draw * 2 - 1)
-            startX: 6.5
-            startY: 12
-            PathLine { x: 6.5 + 3.7 * tick.first; y: 12 + 3.7 * tick.first }
-            PathLine { x: 10.2 + 6.8 * tick.second; y: 15.7 - 8 * tick.second }
+            startX: 7
+            startY: 12.5
+            PathLine { x: 7 + 3.7 * tick.first; y: 12.5 + 3.7 * tick.first }
+            PathLine { x: 10.7 + 6.8 * tick.second; y: 16.2 - 8 * tick.second }
           }
         }
         SequentialAnimation on beat {
@@ -191,10 +191,11 @@ Item {
         Text {
           anchors.centerIn: parent
           visible: notice.asking
-          text: "󰋗"
-          color: notice.tint
+          text: "󰋖"
+          color: "#000000"
           font.family: notice.theme.fontFamily
-          font.pixelSize: notice.theme.px(15)
+          font.pixelSize: notice.theme.px(14)
+          font.bold: true
         }
       }
     }

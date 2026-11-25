@@ -82,6 +82,7 @@ Item {
       font.family: labelRoot.host.theme.textFontFamily
       font.pixelSize: labelRoot.host.theme.size.footnote
       font.weight: Font.Medium
+      font.features: { "tnum": 1 }
       font.letterSpacing: labelRoot.host.theme.tracking(labelRoot.host.theme.textFontFamily, labelRoot.host.theme.size.footnote)
     }
   }
